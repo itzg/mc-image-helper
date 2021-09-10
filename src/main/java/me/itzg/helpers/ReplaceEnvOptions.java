@@ -13,15 +13,15 @@ public class ReplaceEnvOptions {
     )
     String prefix;
 
-    @Option(names = "--replace-env-excludes", split = ",",
+    @Option(names = "--replace-env-excludes", split = ",|\\s",
             description = "Filenames (without path) that should be excluded from processing.")
     List<Path> excludes;
 
-    @Option(names = "--replace-env-exclude-paths", split = ",",
+    @Option(names = "--replace-env-exclude-paths", split = ",|\\s",
             description = "Destination paths that will be excluded from processing")
     List<Path> excludePaths;
 
-    @Option(names = "--replace-env-file-suffixes", split = ",", required = true,
+    @Option(names = "--replace-env-file-suffixes", split = ",|\\s", required = true,
             description = "Filename suffixes (without dot) that should be processed." +
                     " For example: txt,json,yaml")
     List<String> suffixes;
