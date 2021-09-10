@@ -5,8 +5,10 @@ import lombok.extern.slf4j.Slf4j;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
 
 import static java.nio.file.StandardCopyOption.COPY_ATTRIBUTES;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
@@ -45,21 +47,24 @@ class InterpolatingFileVisitor implements FileVisitor<Path> {
 
         if (processFile(srcFile, destFile)) {
             if (replaceEnv.matches(destFile)) {
-                log.debug("interpolate from={} to={}", srcFile, destFile);
+                log.info("Interpolating {} -> {}", srcFile, destFile);
 
-                try (BufferedReader srcReader = Files.newBufferedReader(srcFile)) {
-                    try (BufferedWriter destWriter = Files.newBufferedWriter(destFile, StandardOpenOption.CREATE)) {
-                        interpolator.interpolate(srcReader, destWriter);
-                    }
+                final byte[] content = Files.readAllBytes(srcFile);
+
+                final byte[] result = interpolator.interpolate(content);
+                try (OutputStream out = Files.newOutputStream(destFile, StandardOpenOption.CREATE)) {
+                    out.write(result);
                 }
+                Files.setLastModifiedTime(destFile, Files.getLastModifiedTime(srcFile));
+
             } else {
-                log.debug("copy from={} to={}", srcFile, destFile);
+                log.info("Copying {} -> {}", srcFile, destFile);
 
                 Files.copy(srcFile, destFile, COPY_ATTRIBUTES, REPLACE_EXISTING);
             }
         }
         else {
-            log.debug("skipping destFile={}", destFile);
+            log.debug("Skipping destFile={}", destFile);
         }
 
         return FileVisitResult.CONTINUE;
@@ -70,25 +75,35 @@ class InterpolatingFileVisitor implements FileVisitor<Path> {
             return true;
         }
 
+        final FileTime srcTime = Files.getLastModifiedTime(srcFile);
+        final FileTime destTime = Files.getLastModifiedTime(destFile);
+
         if (skipNewerInDestination) {
-            if (Files.getLastModifiedTime(destFile).compareTo(Files.getLastModifiedTime(srcFile)) > 0) {
+            if (destTime.compareTo(srcTime) > 0) {
                 return false;
             }
         }
 
-        return Files.size(srcFile) != Files.size(destFile) ||
-                Files.getLastModifiedTime(srcFile) != Files.getLastModifiedTime(destFile);
+        final long srcSize = Files.size(srcFile);
+        final long destSize = Files.size(destFile);
+
+        log.trace("Comparing {} (size={}, time={}) to {} (size={}, time={})",
+                srcFile, srcSize, srcTime,
+                destFile, destSize, destTime);
+
+        return srcSize != destSize ||
+                !srcTime.equals(destTime);
     }
 
     @Override
-    public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+    public FileVisitResult visitFileFailed(Path file, IOException exc) {
         log.warn("Failed to access {} due to {}", file, exc.getMessage());
         log.debug("Details", exc);
         return FileVisitResult.CONTINUE;
     }
 
     @Override
-    public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+    public FileVisitResult postVisitDirectory(Path dir, IOException exc) {
         return FileVisitResult.CONTINUE;
     }
 }

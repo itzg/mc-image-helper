@@ -33,7 +33,7 @@ public class CopyAndInterpolate implements Callable<Integer> {
 
     @Override
     public Integer call() throws Exception {
-        log.info("CopyAndInterpolate : {}", this);
+        log.debug("CopyAndInterpolate : {}", this);
 
         try {
             Files.walkFileTree(src, new InterpolatingFileVisitor(src, dest, skipNewerInDestination, replaceEnv,
