@@ -4,7 +4,7 @@
 
     <groupId>com.github.itzg</groupId>
     <artifactId>mc-image-helper</artifactId>
-    <version>1.0.3-SNAPSHOT</version>
+    <version>1.0.3</version>
 
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
@@ -16,7 +16,7 @@
 
     <scm>
         <developerConnection>scm:git:git@github.com:itzg/mc-image-helper.git</developerConnection>
-      <tag>HEAD</tag>
+      <tag>1.0.3</tag>
   </scm>
 
     <dependencies>
