@@ -21,7 +21,7 @@ public class ReplaceEnvOptions {
             description = "Destination paths that will be excluded from processing")
     List<Path> excludePaths;
 
-    @Option(names = "--replace-env-files-suffixes", split = ",", required = true,
+    @Option(names = "--replace-env-file-suffixes", split = ",", required = true,
             description = "Filename suffixes (without dot) that should be processed." +
                     " For example: txt,json,yaml")
     List<String> suffixes;
