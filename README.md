@@ -4,18 +4,19 @@ This tool does the complicated bits for [the itzg/minecraft-server Docker image]
 
 ```
 Usage: mc-image-helper copy-and-interpolate [-hV] [--skip-newer-in-destination]
-       ([--replace-env-prefix=<prefix>] [--replace-env-excludes=<excludes>]...
-       [--replace-env-exclude-path=<excludePaths>]...
-       --replace-env-file-suffixes=<suffixes>[,<suffixes>...]
-       [--replace-env-file-suffixes=<suffixes>[,<suffixes>...]]...) <src> <dest>
+       ([--replace-env-prefix=<prefix>] [--replace-env-excludes=<excludes>[,
+       <excludes>...]]... [--replace-env-exclude-paths=<excludePaths>[,
+       <excludePaths>...]]... --replace-env-file-suffixes=<suffixes>[,
+       <suffixes>...] [--replace-env-file-suffixes=<suffixes>[,
+       <suffixes>...]]...) <src> <dest>
 Copies the contents of one directory to another with conditional variable
 interpolation.
       <src>       source directory
       <dest>      destination directory
   -h, --help      Show this help message and exit.
-      --replace-env-exclude-path=<excludePaths>
+      --replace-env-exclude-paths=<excludePaths>[,<excludePaths>...]
                   Destination paths that will be excluded from processing
-      --replace-env-excludes=<excludes>
+      --replace-env-excludes=<excludes>[,<excludes>...]
                   Filenames (without path) that should be excluded from
                     processing.
       --replace-env-file-suffixes=<suffixes>[,<suffixes>...]

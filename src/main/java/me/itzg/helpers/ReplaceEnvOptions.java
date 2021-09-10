@@ -13,11 +13,11 @@ public class ReplaceEnvOptions {
     )
     String prefix;
 
-    @Option(names = "--replace-env-excludes",
+    @Option(names = "--replace-env-excludes", split = ",",
             description = "Filenames (without path) that should be excluded from processing.")
     List<Path> excludes;
 
-    @Option(names = "--replace-env-exclude-path",
+    @Option(names = "--replace-env-exclude-paths", split = ",",
             description = "Destination paths that will be excluded from processing")
     List<Path> excludePaths;
 
