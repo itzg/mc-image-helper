@@ -2,8 +2,6 @@ package me.itzg.helpers;
 
 import lombok.extern.slf4j.Slf4j;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.*;
@@ -80,6 +78,7 @@ class InterpolatingFileVisitor implements FileVisitor<Path> {
 
         if (skipNewerInDestination) {
             if (destTime.compareTo(srcTime) > 0) {
+                log.debug("Skipping since dest={} is newer than src={}", destFile, srcFile);
                 return false;
             }
         }
@@ -87,12 +86,14 @@ class InterpolatingFileVisitor implements FileVisitor<Path> {
         final long srcSize = Files.size(srcFile);
         final long destSize = Files.size(destFile);
 
-        log.trace("Comparing {} (size={}, time={}) to {} (size={}, time={})",
+        log.debug("Comparing {} (size={}, time={}) to {} (size={}, time={})",
                 srcFile, srcSize, srcTime,
                 destFile, destSize, destTime);
 
         return srcSize != destSize ||
-                !srcTime.equals(destTime);
+                // Use millisecond resolution since finer resolution became inconsistent with copied files
+                // such as 2021-05-01T18:29:50.2805676Z vs 2021-05-01T18:29:50.280567Z
+                srcTime.toMillis() != destTime.toMillis();
     }
 
     @Override
