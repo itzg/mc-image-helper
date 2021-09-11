@@ -1,3 +1,5 @@
+[![Release](https://jitpack.io/v/itzg/mc-image-helper.svg)](https://jitpack.io/#itzg/mc-image-helper)
+
 This tool does the complicated bits for [the itzg/minecraft-server Docker image](https://github.com/itzg/docker-minecraft-server).
 
 ## Usage
