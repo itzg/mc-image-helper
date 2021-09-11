@@ -9,7 +9,7 @@ import java.util.List;
 
 @ToString
 public class ReplaceEnvOptions {
-    @Option(names = "--replace-env-prefix", required = true,
+    @Option(names = "--replace-env-prefix",
             defaultValue = "CFG_", showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
             description = "Only placeholder variables with this prefix will be processed."
     )
