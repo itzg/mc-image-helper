@@ -1,4 +1,4 @@
-package me.itzg.helpers;
+package me.itzg.helpers.sync;
 
 public class StandardEnvironmentVariablesProvider implements EnvironmentVariablesProvider {
     @Override

@@ -1,10 +1,12 @@
-package me.itzg.helpers;
+package me.itzg.helpers.sync;
 
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.file.*;
+import java.nio.file.FileVisitResult;
+import java.nio.file.FileVisitor;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 
@@ -12,19 +14,15 @@ import static java.nio.file.StandardCopyOption.COPY_ATTRIBUTES;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 @Slf4j
-class InterpolatingFileVisitor implements FileVisitor<Path> {
+class SynchronizingFileVisitor implements FileVisitor<Path> {
     private final Path src;
     private final Path dest;
     private final boolean skipNewerInDestination;
-    private final ReplaceEnvOptions replaceEnv;
-    private final Interpolator interpolator;
 
-    public InterpolatingFileVisitor(Path src, Path dest, boolean skipNewerInDestination, ReplaceEnvOptions replaceEnv, Interpolator interpolator) {
+    public SynchronizingFileVisitor(Path src, Path dest, boolean skipNewerInDestination) {
         this.src = src;
         this.dest = dest;
         this.skipNewerInDestination = skipNewerInDestination;
-        this.replaceEnv = replaceEnv;
-        this.interpolator = interpolator;
     }
 
     @Override
@@ -43,23 +41,8 @@ class InterpolatingFileVisitor implements FileVisitor<Path> {
         log.trace("visit file={}", srcFile);
         final Path destFile = dest.resolve(src.relativize(srcFile));
 
-        if (processFile(srcFile, destFile)) {
-            if (replaceEnv.matches(destFile)) {
-                log.info("Interpolating {} -> {}", srcFile, destFile);
-
-                final byte[] content = Files.readAllBytes(srcFile);
-
-                final byte[] result = interpolator.interpolate(content);
-                try (OutputStream out = Files.newOutputStream(destFile, StandardOpenOption.CREATE)) {
-                    out.write(result);
-                }
-                Files.setLastModifiedTime(destFile, Files.getLastModifiedTime(srcFile));
-
-            } else {
-                log.info("Copying {} -> {}", srcFile, destFile);
-
-                Files.copy(srcFile, destFile, COPY_ATTRIBUTES, REPLACE_EXISTING);
-            }
+        if (shouldProcessFile(srcFile, destFile)) {
+            processFile(srcFile, destFile);
         }
         else {
             log.debug("Skipping destFile={}", destFile);
@@ -68,7 +51,13 @@ class InterpolatingFileVisitor implements FileVisitor<Path> {
         return FileVisitResult.CONTINUE;
     }
 
-    private boolean processFile(Path srcFile, Path destFile) throws IOException {
+    protected void processFile(Path srcFile, Path destFile) throws IOException {
+        log.info("Copying {} -> {}", srcFile, destFile);
+
+        Files.copy(srcFile, destFile, COPY_ATTRIBUTES, REPLACE_EXISTING);
+    }
+
+    private boolean shouldProcessFile(Path srcFile, Path destFile) throws IOException {
         if (Files.notExists(destFile)) {
             return true;
         }

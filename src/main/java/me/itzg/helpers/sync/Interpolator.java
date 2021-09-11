@@ -1,4 +1,4 @@
-package me.itzg.helpers;
+package me.itzg.helpers.sync;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -8,10 +8,8 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 @Slf4j
 public class Interpolator {
