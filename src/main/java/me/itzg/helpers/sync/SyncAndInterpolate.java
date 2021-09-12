@@ -39,7 +39,7 @@ public class SyncAndInterpolate implements Callable<Integer> {
 
     @Override
     public Integer call() throws Exception {
-        log.debug("SyncAndInterpolate : {}", this);
+        log.debug("Configured with {}", this);
 
         try {
             Files.walkFileTree(src, new InterpolatingFileVisitor(src, dest, skipNewerInDestination,
@@ -68,9 +68,20 @@ public class SyncAndInterpolate implements Callable<Integer> {
 
                 final byte[] content = Files.readAllBytes(srcFile);
 
-                final byte[] result = interpolator.interpolate(content);
+                final Interpolator.Result<byte[]> result;
+                try {
+                    result = interpolator.interpolate(content);
+                } catch (IOException e) {
+                    log.warn("Failed to interpolate {}, using copy instead: {}", srcFile, e.getMessage());
+                    log.debug("Details", e);
+                    copyFile(srcFile, destFile);
+                    return;
+                }
+                if (result.getReplacementCount() > 0) {
+                    log.debug("Replaced {} variable(s) in {}", result.getReplacementCount(), destFile);
+                }
                 try (OutputStream out = Files.newOutputStream(destFile, StandardOpenOption.CREATE)) {
-                    out.write(result);
+                    out.write(result.getContent());
                 }
                 Files.setLastModifiedTime(destFile, Files.getLastModifiedTime(srcFile));
 

@@ -52,6 +52,10 @@ class SynchronizingFileVisitor implements FileVisitor<Path> {
     }
 
     protected void processFile(Path srcFile, Path destFile) throws IOException {
+        copyFile(srcFile, destFile);
+    }
+
+    protected void copyFile(Path srcFile, Path destFile) throws IOException {
         log.info("Copying {} -> {}", srcFile, destFile);
 
         Files.copy(srcFile, destFile, COPY_ATTRIBUTES, REPLACE_EXISTING);

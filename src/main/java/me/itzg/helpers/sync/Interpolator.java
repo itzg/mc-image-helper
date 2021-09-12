@@ -1,10 +1,12 @@
 package me.itzg.helpers.sync;
 
+import lombok.Data;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import me.itzg.helpers.CharsetDetector;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -25,19 +27,11 @@ public class Interpolator {
         this.envPrefix = envPrefix;
     }
 
-    public void interpolate(BufferedReader reader, BufferedWriter writer) throws IOException {
-        String line;
-        while ((line = reader.readLine()) != null) {
-            final String str = interpolate(line);
-
-            writer.write(str);
-            writer.write("\n");
-        }
-    }
-
-    private String interpolate(String str) throws IOException {
+    private Result<String> interpolate(String str) throws IOException {
         final Matcher matcher = VAR_PATTERN.matcher(str);
         final StringBuffer sb = new StringBuffer();
+
+        int replacements = 0;
 
         while (matcher.find()) {
             final String varName = matcher.group(1);
@@ -53,12 +47,13 @@ public class Interpolator {
                 }
             }
 
-            log.debug("Processing varName={} with value={}", varName, value);
+            log.trace("Processing varName={} with value={}", varName, value);
+            ++replacements;
             matcher.appendReplacement(sb, value != null ? value : Matcher.quoteReplacement(matcher.group()));
         }
         matcher.appendTail(sb);
 
-        return sb.toString();
+        return new Result<>(sb.toString(), replacements);
     }
 
     private String readValueFromFile(String filename) throws IOException {
@@ -66,8 +61,17 @@ public class Interpolator {
         return content.trim();
     }
 
-    public byte[] interpolate(byte[] content) throws IOException {
-        final String result = interpolate(new String(content, StandardCharsets.UTF_8));
-        return result.getBytes(StandardCharsets.UTF_8);
+    public Result<byte[]> interpolate(byte[] content) throws IOException {
+        Charset charset = CharsetDetector.detect(content);
+        log.debug("Detected charset={}", charset);
+        final Result<String> result = interpolate(new String(content, charset));
+        return new Result<>(result.getContent().getBytes(charset), result.getReplacementCount());
+    }
+
+    @RequiredArgsConstructor
+    @Data
+    public static class Result<T> {
+        final T content;
+        final int replacementCount;
     }
 }

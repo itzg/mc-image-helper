@@ -42,7 +42,7 @@ public class Sync implements Callable<Integer> {
 
     @Override
     public Integer call() throws Exception {
-        log.debug("Sync : {}", this);
+        log.debug("Configured with {}", this);
 
         try {
             Files.walkFileTree(src, new SynchronizingFileVisitor(src, dest, skipNewerInDestination));
