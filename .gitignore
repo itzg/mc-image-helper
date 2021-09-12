@@ -1,5 +1,7 @@
 /.idea/
 /target/
+/build/
+/.gradle/
 
 /dependency-reduced-pom.xml
 /pom.xml.releaseBackup
