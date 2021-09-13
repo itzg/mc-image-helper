@@ -21,9 +21,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: Git config
-        run: |
-          git config --global user.email "git@github.com"
-          git config --global user.name "${{github.actor}}"
+        uses: fregante/setup-git-user@v1
 
       - name: Build with Gradle
         run: ./gradlew release -PpushReleaseTag=true
