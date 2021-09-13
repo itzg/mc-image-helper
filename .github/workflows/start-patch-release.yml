@@ -20,5 +20,10 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      - name: Git config
+        run: |
+          git config --global user.email "git@github.com"
+          git config --global user.name "${{github.actor}}"
+
       - name: Build with Gradle
         run: ./gradlew release -PpushReleaseTag=true
