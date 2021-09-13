@@ -1,4 +1,4 @@
-[![Release](https://jitpack.io/v/itzg/mc-image-helper.svg)](https://jitpack.io/#itzg/mc-image-helper)
+[![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/itzg/mc-image-helper?sort=semver)](https://github.com/itzg/mc-image-helper/releases/latest)
 
 This tool does the complicated bits for [the itzg/minecraft-server Docker image](https://github.com/itzg/docker-minecraft-server).
 
