@@ -16,12 +16,26 @@ application {
     mainClass = 'me.itzg.helpers.McImageHelper'
 }
 
+// For bumping version.txt and tagging
+release {
+    push = project.findProperty("pushReleaseTag") ?: false
+}
+
 githubRelease {
+    def isSnapshot = project.version.toString().endsWith("-SNAPSHOT")
     token System.env.GITHUB_TOKEN ?: ''
-    prerelease = project.version.toString().endsWith("-SNAPSHOT")
+    prerelease = isSnapshot
+    overwrite = isSnapshot
     releaseAssets {
-        project.tasks.distZip.archiveFile
+        [
+                project.tasks.distZip.archiveFile,
+                project.tasks.distTar.archiveFile
+        ]
     }
+}
+
+project.tasks.distTar {
+    compression = Compression.GZIP
 }
 
 repositories {
