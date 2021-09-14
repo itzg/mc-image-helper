@@ -3,6 +3,7 @@ package me.itzg.helpers;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import me.itzg.helpers.asciify.Asciify;
+import me.itzg.helpers.sync.InterpolateCommand;
 import me.itzg.helpers.sync.Sync;
 import me.itzg.helpers.sync.SyncAndInterpolate;
 import org.slf4j.LoggerFactory;
@@ -15,6 +16,7 @@ import picocli.CommandLine.Option;
         versionProvider = MavenVersionProvider.class,
         subcommands = {
                 SyncAndInterpolate.class,
+                InterpolateCommand.class,
                 Sync.class,
                 Asciify.class
         }

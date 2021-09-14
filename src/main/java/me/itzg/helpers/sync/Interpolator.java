@@ -48,8 +48,13 @@ public class Interpolator {
             }
 
             log.trace("Processing varName={} with value={}", varName, value);
-            ++replacements;
-            matcher.appendReplacement(sb, value != null ? value : Matcher.quoteReplacement(matcher.group()));
+            if (value != null) {
+                ++replacements;
+            }
+            else {
+                value = Matcher.quoteReplacement(matcher.group());
+            }
+            matcher.appendReplacement(sb, value);
         }
         matcher.appendTail(sb);
 
