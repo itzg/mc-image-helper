@@ -13,6 +13,10 @@ plugins {
     id "com.github.breadmoirai.github-release" version "2.2.12"
 }
 
+test {
+    useJUnitPlatform()
+}
+
 application {
     mainClass = 'me.itzg.helpers.McImageHelper'
 }
@@ -54,6 +58,8 @@ dependencies {
     implementation 'ch.qos.logback:logback-core:1.2.5'
     implementation 'ch.qos.logback:logback-classic:1.2.5'
     implementation "info.picocli:picocli:4.6.1"
+    testImplementation 'org.assertj:assertj-core:3.20.2'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.7.2'
     annotationProcessor "info.picocli:picocli-codegen:4.6.1"
 }
 

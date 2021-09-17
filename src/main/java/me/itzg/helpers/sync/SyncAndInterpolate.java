@@ -8,10 +8,8 @@ import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.util.concurrent.Callable;
 
 @Command(name = "sync-and-interpolate",
@@ -42,8 +40,12 @@ public class SyncAndInterpolate implements Callable<Integer> {
         log.debug("Configured with {}", this);
 
         try {
-            Files.walkFileTree(src, new InterpolatingFileVisitor(src, dest, skipNewerInDestination,
-                    new Interpolator(new StandardEnvironmentVariablesProvider(), replaceEnv.prefix)));
+            Files.walkFileTree(src,
+                    new InterpolatingFileVisitor(src, dest, skipNewerInDestination,
+                            replaceEnv,
+                            new Interpolator(new StandardEnvironmentVariablesProvider(), replaceEnv.prefix)
+                    )
+            );
         } catch (IOException e) {
             log.error("Failed to sync and interpolate {} into {} : {}", src, dest, e.getMessage());
             log.debug("Details", e);
@@ -53,41 +55,4 @@ public class SyncAndInterpolate implements Callable<Integer> {
         return 0;
     }
 
-    class InterpolatingFileVisitor extends SynchronizingFileVisitor {
-        private final Interpolator interpolator;
-
-        public InterpolatingFileVisitor(Path src, Path dest, boolean skipNewerInDestination, Interpolator interpolator) {
-            super(src, dest, skipNewerInDestination);
-            this.interpolator = interpolator;
-        }
-
-        @Override
-        protected void processFile(Path srcFile, Path destFile) throws IOException {
-            if (replaceEnv.matches(destFile)) {
-                log.info("Interpolating {} -> {}", srcFile, destFile);
-
-                final byte[] content = Files.readAllBytes(srcFile);
-
-                final Interpolator.Result<byte[]> result;
-                try {
-                    result = interpolator.interpolate(content);
-                } catch (IOException e) {
-                    log.warn("Failed to interpolate {}, using copy instead: {}", srcFile, e.getMessage());
-                    log.debug("Details", e);
-                    copyFile(srcFile, destFile);
-                    return;
-                }
-                if (result.getReplacementCount() > 0) {
-                    log.debug("Replaced {} variable(s) in {}", result.getReplacementCount(), destFile);
-                }
-                try (OutputStream out = Files.newOutputStream(destFile, StandardOpenOption.CREATE)) {
-                    out.write(result.getContent());
-                }
-                Files.setLastModifiedTime(destFile, Files.getLastModifiedTime(srcFile));
-
-            } else {
-                super.processFile(srcFile, destFile);
-            }
-        }
-    }
 }
