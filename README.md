@@ -87,7 +87,7 @@ Usage: mc-image-helper patch [-h] [--patch-env-prefix=<envPrefix>] FILE_OR_DIR
                       Default: CFG_
 ```
 
-[See below](#patch-schema) for a description of PatchSet and PatchDefinition JSON schemas.
+[See below](#patch-schemas) for a description of [PatchSet](#patchset) and [PatchDefinition](#patchdefinition) JSON schemas.
 
 ## Patch Schemas
 
@@ -95,11 +95,75 @@ Usage: mc-image-helper patch [-h] [--patch-env-prefix=<envPrefix>] FILE_OR_DIR
 
 - `patches` : array of [PatchDefinition](#patchdefinition)
 
+Example
+
+```json
+{
+  "patches": [
+    {
+      "file": "/data/paper.yml",
+      "ops": [
+        {
+          "$set": {
+            "path": "$.verbose",
+            "value": true
+          }
+        },
+        {
+          "$set": {
+            "path": "$.settings['velocity-support'].enabled",
+            "value": "${CFG_VELOCITY_ENABLED}",
+            "value-type": "bool"
+          }
+        },
+        {
+          "$put": {
+            "path": "$.settings",
+            "key": "my-test-setting",
+            "value": "testing"
+          }
+        }
+      ]
+    }
+  ]
+}
+```
+
 ### PatchDefinition
 
 - `file` : Path to the file to patch
 - `file-format` : **optional** If non-null, declares a specifically supported format name: json, yaml. Otherwise, the file format is detected by the file's suffix.
 - `ops` : array of [PatchOperation](#patchoperation)
+
+Example:
+
+```json
+{
+  "file": "/data/paper.yml",
+  "ops": [
+    {
+      "$set": {
+        "path": "$.verbose",
+        "value": true
+      }
+    },
+    {
+      "$set": {
+        "path": "$.settings['velocity-support'].enabled",
+        "value": "${CFG_VELOCITY_ENABLED}",
+        "value-type": "bool"
+      }
+    },
+    {
+      "$put": {
+        "path": "$.settings",
+        "key": "my-test-setting",
+        "value": "testing"
+      }
+    }
+  ]
+}
+```
 
 ### PatchOperation
 
@@ -114,6 +178,17 @@ The `$set` operation can set an existing field to a new value. If a new field ne
   - `value` : The value to set. If the given value is a string, variable placeholders of the form `${...}` will be replaced from the environment variables and the resulting string can be converted by setting value-type.
   - `value-type` : **optional** [see below](#valuetype)
 
+Example:
+
+```json
+{
+  "$set": {
+    "path": "$.verbose",
+    "value": true
+  }
+}
+```
+
 #### `$put`
 
 The `$put` operation can add or update a field with the given key within an object.
@@ -123,6 +198,18 @@ The `$put` operation can add or update a field with the given key within an obje
     - `key` : The key to set
     - `value` : The value to set. If the given value is a string, variable placeholders of the form `${...}` will be replaced from the environment variables and the resulting string can be converted by setting value-type.
     - `value-type` : **optional** [see below](#valuetype)
+
+Example:
+
+```json
+{
+  "$put": {
+    "path": "$.settings",
+    "key": "my-test-setting",
+    "value": "testing"
+  }
+}
+```
 
 ### ValueType
 
