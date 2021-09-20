@@ -2,6 +2,8 @@ package me.itzg.helpers.sync;
 
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
+import me.itzg.helpers.env.Interpolator;
+import me.itzg.helpers.env.StandardEnvironmentVariablesProvider;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -41,9 +43,13 @@ public class SyncAndInterpolate implements Callable<Integer> {
 
         try {
             Files.walkFileTree(src,
-                    new InterpolatingFileVisitor(src, dest, skipNewerInDestination,
-                            replaceEnv,
-                            new Interpolator(new StandardEnvironmentVariablesProvider(), replaceEnv.prefix)
+                    new SynchronizingFileVisitor(src, dest, skipNewerInDestination,
+                            new InterpolatingFileProcessor(
+                                    replaceEnv,
+                                    new Interpolator(new StandardEnvironmentVariablesProvider(), replaceEnv.prefix),
+                                    new CopyingFileProcessor()
+                            )
+
                     )
             );
         } catch (IOException e) {

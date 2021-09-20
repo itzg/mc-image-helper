@@ -45,7 +45,7 @@ public class Sync implements Callable<Integer> {
         log.debug("Configured with {}", this);
 
         try {
-            Files.walkFileTree(src, new SynchronizingFileVisitor(src, dest, skipNewerInDestination));
+            Files.walkFileTree(src, new SynchronizingFileVisitor(src, dest, skipNewerInDestination, new CopyingFileProcessor()));
         } catch (IOException e) {
             log.error("Failed to sync {} into {} : {}", src, dest, e.getMessage());
             log.debug("Details", e);

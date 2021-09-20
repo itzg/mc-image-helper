@@ -1,4 +1,4 @@
-package me.itzg.helpers.sync;
+package me.itzg.helpers.env;
 
 public interface EnvironmentVariablesProvider {
     String get(String name);

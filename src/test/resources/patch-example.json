@@ -1,0 +1,29 @@
+{
+  "patches": [
+    {
+      "file": "/data/paper.yml",
+      "ops": [
+        {
+          "$set": {
+            "path": "$.verbose",
+            "value": true
+          }
+        },
+        {
+          "$set": {
+            "path": "$.settings['velocity-support'].enabled",
+            "value": "${CFG_VELOCITY_ENABLED}",
+            "value-type": "bool"
+          }
+        },
+        {
+          "$put": {
+            "path": "$.settings",
+            "key": "my-test-setting",
+            "value": "testing"
+          }
+        }
+      ]
+    }
+  ]
+}

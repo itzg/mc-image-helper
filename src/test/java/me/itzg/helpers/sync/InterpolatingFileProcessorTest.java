@@ -1,11 +1,14 @@
 package me.itzg.helpers.sync;
 
+import me.itzg.helpers.env.Interpolator;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -14,26 +17,29 @@ import java.nio.file.StandardOpenOption;
 import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.verifyNoInteractions;
 
-class InterpolatingFileVisitorTest {
+@ExtendWith(MockitoExtension.class)
+class InterpolatingFileProcessorTest {
+
+    @Mock
+    FileProcessor fallbackProcessor;
 
     @Test
-    void processFile(@TempDir Path tempDir) throws URISyntaxException, IOException {
+    void processFile(@TempDir Path tempDir) throws IOException {
         ReplaceEnvOptions replaceEnvOptions = new ReplaceEnvOptions();
         replaceEnvOptions.suffixes = Collections.singletonList("yml");
 
         final Path src = Paths.get("src/test/resources/paper.yml");
         final Path dest = tempDir.resolve("paper.yml");
 
-        final InterpolatingFileVisitor visitor = new InterpolatingFileVisitor(
-                src,
-                dest,
-                false,
+        final InterpolatingFileProcessor processor = new InterpolatingFileProcessor(
                 replaceEnvOptions,
-                new Interpolator((name) -> name, "CFG_")
+                new Interpolator((name) -> name, "CFG_"),
+                fallbackProcessor
         );
 
-        visitor.processFile(src, dest);
+        processor.processFile(src, dest);
 
         assertThat(dest).exists();
         assertThat(dest).hasSameTextualContentAs(src, StandardCharsets.UTF_8);
@@ -44,9 +50,11 @@ class InterpolatingFileVisitorTest {
             writer.write("\nextra: true\n");
         }
 
-        visitor.processFile(src, dest);
+        processor.processFile(src, dest);
 
         assertThat(dest).exists();
         assertThat(dest).hasSameTextualContentAs(src, StandardCharsets.UTF_8);
+
+        verifyNoInteractions(fallbackProcessor);
     }
 }

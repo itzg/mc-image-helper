@@ -1,4 +1,4 @@
-package me.itzg.helpers.sync;
+package me.itzg.helpers.env;
 
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -6,10 +6,11 @@ import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.CharsetDetector;
 
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -27,11 +28,12 @@ public class Interpolator {
         this.envPrefix = envPrefix;
     }
 
-    private Result<String> interpolate(String str) throws IOException {
+    public Result<String> interpolate(String str) throws IOException {
         final Matcher matcher = VAR_PATTERN.matcher(str);
         final StringBuffer sb = new StringBuffer();
 
         int replacements = 0;
+        final List<String> missingVariables = new ArrayList<>();
 
         while (matcher.find()) {
             final String varName = matcher.group(1);
@@ -44,6 +46,9 @@ public class Interpolator {
                 }
                 else {
                     value = environmentVariablesProvider.get(varName);
+                }
+                if (value == null) {
+                    missingVariables.add(varName);
                 }
             }
 
@@ -58,7 +63,7 @@ public class Interpolator {
         }
         matcher.appendTail(sb);
 
-        return new Result<>(sb.toString(), replacements);
+        return new Result<>(sb.toString(), replacements, missingVariables);
     }
 
     private String readValueFromFile(String filename) throws IOException {
@@ -67,10 +72,14 @@ public class Interpolator {
     }
 
     public Result<byte[]> interpolate(byte[] content) throws IOException {
-        Charset charset = CharsetDetector.detect(content);
-        log.debug("Detected charset={}", charset);
-        final Result<String> result = interpolate(new String(content, charset));
-        return new Result<>(result.getContent().getBytes(charset), result.getReplacementCount());
+        CharsetDetector.Result charsetResult = CharsetDetector.detect(content);
+        log.debug("Detected charset={}", charsetResult.getCharset());
+        final Result<String> result = interpolate(charsetResult.getContent().toString());
+        return new Result<>(
+                result.getContent().getBytes(charsetResult.getCharset()),
+                result.getReplacementCount(),
+                result.getMissingVariables()
+        );
     }
 
     @RequiredArgsConstructor
@@ -78,5 +87,6 @@ public class Interpolator {
     public static class Result<T> {
         final T content;
         final int replacementCount;
+        final List<String> missingVariables;
     }
 }

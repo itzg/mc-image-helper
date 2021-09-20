@@ -1,6 +1,7 @@
 package me.itzg.helpers.sync;
 
 import lombok.extern.slf4j.Slf4j;
+import me.itzg.helpers.env.Interpolator;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -8,18 +9,19 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 @Slf4j
-class InterpolatingFileVisitor extends SynchronizingFileVisitor {
+class InterpolatingFileProcessor implements FileProcessor {
     private final ReplaceEnvOptions replaceEnv;
     private final Interpolator interpolator;
+    private final FileProcessor fallbackProcessor;
 
-    public InterpolatingFileVisitor(Path src, Path dest, boolean skipNewerInDestination, ReplaceEnvOptions replaceEnv, Interpolator interpolator) {
-        super(src, dest, skipNewerInDestination);
+    public InterpolatingFileProcessor(ReplaceEnvOptions replaceEnv, Interpolator interpolator, FileProcessor fallbackProcessor) {
         this.replaceEnv = replaceEnv;
         this.interpolator = interpolator;
+        this.fallbackProcessor = fallbackProcessor;
     }
 
     @Override
-    protected void processFile(Path srcFile, Path destFile) throws IOException {
+    public void processFile(Path srcFile, Path destFile) throws IOException {
         if (replaceEnv.matches(destFile)) {
             log.info("Interpolating {} -> {}", srcFile, destFile);
 
@@ -31,7 +33,7 @@ class InterpolatingFileVisitor extends SynchronizingFileVisitor {
             } catch (IOException e) {
                 log.warn("Failed to interpolate {}, using copy instead: {}", srcFile, e.getMessage());
                 log.debug("Details", e);
-                copyFile(srcFile, destFile);
+                fallbackProcessor.processFile(srcFile, destFile);
                 return;
             }
             if (result.getReplacementCount() > 0) {
@@ -43,7 +45,7 @@ class InterpolatingFileVisitor extends SynchronizingFileVisitor {
             Files.setLastModifiedTime(destFile, Files.getLastModifiedTime(srcFile));
 
         } else {
-            super.processFile(srcFile, destFile);
+            fallbackProcessor.processFile(srcFile, destFile);
         }
     }
 }

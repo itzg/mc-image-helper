@@ -1,0 +1,4 @@
+outer:
+  field1: value from env
+  field2: value2
+  field3: "${GETS_IGNORED}"

@@ -10,19 +10,18 @@ import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 
-import static java.nio.file.StandardCopyOption.COPY_ATTRIBUTES;
-import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
-
 @Slf4j
 class SynchronizingFileVisitor implements FileVisitor<Path> {
     private final Path src;
     private final Path dest;
     private final boolean skipNewerInDestination;
+    private final FileProcessor fileProcessor;
 
-    public SynchronizingFileVisitor(Path src, Path dest, boolean skipNewerInDestination) {
+    public SynchronizingFileVisitor(Path src, Path dest, boolean skipNewerInDestination, FileProcessor fileProcessor) {
         this.src = src;
         this.dest = dest;
         this.skipNewerInDestination = skipNewerInDestination;
+        this.fileProcessor = fileProcessor;
     }
 
     @Override
@@ -42,23 +41,13 @@ class SynchronizingFileVisitor implements FileVisitor<Path> {
         final Path destFile = dest.resolve(src.relativize(srcFile));
 
         if (shouldProcessFile(srcFile, destFile)) {
-            processFile(srcFile, destFile);
+            fileProcessor.processFile(srcFile, destFile);
         }
         else {
             log.debug("Skipping destFile={}", destFile);
         }
 
         return FileVisitResult.CONTINUE;
-    }
-
-    protected void processFile(Path srcFile, Path destFile) throws IOException {
-        copyFile(srcFile, destFile);
-    }
-
-    protected void copyFile(Path srcFile, Path destFile) throws IOException {
-        log.info("Copying {} -> {}", srcFile, destFile);
-
-        Files.copy(srcFile, destFile, COPY_ATTRIBUTES, REPLACE_EXISTING);
     }
 
     private boolean shouldProcessFile(Path srcFile, Path destFile) throws IOException {
