@@ -3,6 +3,7 @@ package me.itzg.helpers;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import me.itzg.helpers.asciify.Asciify;
+import me.itzg.helpers.get.GetCommand;
 import me.itzg.helpers.patch.PatchCommand;
 import me.itzg.helpers.sync.InterpolateCommand;
 import me.itzg.helpers.sync.Sync;
@@ -18,7 +19,8 @@ import picocli.CommandLine.Option;
                 InterpolateCommand.class,
                 Sync.class,
                 Asciify.class,
-                PatchCommand.class
+                PatchCommand.class,
+                GetCommand.class
         }
 )
 public class McImageHelper {
@@ -32,7 +34,8 @@ public class McImageHelper {
 
     public static void main(String[] args) {
         System.exit(
-                new CommandLine(new McImageHelper()).execute(args)
+                new CommandLine(new McImageHelper())
+                    .execute(args)
         );
     }
 

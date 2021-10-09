@@ -17,6 +17,7 @@ Commands:
                           characters
   patch                 Patches one or more existing files using JSON path
                           based operations
+  get                   Download a file
 ```
 
 ### sync-and-interpolate
