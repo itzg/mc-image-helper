@@ -51,6 +51,57 @@ class GetCommandTest {
   }
 
   @Test
+  void handlesExtraSlashAtStartOfPath() throws MalformedURLException {
+    client
+        .when(
+            request()
+                .withMethod("GET")
+                .withPath("/handlesExtraSlashAtStartOfPath.txt")
+        )
+        .respond(
+            response()
+                .withBody("Response content", MediaType.TEXT_PLAIN)
+        );
+
+    final StringWriter output = new StringWriter();
+    final int status =
+        new CommandLine(new GetCommand())
+            .setOut(new PrintWriter(output))
+            .execute(
+                buildMockedUrl("//handlesExtraSlashAtStartOfPath.txt").toString()
+            );
+
+    assertThat(status).isEqualTo(0);
+    assertThat(output.toString()).isEqualTo("Response content");
+  }
+
+  @Test
+  void handlesNotFound() throws MalformedURLException {
+    client
+        .when(
+            request()
+                .withMethod("GET")
+                .withPath("/handlesNotFound")
+        )
+        .respond(
+            response()
+                .withStatusCode(404)
+        );
+
+    final StringWriter output = new StringWriter();
+    final int status =
+        new CommandLine(new GetCommand())
+            .setOut(new PrintWriter(output))
+            .execute(
+                buildMockedUrl("/handlesNotFound").toString()
+            );
+
+    assertThat(status).isEqualTo(1);
+    assertThat(output.toString()).isEqualTo("");
+
+  }
+
+  @Test
   void downloadsToFile(@TempDir Path tempDir) throws MalformedURLException {
     client
         .when(

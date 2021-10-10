@@ -3,10 +3,12 @@ package me.itzg.helpers.get;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.Callable;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.hc.client5.http.fluent.Content;
 import org.apache.hc.client5.http.fluent.Executor;
 import org.apache.hc.client5.http.fluent.Request;
@@ -16,9 +18,11 @@ import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.Header;
 import picocli.CommandLine;
+import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.Spec;
 
 @CommandLine.Command(name = "get", description = "Download a file")
+@Slf4j
 public class GetCommand implements Callable<Integer> {
     @Spec
     CommandLine.Model.CommandSpec spec;
@@ -44,11 +48,30 @@ public class GetCommand implements Callable<Integer> {
 
             processResponse(interceptor,
                 Executor.newInstance(client)
-                    .execute(Request.get(uri))
+                    .execute(Request.get(
+                        uri.getPath().startsWith("//") ?
+                            alterUriPath(uri.getPath().substring(1)) : uri
+                    ))
             );
+        } catch (Exception e) {
+            log.error("Failed to download: {}", e.getMessage());
+            log.debug("Details", e);
+            return ExitCode.SOFTWARE;
         }
 
-        return 0;
+        return ExitCode.OK;
+    }
+
+    private URI alterUriPath(String path) throws URISyntaxException {
+        return new URI(
+            uri.getScheme(),
+            uri.getAuthority(),
+            uri.getHost(),
+            uri.getPort(),
+            path,
+            uri.getQuery(),
+            uri.getFragment()
+        );
     }
 
     private void processResponse(LatchingUrisInterceptor interceptor, Response response)
