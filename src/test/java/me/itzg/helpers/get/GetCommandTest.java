@@ -9,6 +9,7 @@ import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
@@ -23,6 +24,11 @@ class GetCommandTest {
 
   GetCommandTest(ClientAndServer client) {
     this.client = client;
+  }
+
+  @AfterEach
+  void tearDown() {
+    client.reset();
   }
 
   @Test
@@ -86,6 +92,7 @@ class GetCommandTest {
         .respond(
             response()
                 .withStatusCode(404)
+                .withBody("<html><body>Not found</body></html>", MediaType.TEXT_HTML_UTF_8)
         );
 
     final StringWriter output = new StringWriter();
@@ -99,6 +106,33 @@ class GetCommandTest {
     assertThat(status).isEqualTo(1);
     assertThat(output.toString()).isEqualTo("");
 
+  }
+
+  @Test
+  void doesntWriteFileWhenNotFound(@TempDir Path tempDir) throws MalformedURLException {
+    client
+        .when(
+            request()
+                .withMethod("GET")
+                .withPath("/doesntWriteFileWhenNotFound.txt")
+        )
+        .respond(
+            response()
+                .withStatusCode(404)
+                .withBody("<html><body>Not found</body></html>", MediaType.TEXT_HTML_UTF_8)
+        );
+
+    final StringWriter output = new StringWriter();
+    final int status =
+        new CommandLine(new GetCommand())
+            .setOut(new PrintWriter(output))
+            .execute(
+                "-o", tempDir.toString(),
+                buildMockedUrl("/doesntWriteFileWhenNotFound.txt").toString()
+            );
+
+    assertThat(status).isEqualTo(1);
+    assertThat(tempDir).isEmptyDirectory();
   }
 
   @Test
