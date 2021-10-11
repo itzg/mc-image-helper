@@ -4,6 +4,8 @@ This tool does the complicated bits for [the itzg/minecraft-server Docker image]
 
 ## Usage
 
+> **NOTE** The following documentation may not always be up to date. Please be sure to use `-h` or `--help` after any subcommand to view the current usage.
+
 ```
 Usage: mc-image-helper [-h] [--debug] [COMMAND]
       --debug   Enable debug output
@@ -89,6 +91,24 @@ Usage: mc-image-helper patch [-h] [--patch-env-prefix=<envPrefix>] FILE_OR_DIR
 ```
 
 [See below](#patch-schemas) for a description of [PatchSet](#patchset) and [PatchDefinition](#patchdefinition) JSON schemas.
+
+### get
+
+```
+Usage: mc-image-helper get [-h] [--output-filename] [--json-path=<jsonPath>]
+                           [-o=FILE|DIR] <uri>
+Download a file
+      <uri>
+  -h, --help              Show this usage and exit
+      --json-path=<jsonPath>
+                          Extract and output a JsonPath from the response
+  -o, --output=FILE|DIR   Specifies the name of a file or directory to write
+                            the downloaded content. If a directory is provided,
+                            the filename will be derived from the content
+                            disposition or the URI's path. If not provided,
+                            then content will be output to standard out.
+      --output-filename   Output the resulting filename
+```
 
 ## Patch Schemas
 

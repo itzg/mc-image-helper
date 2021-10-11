@@ -20,6 +20,7 @@ import picocli.CommandLine.Spec;
 @CommandLine.Command(name = "get", description = "Download a file")
 @Slf4j
 public class GetCommand implements Callable<Integer> {
+
     @Spec
     CommandLine.Model.CommandSpec spec;
 
@@ -33,9 +34,11 @@ public class GetCommand implements Callable<Integer> {
         description = "Extract and output a JsonPath from the response")
     String jsonPath;
 
-    @Option(names = "-o",
-        description = "Specifies the name of a file to write the downloaded content."
-            + " If not provided, then content will be output to standard out.")
+    @Option(names = {"-o", "--output"},
+        description = "Specifies the name of a file or directory to write the downloaded content."
+            + " If a directory is provided, the filename will be derived from the content disposition or the URI's path."
+            + " If not provided, then content will be output to standard out.",
+        paramLabel = "FILE|DIR")
     Path outputFile;
 
     @Parameters(arity = "1")
