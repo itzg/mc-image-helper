@@ -29,6 +29,10 @@ public class GetCommand implements Callable<Integer> {
     @Option(names = "--output-filename", description = "Output the resulting filename")
     boolean outputFilename;
 
+    @Option(names = "--json-path",
+        description = "Extract and output a JsonPath from the response")
+    String jsonPath;
+
     @Option(names = "-o",
         description = "Specifies the name of a file to write the downloaded content."
             + " If not provided, then content will be output to standard out.")
@@ -50,14 +54,15 @@ public class GetCommand implements Callable<Integer> {
 
             log.debug("GETing uri={}", requestUri);
 
-            final HttpGet request = new HttpGet(
-                requestUri
-            );
+            final HttpGet request = new HttpGet(requestUri);
 
             final PrintWriter stdout = spec.commandLine().getOut();
 
             final HttpClientResponseHandler<String> handler;
-            if (outputFile == null) {
+            if (jsonPath != null) {
+                handler = new JsonPathOutputHandler(stdout, jsonPath);
+            }
+            else if (outputFile == null) {
                 handler = new PrintWriterHandler(stdout);
             } else if (Files.isDirectory(outputFile)) {
                 handler = new OutputToDirectoryHandler(outputFile, interceptor);

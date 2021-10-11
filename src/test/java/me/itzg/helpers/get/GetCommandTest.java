@@ -1,5 +1,6 @@
 package me.itzg.helpers.get;
 
+import static java.lang.System.lineSeparator;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
@@ -10,6 +11,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
@@ -247,6 +249,166 @@ class GetCommandTest {
     assertThat(status).isEqualTo(0);
     assertThat(expectedFile).exists();
     assertThat(expectedFile).hasContent("final content");
+
+  }
+
+  @Nested
+  class JsonPath {
+
+    @Test
+    void stringField() throws MalformedURLException {
+      client
+          .when(
+              request()
+                  .withMethod("GET")
+                  .withPath("/string.json")
+          )
+          .respond(
+              response()
+                  .withBody("{\"field\": \"a string\"}", MediaType.APPLICATION_JSON)
+          );
+
+      final StringWriter output = new StringWriter();
+      final int status =
+          new CommandLine(new GetCommand())
+              .setOut(new PrintWriter(output))
+              .execute(
+                  "--json-path", "$.field",
+                  buildMockedUrl("/string.json").toString()
+              );
+
+      assertThat(status).isEqualTo(0);
+      assertThat(output.toString()).isEqualTo("a string"+ lineSeparator());
+    }
+
+    @Test
+    void numberField() throws MalformedURLException {
+      client
+          .when(
+              request()
+                  .withMethod("GET")
+                  .withPath("/number.json")
+          )
+          .respond(
+              response()
+                  .withBody("{\"field\": 543}", MediaType.APPLICATION_JSON)
+          );
+
+      final StringWriter output = new StringWriter();
+      final int status =
+          new CommandLine(new GetCommand())
+              .setOut(new PrintWriter(output))
+              .execute(
+                  "--json-path", "$.field",
+                  buildMockedUrl("/number.json").toString()
+              );
+
+      assertThat(status).isEqualTo(0);
+      assertThat(output.toString()).isEqualTo("543"+ lineSeparator());
+    }
+
+    @Test
+    void booleanField() throws MalformedURLException {
+      client
+          .when(
+              request()
+                  .withMethod("GET")
+                  .withPath("/boolean.json")
+          )
+          .respond(
+              response()
+                  .withBody("{\"field\": true}", MediaType.APPLICATION_JSON)
+          );
+
+      final StringWriter output = new StringWriter();
+      final int status =
+          new CommandLine(new GetCommand())
+              .setOut(new PrintWriter(output))
+              .execute(
+                  "--json-path", "$.field",
+                  buildMockedUrl("/boolean.json").toString()
+              );
+
+      assertThat(status).isEqualTo(0);
+      assertThat(output.toString()).isEqualTo("true"+ lineSeparator());
+    }
+
+    @Test
+    void handlesMissingField() throws MalformedURLException {
+      client
+          .when(
+              request()
+                  .withMethod("GET")
+                  .withPath("/content.json")
+          )
+          .respond(
+              response()
+                  .withBody("{}", MediaType.APPLICATION_JSON)
+          );
+
+      final StringWriter stdout = new StringWriter();
+      final int status =
+          new CommandLine(new GetCommand())
+              .setOut(new PrintWriter(stdout))
+              .execute(
+                  "--json-path", "$.field",
+                  buildMockedUrl("/content.json").toString()
+              );
+
+      assertThat(status).isEqualTo(1);
+    }
+
+    @Test
+    void missingRootOutputsNull() throws MalformedURLException {
+      client
+          .when(
+              request()
+                  .withMethod("GET")
+                  .withPath("/content.json")
+          )
+          .respond(
+              response()
+                  .withBody("{\"field\":\"value\"}", MediaType.APPLICATION_JSON)
+          );
+
+      final StringWriter output = new StringWriter();
+      final int status =
+          new CommandLine(new GetCommand())
+              .setOut(new PrintWriter(output))
+              .execute(
+                  "--json-path", ".field",
+                  buildMockedUrl("/content.json").toString()
+              );
+
+      assertThat(status).isEqualTo(0);
+      assertThat(output.toString()).isEqualTo("null"+ lineSeparator());
+    }
+
+    @Test
+    void useConcatWithListField() throws MalformedURLException {
+      client
+          .when(
+              request()
+                  .withMethod("GET")
+                  .withPath("/content.json")
+          )
+          .respond(
+              response()
+                  .withBody("{\"field\":[\"one\",\"two\"]}", MediaType.APPLICATION_JSON)
+          );
+
+      final StringWriter output = new StringWriter();
+      final int status =
+          new CommandLine(new GetCommand())
+              .setOut(new PrintWriter(output))
+              .execute(
+                  "--json-path", "$.field.concat()",
+                  buildMockedUrl("/content.json").toString()
+              );
+
+      assertThat(status).isEqualTo(0);
+      assertThat(output.toString()).isEqualTo("onetwo"+ lineSeparator());
+    }
 
   }
 }
