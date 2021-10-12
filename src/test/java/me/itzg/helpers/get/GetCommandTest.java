@@ -110,147 +110,256 @@ class GetCommandTest {
 
   }
 
-  @Test
-  void doesntWriteFileWhenNotFound(@TempDir Path tempDir) throws MalformedURLException {
-    client
-        .when(
-            request()
-                .withMethod("GET")
-                .withPath("/doesntWriteFileWhenNotFound.txt")
-        )
-        .respond(
-            response()
-                .withStatusCode(404)
-                .withBody("<html><body>Not found</body></html>", MediaType.TEXT_HTML_UTF_8)
-        );
+  @Nested
+  class OutputToDir {
+    @Test
+    void saveFileFromGithubRelease(@TempDir Path tempDir) throws MalformedURLException {
+      // 302 to CDN location
+      // 200 with content-disposition: attachment; filename=mc-image-helper-1.4.0.zip
+      client
+          .when(
+              request()
+                  .withMethod("GET")
+                  .withPath("/github/releases/file.txt")
+          )
+          .respond(
+              response()
+                  .withStatusCode(302)
+                  .withHeader("Location", buildMockedUrl("/cdn/1-2-3-4").toString())
+          );
+      client
+          .when(
+              request()
+                  .withMethod("GET")
+                  .withPath("/cdn/1-2-3-4")
+          )
+          .respond(
+              response()
+                  .withStatusCode(200)
+                  .withHeader("content-disposition", "attachment; filename=final-name.txt")
+                  .withBody("final content", MediaType.TEXT_PLAIN)
+          );
 
-    final StringWriter output = new StringWriter();
-    final int status =
-        new CommandLine(new GetCommand())
-            .setOut(new PrintWriter(output))
-            .execute(
-                "-o", tempDir.toString(),
-                buildMockedUrl("/doesntWriteFileWhenNotFound.txt").toString()
-            );
+      final int status =
+          new CommandLine(new GetCommand())
+              .execute(
+                  "-o",
+                  tempDir.toString(),
+                  buildMockedUrl("/github/releases/file.txt").toString()
+              );
 
-    assertThat(status).isEqualTo(1);
-    assertThat(tempDir).isEmptyDirectory();
+      final Path expectedFile = tempDir.resolve("final-name.txt");
+
+      assertThat(status).isEqualTo(0);
+      assertThat(expectedFile).exists();
+      assertThat(expectedFile).hasContent("final content");
+    }
+
+    @Test
+    void saveFileLikeBukkit(@TempDir Path tempDir) throws MalformedURLException {
+      client
+          .when(
+              request()
+                  .withMethod("GET")
+                  .withPath("/bukkit/123/download")
+          )
+          .respond(
+              response()
+                  .withStatusCode(302)
+                  .withHeader("location", buildMockedUrl("/forgecdn/saveFileLikeBukkit.txt").toString())
+          );
+      client
+          .when(
+              request()
+                  .withMethod("GET")
+                  .withPath("/forgecdn/saveFileLikeBukkit.txt")
+          )
+          .respond(
+              response()
+                  .withBody("final content", MediaType.TEXT_PLAIN)
+          );
+
+      final int status =
+          new CommandLine(new GetCommand())
+              .execute(
+                  "-o",
+                  tempDir.toString(),
+                  buildMockedUrl("/bukkit/123/download").toString()
+              );
+
+      final Path expectedFile = tempDir.resolve("saveFileLikeBukkit.txt");
+
+      assertThat(status).isEqualTo(0);
+      assertThat(expectedFile).exists();
+      assertThat(expectedFile).hasContent("final content");
+
+    }
+
+    @Test
+    void multipleUrisSeparated(@TempDir Path tempDir) throws MalformedURLException {
+      client
+          .when(
+              request()
+                  .withMethod("GET")
+                  .withPath("/one")
+          )
+          .respond(
+              response()
+                  .withStatusCode(302)
+                  .withHeader("location", buildMockedUrl("/one.txt").toString())
+          );
+      client
+          .when(
+              request()
+                  .withMethod("GET")
+                  .withPath("/one.txt")
+          )
+          .respond(
+              response()
+                  .withBody("content for one", MediaType.TEXT_PLAIN)
+          );
+      client
+          .when(
+              request()
+                  .withMethod("GET")
+                  .withPath("/two.txt")
+          )
+          .respond(
+              response()
+                  .withBody("content for two", MediaType.TEXT_PLAIN)
+          );
+
+      final int status =
+          new CommandLine(new GetCommand())
+              .execute(
+                  "-o",
+                  tempDir.toString(),
+                  buildMockedUrl("/one").toString(),
+                  buildMockedUrl("/two.txt").toString()
+              );
+
+      assertThat(status).isEqualTo(0);
+      assertThat(tempDir.resolve("one.txt")).hasContent("content for one");
+      assertThat(tempDir.resolve("two.txt")).hasContent("content for two");
+    }
+
+    @Test
+    void multipleUrisConcatenated(@TempDir Path tempDir) throws MalformedURLException {
+      client
+          .when(
+              request()
+                  .withMethod("GET")
+                  .withPath("/one.txt")
+          )
+          .respond(
+              response()
+                  .withBody("content for one", MediaType.TEXT_PLAIN)
+          );
+      client
+          .when(
+              request()
+                  .withMethod("GET")
+                  .withPath("/two.txt")
+          )
+          .respond(
+              response()
+                  .withBody("content for two", MediaType.TEXT_PLAIN)
+          );
+
+      final int status =
+          new CommandLine(new GetCommand())
+              .execute(
+                  "-o",
+                  tempDir.toString(),
+                  String.join(",",
+                      buildMockedUrl("/one.txt").toString(),
+                      buildMockedUrl("/two.txt").toString()
+                  )
+              );
+
+      assertThat(status).isEqualTo(0);
+      assertThat(tempDir.resolve("one.txt")).hasContent("content for one");
+      assertThat(tempDir.resolve("two.txt")).hasContent("content for two");
+    }
+
+    @Test
+    void doesntWriteFileWhenNotFound(@TempDir Path tempDir) throws MalformedURLException {
+      client
+          .when(
+              request()
+                  .withMethod("GET")
+                  .withPath("/doesntWriteFileWhenNotFound.txt")
+          )
+          .respond(
+              response()
+                  .withStatusCode(404)
+                  .withBody("<html><body>Not found</body></html>", MediaType.TEXT_HTML_UTF_8)
+          );
+
+      final StringWriter output = new StringWriter();
+      final int status =
+          new CommandLine(new GetCommand())
+              .setOut(new PrintWriter(output))
+              .execute(
+                  "-o", tempDir.toString(),
+                  buildMockedUrl("/doesntWriteFileWhenNotFound.txt").toString()
+              );
+
+      assertThat(status).isEqualTo(1);
+      assertThat(tempDir).isEmptyDirectory();
+    }
+
   }
 
-  @Test
-  void downloadsToFile(@TempDir Path tempDir) throws MalformedURLException {
-    client
-        .when(
-            request()
-                .withMethod("GET")
-                .withPath("/downloadsToFile.txt")
-        )
-        .respond(
-            response()
-                .withBody("Response content to file", MediaType.TEXT_PLAIN)
-        );
+  @Nested
+  class OutputToFile {
+    @Test
+    void successful(@TempDir Path tempDir) throws MalformedURLException {
+      client
+          .when(
+              request()
+                  .withMethod("GET")
+                  .withPath("/downloadsToFile.txt")
+          )
+          .respond(
+              response()
+                  .withBody("Response content to file", MediaType.TEXT_PLAIN)
+          );
 
-    final Path expectedFile = tempDir.resolve("out.txt");
+      final Path expectedFile = tempDir.resolve("out.txt");
 
-    final int status =
-        new CommandLine(new GetCommand())
-            .execute(
-                "-o",
-                expectedFile.toString(),
-                buildMockedUrl("/downloadsToFile.txt").toString()
-            );
+      final int status =
+          new CommandLine(new GetCommand())
+              .execute(
+                  "-o",
+                  expectedFile.toString(),
+                  buildMockedUrl("/downloadsToFile.txt").toString()
+              );
 
-    assertThat(status).isEqualTo(0);
-    assertThat(expectedFile).exists();
-    assertThat(expectedFile).hasContent("Response content to file");
+      assertThat(status).isEqualTo(0);
+      assertThat(expectedFile).exists();
+      assertThat(expectedFile).hasContent("Response content to file");
+    }
+
+    @Test
+    void doesNotAllowMultipleUris(@TempDir Path tempDir) throws MalformedURLException {
+      final int status =
+          new CommandLine(new GetCommand())
+              .execute(
+                  "-o",
+                  tempDir.resolve("notused.txt").toString(),
+                  buildMockedUrl("/one.txt").toString(),
+                  buildMockedUrl("/two.txt").toString()
+              );
+
+      assertThat(status).isEqualTo(2);
+    }
   }
 
   private URL buildMockedUrl(String s) throws MalformedURLException {
     return new URL("http", "localhost", client.getLocalPort(), s);
   }
 
-  @Test
-  void saveFileFromGithubRelease(@TempDir Path tempDir) throws MalformedURLException {
-    // 302 to CDN location
-    // 200 with content-disposition: attachment; filename=mc-image-helper-1.4.0.zip
-    client
-        .when(
-            request()
-                .withMethod("GET")
-                .withPath("/github/releases/file.txt")
-        )
-        .respond(
-            response()
-                .withStatusCode(302)
-                .withHeader("Location", buildMockedUrl("/cdn/1-2-3-4").toString())
-        );
-    client
-        .when(
-            request()
-                .withMethod("GET")
-                .withPath("/cdn/1-2-3-4")
-        )
-        .respond(
-            response()
-                .withStatusCode(200)
-                .withHeader("content-disposition", "attachment; filename=final-name.txt")
-                .withBody("final content", MediaType.TEXT_PLAIN)
-        );
-
-    final int status =
-        new CommandLine(new GetCommand())
-            .execute(
-                "-o",
-                tempDir.toString(),
-                buildMockedUrl("/github/releases/file.txt").toString()
-            );
-
-    final Path expectedFile = tempDir.resolve("final-name.txt");
-
-    assertThat(status).isEqualTo(0);
-    assertThat(expectedFile).exists();
-    assertThat(expectedFile).hasContent("final content");
-  }
-
-  @Test
-  void saveFileLikeBukkit(@TempDir Path tempDir) throws MalformedURLException {
-    client
-        .when(
-            request()
-                .withMethod("GET")
-                .withPath("/bukkit/123/download")
-        )
-        .respond(
-            response()
-                .withStatusCode(302)
-                .withHeader("location", buildMockedUrl("/forgecdn/saveFileLikeBukkit.txt").toString())
-        );
-    client
-        .when(
-            request()
-                .withMethod("GET")
-                .withPath("/forgecdn/saveFileLikeBukkit.txt")
-        )
-        .respond(
-            response()
-                .withBody("final content", MediaType.TEXT_PLAIN)
-        );
-
-    final int status =
-        new CommandLine(new GetCommand())
-            .execute(
-                "-o",
-                tempDir.toString(),
-                buildMockedUrl("/bukkit/123/download").toString()
-            );
-
-    final Path expectedFile = tempDir.resolve("saveFileLikeBukkit.txt");
-
-    assertThat(status).isEqualTo(0);
-    assertThat(expectedFile).exists();
-    assertThat(expectedFile).hasContent("final content");
-
-  }
 
   @Nested
   class JsonPath {

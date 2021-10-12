@@ -37,4 +37,8 @@ class LatchingUrisInterceptor implements ExecChainHandler {
   public URI getLastRequestedUri() {
     return uris.peekFirst();
   }
+
+  public void reset() {
+    uris.clear();
+  }
 }
