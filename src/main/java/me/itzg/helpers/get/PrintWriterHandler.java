@@ -2,10 +2,11 @@ package me.itzg.helpers.get;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.file.Path;
 import org.apache.hc.client5.http.impl.classic.AbstractHttpClientResponseHandler;
 import org.apache.hc.core5.http.HttpEntity;
 
-class PrintWriterHandler extends AbstractHttpClientResponseHandler<String> {
+class PrintWriterHandler extends AbstractHttpClientResponseHandler<Path> implements OutputResponseHandler {
   private final PrintWriter writer;
 
   public PrintWriterHandler(PrintWriter writer) {
@@ -13,11 +14,11 @@ class PrintWriterHandler extends AbstractHttpClientResponseHandler<String> {
   }
 
   @Override
-  public String handleEntity(HttpEntity entity) throws IOException {
+  public Path handleEntity(HttpEntity entity) throws IOException {
 
     EntityWriter.write(entity, writer);
 
     // no filename to return
-    return "";
+    return null;
   }
 }

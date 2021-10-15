@@ -8,7 +8,7 @@
     </appender>
 
     <!-- it's noisy at info level -->
-    <logger name="org.mockserver.log.MockServerEventLog" level="warn"/>
+    <logger name="org.mockserver.log.MockServerEventLog" level="${mockServerLogLevel:-warn}"/>
 
     <root level="info">
         <appender-ref ref="STDOUT"/>
