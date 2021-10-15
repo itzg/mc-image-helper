@@ -174,44 +174,51 @@ public class GetCommand implements Callable<Integer> {
             }
         }
 
-        final Set<Path> outputs = new HashSet<>();
+        final Set<Path> processed = new HashSet<>();
 
         for (URI uri : uris) {
-            if (skipExisting) {
-                final HttpHead headRequest = new HttpHead(uri.getPath().startsWith("//") ?
-                    alterUriPath(uri, uri.getPath().substring(1)) : uri);
-
-                log.debug("Sending HEAD request to uri={}", uri);
-                final String filename;
-                try {
-                    filename = client.execute(headRequest,
-                        new DeriveFilenameHandler(interceptor));
-                } catch (HttpResponseException e) {
-                    throw new FailedToDownloadException(uri, e);
-                }
+            if (needsDownload(client, interceptor, uri, processed)) {
+                processed.add(
+                    processSingleUri(uri, client, stdout,
+                        new OutputToDirectoryHandler(outputFile, interceptor))
+                );
                 interceptor.reset();
-
-                final Path resolvedFilename = outputFile.resolve(filename);
-                if (Files.isRegularFile(resolvedFilename)) {
-                    if (logProgressEach) {
-                        log.info("Skipping {} since {} already exists", uri, resolvedFilename);
-                    } else {
-                        log.debug("Skipping {} since {} already exists", uri, resolvedFilename);
-                    }
-                    continue;
-                }
             }
-
-            outputs.add(
-                processSingleUri(uri, client, stdout,
-                    new OutputToDirectoryHandler(outputFile, interceptor))
-            );
-            interceptor.reset();
         }
 
         if (usingPrune()) {
-            pruneOtherFiles(outputs);
+            pruneOtherFiles(processed);
         }
+    }
+
+    private boolean needsDownload(CloseableHttpClient client, LatchingUrisInterceptor interceptor,
+        URI uri, Set<Path> processed) throws URISyntaxException, IOException {
+        if (skipExisting) {
+            final HttpHead headRequest = new HttpHead(uri.getPath().startsWith("//") ?
+                alterUriPath(uri, uri.getPath().substring(1)) : uri);
+
+            log.debug("Sending HEAD request to uri={}", uri);
+            final String filename;
+            try {
+                filename = client.execute(headRequest,
+                    new DeriveFilenameHandler(interceptor));
+            } catch (HttpResponseException e) {
+                throw new FailedToDownloadException(uri, e);
+            }
+            interceptor.reset();
+
+            final Path resolvedFilename = outputFile.resolve(filename);
+            if (Files.isRegularFile(resolvedFilename)) {
+                if (logProgressEach) {
+                    log.info("Skipping {} since {} already exists", uri, resolvedFilename);
+                } else {
+                    log.debug("Skipping {} since {} already exists", uri, resolvedFilename);
+                }
+                processed.add(resolvedFilename);
+                return false;
+            }
+        }
+        return true;
     }
 
     private boolean usingPrune() {

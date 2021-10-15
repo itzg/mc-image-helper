@@ -99,7 +99,7 @@ class GetCommandTest {
   }
 
   @Nested
-  class OutputToDir {
+  class OutputToDirTests {
 
     @Test
     void saveFileFromGithubRelease(@TempDir Path tempDir) throws IOException {
@@ -212,31 +212,37 @@ class GetCommandTest {
 
     @Test
     void prunesOthers(@TempDir Path tempDir) throws IOException {
-      expectRequest("GET", "/one.txt", response()
-          .withBody("content for one", MediaType.TEXT_PLAIN));
+      expectRequest("HEAD", "/one.txt", response()
+          .withStatusCode(HttpStatusCode.NO_CONTENT_204.code()));
+      expectRequest("HEAD", "/two.txt", response()
+          .withStatusCode(HttpStatusCode.NO_CONTENT_204.code()));
       expectRequest("GET", "/two.txt", response()
           .withBody("content for two", MediaType.TEXT_PLAIN));
 
-      final Path keepTxt = Files.createFile(tempDir.resolve("keep.txt"));
+      final Path keep = Files.createFile(tempDir.resolve("keep.dat"));
       final Path pruneJar = Files.createFile(tempDir.resolve("prune.jar"));
       final Path keepJar = Files.createFile(Files.createDirectory(tempDir.resolve("inner"))
           .resolve("keep.jar"));
+
+      // this one will be skipped
+      final Path oneTxt = Files.createFile(tempDir.resolve("one.txt"));
 
       final int status =
           new CommandLine(new GetCommand())
               .execute(
                   "-o",
                   tempDir.toString(),
-                  "--prune-others", "*.jar",
+                  "--skip-existing",
+                  "--prune-others", "*.txt,*.jar",
                   // use default prune depth of 1
                   buildMockedUrl("/one.txt").toString(),
                   buildMockedUrl("/two.txt").toString()
               );
 
       assertThat(status).isEqualTo(0);
-      assertThat(tempDir.resolve("one.txt")).hasContent("content for one");
+      assertThat(oneTxt).exists();
       assertThat(tempDir.resolve("two.txt")).hasContent("content for two");
-      assertThat(keepTxt).exists();
+      assertThat(keep).exists();
       assertThat(keepJar).exists();
       assertThat(pruneJar).doesNotExist();
     }
@@ -371,7 +377,7 @@ class GetCommandTest {
   }
 
   @Nested
-  class OutputToFile {
+  class OutputToFileTests {
     @Test
     void successful(@TempDir Path tempDir) throws MalformedURLException {
       expectRequest("GET","/downloadsToFile.txt",
@@ -440,7 +446,7 @@ class GetCommandTest {
 
 
   @Nested
-  class JsonPath {
+  class JsonPathTests {
 
     @Test
     void stringField() throws MalformedURLException {
