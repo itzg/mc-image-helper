@@ -16,6 +16,7 @@ import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.hc.client5.http.HttpResponseException;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.classic.methods.HttpHead;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
@@ -79,7 +80,9 @@ public class GetCommand implements Callable<Integer> {
 
     @Parameters(split = ",", paramLabel = "URI",
         description = "The URI of the resource to retrieve. When the output is a directory,"
-            + " more than one URI can be requested.")
+            + " more than one URI can be requested.",
+        converter = LenientUriConverter.class
+    )
     List<URI> uris;
 
     @Override
@@ -128,7 +131,7 @@ public class GetCommand implements Callable<Integer> {
         } catch (ParameterException e) {
             throw e;
         } catch (Exception e) {
-            log.error("Failed to download: {}",
+            log.error("Operation failed: {}",
                 e.getMessage() != null ? e.getMessage() : e.getClass());
             log.debug("Details", e);
             return ExitCode.SOFTWARE;
@@ -141,15 +144,20 @@ public class GetCommand implements Callable<Integer> {
         if (uris == null) {
             uris = new ArrayList<>();
         }
+
+        final LenientUriConverter uriConverter = new LenientUriConverter();
+
         Files.readAllLines(urisFile).stream()
             .filter(line -> !line.startsWith("#"))
             .filter(line -> !line.trim().isEmpty())
             .map(line -> {
                 try {
-                    return new URI(line);
+                    return uriConverter.convert(line);
                 } catch (URISyntaxException e) {
                     throw new ParameterException(spec.commandLine(),
                         String.format("%s is not a valid URI", line));
+                } catch (Exception e) {
+                    throw new IllegalStateException(e);
                 }
             })
             .forEach(uris::add);
@@ -174,8 +182,13 @@ public class GetCommand implements Callable<Integer> {
                     alterUriPath(uri, uri.getPath().substring(1)) : uri);
 
                 log.debug("Sending HEAD request to uri={}", uri);
-                final String filename = client.execute(headRequest,
-                    new DeriveFilenameHandler(interceptor));
+                final String filename;
+                try {
+                    filename = client.execute(headRequest,
+                        new DeriveFilenameHandler(interceptor));
+                } catch (HttpResponseException e) {
+                    throw new FailedToDownloadException(uri, e);
+                }
                 interceptor.reset();
 
                 final Path resolvedFilename = outputFile.resolve(filename);
@@ -238,7 +251,12 @@ public class GetCommand implements Callable<Integer> {
 
         final HttpGet request = new HttpGet(requestUri);
 
-        final Path file = client.execute(request, handler);
+        final Path file;
+        try {
+            file = client.execute(request, handler);
+        } catch (HttpResponseException e) {
+            throw new FailedToDownloadException(uri, e);
+        }
         if (logProgressEach) {
             if (file != null) {
                 log.info("Downloaded {} to {}", uri, file);

@@ -186,14 +186,14 @@ class GetCommandTest {
           .withBody("content for one", MediaType.TEXT_PLAIN));
       expectRequest("GET", "/two.txt", response()
           .withBody("content for two", MediaType.TEXT_PLAIN));
-      expectRequest("GET", "/three.txt", response()
+      expectRequest("GET", "/%5B1.10.2%5Dthree.txt", response()
           .withBody("content for three", MediaType.TEXT_PLAIN));
 
       final ArrayList<String> lines = new ArrayList<>();
       lines.add(buildMockedUrl("/one.txt").toString());
       lines.add("");
       lines.add("#"+ buildMockedUrl("/notThis.txt"));
-      lines.add(buildMockedUrl("/three.txt").toString());
+      lines.add(buildMockedUrl("/[1.10.2]three.txt").toString());
       final Path urisFile = Files.write(tempDir.resolve("uris.txt"), lines);
 
       final int status =
@@ -207,7 +207,7 @@ class GetCommandTest {
       assertThat(status).isEqualTo(0);
       assertThat(tempDir.resolve("one.txt")).hasContent("content for one");
       assertThat(tempDir.resolve("two.txt")).hasContent("content for two");
-      assertThat(tempDir.resolve("three.txt")).hasContent("content for three");
+      assertThat(tempDir.resolve("[1.10.2]three.txt")).hasContent("content for three");
     }
 
     @Test
