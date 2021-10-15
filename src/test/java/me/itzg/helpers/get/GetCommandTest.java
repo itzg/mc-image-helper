@@ -13,6 +13,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -177,6 +178,36 @@ class GetCommandTest {
       assertThat(status).isEqualTo(0);
       assertThat(tempDir.resolve("one.txt")).hasContent("content for one");
       assertThat(tempDir.resolve("two.txt")).hasContent("content for two");
+    }
+
+    @Test
+    void combinesWithUrisFile(@TempDir Path tempDir) throws IOException {
+      expectRequest("GET", "/one.txt", response()
+          .withBody("content for one", MediaType.TEXT_PLAIN));
+      expectRequest("GET", "/two.txt", response()
+          .withBody("content for two", MediaType.TEXT_PLAIN));
+      expectRequest("GET", "/three.txt", response()
+          .withBody("content for three", MediaType.TEXT_PLAIN));
+
+      final ArrayList<String> lines = new ArrayList<>();
+      lines.add(buildMockedUrl("/one.txt").toString());
+      lines.add("");
+      lines.add("#"+ buildMockedUrl("/notThis.txt"));
+      lines.add(buildMockedUrl("/three.txt").toString());
+      final Path urisFile = Files.write(tempDir.resolve("uris.txt"), lines);
+
+      final int status =
+          new CommandLine(new GetCommand())
+              .execute(
+                  "-o", tempDir.toString(),
+                  "--uris-file", urisFile.toString(),
+                  buildMockedUrl("/two.txt").toString()
+              );
+
+      assertThat(status).isEqualTo(0);
+      assertThat(tempDir.resolve("one.txt")).hasContent("content for one");
+      assertThat(tempDir.resolve("two.txt")).hasContent("content for two");
+      assertThat(tempDir.resolve("three.txt")).hasContent("content for three");
     }
 
     @Test

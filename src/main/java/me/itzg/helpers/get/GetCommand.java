@@ -8,6 +8,7 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -33,6 +34,7 @@ public class GetCommand implements Callable<Integer> {
     @Spec
     CommandLine.Model.CommandSpec spec;
 
+    @SuppressWarnings("unused")
     @Option(names = {"-h", "--help"}, usageHelp = true, description = "Show this usage and exit")
     boolean showHelp;
 
@@ -70,13 +72,31 @@ public class GetCommand implements Callable<Integer> {
     )
     int pruneDepth;
 
-    @Parameters(arity = "1..", split = ",", paramLabel = "URI",
+    @Option(names = "--uris-file",
+        description = "A file that contains a URL per line"
+    )
+    Path urisFile;
+
+    @Parameters(split = ",", paramLabel = "URI",
         description = "The URI of the resource to retrieve. When the output is a directory,"
             + " more than one URI can be requested.")
     List<URI> uris;
 
     @Override
     public Integer call() {
+        if (urisFile != null) {
+            try {
+                readUris();
+            } catch (IOException e) {
+                log.error("Failed to read URIs file: {}", e.getMessage());
+                log.debug("Details", e);
+                return ExitCode.SOFTWARE;
+            }
+        }
+        if (uris == null || uris.isEmpty()) {
+            throw new ParameterException(spec.commandLine(), "No URIs were given");
+        }
+
         final LatchingUrisInterceptor interceptor = new LatchingUrisInterceptor();
 
         try (CloseableHttpClient client = HttpClients.custom()
@@ -115,6 +135,24 @@ public class GetCommand implements Callable<Integer> {
         }
 
         return ExitCode.OK;
+    }
+
+    private void readUris() throws IOException {
+        if (uris == null) {
+            uris = new ArrayList<>();
+        }
+        Files.readAllLines(urisFile).stream()
+            .filter(line -> !line.startsWith("#"))
+            .filter(line -> !line.trim().isEmpty())
+            .map(line -> {
+                try {
+                    return new URI(line);
+                } catch (URISyntaxException e) {
+                    throw new ParameterException(spec.commandLine(),
+                        String.format("%s is not a valid URI", line));
+                }
+            })
+            .forEach(uris::add);
     }
 
     private void processUrisForDirectory(CloseableHttpClient client,
