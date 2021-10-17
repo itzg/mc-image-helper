@@ -21,6 +21,8 @@ import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.classic.methods.HttpHead;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.core5.http.ContentType;
+import org.apache.hc.core5.http.HttpHeaders;
 import org.apache.hc.core5.http.HttpStatus;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
@@ -75,8 +77,14 @@ public class GetCommand implements Callable<Integer> {
     int pruneDepth;
 
     @Option(names = "--exists",
-    description = "Test if the given URIs are retrievable")
+        description = "Test if the given URIs are retrievable"
+    )
     boolean checkExists;
+
+    @Option(names = "--accept",
+        description = "Specifies the accept header to use with the request"
+    )
+    String acceptHeader;
 
     @Option(names = "--uris-file",
         description = "A file that contains a URL per line"
@@ -117,6 +125,9 @@ public class GetCommand implements Callable<Integer> {
                 return checkUrisExist(client);
             } else if (jsonPath != null) {
                 validateSingleUri();
+                if (acceptHeader == null) {
+                    acceptHeader = ContentType.APPLICATION_JSON.getMimeType();
+                }
                 processSingleUri(uris.get(0), client, stdout,
                     new JsonPathOutputHandler(stdout, jsonPath));
             } else if (outputFile == null) {
@@ -289,6 +300,9 @@ public class GetCommand implements Callable<Integer> {
         log.debug("Getting uri={}", requestUri);
 
         final HttpGet request = new HttpGet(requestUri);
+        if (acceptHeader != null) {
+            request.addHeader(HttpHeaders.ACCEPT, acceptHeader);
+        }
 
         final Path file;
         try {

@@ -16,13 +16,13 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import me.itzg.helpers.TestLoggingAppender;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.junit.jupiter.MockServerExtension;
+import org.mockserver.model.HttpRequest;
 import org.mockserver.model.HttpResponse;
 import org.mockserver.model.HttpStatusCode;
 import org.mockserver.model.MediaType;
@@ -37,14 +37,10 @@ class GetCommandTest {
     this.client = client;
   }
 
-  @BeforeEach
-  void setUp() {
-    TestLoggingAppender.reset();
-  }
-
   @AfterEach
   void tearDown() {
     client.reset();
+    TestLoggingAppender.reset();
   }
 
   @Test
@@ -104,6 +100,27 @@ class GetCommandTest {
     assertThat(status).isEqualTo(1);
     assertThat(output.toString()).isEqualTo("");
 
+  }
+
+  @Test
+  void usesGivenAcceptHeader() throws MalformedURLException {
+    expectRequest("GET","/content.txt",
+        request -> request.withHeader("accept", "text/plain"),
+        response()
+            .withBody("Some text", MediaType.TEXT_PLAIN)
+    );
+
+    final StringWriter output = new StringWriter();
+    final int status =
+        new CommandLine(new GetCommand())
+            .setOut(new PrintWriter(output))
+            .execute(
+                "--accept", "text/plain",
+                buildMockedUrl("/content.txt").toString()
+            );
+
+    assertThat(status).isEqualTo(0);
+    assertThat(output.toString()).isEqualTo("Some text");
   }
 
   @Nested
@@ -496,6 +513,7 @@ class GetCommandTest {
     @Test
     void stringField() throws MalformedURLException {
       expectRequest("GET", "/string.json",
+          acceptJson(),
           response()
               .withBody("{\"field\": \"a string\"}", MediaType.APPLICATION_JSON)
       );
@@ -513,9 +531,14 @@ class GetCommandTest {
       assertThat(output.toString()).isEqualTo("a string"+ lineSeparator());
     }
 
+    private RequestCustomizer acceptJson() {
+      return request -> request.withHeader("accept", "application/json");
+    }
+
     @Test
     void handlesJqStylePath() throws MalformedURLException {
       expectRequest("GET", "/string.json",
+          acceptJson(),
           response()
               .withBody("{\"field\": \"a string\"}", MediaType.APPLICATION_JSON)
       );
@@ -536,6 +559,7 @@ class GetCommandTest {
     @Test
     void numberField() throws MalformedURLException {
       expectRequest("GET", "/number.json",
+          acceptJson(),
           response()
               .withBody("{\"field\": 543}", MediaType.APPLICATION_JSON)
       );
@@ -556,6 +580,7 @@ class GetCommandTest {
     @Test
     void booleanField() throws MalformedURLException {
       expectRequest("GET", "/boolean.json",
+          acceptJson(),
           response()
               .withBody("{\"field\": true}", MediaType.APPLICATION_JSON)
       );
@@ -576,6 +601,7 @@ class GetCommandTest {
     @Test
     void handlesMissingField() throws MalformedURLException {
       expectRequest("GET", "/content.json",
+          acceptJson(),
           response()
               .withBody("{}", MediaType.APPLICATION_JSON)
       );
@@ -601,6 +627,7 @@ class GetCommandTest {
     @Test
     void handlesNoResultsForPath() throws MalformedURLException {
       expectRequest("GET", "/content.json",
+          acceptJson(),
           response()
               .withBody("{\"promos\": {\"1.17.1-latest\": \"37.0.95\"}}", MediaType.APPLICATION_JSON)
       );
@@ -621,8 +648,11 @@ class GetCommandTest {
 
     @Test
     void useConcatWithListField() throws MalformedURLException {
-      expectRequest("GET", "/content.json", response()
-          .withBody("{\"field\":[\"one\",\"two\"]}", MediaType.APPLICATION_JSON));
+      expectRequest("GET", "/content.json",
+          acceptJson(),
+          response()
+              .withBody("{\"field\":[\"one\",\"two\"]}", MediaType.APPLICATION_JSON)
+      );
 
       final StringWriter output = new StringWriter();
       final int status =
@@ -639,12 +669,25 @@ class GetCommandTest {
 
   }
 
+  @FunctionalInterface
+  interface RequestCustomizer {
+    HttpRequest customize(HttpRequest request);
+  }
+
   private void expectRequest(String method, String path, HttpResponse httpResponse) {
+    expectRequest(method, path, request -> request, httpResponse);
+  }
+
+  private void expectRequest(String method,
+      String path, RequestCustomizer requestCustomizer,
+      HttpResponse httpResponse) {
     client
         .when(
-            request()
-                .withMethod(method)
-                .withPath(path)
+            requestCustomizer.customize(
+                request()
+                    .withMethod(method)
+                    .withPath(path)
+            )
         )
         .respond(
             httpResponse
