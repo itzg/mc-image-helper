@@ -21,6 +21,7 @@ import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.classic.methods.HttpHead;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.core5.http.HttpStatus;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.Option;
@@ -73,6 +74,10 @@ public class GetCommand implements Callable<Integer> {
     )
     int pruneDepth;
 
+    @Option(names = "--exists",
+    description = "Test if the given URIs are retrievable")
+    boolean checkExists;
+
     @Option(names = "--uris-file",
         description = "A file that contains a URL per line"
     )
@@ -108,7 +113,9 @@ public class GetCommand implements Callable<Integer> {
 
             final PrintWriter stdout = spec.commandLine().getOut();
 
-            if (jsonPath != null) {
+            if (checkExists) {
+                return checkUrisExist(client);
+            } else if (jsonPath != null) {
                 validateSingleUri();
                 processSingleUri(uris.get(0), client, stdout,
                     new JsonPathOutputHandler(stdout, jsonPath));
@@ -138,6 +145,31 @@ public class GetCommand implements Callable<Integer> {
         }
 
         return ExitCode.OK;
+    }
+
+    private int checkUrisExist(CloseableHttpClient client) {
+        if (uris.stream()
+            .allMatch(uri -> {
+                log.debug("Checking {}", uri);
+                final HttpHead request = new HttpHead(uri);
+                try {
+                    final int statusCode = client.execute(request).getCode();
+                    if (statusCode == HttpStatus.SC_OK) {
+                        return true;
+                    } else {
+                        log.warn("{} cannot be retrieved: status={}", uri, statusCode);
+                        return false;
+                    }
+                } catch (IOException e) {
+                    throw new IllegalStateException(String.format("Failed to retrieve: %s", uri),
+                        e);
+                }
+            })
+        ) {
+            return ExitCode.OK;
+        } else {
+            return ExitCode.SOFTWARE;
+        }
     }
 
     private void readUris() throws IOException {

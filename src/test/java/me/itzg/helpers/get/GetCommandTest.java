@@ -25,6 +25,7 @@ import org.mockserver.model.HttpResponse;
 import org.mockserver.model.HttpStatusCode;
 import org.mockserver.model.MediaType;
 import picocli.CommandLine;
+import picocli.CommandLine.ExitCode;
 
 @ExtendWith(MockServerExtension.class)
 class GetCommandTest {
@@ -96,6 +97,43 @@ class GetCommandTest {
     assertThat(status).isEqualTo(1);
     assertThat(output.toString()).isEqualTo("");
 
+  }
+
+  @Nested
+  class ExistsTests {
+
+    @Test
+    void okWhenExists() throws MalformedURLException {
+      expectRequest("HEAD", "/exists",
+          response("Here!"));
+
+      final int status =
+          new CommandLine(new GetCommand())
+              .execute(
+                  "--exists",
+                  buildMockedUrl("/exists").toString()
+              );
+
+      assertThat(status).isEqualTo(0);
+    }
+
+    @Test
+    void notOkWhenOneMissing() throws MalformedURLException {
+      expectRequest("HEAD", "/exists",
+          response("Here!"));
+      expectRequest("HEAD", "/notHere",
+          response().withStatusCode(404));
+
+      final int status =
+          new CommandLine(new GetCommand())
+              .execute(
+                  "--exists",
+                  buildMockedUrl("/exists").toString(),
+                  buildMockedUrl("/notHere").toString()
+              );
+
+      assertThat(status).isEqualTo(ExitCode.SOFTWARE);
+    }
   }
 
   @Nested
