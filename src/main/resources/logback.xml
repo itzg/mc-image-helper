@@ -1,5 +1,19 @@
 <configuration>
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <filter class="me.itzg.helpers.LowerThanThresholdLogbackFilter">
+            <level>WARN</level>
+        </filter>
+        <!-- encoders are assigned the type
+             ch.qos.logback.classic.encoder.PatternLayoutEncoder by default -->
+        <encoder>
+            <pattern>[mc-image-helper] %d{HH:mm:ss.SSS} %-5level : %msg%n</pattern>
+        </encoder>
+    </appender>
+    <appender name="STDERR" class="ch.qos.logback.core.ConsoleAppender">
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>WARN</level>
+        </filter>
+        <target>System.err</target>
         <!-- encoders are assigned the type
              ch.qos.logback.classic.encoder.PatternLayoutEncoder by default -->
         <encoder>
@@ -9,5 +23,6 @@
 
     <root level="info">
         <appender-ref ref="STDOUT"/>
+        <appender-ref ref="STDERR"/>
     </root>
 </configuration>

@@ -14,6 +14,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import me.itzg.helpers.TestLoggingAppender;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -583,6 +584,33 @@ class GetCommandTest {
               );
 
       assertThat(status).isEqualTo(1);
+      assertThat(stdout.toString()).isEqualTo("");
+      assertThat(TestLoggingAppender.getEvents()).isEmpty();
+    }
+
+    /**
+     * This test case captures the case of using forge's promotions_slim.json
+     * where a "{version}-recommended" entry is not present.
+     */
+    @Test
+    void handlesNoResultsForPath() throws MalformedURLException {
+      expectRequest("GET", "/content.json",
+          response()
+              .withBody("{\"promos\": {\"1.17.1-latest\": \"37.0.95\"}}", MediaType.APPLICATION_JSON)
+      );
+
+      final StringWriter stdout = new StringWriter();
+      final int status =
+          new CommandLine(new GetCommand())
+              .setOut(new PrintWriter(stdout))
+              .execute(
+                  "--json-path", "$.promos['1.17.1-recommended']",
+                  buildMockedUrl("/content.json").toString()
+              );
+
+      assertThat(status).isEqualTo(1);
+      assertThat(stdout.toString()).isEqualTo("");
+      assertThat(TestLoggingAppender.getEvents()).isEmpty();
     }
 
     @Test
