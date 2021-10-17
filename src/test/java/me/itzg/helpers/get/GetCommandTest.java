@@ -507,6 +507,26 @@ class GetCommandTest {
     }
 
     @Test
+    void handlesJqStylePath() throws MalformedURLException {
+      expectRequest("GET", "/string.json",
+          response()
+              .withBody("{\"field\": \"a string\"}", MediaType.APPLICATION_JSON)
+      );
+
+      final StringWriter output = new StringWriter();
+      final int status =
+          new CommandLine(new GetCommand())
+              .setOut(new PrintWriter(output))
+              .execute(
+                  "--json-path", ".field",
+                  buildMockedUrl("/string.json").toString()
+              );
+
+      assertThat(status).isEqualTo(0);
+      assertThat(output.toString()).isEqualTo("a string"+ lineSeparator());
+    }
+
+    @Test
     void numberField() throws MalformedURLException {
       expectRequest("GET", "/number.json",
           response()
@@ -563,26 +583,6 @@ class GetCommandTest {
               );
 
       assertThat(status).isEqualTo(1);
-    }
-
-    @Test
-    void missingRootOutputsNull() throws MalformedURLException {
-      expectRequest("GET", "/content.json",
-          response()
-              .withBody("{\"field\":\"value\"}", MediaType.APPLICATION_JSON)
-      );
-
-      final StringWriter output = new StringWriter();
-      final int status =
-          new CommandLine(new GetCommand())
-              .setOut(new PrintWriter(output))
-              .execute(
-                  "--json-path", ".field",
-                  buildMockedUrl("/content.json").toString()
-              );
-
-      assertThat(status).isEqualTo(0);
-      assertThat(output.toString()).isEqualTo("null"+ lineSeparator());
     }
 
     @Test

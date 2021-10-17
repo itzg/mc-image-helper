@@ -13,7 +13,8 @@ class JsonPathOutputHandler extends AbstractHttpClientResponseHandler<Path> impl
 
   public JsonPathOutputHandler(PrintWriter writer, String jsonPath) {
     this.writer = writer;
-    this.jsonPath = jsonPath;
+    // adapt jq style path into JsonPath
+    this.jsonPath = jsonPath.startsWith("$") ? jsonPath : "$"+jsonPath;
   }
 
   @Override
