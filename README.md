@@ -96,19 +96,38 @@ Usage: mc-image-helper patch [-h] [--patch-env-prefix=<envPrefix>] FILE_OR_DIR
 ### get
 
 ```
-Usage: mc-image-helper get [-h] [--output-filename] [--json-path=<jsonPath>]
-                           [-o=FILE|DIR] <uri>
+Usage: mc-image-helper get [-h] [--exists] [--log-progress-each]
+                           [--output-filename] [--skip-existing]
+                           [--json-path=<jsonPath>] [-o=FILE|DIR]
+                           [--prune-depth=<pruneDepth>]
+                           [--uris-file=<urisFile>] [--prune-others=GLOB[,
+                           GLOB...]]... [URI[,URI...]...]
 Download a file
-      <uri>
-  -h, --help              Show this usage and exit
+      [URI[,URI...]...]     The URI of the resource to retrieve. When the
+                              output is a directory, more than one URI can be
+                              requested.
+      --exists              Test if the given URIs are retrievable
+  -h, --help                Show this usage and exit
       --json-path=<jsonPath>
-                          Extract and output a JsonPath from the response
-  -o, --output=FILE|DIR   Specifies the name of a file or directory to write
-                            the downloaded content. If a directory is provided,
-                            the filename will be derived from the content
-                            disposition or the URI's path. If not provided,
-                            then content will be output to standard out.
-      --output-filename   Output the resulting filename
+                            Extract and output a JsonPath from the response
+      --log-progress-each   Output a log as each URI is being retrieved
+  -o, --output=FILE|DIR     Specifies the name of a file or directory to write
+                              the downloaded content. If a directory is
+                              provided, the filename will be derived from the
+                              content disposition or the URI's path. If not
+                              provided, then content will be output to standard
+                              out.
+      --output-filename     Output the resulting filename
+      --prune-depth=<pruneDepth>
+                            When using prune-others, this specifies how deep to
+                              search for files to prune
+      --prune-others=GLOB[,GLOB...]
+                            When set and using an output directory, files that
+                              match the given glob patterns will be pruned if
+                              not part of the download set. For example *.jar
+      --skip-existing       Do not retrieve if the output file already exists
+      --uris-file=<urisFile>
+                            A file that contains a URL per line
 ```
 
 ## Patch Schemas
