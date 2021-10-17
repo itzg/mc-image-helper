@@ -16,6 +16,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import me.itzg.helpers.TestLoggingAppender;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,6 +35,11 @@ class GetCommandTest {
 
   GetCommandTest(ClientAndServer client) {
     this.client = client;
+  }
+
+  @BeforeEach
+  void setUp() {
+    TestLoggingAppender.reset();
   }
 
   @AfterEach

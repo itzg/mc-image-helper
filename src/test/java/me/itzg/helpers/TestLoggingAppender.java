@@ -17,4 +17,8 @@ public class TestLoggingAppender extends AppenderBase<LoggingEvent> {
   public static List<LoggingEvent> getEvents() {
     return events;
   }
+
+  public static void reset() {
+    events.clear();
+  }
 }
