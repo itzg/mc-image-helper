@@ -158,6 +158,25 @@ class GetCommandTest {
 
       assertThat(status).isEqualTo(ExitCode.SOFTWARE);
     }
+
+    @Test
+    void includesAcceptHeader() throws MalformedURLException {
+      expectRequest("HEAD", "/exists",
+          request -> request.withHeader("accept", "text/plain"),
+          response("Here!"));
+
+
+      final int status =
+          new CommandLine(new GetCommand())
+              .execute(
+                  "--exists",
+                  "--accept", "text/plain",
+                  buildMockedUrl("/exists").toString()
+              );
+
+      assertThat(status).isEqualTo(0);
+
+    }
   }
 
   @Nested

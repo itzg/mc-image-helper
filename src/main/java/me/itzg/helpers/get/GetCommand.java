@@ -163,6 +163,10 @@ public class GetCommand implements Callable<Integer> {
             .allMatch(uri -> {
                 log.debug("Checking {}", uri);
                 final HttpHead request = new HttpHead(uri);
+                if (acceptHeader != null) {
+                    request.addHeader(HttpHeaders.ACCEPT, acceptHeader);
+                }
+
                 try {
                     final int statusCode = client.execute(request).getCode();
                     if (statusCode == HttpStatus.SC_OK) {
