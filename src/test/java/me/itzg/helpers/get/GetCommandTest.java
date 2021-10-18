@@ -2,6 +2,7 @@ package me.itzg.helpers.get;
 
 import static java.lang.System.lineSeparator;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 
@@ -20,6 +21,9 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.junit.jupiter.MockServerExtension;
 import org.mockserver.model.HttpRequest;
@@ -686,6 +690,44 @@ class GetCommandTest {
       assertThat(output.toString()).isEqualTo("onetwo" + lineSeparator());
     }
 
+
+    @ParameterizedTest
+    @MethodSource("me.itzg.helpers.get.GetCommandTest#argsForJsonPathQuery")
+    void supportsQueryOfStringValues(String content, String expected) throws MalformedURLException {
+      expectRequest("GET", "/content.json",
+          acceptJson(),
+          response()
+              .withBody(content, MediaType.APPLICATION_JSON)
+      );
+
+      final StringWriter output = new StringWriter();
+      final int status =
+          new CommandLine(new GetCommand())
+              .setOut(new PrintWriter(output))
+              .execute(
+                  "--json-path", "$.values[?(@.name == 'one')].value",
+                  buildMockedUrl("/content.json").toString()
+              );
+
+      assertThat(status).isEqualTo(0);
+      assertThat(output.toString()).isEqualTo(expected + lineSeparator());
+
+    }
+  }
+
+  @SuppressWarnings("unused")
+  static Arguments[] argsForJsonPathQuery() {
+    return new Arguments[]{
+        arguments(
+            "{\"values\": [{\"value\": \"v1\", \"name\": \"one\"}, {\"value\": \"v2\", \"name\": \"two\"}]}",
+            "v1"),
+        arguments(
+            "{\"values\": [{\"value\": 1, \"name\": \"one\"}, {\"value\": 1, \"name\": \"two\"}]}",
+            "1"),
+        arguments(
+            "{\"values\": [{\"value\": true, \"name\": \"one\"}, {\"value\": false, \"name\": \"two\"}]}",
+            "true")
+    };
   }
 
   @FunctionalInterface
