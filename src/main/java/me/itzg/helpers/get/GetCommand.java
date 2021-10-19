@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -134,16 +135,25 @@ public class GetCommand implements Callable<Integer> {
                 validateSingleUri();
                 processSingleUri(uris.get(0), client, stdout, new PrintWriterHandler(stdout));
             } else if (Files.isDirectory(outputFile)) {
-                processUrisForDirectory(client, stdout,
+                final Collection<Path> files = processUrisForDirectory(client, stdout,
                     interceptor);
+                if (outputFilename) {
+                    files.forEach(stdout::println);
+                }
             } else {
                 validateSingleUri();
                 if (skipExisting && Files.isRegularFile(outputFile)) {
                     log.debug("Skipping uri={} since output file={} already exists", uris.get(0),
                         outputFile);
+                    if (outputFilename) {
+                        stdout.println(outputFile);
+                    }
                 } else {
-                    processSingleUri(uris.get(0), client, stdout,
+                    final Path file = processSingleUri(uris.get(0), client, stdout,
                         new SaveToFileHandler(outputFile));
+                    if (outputFilename) {
+                        stdout.println(file);
+                    }
                 }
             }
         } catch (ParameterException e) {
@@ -210,7 +220,7 @@ public class GetCommand implements Callable<Integer> {
             .forEach(uris::add);
     }
 
-    private void processUrisForDirectory(CloseableHttpClient client,
+    private Collection<Path> processUrisForDirectory(CloseableHttpClient client,
         PrintWriter stdout,
         LatchingUrisInterceptor interceptor) throws URISyntaxException, IOException {
 
@@ -236,6 +246,8 @@ public class GetCommand implements Callable<Integer> {
         if (usingPrune()) {
             pruneOtherFiles(processed);
         }
+
+        return processed;
     }
 
     private boolean needsDownload(CloseableHttpClient client, LatchingUrisInterceptor interceptor,
@@ -320,9 +332,6 @@ public class GetCommand implements Callable<Integer> {
             } else {
                 log.info("Skipped {} since file already exists", uri);
             }
-        }
-        if (outputFilename && file != null) {
-            stdout.println(file);
         }
 
         return file;

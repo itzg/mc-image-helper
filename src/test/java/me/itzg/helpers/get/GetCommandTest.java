@@ -396,23 +396,32 @@ class GetCommandTest {
       expectRequest("GET", "/two.txt", response()
           .withBody("content for two", MediaType.TEXT_PLAIN));
 
-      try (BufferedWriter writer = Files.newBufferedWriter(tempDir.resolve("one.txt"))) {
+      final Path fileOne = tempDir.resolve("one.txt");
+      final Path fileTwo = tempDir.resolve("two.txt");
+      try (BufferedWriter writer = Files.newBufferedWriter(fileOne)) {
         writer.write("old content for one");
       }
 
+      final StringWriter output = new StringWriter();
       final int status =
           new CommandLine(new GetCommand())
+              .setOut(new PrintWriter(output))
               .execute(
                   "-o",
                   tempDir.toString(),
                   "--skip-existing",
+                  "--output-filename",
                   buildMockedUrl("/one.txt").toString(),
                   buildMockedUrl("/two.txt").toString()
               );
 
       assertThat(status).isEqualTo(0);
-      assertThat(tempDir.resolve("one.txt")).hasContent("old content for one");
-      assertThat(tempDir.resolve("two.txt")).hasContent("content for two");
+      assertThat(fileOne).hasContent("old content for one");
+      assertThat(fileTwo).hasContent("content for two");
+      assertThat(output.toString()).isEqualTo(
+          fileOne + lineSeparator()
+              + fileTwo + lineSeparator()
+      );
     }
 
     @Test
@@ -511,17 +520,21 @@ class GetCommandTest {
         writer.write("old content for one");
       }
 
+      final StringWriter output = new StringWriter();
       final int status =
           new CommandLine(new GetCommand())
+              .setOut(new PrintWriter(output))
               .execute(
                   "-o",
                   fileToSkip.toString(),
                   "--skip-existing",
+                  "--output-filename",
                   buildMockedUrl("/one.txt").toString()
               );
 
       assertThat(status).isEqualTo(0);
       assertThat(tempDir.resolve("one.txt")).hasContent("old content for one");
+      assertThat(output.toString()).isEqualTo(fileToSkip + lineSeparator());
     }
   }
 
