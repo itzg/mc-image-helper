@@ -418,9 +418,10 @@ class GetCommandTest {
       assertThat(status).isEqualTo(0);
       assertThat(fileOne).hasContent("old content for one");
       assertThat(fileTwo).hasContent("content for two");
-      assertThat(output.toString()).isEqualTo(
-          fileOne + lineSeparator()
-              + fileTwo + lineSeparator()
+
+      final String[] parts = output.toString().split(lineSeparator());
+      assertThat(parts).containsExactlyInAnyOrder(
+          fileOne.toString(), fileTwo.toString()
       );
     }
 
