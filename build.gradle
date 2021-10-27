@@ -52,6 +52,15 @@ jreleaser {
             }
         }
     }
+    packagers {
+        scoop {
+            active = 'ALWAYS'
+            bucket {
+                owner = 'itzg'
+                name = 'scoop-bucket'
+            }
+        }
+    }
 }
 
 project.tasks.distTar {
