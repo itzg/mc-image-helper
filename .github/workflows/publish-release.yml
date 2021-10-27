@@ -29,15 +29,7 @@ jobs:
     - name: Test
       run: ./gradlew test
 
-    - name: Assemble
-      run: ./gradlew assembleDist
-
-    - name: Setup Java for JReleaser
-      uses: actions/setup-java@v1
-      with:
-        java-version: 17
-
-    - name: Run JReleaser
-      uses: jreleaser/release-action@v1
+    - name: Release
+      run: ./gradlew jreleaserFullRelease
       env:
         JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
