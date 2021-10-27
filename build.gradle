@@ -7,10 +7,11 @@ plugins {
     id 'application'
     id 'idea'
     id "io.freefair.lombok" version "6.2.0"
+    // For managing incrementing of project.version and tagging
     // https://github.com/netzwerg/gradle-release-plugin
     id 'ch.netzwerg.release' version '1.2.3'
-    // https://github.com/BreadMoirai/github-release-gradle-plugin
-    id "com.github.breadmoirai.github-release" version "2.2.12"
+    // https://jreleaser.org/guide/latest/index.html
+    id 'org.jreleaser' version '0.7.0'
 }
 
 test {
@@ -23,21 +24,33 @@ application {
     mainClass = 'me.itzg.helpers.McImageHelper'
 }
 
-// For bumping version.txt and tagging
+// For bumping version.txt and tagging with ch.netzwerg.release
 release {
     push = project.findProperty("pushReleaseTag") ?: false
 }
 
-githubRelease {
-    def isSnapshot = project.version.toString().endsWith("-SNAPSHOT")
-    token System.env.GITHUB_TOKEN ?: ''
-    prerelease = isSnapshot
-    overwrite = isSnapshot
-    releaseAssets {
-        [
-                project.tasks.distZip.archiveFile,
-                project.tasks.distTar.archiveFile
-        ]
+jreleaser {
+    project {
+        website = 'https://github.com/itzg/mc-image-helper'
+        docsUrl = 'https://github.com/itzg/mc-image-helper'
+        authors = ['Geoff Bourne']
+        tags = ['cli']
+        license = 'MIT'
+        extraProperties.put('inceptionYear', '2021')
+    }
+    release {
+        github {
+            //noinspection GroovyAccessibility
+            owner = 'itzg'
+            prerelease {
+                pattern = '.*-SNAPSHOT'
+            }
+            changelog {
+                hide {
+                    categories = ['Merge', 'Prepare next release', 'Release', 'test', 'ci']
+                }
+            }
+        }
     }
 }
 
@@ -57,26 +70,28 @@ repositories {
 }
 
 ext {
-    jacksonVersion = '2.13.0'
+    picocliVersion = '4.6.1'
 }
 
 dependencies {
-    implementation(platform("com.squareup.okhttp3:okhttp-bom:4.9.0"))
+    implementation(platform('com.squareup.okhttp3:okhttp-bom:4.9.0'))
+    implementation(platform('com.fasterxml.jackson:jackson-bom:2.13.0'))
+    implementation(platform('ch.qos.logback:logback-parent:1.2.6'))
 
-    implementation 'ch.qos.logback:logback-core:1.2.6'
-    implementation 'ch.qos.logback:logback-classic:1.2.6'
-    implementation "info.picocli:picocli:4.6.1"
-    implementation "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
-    implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:${jacksonVersion}"
+    implementation 'ch.qos.logback:logback-core'
+    implementation 'ch.qos.logback:logback-classic'
+    implementation "info.picocli:picocli:${picocliVersion}"
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
+    implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
     implementation 'com.jayway.jsonpath:json-path:2.6.0'
     implementation 'org.apache.httpcomponents.client5:httpclient5:5.1'
-    implementation("com.squareup.okhttp3:okhttp")
+    implementation 'com.squareup.okhttp3:okhttp'
     implementation 'com.jayway.jsonpath:json-path:2.6.0'
     testImplementation 'org.assertj:assertj-core:3.21.0'
     testImplementation 'org.junit.jupiter:junit-jupiter:5.8.1'
     testImplementation 'org.mockito:mockito-junit-jupiter:4.0.0'
     testImplementation 'org.mock-server:mockserver-junit-jupiter:5.11.2'
-    annotationProcessor "info.picocli:picocli-codegen:4.6.1"
+    annotationProcessor "info.picocli:picocli-codegen:${picocliVersion}"
 }
 
 java {

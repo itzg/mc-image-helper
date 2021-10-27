@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - v[0-9]+.[0-9]+.[0-9]+
+  workflow_dispatch:
 
 jobs:
   build:
@@ -11,6 +12,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
 
     - name: Setup Java JDK
       uses: actions/setup-java@v2.3.1
@@ -26,7 +29,15 @@ jobs:
     - name: Test
       run: ./gradlew test
 
-    - name: Perform github release
-      run: ./gradlew githubRelease
+    - name: Assemble
+      run: ./gradlew assembleDist
+
+    - name: Setup Java for JReleaser
+      uses: actions/setup-java@v1
+      with:
+        java-version: 17
+
+    - name: Run JReleaser
+      uses: jreleaser/release-action@v1
       env:
-        GITHUB_TOKEN: ${{github.token}}
+        JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
