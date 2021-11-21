@@ -33,3 +33,10 @@ jobs:
       run: ./gradlew jreleaserFullRelease
       env:
         JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Archive jreleaser trace log
+      uses: actions/upload-artifact@v2
+      if: success() || failure()    # run this step even if previous step failed
+      with:
+        name: jrelease-trace-log
+        path: build/jreleaser/trace.log

@@ -11,7 +11,7 @@ plugins {
     // https://github.com/netzwerg/gradle-release-plugin
     id 'ch.netzwerg.release' version '1.2.3'
     // https://jreleaser.org/guide/latest/index.html
-    id 'org.jreleaser' version '0.7.0'
+    id 'org.jreleaser' version '0.8.0'
 }
 
 group = 'com.github.itzg'
