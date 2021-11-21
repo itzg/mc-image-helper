@@ -14,6 +14,9 @@ plugins {
     id 'org.jreleaser' version '0.7.0'
 }
 
+group = 'com.github.itzg'
+description = 'mc-image-helper'
+
 test {
     useJUnitPlatform()
 
@@ -46,15 +49,28 @@ jreleaser {
                 pattern = '.*-SNAPSHOT'
             }
             changelog {
+                labeler {
+                    label = 'ci'
+                    title = '^ci:'
+                }
+                labeler {
+                    label = 'test'
+                    title = '^test'
+                }
+                category {
+                    title = 'Internal'
+                    labels = ['ci','test']
+                }
                 hide {
-                    categories = ['Merge', 'Prepare next release', 'Release', 'test', 'ci']
+                    categories = ['Internal']
                 }
             }
         }
     }
     packagers {
         scoop {
-            active = 'ALWAYS'
+            // snapshots are not supported
+            active = 'RELEASE'
             bucket {
                 owner = 'itzg'
                 name = 'scoop-bucket'
@@ -78,10 +94,6 @@ repositories {
     mavenCentral()
 }
 
-ext {
-    picocliVersion = '4.6.1'
-}
-
 dependencies {
     implementation(platform('com.squareup.okhttp3:okhttp-bom:4.9.0'))
     implementation(platform('com.fasterxml.jackson:jackson-bom:2.13.0'))
@@ -93,7 +105,7 @@ dependencies {
     implementation 'com.fasterxml.jackson.core:jackson-databind'
     implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
     implementation 'com.jayway.jsonpath:json-path:2.6.0'
-    implementation 'org.apache.httpcomponents.client5:httpclient5:5.1'
+    implementation 'org.apache.httpcomponents.client5:httpclient5:5.1.1'
     implementation 'com.squareup.okhttp3:okhttp'
     implementation 'com.jayway.jsonpath:json-path:2.6.0'
     testImplementation 'org.assertj:assertj-core:3.21.0'
@@ -107,5 +119,3 @@ java {
     sourceCompatibility = JavaVersion.VERSION_1_8
 }
 
-group = 'com.github.itzg'
-description = 'mc-image-helper'

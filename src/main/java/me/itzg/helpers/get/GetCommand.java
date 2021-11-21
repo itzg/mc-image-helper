@@ -52,6 +52,9 @@ public class GetCommand implements Callable<Integer> {
     @Option(names = "--log-progress-each", description = "Output a log as each URI is being retrieved")
     boolean logProgressEach;
 
+    @Option(names = {"-s", "--silent"}, description = "Don't output logs even if there's an error")
+    boolean silent;
+
     @Option(names = "--json-path",
         description = "Extract and output a JsonPath from the response")
     String jsonPath;
@@ -159,8 +162,10 @@ public class GetCommand implements Callable<Integer> {
         } catch (ParameterException e) {
             throw e;
         } catch (Exception e) {
-            log.error("Operation failed: {}",
-                e.getMessage() != null ? e.getMessage() : e.getClass());
+            if (!silent) {
+                log.error("Operation failed: {}",
+                    e.getMessage() != null ? e.getMessage() : e.getClass());
+            }
             log.debug("Details", e);
             return ExitCode.SOFTWARE;
         }
