@@ -45,6 +45,7 @@ jreleaser {
         github {
             //noinspection GroovyAccessibility
             owner = 'itzg'
+            branch = 'master'
             prerelease {
                 pattern = '.*-SNAPSHOT'
             }
