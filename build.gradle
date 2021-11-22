@@ -20,6 +20,7 @@ description = 'mc-image-helper'
 test {
     useJUnitPlatform()
 
+    // Can set with -DmockServerLogLevel=info
     systemProperty 'mockServerLogLevel', System.getProperty('mockServerLogLevel') ?: 'warn'
 }
 

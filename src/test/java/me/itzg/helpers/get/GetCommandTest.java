@@ -14,7 +14,9 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.FileTime;
 import java.util.ArrayList;
+import java.util.concurrent.TimeUnit;
 import me.itzg.helpers.TestLoggingAppender;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Nested;
@@ -451,6 +453,36 @@ class GetCommandTest {
     }
 
     @Test
+    void skipsUpToDate(@TempDir Path tempDir) throws IOException {
+      final Path fileToSkip = Files.createFile(tempDir.resolve("existing.txt"));
+      // set it to a known time "in the past"
+      Files.setLastModifiedTime(fileToSkip, FileTime.from(1637551412, TimeUnit.SECONDS));
+
+      expectRequest("HEAD", "/existing.txt", response()
+          .withStatusCode(HttpStatusCode.NO_CONTENT_204.code()));
+      expectRequest("GET", "/existing.txt",
+          request -> request.withHeader("if-modified-since", "Mon, 22 Nov 2021 03:23:32 GMT"),
+          response()
+              .withStatusCode(304)
+      );
+
+      final StringWriter output = new StringWriter();
+      final int status =
+          new CommandLine(new GetCommand())
+              .setOut(new PrintWriter(output))
+              .execute(
+                  "-o",
+                  tempDir.toString(),
+                  "--skip-up-to-date",
+                  "--output-filename",
+                  buildMockedUrl("/existing.txt").toString()
+              );
+
+      assertThat(status).isEqualTo(0);
+      assertThat(Files.getLastModifiedTime(fileToSkip).to(TimeUnit.SECONDS)).isEqualTo(1637551412);
+    }
+
+    @Test
     void doesntWriteFileWhenNotFound(@TempDir Path tempDir) throws MalformedURLException {
       expectRequest("GET", "/doesntWriteFileWhenNotFound.txt", response()
           .withStatusCode(404)
@@ -536,6 +568,34 @@ class GetCommandTest {
       assertThat(status).isEqualTo(0);
       assertThat(tempDir.resolve("one.txt")).hasContent("old content for one");
       assertThat(output.toString()).isEqualTo(fileToSkip + lineSeparator());
+    }
+
+    @Test
+    void skipsUpToDate(@TempDir Path tempDir) throws IOException {
+      final Path fileToSkip = Files.createFile(tempDir.resolve("existing.txt"));
+      // set it to a known time "in the past"
+      Files.setLastModifiedTime(fileToSkip, FileTime.from(1637551412, TimeUnit.SECONDS));
+
+      expectRequest("GET", "/existing.txt", request ->
+        request.withHeader("if-modified-since", "Mon, 22 Nov 2021 03:23:32 GMT"),
+          response()
+              .withStatusCode(304)
+      );
+
+      final StringWriter output = new StringWriter();
+      final int status =
+          new CommandLine(new GetCommand())
+              .setOut(new PrintWriter(output))
+              .execute(
+                  "-o",
+                  fileToSkip.toString(),
+                  "--skip-up-to-date",
+                  "--output-filename",
+                  buildMockedUrl("/existing.txt").toString()
+              );
+
+      assertThat(status).isEqualTo(0);
+      assertThat(Files.getLastModifiedTime(fileToSkip).to(TimeUnit.SECONDS)).isEqualTo(1637551412);
     }
   }
 

@@ -8,6 +8,9 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
+import java.nio.file.attribute.FileTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -16,6 +19,7 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.hc.client5.http.HttpResponseException;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
@@ -48,6 +52,11 @@ public class GetCommand implements Callable<Integer> {
 
     @Option(names = "--skip-existing", description = "Do not retrieve if the output file already exists")
     boolean skipExisting;
+
+    @Option(names = {"-z", "--skip-up-to-date"},
+        description = "Skips re-downloading a file that is up to date"
+    )
+    boolean skipUpToDate;
 
     @Option(names = "--log-progress-each", description = "Output a log as each URI is being retrieved")
     boolean logProgressEach;
@@ -102,6 +111,9 @@ public class GetCommand implements Callable<Integer> {
     )
     List<URI> uris;
 
+    private final static DateTimeFormatter httpDateTimeFormatter =
+        DateTimeFormatter.RFC_1123_DATE_TIME.withZone(ZoneId.of("GMT"));
+
     @Override
     public Integer call() {
         if (urisFile != null) {
@@ -133,10 +145,10 @@ public class GetCommand implements Callable<Integer> {
                     acceptHeader = ContentType.APPLICATION_JSON.getMimeType();
                 }
                 processSingleUri(uris.get(0), client, stdout,
-                    new JsonPathOutputHandler(stdout, jsonPath));
+                    null, new JsonPathOutputHandler(stdout, jsonPath));
             } else if (outputFile == null) {
                 validateSingleUri();
-                processSingleUri(uris.get(0), client, stdout, new PrintWriterHandler(stdout));
+                processSingleUri(uris.get(0), client, stdout, null, new PrintWriterHandler(stdout));
             } else if (Files.isDirectory(outputFile)) {
                 final Collection<Path> files = processUrisForDirectory(client, stdout,
                     interceptor);
@@ -153,6 +165,7 @@ public class GetCommand implements Callable<Integer> {
                     }
                 } else {
                     final Path file = processSingleUri(uris.get(0), client, stdout,
+                        skipUpToDate ? outputFile : null,
                         new SaveToFileHandler(outputFile));
                     if (outputFilename) {
                         stdout.println(file);
@@ -239,9 +252,11 @@ public class GetCommand implements Callable<Integer> {
         final Set<Path> processed = new HashSet<>();
 
         for (URI uri : uris) {
-            if (needsDownload(client, interceptor, uri, processed)) {
+            NeedsDownloadResult result = needsDownload(client, interceptor, uri, processed);
+            if (result.needsDownload) {
                 processed.add(
                     processSingleUri(uri, client, stdout,
+                        skipUpToDate ? result.resolvedFilename : null,
                         new OutputToDirectoryHandler(outputFile, interceptor))
                 );
                 interceptor.reset();
@@ -255,9 +270,14 @@ public class GetCommand implements Callable<Integer> {
         return processed;
     }
 
-    private boolean needsDownload(CloseableHttpClient client, LatchingUrisInterceptor interceptor,
+    @RequiredArgsConstructor
+    static class NeedsDownloadResult {
+        final boolean needsDownload;
+        final Path resolvedFilename;
+    }
+    private NeedsDownloadResult needsDownload(CloseableHttpClient client, LatchingUrisInterceptor interceptor,
         URI uri, Set<Path> processed) throws URISyntaxException, IOException {
-        if (skipExisting) {
+        if (skipExisting || skipUpToDate) {
             final HttpHead headRequest = new HttpHead(uri.getPath().startsWith("//") ?
                 alterUriPath(uri, uri.getPath().substring(1)) : uri);
 
@@ -272,17 +292,20 @@ public class GetCommand implements Callable<Integer> {
             interceptor.reset();
 
             final Path resolvedFilename = outputFile.resolve(filename);
-            if (Files.isRegularFile(resolvedFilename)) {
+            if (skipExisting && Files.isRegularFile(resolvedFilename)) {
                 if (logProgressEach) {
                     log.info("Skipping {} since {} already exists", uri, resolvedFilename);
                 } else {
                     log.debug("Skipping {} since {} already exists", uri, resolvedFilename);
                 }
                 processed.add(resolvedFilename);
-                return false;
+                return new NeedsDownloadResult(false, null);
+            }
+            else {
+                return new NeedsDownloadResult(true, resolvedFilename);
             }
         }
-        return true;
+        return new NeedsDownloadResult(true, null);
     }
 
     private boolean usingPrune() {
@@ -314,7 +337,7 @@ public class GetCommand implements Callable<Integer> {
     }
 
     private Path processSingleUri(URI uri, CloseableHttpClient client, PrintWriter stdout,
-        OutputResponseHandler handler) throws URISyntaxException, IOException {
+        Path modifiedSinceFile, OutputResponseHandler handler) throws URISyntaxException, IOException {
         final URI requestUri = uri.getPath().startsWith("//") ?
             alterUriPath(uri, uri.getPath().substring(1)) : uri;
 
@@ -323,6 +346,15 @@ public class GetCommand implements Callable<Integer> {
         final HttpGet request = new HttpGet(requestUri);
         if (acceptHeader != null) {
             request.addHeader(HttpHeaders.ACCEPT, acceptHeader);
+        }
+        if (modifiedSinceFile != null) {
+            final FileTime lastModifiedTime = Files.getLastModifiedTime(modifiedSinceFile);
+            request.addHeader(HttpHeaders.IF_MODIFIED_SINCE,
+                httpDateTimeFormatter.format(lastModifiedTime.toInstant())
+            );
+
+            // wrap the handler to intercept the NotModified response
+            handler = new NotModifiedHandler(modifiedSinceFile, handler);
         }
 
         final Path file;
