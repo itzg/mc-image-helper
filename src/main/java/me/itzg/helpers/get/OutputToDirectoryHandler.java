@@ -13,11 +13,13 @@ class OutputToDirectoryHandler implements OutputResponseHandler {
 
   private final Path directory;
   final FilenameExtractor filenameExtractor;
+  private final boolean logProgressEach;
 
   public OutputToDirectoryHandler(Path directory,
-      LatchingUrisInterceptor interceptor) {
+      LatchingUrisInterceptor interceptor, boolean logProgressEach) {
     this.directory = directory;
     filenameExtractor = new FilenameExtractor(interceptor);
+    this.logProgressEach = logProgressEach;
   }
 
   @Override
@@ -26,7 +28,12 @@ class OutputToDirectoryHandler implements OutputResponseHandler {
 
     final Path filePath = directory.resolve(filename);
 
-    log.debug("Writing response content to path={}", filePath);
+    if (logProgressEach) {
+      log.info("Downloaded {}", filePath);
+    }
+    else {
+      log.debug("Writing response content to path={}", filePath);
+    }
     try (OutputStream out = Files.newOutputStream(filePath)) {
       response.getEntity().writeTo(out);
     }

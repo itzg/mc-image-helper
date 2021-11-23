@@ -166,7 +166,7 @@ public class GetCommand implements Callable<Integer> {
                 } else {
                     final Path file = processSingleUri(uris.get(0), client, stdout,
                         skipUpToDate ? outputFile : null,
-                        new SaveToFileHandler(outputFile));
+                        new SaveToFileHandler(outputFile, logProgressEach));
                     if (outputFilename) {
                         stdout.println(file);
                     }
@@ -257,7 +257,7 @@ public class GetCommand implements Callable<Integer> {
                 processed.add(
                     processSingleUri(uri, client, stdout,
                         skipUpToDate ? result.resolvedFilename : null,
-                        new OutputToDirectoryHandler(outputFile, interceptor))
+                        new OutputToDirectoryHandler(outputFile, interceptor, logProgressEach))
                 );
                 interceptor.reset();
             }
@@ -354,7 +354,7 @@ public class GetCommand implements Callable<Integer> {
             );
 
             // wrap the handler to intercept the NotModified response
-            handler = new NotModifiedHandler(modifiedSinceFile, handler);
+            handler = new NotModifiedHandler(modifiedSinceFile, handler, logProgressEach);
         }
 
         final Path file;
@@ -362,13 +362,6 @@ public class GetCommand implements Callable<Integer> {
             file = client.execute(request, handler);
         } catch (HttpResponseException e) {
             throw new FailedToDownloadException(uri, e);
-        }
-        if (logProgressEach) {
-            if (file != null) {
-                log.info("Downloaded {} to {}", uri, file);
-            } else {
-                log.info("Skipped {} since file already exists", uri);
-            }
         }
 
         return file;
