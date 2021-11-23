@@ -597,6 +597,34 @@ class GetCommandTest {
       assertThat(status).isEqualTo(0);
       assertThat(Files.getLastModifiedTime(fileToSkip).to(TimeUnit.SECONDS)).isEqualTo(1637551412);
     }
+
+
+    @Test
+    void skipsUpToDate_butDownloadsWhenAbsent(@TempDir Path tempDir) throws IOException {
+      final Path fileToDownload = tempDir.resolve("new.txt");
+
+      expectRequest("GET", "/new.txt",
+          response()
+              .withBody("New content", MediaType.TEXT_PLAIN)
+      );
+
+      final StringWriter output = new StringWriter();
+      final int status =
+          new CommandLine(new GetCommand())
+              .setOut(new PrintWriter(output))
+              .execute(
+                  "-o",
+                  fileToDownload.toString(),
+                  "--skip-up-to-date",
+                  "--output-filename",
+                  buildMockedUrl("/new.txt").toString()
+              );
+
+      assertThat(status).isEqualTo(0);
+      assertThat(fileToDownload).exists();
+      assertThat(fileToDownload).hasContent("New content");
+    }
+
   }
 
   private URL buildMockedUrl(String s) throws MalformedURLException {

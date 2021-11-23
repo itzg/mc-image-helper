@@ -347,7 +347,7 @@ public class GetCommand implements Callable<Integer> {
         if (acceptHeader != null) {
             request.addHeader(HttpHeaders.ACCEPT, acceptHeader);
         }
-        if (modifiedSinceFile != null) {
+        if (modifiedSinceFile != null && Files.exists(modifiedSinceFile)) {
             final FileTime lastModifiedTime = Files.getLastModifiedTime(modifiedSinceFile);
             request.addHeader(HttpHeaders.IF_MODIFIED_SINCE,
                 httpDateTimeFormatter.format(lastModifiedTime.toInstant())
