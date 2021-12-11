@@ -8,20 +8,22 @@ import me.itzg.helpers.patch.PatchCommand;
 import me.itzg.helpers.sync.InterpolateCommand;
 import me.itzg.helpers.sync.Sync;
 import me.itzg.helpers.sync.SyncAndInterpolate;
+import me.itzg.helpers.versions.CompareVersionsCommand;
 import org.slf4j.LoggerFactory;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
 @Command(name = "mc-image-helper",
-        subcommands = {
-                SyncAndInterpolate.class,
-                InterpolateCommand.class,
-                Sync.class,
-                Asciify.class,
-                PatchCommand.class,
-                GetCommand.class
-        }
+    subcommands = {
+        SyncAndInterpolate.class,
+        InterpolateCommand.class,
+        Sync.class,
+        Asciify.class,
+        PatchCommand.class,
+        GetCommand.class,
+        CompareVersionsCommand.class
+    }
 )
 public class McImageHelper {
     @CommandLine.Option(names = {"-h", "--help"}, usageHelp = true, description = "Show this usage and exit")

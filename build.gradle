@@ -11,7 +11,7 @@ plugins {
     // https://github.com/netzwerg/gradle-release-plugin
     id 'ch.netzwerg.release' version '1.2.3'
     // https://jreleaser.org/guide/latest/index.html
-    id 'org.jreleaser' version '0.8.0'
+    id 'org.jreleaser' version '0.9.1'
 }
 
 group = 'com.github.itzg'
@@ -42,6 +42,16 @@ jreleaser {
         license = 'MIT'
         extraProperties.put('inceptionYear', '2021')
     }
+    distributions {
+        'mc-image-helper' {
+            artifact {
+                path = "build/distributions/{{projectName}}-{{projectVersion}}.tgz"
+            }
+            artifact {
+                path = "build/distributions/{{projectName}}-{{projectVersion}}.zip"
+            }
+        }
+    }
     release {
         github {
             //noinspection GroovyAccessibility
@@ -51,31 +61,42 @@ jreleaser {
                 pattern = '.*-SNAPSHOT'
             }
             changelog {
+                formatted = 'ALWAYS'
+                preset = 'conventional-commits'
                 labeler {
-                    label = 'ci'
-                    title = '^ci:'
+                    label = 'release'
+                    title = '^Prepare next release '
                 }
                 labeler {
-                    label = 'test'
-                    title = '^test'
+                    label = 'release'
+                    title = '^Release '
                 }
                 category {
                     title = 'Internal'
-                    labels = ['ci','test']
+                    labels = ['release']
                 }
                 hide {
                     categories = ['Internal']
+                }
+                contributors {
+                    format = '- {{contributorName}}'
                 }
             }
         }
     }
     packagers {
         scoop {
-            // snapshots are not supported
             active = 'RELEASE'
             bucket {
                 owner = 'itzg'
                 name = 'scoop-bucket'
+            }
+        }
+        brew {
+            active = 'RELEASE'
+            repoTap {
+                owner = 'itzg'
+                name = 'homebrew-tap'
             }
         }
     }
@@ -110,9 +131,12 @@ dependencies {
     implementation 'org.apache.httpcomponents.client5:httpclient5:5.1.1'
     implementation 'com.squareup.okhttp3:okhttp'
     implementation 'com.jayway.jsonpath:json-path:2.6.0'
+    implementation 'org.apache.maven:maven-artifact:3.8.4'
+
     testImplementation 'org.assertj:assertj-core:3.21.0'
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.8.1'
-    testImplementation 'org.mockito:mockito-junit-jupiter:4.0.0'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.8.2'
+    testImplementation 'org.junit.jupiter:junit-jupiter-params:5.8.2'
+    testImplementation 'org.mockito:mockito-junit-jupiter:4.1.0'
     testImplementation 'org.mock-server:mockserver-junit-jupiter:5.11.2'
     annotationProcessor "info.picocli:picocli-codegen:${picocliVersion}"
 }
