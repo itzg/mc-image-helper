@@ -133,6 +133,7 @@ public class GetCommand implements Callable<Integer> {
 
         try (CloseableHttpClient client = HttpClients.custom()
             .addExecInterceptorFirst("latchRequestUris", interceptor)
+            .useSystemProperties()
             .build()) {
 
             final PrintWriter stdout = spec.commandLine().getOut();
