@@ -96,16 +96,18 @@ Usage: mc-image-helper patch [-h] [--patch-env-prefix=<envPrefix>] FILE_OR_DIR
 ### get
 
 ```
-Usage: mc-image-helper get [-h] [--exists] [--log-progress-each]
+Usage: mc-image-helper get [-hsz] [--exists] [--log-progress-each]
                            [--output-filename] [--skip-existing]
-                           [--json-path=<jsonPath>] [-o=FILE|DIR]
-                           [--prune-depth=<pruneDepth>]
+                           [--accept=<acceptHeader>] [--json-path=<jsonPath>]
+                           [-o=FILE|DIR] [--prune-depth=<pruneDepth>]
                            [--uris-file=<urisFile>] [--prune-others=GLOB[,
                            GLOB...]]... [URI[,URI...]...]
 Download a file
       [URI[,URI...]...]     The URI of the resource to retrieve. When the
                               output is a directory, more than one URI can be
                               requested.
+      --accept=<acceptHeader>
+                            Specifies the accept header to use with the request
       --exists              Test if the given URIs are retrievable
   -h, --help                Show this usage and exit
       --json-path=<jsonPath>
@@ -125,9 +127,11 @@ Download a file
                             When set and using an output directory, files that
                               match the given glob patterns will be pruned if
                               not part of the download set. For example *.jar
+  -s, --silent              Don't output logs even if there's an error
       --skip-existing       Do not retrieve if the output file already exists
       --uris-file=<urisFile>
                             A file that contains a URL per line
+  -z, --skip-up-to-date     Skips re-downloading a file that is up to date
 ```
 
 ## Patch Schemas
