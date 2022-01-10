@@ -1,6 +1,8 @@
 /.idea/
+/.vscode/
 /target/
 /build/
+/bin/
 /.gradle/
 
 /dependency-reduced-pom.xml

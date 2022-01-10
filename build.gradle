@@ -17,6 +17,10 @@ plugins {
 group = 'com.github.itzg'
 description = 'mc-image-helper'
 
+compileJava {
+    options.release = 8
+}
+
 test {
     useJUnitPlatform()
 
