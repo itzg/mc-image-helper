@@ -99,6 +99,11 @@ public class GetCommand implements Callable<Integer> {
     )
     String acceptHeader;
 
+    @Option(names = "--apikey",
+        description = "Specifies the accept header to use with the request"
+    )
+    String apikeyHeader;
+
     @Option(names = "--uris-file",
         description = "A file that contains a URL per line"
     )
@@ -194,7 +199,9 @@ public class GetCommand implements Callable<Integer> {
                 if (acceptHeader != null) {
                     request.addHeader(HttpHeaders.ACCEPT, acceptHeader);
                 }
-
+                if (apikeyHeader != null) {
+                    request.addHeader("x-api-key", apikeyHeader);
+                }
                 try {
                     final int statusCode = client.execute(request).getCode();
                     if (statusCode == HttpStatus.SC_OK) {
@@ -346,6 +353,9 @@ public class GetCommand implements Callable<Integer> {
         final HttpGet request = new HttpGet(requestUri);
         if (acceptHeader != null) {
             request.addHeader(HttpHeaders.ACCEPT, acceptHeader);
+        }
+        if (apikeyHeader != null) {
+            request.addHeader("x-api-key", apikeyHeader);
         }
         if (modifiedSinceFile != null && Files.exists(modifiedSinceFile)) {
             final FileTime lastModifiedTime = Files.getLastModifiedTime(modifiedSinceFile);

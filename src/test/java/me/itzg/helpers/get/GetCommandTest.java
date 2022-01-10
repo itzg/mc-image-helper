@@ -129,6 +129,27 @@ class GetCommandTest {
     assertThat(output.toString()).isEqualTo("Some text");
   }
 
+  @Test
+  void usesGivenApiKeyHeader() throws MalformedURLException {
+    expectRequest("GET","/content.txt",
+        request -> request.withHeader("x-api-key", "xxxxxx"),
+        response()
+            .withBody("Some text", MediaType.TEXT_PLAIN)
+    );
+
+    final StringWriter output = new StringWriter();
+    final int status =
+        new CommandLine(new GetCommand())
+            .setOut(new PrintWriter(output))
+            .execute(
+                "--apikey", "xxxxxx",
+                buildMockedUrl("/content.txt").toString()
+            );
+
+    assertThat(status).isEqualTo(0);
+    assertThat(output.toString()).isEqualTo("Some text");
+  }
+
   @Nested
   class ExistsTests {
 
