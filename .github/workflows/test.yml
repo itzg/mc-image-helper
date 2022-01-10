@@ -19,7 +19,7 @@ jobs:
       uses: actions/setup-java@v2.5.0
       with:
         # maximize compatibility with minecraft images
-        distribution: 'termurin'
+        distribution: 'temurin'
         java-version: '17'
         cache: gradle
 
