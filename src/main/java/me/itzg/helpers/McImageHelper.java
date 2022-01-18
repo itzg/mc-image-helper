@@ -10,6 +10,7 @@ import me.itzg.helpers.sync.InterpolateCommand;
 import me.itzg.helpers.sync.Sync;
 import me.itzg.helpers.sync.SyncAndInterpolate;
 import me.itzg.helpers.versions.CompareVersionsCommand;
+import me.itzg.helpers.versions.JavaReleaseCommand;
 import org.slf4j.LoggerFactory;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
@@ -22,6 +23,7 @@ import picocli.CommandLine.Option;
         GetCommand.class,
         HashCommand.class,
         InterpolateCommand.class,
+        JavaReleaseCommand.class,
         PatchCommand.class,
         Sync.class,
         SyncAndInterpolate.class,
