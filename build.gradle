@@ -137,12 +137,13 @@ dependencies {
     implementation 'com.jayway.jsonpath:json-path:2.6.0'
     implementation 'org.apache.maven:maven-artifact:3.8.4'
 
-    testImplementation 'org.assertj:assertj-core:3.21.0'
+    testImplementation 'org.assertj:assertj-core:3.22.0'
     testImplementation 'org.junit.jupiter:junit-jupiter:5.8.2'
     testImplementation 'org.junit.jupiter:junit-jupiter-params:5.8.2'
-    testImplementation 'org.mockito:mockito-junit-jupiter:4.1.0'
+    testImplementation 'org.mockito:mockito-junit-jupiter:4.2.0'
     testImplementation 'org.mock-server:mockserver-junit-jupiter:5.11.2'
-    testImplementation 'com.github.stefanbirkner:system-lambda:1.2.0'
+    // https://github.com/stefanbirkner/system-lambda
+    testImplementation 'com.github.stefanbirkner:system-lambda:1.2.1'
 
     annotationProcessor "info.picocli:picocli-codegen:${picocliVersion}"
 }

@@ -3,6 +3,7 @@ package me.itzg.helpers;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import me.itzg.helpers.asciify.Asciify;
+import me.itzg.helpers.assertcmd.AssertCommand;
 import me.itzg.helpers.get.GetCommand;
 import me.itzg.helpers.hash.HashCommand;
 import me.itzg.helpers.patch.PatchCommand;
@@ -19,6 +20,7 @@ import picocli.CommandLine.Option;
 @Command(name = "mc-image-helper",
     subcommands = {
         Asciify.class,
+        AssertCommand.class,
         CompareVersionsCommand.class,
         GetCommand.class,
         HashCommand.class,
