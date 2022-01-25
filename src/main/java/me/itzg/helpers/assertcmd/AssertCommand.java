@@ -4,7 +4,8 @@ import picocli.CommandLine.Command;
 
 @Command(name = "assert", description = "Provides assertion operators for verifying container setup",
   subcommands = {
-    FileExists.class
+      FileExists.class,
+      JsonPathEquals.class,
   }
 )
 public class AssertCommand {
