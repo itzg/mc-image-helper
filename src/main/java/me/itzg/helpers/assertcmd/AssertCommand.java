@@ -6,6 +6,7 @@ import picocli.CommandLine.Command;
   subcommands = {
       FileExists.class,
       JsonPathEquals.class,
+      PropertyEquals.class,
   }
 )
 public class AssertCommand {
