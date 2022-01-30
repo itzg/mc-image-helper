@@ -138,6 +138,7 @@ public class GetCommand implements Callable<Integer> {
 
         try (CloseableHttpClient client = HttpClients.custom()
             .addExecInterceptorFirst("latchRequestUris", interceptor)
+            .setUserAgent("mc-image-helper/0")
             .build()) {
 
             final PrintWriter stdout = spec.commandLine().getOut();
