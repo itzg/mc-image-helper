@@ -49,8 +49,43 @@ class FileExistsTest {
     });
 
     assertThat(errOut).contains(
-        "fileA does not exist",
-        "fileB does not exist"
+        "does not exist"
+    );
+  }
+
+  @Test
+  void passesWhenGlobFindsAllFiles(@TempDir Path tempDir) throws Exception {
+    Files.createFile(tempDir.resolve("file1"));
+    Files.createFile(tempDir.resolve("file2"));
+
+    final String errOut = tapSystemErr(() -> {
+      int exitCode = new CommandLine(new FileExists())
+          .execute(
+              String.format("%s/file*", tempDir)
+          );
+
+      assertThat(exitCode).isEqualTo(0);
+    });
+
+    assertThat(errOut).isBlank();
+  }
+
+  @Test
+  void failsWhenGlobFailsToFindFiles(@TempDir Path tempDir) throws Exception {
+    Files.createFile(tempDir.resolve("file1"));
+    Files.createFile(tempDir.resolve("file2"));
+
+    final String errOut = tapSystemErr(() -> {
+      int exitCode = new CommandLine(new FileExists())
+          .execute(
+              String.format("%s/fileA*", tempDir)
+          );
+
+      assertThat(exitCode).isEqualTo(1);
+    });
+
+    assertThat(errOut).contains(
+      "does not exist"
     );
   }
 }
