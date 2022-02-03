@@ -1,6 +1,5 @@
 package me.itzg.helpers.assertcmd;
 
-import java.util.Arrays;
 import java.util.concurrent.Callable;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.ExitCode;
@@ -20,12 +19,14 @@ class FileExists implements Callable<Integer> {
     scanner.setCaseSensitive(false);
 
     if (paths != null) {
-      scanner.setIncludes(paths);
-      scanner.scan();
-      String[] files = scanner.getIncludedFiles();
-      if (files.length < paths.length) {
-        System.err.printf("%s does not exist%n", Arrays.toString(paths));
-        missing = true;
+      for (String path : paths) {
+        scanner.setIncludes(new String[] { path });
+        scanner.scan();
+        String[] files = scanner.getIncludedFiles();
+        if (files.length < 1) {
+          System.err.printf("%s does not exist%n", path);
+          missing = true;
+        }
       }
     }
 

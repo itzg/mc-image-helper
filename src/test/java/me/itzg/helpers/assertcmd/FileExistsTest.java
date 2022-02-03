@@ -49,7 +49,8 @@ class FileExistsTest {
     });
 
     assertThat(errOut).contains(
-        "does not exist"
+        "fileA does not exist",
+        "fileB does not exist"
     );
   }
 
@@ -85,7 +86,7 @@ class FileExistsTest {
     });
 
     assertThat(errOut).contains(
-      "does not exist"
+        "fileA* does not exist"
     );
   }
 }
