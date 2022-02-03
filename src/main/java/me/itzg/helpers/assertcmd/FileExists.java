@@ -1,26 +1,29 @@
 package me.itzg.helpers.assertcmd;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.List;
 import java.util.concurrent.Callable;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.Parameters;
+import org.apache.tools.ant.DirectoryScanner;
 
 @Command(name = "fileExists")
 class FileExists implements Callable<Integer> {
 
   @Parameters
-  List<Path> paths;
+  String[] paths;
 
   @Override
   public Integer call() throws Exception {
     boolean missing = false;
+    DirectoryScanner scanner = new DirectoryScanner();
+    scanner.setCaseSensitive(false);
 
     if (paths != null) {
-      for (Path path : paths) {
-        if (!Files.exists(path)) {
+      for (String path : paths) {
+        scanner.setIncludes(new String[] { path });
+        scanner.scan();
+        String[] files = scanner.getIncludedFiles();
+        if (files.length < 1) {
           System.err.printf("%s does not exist%n", path);
           missing = true;
         }

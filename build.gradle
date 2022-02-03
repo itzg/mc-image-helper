@@ -136,6 +136,7 @@ dependencies {
     implementation 'com.squareup.okhttp3:okhttp'
     implementation 'com.jayway.jsonpath:json-path:2.6.0'
     implementation 'org.apache.maven:maven-artifact:3.8.4'
+    implementation 'org.apache.ant:ant:1.10.12'
 
     testImplementation 'org.assertj:assertj-core:3.22.0'
     testImplementation 'org.junit.jupiter:junit-jupiter:5.8.2'
