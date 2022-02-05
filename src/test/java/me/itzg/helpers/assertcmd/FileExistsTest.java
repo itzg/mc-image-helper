@@ -72,6 +72,51 @@ class FileExistsTest {
   }
 
   @Test
+  void passesWhenGlobFileInWorkingDirectory() throws Exception {
+    final String errOut = tapSystemErr(() -> {
+      int exitCode = new CommandLine(new FileExists())
+          .execute(
+              // working directory is top of project
+              "*.md"
+          );
+
+      assertThat(exitCode).isEqualTo(0);
+    });
+
+    assertThat(errOut).isBlank();
+  }
+
+  @Test
+  void passesWhenGlobFileSubdir() throws Exception {
+    final String errOut = tapSystemErr(() -> {
+      int exitCode = new CommandLine(new FileExists())
+          .execute(
+              // working directory is top of project
+              "gradle/wrapper/*.jar"
+          );
+
+      assertThat(exitCode).isEqualTo(0);
+    });
+
+    assertThat(errOut).isBlank();
+  }
+
+  @Test
+  void passesWhenGlobDoubleStarAndMultipleMatches() throws Exception {
+    final String errOut = tapSystemErr(() -> {
+      int exitCode = new CommandLine(new FileExists())
+          .execute(
+              // working directory is top of project
+              "**/gradle-wrapper.*"
+          );
+
+      assertThat(exitCode).isEqualTo(0);
+    });
+
+    assertThat(errOut).isBlank();
+  }
+
+  @Test
   void failsWhenGlobFailsToFindFiles(@TempDir Path tempDir) throws Exception {
     Files.createFile(tempDir.resolve("file1"));
     Files.createFile(tempDir.resolve("file2"));
