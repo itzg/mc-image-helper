@@ -27,6 +27,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockserver.integration.ClientAndServer;
+import org.mockserver.verify.VerificationTimes;
 import org.mockserver.junit.jupiter.MockServerExtension;
 import org.mockserver.model.HttpRequest;
 import org.mockserver.model.HttpResponse;
@@ -92,7 +93,8 @@ class GetCommandTest {
     expectRequest("GET","/handlesNotFound",
         response()
             .withStatusCode(404)
-            .withBody("<html><body>Not found</body></html>", MediaType.TEXT_HTML_UTF_8)
+            .withBody("<html><body>Not found</body></html>", MediaType.TEXT_HTML_UTF_8), 
+        5
     );
 
     final StringWriter output = new StringWriter();
@@ -866,6 +868,27 @@ class GetCommandTest {
       String path, RequestCustomizer requestCustomizer,
       HttpResponse httpResponse) {
     client
+        .when(
+            requestCustomizer.customize(
+                request()
+                    .withMethod(method)
+                    .withPath(path)
+            )
+        )
+        .respond(
+            httpResponse
+        );
+  }
+
+  private void expectRequest(String method,
+      String path, RequestCustomizer requestCustomizer,
+      HttpResponse httpResponse, int expectedRetryCount) {
+    client
+        .verify(
+            request()
+                .withMethod(method)
+                .withPath(path), 
+            VerificationTimes.atLeast(expectedRetryCount))
         .when(
             requestCustomizer.customize(
                 request()

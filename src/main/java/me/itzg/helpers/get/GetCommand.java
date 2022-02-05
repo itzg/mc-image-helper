@@ -26,9 +26,11 @@ import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.classic.methods.HttpHead;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.client5.http.impl.DefaultHttpRequestRetryStrategy;
 import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.HttpHeaders;
 import org.apache.hc.core5.http.HttpStatus;
+import org.apache.hc.core5.util.TimeValue;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.Option;
@@ -139,6 +141,7 @@ public class GetCommand implements Callable<Integer> {
         try (CloseableHttpClient client = HttpClients.custom()
             .addExecInterceptorFirst("latchRequestUris", interceptor)
             .setUserAgent("mc-image-helper/0")
+            .setRetryStrategy(new DefaultHttpRequestRetryStrategy(5, TimeValue.ofSeconds(5)))
             .build()) {
 
             final PrintWriter stdout = spec.commandLine().getOut();
