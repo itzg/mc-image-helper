@@ -131,17 +131,17 @@ dependencies {
     implementation "info.picocli:picocli:${picocliVersion}"
     implementation 'com.fasterxml.jackson.core:jackson-databind'
     implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
-    implementation 'com.jayway.jsonpath:json-path:2.6.0'
+    implementation 'com.jayway.jsonpath:json-path:2.7.0'
     implementation 'org.apache.httpcomponents.client5:httpclient5:5.1.1'
     implementation 'com.squareup.okhttp3:okhttp'
-    implementation 'com.jayway.jsonpath:json-path:2.6.0'
+    implementation 'com.jayway.jsonpath:json-path:2.7.0'
     implementation 'org.apache.maven:maven-artifact:3.8.4'
     implementation 'org.apache.ant:ant:1.10.12'
 
     testImplementation 'org.assertj:assertj-core:3.22.0'
     testImplementation 'org.junit.jupiter:junit-jupiter:5.8.2'
     testImplementation 'org.junit.jupiter:junit-jupiter-params:5.8.2'
-    testImplementation 'org.mockito:mockito-junit-jupiter:4.2.0'
+    testImplementation 'org.mockito:mockito-junit-jupiter:4.3.1'
     testImplementation 'org.mock-server:mockserver-junit-jupiter:5.11.2'
     // https://github.com/stefanbirkner/system-lambda
     testImplementation 'com.github.stefanbirkner:system-lambda:1.2.1'
