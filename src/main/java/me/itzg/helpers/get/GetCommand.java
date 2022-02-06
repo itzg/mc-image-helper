@@ -109,6 +109,12 @@ public class GetCommand implements Callable<Integer> {
     )
     Path urisFile;
 
+    @Option(names = "--retry-count", defaultValue = "5")
+    int retryCount;
+
+    @Option(names = "--retry-delay", description = "in seconds", defaultValue = "2")
+    int retryDelay;
+
     @Parameters(split = ",", paramLabel = "URI",
         description = "The URI of the resource to retrieve. When the output is a directory,"
             + " more than one URI can be requested.",
@@ -139,6 +145,9 @@ public class GetCommand implements Callable<Integer> {
         try (CloseableHttpClient client = HttpClients.custom()
             .addExecInterceptorFirst("latchRequestUris", interceptor)
             .setUserAgent("mc-image-helper/0")
+            .setRetryStrategy(
+                new ExtendedRequestRetryStrategy(retryCount, retryDelay)
+            )
             .build()) {
 
             final PrintWriter stdout = spec.commandLine().getOut();
@@ -150,13 +159,13 @@ public class GetCommand implements Callable<Integer> {
                 if (acceptHeader == null) {
                     acceptHeader = ContentType.APPLICATION_JSON.getMimeType();
                 }
-                processSingleUri(uris.get(0), client, stdout,
+                processSingleUri(uris.get(0), client,
                     null, new JsonPathOutputHandler(stdout, jsonPath));
             } else if (outputFile == null) {
                 validateSingleUri();
-                processSingleUri(uris.get(0), client, stdout, null, new PrintWriterHandler(stdout));
+                processSingleUri(uris.get(0), client, null, new PrintWriterHandler(stdout));
             } else if (Files.isDirectory(outputFile)) {
-                final Collection<Path> files = processUrisForDirectory(client, stdout,
+                final Collection<Path> files = processUrisForDirectory(client,
                     interceptor);
                 if (outputFilename) {
                     files.forEach(stdout::println);
@@ -170,7 +179,7 @@ public class GetCommand implements Callable<Integer> {
                         stdout.println(outputFile);
                     }
                 } else {
-                    final Path file = processSingleUri(uris.get(0), client, stdout,
+                    final Path file = processSingleUri(uris.get(0), client,
                         skipUpToDate ? outputFile : null,
                         new SaveToFileHandler(outputFile, logProgressEach));
                     if (outputFilename) {
@@ -247,7 +256,6 @@ public class GetCommand implements Callable<Integer> {
     }
 
     private Collection<Path> processUrisForDirectory(CloseableHttpClient client,
-        PrintWriter stdout,
         LatchingUrisInterceptor interceptor) throws URISyntaxException, IOException {
 
         if (usingPrune()) {
@@ -263,7 +271,7 @@ public class GetCommand implements Callable<Integer> {
             NeedsDownloadResult result = needsDownload(client, interceptor, uri, processed);
             if (result.needsDownload) {
                 processed.add(
-                    processSingleUri(uri, client, stdout,
+                    processSingleUri(uri, client,
                         skipUpToDate ? result.resolvedFilename : null,
                         new OutputToDirectoryHandler(outputFile, interceptor, logProgressEach))
                 );
@@ -344,7 +352,7 @@ public class GetCommand implements Callable<Integer> {
         }
     }
 
-    private Path processSingleUri(URI uri, CloseableHttpClient client, PrintWriter stdout,
+    private Path processSingleUri(URI uri, CloseableHttpClient client,
         Path modifiedSinceFile, OutputResponseHandler handler) throws URISyntaxException, IOException {
         final URI requestUri = uri.getPath().startsWith("//") ?
             alterUriPath(uri, uri.getPath().substring(1)) : uri;

@@ -28,10 +28,12 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.junit.jupiter.MockServerExtension;
+import org.mockserver.matchers.Times;
 import org.mockserver.model.HttpRequest;
 import org.mockserver.model.HttpResponse;
 import org.mockserver.model.HttpStatusCode;
 import org.mockserver.model.MediaType;
+import org.mockserver.verify.VerificationTimes;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
 
@@ -92,7 +94,8 @@ class GetCommandTest {
     expectRequest("GET","/handlesNotFound",
         response()
             .withStatusCode(404)
-            .withBody("<html><body>Not found</body></html>", MediaType.TEXT_HTML_UTF_8)
+            .withBody("<html><body>Not found</body></html>", MediaType.TEXT_HTML_UTF_8), 
+        5
     );
 
     final StringWriter output = new StringWriter();
@@ -106,6 +109,67 @@ class GetCommandTest {
     assertThat(status).isEqualTo(1);
     assertThat(output.toString()).isEqualTo("");
 
+  }
+
+  @Test
+  void handlesRetryOn403ThenSuccess() throws MalformedURLException {
+    expectRequest("GET","/handlesRetry",
+        response()
+            .withStatusCode(403)
+            .withBody("Permission denied", MediaType.TEXT_PLAIN),
+        1
+    );
+    expectRequest("GET","/handlesRetry",
+        response()
+            .withStatusCode(200)
+            .withBody("Success", MediaType.TEXT_PLAIN),
+        1
+    );
+
+    final StringWriter output = new StringWriter();
+    final int status =
+        new CommandLine(new GetCommand())
+            .setOut(new PrintWriter(output))
+            .execute(
+                "--retry-count=1",
+                "--retry-delay=1",
+                buildMockedUrl("/handlesRetry").toString()
+            );
+
+    assertThat(status).isEqualTo(0);
+    assertThat(output.toString()).isEqualTo("Success");
+
+    client.verify(
+        request("/handlesRetry"),
+        VerificationTimes.exactly(2)
+    );
+  }
+
+  @Test
+  void handlesRetryThenFails() throws MalformedURLException {
+    expectRequest("GET","/handlesRetry",
+        response()
+            .withStatusCode(403)
+            .withBody("Permission denied", MediaType.TEXT_PLAIN),
+        2
+    );
+
+    final StringWriter output = new StringWriter();
+    final int status =
+        new CommandLine(new GetCommand())
+            .setOut(new PrintWriter(output))
+            .execute(
+                "--retry-count=1",
+                "--retry-delay=1",
+                buildMockedUrl("/handlesRetry").toString()
+            );
+
+    assertThat(status).isEqualTo(1);
+
+    client.verify(
+        request("/handlesRetry"),
+        VerificationTimes.exactly(2)
+    );
   }
 
   @Test
@@ -862,9 +926,19 @@ class GetCommandTest {
     expectRequest(method, path, request -> request, httpResponse);
   }
 
+  private void expectRequest(String method, String path, HttpResponse httpResponse, int responseTimes) {
+    expectRequest(method, path, request -> request, httpResponse, responseTimes);
+  }
+
   private void expectRequest(String method,
       String path, RequestCustomizer requestCustomizer,
       HttpResponse httpResponse) {
+    expectRequest(method, path, requestCustomizer, httpResponse, 1);
+  }
+
+  private void expectRequest(String method,
+      String path, RequestCustomizer requestCustomizer,
+      HttpResponse httpResponse, int responseTimes) {
     client
         .when(
             requestCustomizer.customize(
@@ -872,6 +946,8 @@ class GetCommandTest {
                     .withMethod(method)
                     .withPath(path)
             )
+            ,
+            Times.exactly(responseTimes)
         )
         .respond(
             httpResponse
