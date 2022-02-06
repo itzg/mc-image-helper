@@ -27,7 +27,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockserver.integration.ClientAndServer;
-import org.mockserver.verify.VerificationTimes;
 import org.mockserver.junit.jupiter.MockServerExtension;
 import org.mockserver.matchers.Times;
 import org.mockserver.model.HttpRequest;
@@ -949,27 +948,6 @@ class GetCommandTest {
             )
             ,
             Times.exactly(responseTimes)
-        )
-        .respond(
-            httpResponse
-        );
-  }
-
-  private void expectRequest(String method,
-      String path, RequestCustomizer requestCustomizer,
-      HttpResponse httpResponse, int expectedRetryCount) {
-    client
-        .verify(
-            request()
-                .withMethod(method)
-                .withPath(path), 
-            VerificationTimes.atLeast(expectedRetryCount))
-        .when(
-            requestCustomizer.customize(
-                request()
-                    .withMethod(method)
-                    .withPath(path)
-            )
         )
         .respond(
             httpResponse
