@@ -831,6 +831,34 @@ class GetCommandTest {
     }
 
     @Test
+    void handlesMissingIntermediateField() throws MalformedURLException {
+      expectRequest("GET", "/content.json",
+          acceptJson(),
+          response()
+              .withBody("{\n"
+                  + "  \"downloads\": {\n"
+                  + "    \"client\": {\n"
+                  + "      \"url\": \"https://launcher.mojang.com/v1/objects/b679fea27f2284836202e9365e13a82552092e5d/client.jar\"\n"
+                  + "    }\n"
+                  + "  }\n"
+                  + "}", MediaType.APPLICATION_JSON)
+      );
+
+      final StringWriter stdout = new StringWriter();
+      final int status =
+          new CommandLine(new GetCommand())
+              .setOut(new PrintWriter(stdout))
+              .execute(
+                  "--json-path", "$.downloads.server.url",
+                  buildMockedUrl("/content.json").toString()
+              );
+
+      assertThat(status).isEqualTo(0);
+      assertThat(stdout.toString()).isEqualTo("null"+lineSeparator());
+      assertThat(TestLoggingAppender.getEvents()).isEmpty();
+    }
+
+    @Test
     void handlesMissingField_alternateValue() throws MalformedURLException {
       expectRequest("GET", "/content.json",
           acceptJson(),

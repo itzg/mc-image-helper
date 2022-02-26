@@ -29,7 +29,7 @@ class JsonPathOutputHandler extends AbstractHttpClientResponseHandler<Path> impl
     this.jsonValueWhenMissing = jsonValueWhenMissing;
     this.parseContext = JsonPath.using(
         Configuration.builder()
-            .options(Option.DEFAULT_PATH_LEAF_TO_NULL)
+            .options(Option.SUPPRESS_EXCEPTIONS)
             .build()
     );
   }
