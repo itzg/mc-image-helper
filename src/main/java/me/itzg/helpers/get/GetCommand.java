@@ -149,6 +149,7 @@ public class GetCommand implements Callable<Integer> {
 
         try (CloseableHttpClient client = HttpClients.custom()
             .addExecInterceptorFirst("latchRequestUris", interceptor)
+            .useSystemProperties()
             .setUserAgent("mc-image-helper/0")
             .setRetryStrategy(
                 new ExtendedRequestRetryStrategy(retryCount, retryDelay)
