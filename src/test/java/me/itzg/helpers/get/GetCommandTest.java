@@ -809,7 +809,7 @@ class GetCommandTest {
     }
 
     @Test
-    void handlesMissingField() throws MalformedURLException {
+    void handlesMissingField_defaultOutputNull() throws MalformedURLException {
       expectRequest("GET", "/content.json",
           acceptJson(),
           response()
@@ -825,8 +825,31 @@ class GetCommandTest {
                   buildMockedUrl("/content.json").toString()
               );
 
-      assertThat(status).isEqualTo(1);
-      assertThat(stdout.toString()).isEqualTo("");
+      assertThat(status).isEqualTo(0);
+      assertThat(stdout.toString()).isEqualTo("null"+lineSeparator());
+      assertThat(TestLoggingAppender.getEvents()).isEmpty();
+    }
+
+    @Test
+    void handlesMissingField_alternateValue() throws MalformedURLException {
+      expectRequest("GET", "/content.json",
+          acceptJson(),
+          response()
+              .withBody("{}", MediaType.APPLICATION_JSON)
+      );
+
+      final StringWriter stdout = new StringWriter();
+      final int status =
+          new CommandLine(new GetCommand())
+              .setOut(new PrintWriter(stdout))
+              .execute(
+                  "--json-path", "$.field",
+                  "--json-value-when-missing", "missing",
+                  buildMockedUrl("/content.json").toString()
+              );
+
+      assertThat(status).isEqualTo(0);
+      assertThat(stdout.toString()).isEqualTo("missing"+lineSeparator());
       assertThat(TestLoggingAppender.getEvents()).isEmpty();
     }
 
@@ -835,7 +858,7 @@ class GetCommandTest {
      * where a "{version}-recommended" entry is not present.
      */
     @Test
-    void handlesNoResultsForPath() throws MalformedURLException {
+    void handlesMissingField_errorWhenEmptyValue() throws MalformedURLException {
       expectRequest("GET", "/content.json",
           acceptJson(),
           response()
@@ -848,6 +871,7 @@ class GetCommandTest {
               .setOut(new PrintWriter(stdout))
               .execute(
                   "--json-path", "$.promos['1.17.1-recommended']",
+                  "--json-value-when-missing", "",
                   buildMockedUrl("/content.json").toString()
               );
 

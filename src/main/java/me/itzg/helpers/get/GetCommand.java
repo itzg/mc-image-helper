@@ -68,6 +68,11 @@ public class GetCommand implements Callable<Integer> {
         description = "Extract and output a JsonPath from the response")
     String jsonPath;
 
+    @Option(names = "--json-value-when-missing",
+        defaultValue = "null", description = "Defines the value that is output when the requested JSON path does not exist."
+        + " An empty value results in a non-zero exit code.")
+    String jsonValueWhenMissing;
+
     @Option(names = {"-o", "--output"},
         description = "Specifies the name of a file or directory to write the downloaded content."
             + " If a directory is provided, the filename will be derived from the content disposition or the URI's path."
@@ -160,7 +165,11 @@ public class GetCommand implements Callable<Integer> {
                     acceptHeader = ContentType.APPLICATION_JSON.getMimeType();
                 }
                 processSingleUri(uris.get(0), client,
-                    null, new JsonPathOutputHandler(stdout, jsonPath));
+                    null, new JsonPathOutputHandler(
+                        stdout, jsonPath,
+                        jsonValueWhenMissing != null && !jsonValueWhenMissing.isEmpty() ?
+                            jsonValueWhenMissing : null
+                    ));
             } else if (outputFile == null) {
                 validateSingleUri();
                 processSingleUri(uris.get(0), client, null, new PrintWriterHandler(stdout));
