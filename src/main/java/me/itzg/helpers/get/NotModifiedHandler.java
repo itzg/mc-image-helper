@@ -21,6 +21,8 @@ public class NotModifiedHandler implements OutputResponseHandler {
 
   @Override
   public Path handleResponse(ClassicHttpResponse response) throws HttpException, IOException {
+    LoggingResponseHandler.logResponse(log, response);
+
     if (response.getCode() == HttpStatus.SC_NOT_MODIFIED) {
       if (logProgressEach) {
         log.info("Skipping {} since it is already up to date", file);

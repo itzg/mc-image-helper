@@ -24,6 +24,8 @@ class OutputToDirectoryHandler implements OutputResponseHandler {
 
   @Override
   public Path handleResponse(ClassicHttpResponse response) throws HttpException, IOException {
+    LoggingResponseHandler.logResponse(log, response);
+
     final String filename = filenameExtractor.extract(response);
 
     final Path filePath = directory.resolve(filename);
