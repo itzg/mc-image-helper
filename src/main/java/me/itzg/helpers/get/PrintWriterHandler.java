@@ -3,10 +3,9 @@ package me.itzg.helpers.get;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Path;
-import org.apache.hc.client5.http.impl.classic.AbstractHttpClientResponseHandler;
 import org.apache.hc.core5.http.HttpEntity;
 
-class PrintWriterHandler extends AbstractHttpClientResponseHandler<Path> implements OutputResponseHandler {
+class PrintWriterHandler extends LoggingResponseHandler<Path> implements OutputResponseHandler {
   private final PrintWriter writer;
 
   public PrintWriterHandler(PrintWriter writer) {

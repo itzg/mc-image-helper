@@ -388,6 +388,7 @@ public class GetCommand implements Callable<Integer> {
 
         final Path file;
         try {
+            log.debug("Executing {} with headers={}", request, request.getHeaders());
             file = client.execute(request, handler);
         } catch (HttpResponseException e) {
             throw new FailedToDownloadException(uri, e);
