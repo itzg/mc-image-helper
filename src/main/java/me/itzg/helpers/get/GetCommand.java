@@ -13,6 +13,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -100,9 +101,10 @@ public class GetCommand implements Callable<Integer> {
     boolean checkExists;
 
     @Option(names = "--accept",
-        description = "Specifies the accept header to use with the request"
+        description = "Specifies the accepted content type(s) to use with the request",
+        split = ","
     )
-    String acceptHeader;
+    List<String> acceptContentTypes;
 
     @Option(names = "--apikey",
         description = "Specifies the accept header to use with the request"
@@ -162,9 +164,15 @@ public class GetCommand implements Callable<Integer> {
                 return checkUrisExist(client);
             } else if (jsonPath != null) {
                 validateSingleUri();
-                if (acceptHeader == null) {
-                    acceptHeader = ContentType.APPLICATION_JSON.getMimeType();
+
+                final String jsonMimeType = ContentType.APPLICATION_JSON.getMimeType();
+                if (acceptContentTypes == null) {
+                    acceptContentTypes = Collections.singletonList(jsonMimeType);
+                } else if (!acceptContentTypes.contains(jsonMimeType)) {
+                    acceptContentTypes = new ArrayList<>(acceptContentTypes);
+                    acceptContentTypes.add(jsonMimeType);
                 }
+
                 processSingleUri(uris.get(0), client,
                     null, new JsonPathOutputHandler(
                         stdout, jsonPath,
@@ -216,8 +224,10 @@ public class GetCommand implements Callable<Integer> {
             .allMatch(uri -> {
                 log.debug("Checking {}", uri);
                 final HttpHead request = new HttpHead(uri);
-                if (acceptHeader != null) {
-                    request.addHeader(HttpHeaders.ACCEPT, acceptHeader);
+                if (acceptContentTypes != null) {
+                    for (String acceptContentType : acceptContentTypes) {
+                        request.addHeader(HttpHeaders.ACCEPT, acceptContentType);
+                    }
                 }
                 if (apikeyHeader != null) {
                     request.addHeader("x-api-key", apikeyHeader);
@@ -370,8 +380,11 @@ public class GetCommand implements Callable<Integer> {
         log.debug("Getting uri={}", requestUri);
 
         final HttpGet request = new HttpGet(requestUri);
-        if (acceptHeader != null) {
-            request.addHeader(HttpHeaders.ACCEPT, acceptHeader);
+        if (acceptContentTypes != null) {
+            for (String acceptContentType : acceptContentTypes) {
+                request.addHeader(HttpHeaders.ACCEPT, acceptContentType);
+            }
+            handler.setExpectedContentTypes(acceptContentTypes);
         }
         if (apikeyHeader != null) {
             request.addHeader("x-api-key", apikeyHeader);
