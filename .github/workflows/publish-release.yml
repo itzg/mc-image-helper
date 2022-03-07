@@ -16,7 +16,7 @@ jobs:
         fetch-depth: 0
 
     - name: Setup Java JDK
-      uses: actions/setup-java@v2.5.0
+      uses: actions/setup-java@v3
       with:
         # maximize compatibility with minecraft images
         distribution: 'temurin'
