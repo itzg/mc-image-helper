@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import me.itzg.helpers.errors.InvalidParameterException;
 import org.apache.hc.client5.http.HttpResponseException;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.classic.methods.HttpHead;
@@ -61,9 +62,6 @@ public class GetCommand implements Callable<Integer> {
 
     @Option(names = "--log-progress-each", description = "Output a log as each URI is being retrieved")
     boolean logProgressEach;
-
-    @Option(names = {"-s", "--silent"}, description = "Don't output logs even if there's an error")
-    boolean silent;
 
     @Option(names = "--json-path",
         description = "Extract and output a JsonPath from the response")
@@ -133,7 +131,7 @@ public class GetCommand implements Callable<Integer> {
         DateTimeFormatter.RFC_1123_DATE_TIME.withZone(ZoneId.of("GMT"));
 
     @Override
-    public Integer call() {
+    public Integer call() throws IOException {
         if (urisFile != null) {
             try {
                 readUris();
@@ -205,15 +203,8 @@ public class GetCommand implements Callable<Integer> {
                     }
                 }
             }
-        } catch (ParameterException e) {
-            throw e;
-        } catch (Exception e) {
-            if (!silent) {
-                log.error("Operation failed: {}",
-                    e.getMessage() != null ? e.getMessage() : e.getClass());
-            }
-            log.debug("Details", e);
-            return ExitCode.SOFTWARE;
+        } catch (URISyntaxException e) {
+            throw new InvalidParameterException("A given URI is invalid", e);
         }
 
         return ExitCode.OK;
@@ -323,7 +314,7 @@ public class GetCommand implements Callable<Integer> {
                 filename = client.execute(headRequest,
                     new DeriveFilenameHandler(interceptor));
             } catch (HttpResponseException e) {
-                throw new FailedToDownloadException(uri, e);
+                throw new RequestFailedException(uri, e);
             }
             interceptor.reset();
 
@@ -404,7 +395,7 @@ public class GetCommand implements Callable<Integer> {
             log.debug("Executing {} with headers={}", request, request.getHeaders());
             file = client.execute(request, handler);
         } catch (HttpResponseException e) {
-            throw new FailedToDownloadException(uri, e);
+            throw new RequestFailedException(uri, e);
         }
 
         return file;
