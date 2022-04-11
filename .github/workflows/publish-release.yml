@@ -37,7 +37,7 @@ jobs:
         JRELEASER_HOMEBREW_GITHUB_TOKEN: ${{ secrets.PUSH_ACCESS_GITHUB_TOKEN }}
 
     - name: Archive jreleaser trace log
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       if: success() || failure()    # run this step even if previous step failed
       with:
         name: jrelease-trace-log
