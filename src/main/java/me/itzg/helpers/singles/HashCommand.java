@@ -1,4 +1,4 @@
-package me.itzg.helpers.hash;
+package me.itzg.helpers.singles;
 
 import java.security.MessageDigest;
 import java.util.concurrent.Callable;
