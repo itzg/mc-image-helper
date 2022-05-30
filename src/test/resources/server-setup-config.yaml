@@ -1,0 +1,9 @@
+# Version of the specs, only for internal usage if this format should ever change drastically
+_specver: 2
+
+# settings regarding the installation of the modpack
+install:
+
+  # The base path where the server should be installed to, ~ for current path
+  baseInstallPath: setup/
+
