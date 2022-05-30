@@ -1,4 +1,4 @@
-package me.itzg.helpers.hash;
+package me.itzg.helpers.singles;
 
 import static com.github.stefanbirkner.systemlambda.SystemLambda.tapSystemOut;
 import static com.github.stefanbirkner.systemlambda.SystemLambda.withTextFromSystemIn;

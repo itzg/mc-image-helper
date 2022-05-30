@@ -1,10 +1,9 @@
-package me.itzg.helpers.asciify;
-
-import picocli.CommandLine.Command;
+package me.itzg.helpers.singles;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.Callable;
+import picocli.CommandLine.Command;
 
 @Command(name = "asciify",
         description = "Converts UTF-8 on stdin to ASCII by escaping Unicode characters")

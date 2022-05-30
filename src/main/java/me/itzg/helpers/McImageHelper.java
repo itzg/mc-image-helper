@@ -3,13 +3,14 @@ package me.itzg.helpers;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import lombok.Getter;
-import me.itzg.helpers.asciify.Asciify;
 import me.itzg.helpers.assertcmd.AssertCommand;
 import me.itzg.helpers.errors.ExceptionHandler;
 import me.itzg.helpers.errors.ExitCodeMapper;
 import me.itzg.helpers.get.GetCommand;
-import me.itzg.helpers.hash.HashCommand;
 import me.itzg.helpers.patch.PatchCommand;
+import me.itzg.helpers.singles.Asciify;
+import me.itzg.helpers.singles.HashCommand;
+import me.itzg.helpers.singles.YamlPathCmd;
 import me.itzg.helpers.sync.InterpolateCommand;
 import me.itzg.helpers.sync.Sync;
 import me.itzg.helpers.sync.SyncAndInterpolate;
@@ -32,14 +33,17 @@ import picocli.CommandLine.Option;
         PatchCommand.class,
         Sync.class,
         SyncAndInterpolate.class,
+        YamlPathCmd.class,
     }
 )
 public class McImageHelper {
 
+  @SuppressWarnings("unused")
   @CommandLine.Option(names = {"-h",
       "--help"}, usageHelp = true, description = "Show this usage and exit")
   boolean showHelp;
 
+  @SuppressWarnings("unused")
   @Option(names = "--debug", description = "Enable debug output")
   void setDebug(boolean value) {
     ((Logger) LoggerFactory.getLogger("me.itzg.helpers")).setLevel(
