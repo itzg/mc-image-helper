@@ -21,16 +21,19 @@ jobs:
         # maximize compatibility with minecraft images
         distribution: 'temurin'
         java-version: '17'
-        cache: gradle
 
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
     - name: Test
-      run: ./gradlew test
+      uses: gradle/gradle-build-action@v2
+      with:
+        arguments: test
 
     - name: Release
-      run: ./gradlew jreleaserFullRelease
+      uses: gradle/gradle-build-action@v2
+      with:
+        arguments: jreleaserFullRelease
       env:
         JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         JRELEASER_SCOOP_GITHUB_TOKEN: ${{ secrets.PUSH_ACCESS_GITHUB_TOKEN }}
