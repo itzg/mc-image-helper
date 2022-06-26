@@ -19,6 +19,7 @@ import me.itzg.helpers.modrinth.model.DependencyType;
 import me.itzg.helpers.modrinth.model.Project;
 import me.itzg.helpers.modrinth.model.Version;
 import me.itzg.helpers.modrinth.model.VersionFile;
+import me.itzg.helpers.modrinth.model.VersionType;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.Option;
@@ -26,7 +27,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
-@Command(name = "modrinth")
+@Command(name = "modrinth", description = "Automates downloading of modrinth resources")
 @Slf4j
 public class ModrinthCommand implements Callable<Integer> {
 
@@ -52,6 +53,9 @@ public class ModrinthCommand implements Callable<Integer> {
 
     @Option(names = "--download-optional-dependencies")
     boolean downloadOptionalDependencies;
+
+    @Option(names = "--allowed-version-type", defaultValue = "release", description = "Valid values: ${COMPLETION-CANDIDATES}")
+    VersionType versionType;
 
     final Set<Path> outputFiles = Collections.synchronizedSet(new HashSet<>());
     final Set<String/*projectId*/> projectsProcessed = Collections.synchronizedSet(new HashSet<>());
@@ -137,7 +141,7 @@ public class ModrinthCommand implements Callable<Integer> {
             .flatMap(versionDependency -> {
                 if (versionDependency.getVersionId() == null) {
                     return getVersionsForProject(versionDependency.getProjectId())
-                        .map(this::pickVersion);
+                        .mapNotNull(this::pickVersion);
                 } else {
                     return getVersion(versionDependency.getVersionId());
                 }
@@ -155,7 +159,12 @@ public class ModrinthCommand implements Callable<Integer> {
     }
 
     private Version pickVersion(List<Version> versions) {
-        return versions.get(0);
+        for (final Version version : versions) {
+            if (version.getVersionType().sufficientFor(versionType)) {
+                return version;
+            }
+        }
+        return null;
     }
 
     private Mono<Path> download(VersionFile versionFile) {
