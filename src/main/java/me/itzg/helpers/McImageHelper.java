@@ -7,6 +7,7 @@ import me.itzg.helpers.assertcmd.AssertCommand;
 import me.itzg.helpers.errors.ExceptionHandler;
 import me.itzg.helpers.errors.ExitCodeMapper;
 import me.itzg.helpers.get.GetCommand;
+import me.itzg.helpers.modrinth.ModrinthCommand;
 import me.itzg.helpers.patch.PatchCommand;
 import me.itzg.helpers.singles.Asciify;
 import me.itzg.helpers.singles.HashCommand;
@@ -30,6 +31,7 @@ import picocli.CommandLine.Option;
         HashCommand.class,
         InterpolateCommand.class,
         JavaReleaseCommand.class,
+        ModrinthCommand.class,
         PatchCommand.class,
         Sync.class,
         SyncAndInterpolate.class,
@@ -44,7 +46,7 @@ public class McImageHelper {
   boolean showHelp;
 
   @SuppressWarnings("unused")
-  @Option(names = "--debug", description = "Enable debug output")
+  @Option(names = "--debug", description = "Enable debug output", defaultValue = "${env:DEBUG}")
   void setDebug(boolean value) {
     ((Logger) LoggerFactory.getLogger("me.itzg.helpers")).setLevel(
         value ? Level.DEBUG : Level.INFO);
