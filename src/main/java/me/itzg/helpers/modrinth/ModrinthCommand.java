@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -17,6 +18,7 @@ import me.itzg.helpers.http.Uris;
 import me.itzg.helpers.json.ObjectMappers;
 import me.itzg.helpers.modrinth.model.DependencyType;
 import me.itzg.helpers.modrinth.model.Project;
+import me.itzg.helpers.modrinth.model.ProjectType;
 import me.itzg.helpers.modrinth.model.Version;
 import me.itzg.helpers.modrinth.model.VersionFile;
 import me.itzg.helpers.modrinth.model.VersionType;
@@ -34,6 +36,7 @@ public class ModrinthCommand implements Callable<Integer> {
     public static final TypeReference<List<Version>> VERSION_LIST = new TypeReference<List<Version>>() {
     };
     public static final String MANIFEST_FILENAME = ".modrinth-files.manifest";
+    public static final String MODS_SUBDIR = "mods";
 
     private final ReactorNettyBits bits = new ReactorNettyBits();
 
@@ -81,8 +84,7 @@ public class ModrinthCommand implements Callable<Integer> {
         if (Files.exists(manifestPath)) {
             oldManifest = objectMapper.readValue(manifestPath.toFile(), Manifest.class);
             log.debug("Loaded existing manifest");
-        }
-        else {
+        } else {
             oldManifest = null;
         }
 
@@ -99,7 +101,7 @@ public class ModrinthCommand implements Callable<Integer> {
                     .expand(this::expandDependencies)
                     .mapNotNull(this::pickVersionFile)
                     .doOnNext(versionFile -> log.debug("VersionFile={}", versionFile))
-                    .flatMap(this::download)
+                    .flatMap(versionFile -> download(project.getProjectType(), versionFile))
                     .doOnNext(outputFiles::add)
                     .doOnNext(path -> log.debug("Wrote file={} for project={}", path, project))
             )
@@ -107,6 +109,7 @@ public class ModrinthCommand implements Callable<Integer> {
             .block();
 
         final Manifest newManifest = Manifest.builder()
+            .timestamp(Instant.now())
             .files(
                 outputFiles.stream()
                     .map(path -> outputDirectory.relativize(path))
@@ -167,14 +170,20 @@ public class ModrinthCommand implements Callable<Integer> {
         return null;
     }
 
-    private Mono<Path> download(VersionFile versionFile) {
+    private Mono<Path> download(ProjectType projectType, VersionFile versionFile) {
         if (log.isDebugEnabled()) {
             log.debug("Downloading {}", versionFile);
         } else {
             log.info("Downloading {}", versionFile.getFilename());
         }
 
-        final Path outPath = outputDirectory.resolveSibling(versionFile.getFilename());
+        if (projectType != ProjectType.mod) {
+            throw new IllegalStateException("Only mod project types can be downloaded for now");
+        }
+        final Path outPath = outputDirectory
+            .resolve(MODS_SUBDIR)
+            .resolve(versionFile.getFilename());
+
         if (Files.exists(outPath)) {
             log.debug("Output file={} already exists", outPath);
             return Mono.just(outPath);
@@ -190,6 +199,11 @@ public class ModrinthCommand implements Callable<Integer> {
             .publishOn(Schedulers.boundedElastic())
             .map(inputStream -> {
                 try {
+                    try {
+                        Files.createDirectories(outPath.getParent());
+                    } catch (IOException e) {
+                        throw new RuntimeException("Unable to create directory for downloaded file", e);
+                    }
 
                     Files.copy(inputStream, outPath);
 
