@@ -78,7 +78,7 @@ public class ModrinthCommand implements Callable<Integer> {
 
         Files.createDirectories(outputDirectory);
 
-        final Path manifestPath = outputDirectory.resolveSibling(MANIFEST_FILENAME);
+        final Path manifestPath = outputDirectory.resolve(MANIFEST_FILENAME);
 
         final Manifest oldManifest;
         if (Files.exists(manifestPath)) {
