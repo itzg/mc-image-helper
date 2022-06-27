@@ -46,7 +46,8 @@ public class McImageHelper {
   boolean showHelp;
 
   @SuppressWarnings("unused")
-  @Option(names = "--debug", description = "Enable debug output", defaultValue = "${env:DEBUG}")
+  @Option(names = "--debug", description = "Enable debug output. Can also set environment variable DEBUG_HELPER",
+      defaultValue = "${env:DEBUG_HELPER}")
   void setDebug(boolean value) {
     ((Logger) LoggerFactory.getLogger("me.itzg.helpers")).setLevel(
         value ? Level.DEBUG : Level.INFO);
