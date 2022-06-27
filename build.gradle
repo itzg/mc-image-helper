@@ -103,6 +103,9 @@ jreleaser {
             }
         }
     }
+/* Something is broken in jreleaser and its logs don't explain what it is
+   Example build failure https://github.com/itzg/mc-image-helper/runs/7073392053?check_suite_focus=true#step:6:84
+
     packagers {
         scoop {
             active = 'RELEASE'
@@ -119,6 +122,7 @@ jreleaser {
             }
         }
     }
+*/
 }
 
 project.tasks.distTar {
