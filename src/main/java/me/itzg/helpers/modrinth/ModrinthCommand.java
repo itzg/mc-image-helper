@@ -14,6 +14,7 @@ import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.Manifests;
+import me.itzg.helpers.http.HttpClientException;
 import me.itzg.helpers.http.ReactorNettyBits;
 import me.itzg.helpers.http.Uris;
 import me.itzg.helpers.json.ObjectMappers;

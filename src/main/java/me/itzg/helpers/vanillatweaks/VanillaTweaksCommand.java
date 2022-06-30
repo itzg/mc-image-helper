@@ -25,6 +25,8 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.Manifests;
 import me.itzg.helpers.errors.GenericException;
+import me.itzg.helpers.errors.InvalidParameterException;
+import me.itzg.helpers.http.HttpClientException;
 import me.itzg.helpers.http.ReactorNettyBits;
 import me.itzg.helpers.http.Uris;
 import me.itzg.helpers.json.ObjectMappers;
@@ -41,6 +43,7 @@ import reactor.core.scheduler.Schedulers;
 @Command(name = "vanillatweaks")
 @Slf4j
 public class VanillaTweaksCommand implements Callable<Integer> {
+
     public static final String MANIFEST_FILENAME = ".vanillatweaks.manifest";
     private static final int FINGERPRINT_LENGTH = 7;
 
@@ -305,6 +308,9 @@ public class VanillaTweaksCommand implements Callable<Integer> {
                 Uris.populate(baseUrl + "/assets/server/sharecode.php?code={code}", shareCode)
             )
             .responseSingle(bits.readInto(PackDefinition.class))
+            .onErrorResume(HttpClientException::isNotFound,
+                throwable -> Mono.error(new InvalidParameterException("Unable to resolve share code " + shareCode, throwable))
+            )
             .map(packDefinition -> new SourcedPackDefinition(
                     "share code " + shareCode, packDefinition
                 )
