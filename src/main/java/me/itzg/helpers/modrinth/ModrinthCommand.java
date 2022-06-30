@@ -13,6 +13,8 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import me.itzg.helpers.Manifests;
+import me.itzg.helpers.http.HttpClientException;
 import me.itzg.helpers.http.ReactorNettyBits;
 import me.itzg.helpers.http.Uris;
 import me.itzg.helpers.json.ObjectMappers;
@@ -83,7 +85,7 @@ public class ModrinthCommand implements Callable<Integer> {
         final Manifest oldManifest;
         if (Files.exists(manifestPath)) {
             oldManifest = objectMapper.readValue(manifestPath.toFile(), Manifest.class);
-            log.debug("Loaded existing manifest");
+            log.debug("Loaded existing manifest={}", oldManifest);
         } else {
             oldManifest = null;
         }
@@ -119,12 +121,9 @@ public class ModrinthCommand implements Callable<Integer> {
             .build();
 
         if (oldManifest != null) {
-            final HashSet<String> filesToRemove = new HashSet<>(oldManifest.getFiles());
-            filesToRemove.removeAll(newManifest.getFiles());
-            for (final String fileToRemove : filesToRemove) {
-                log.debug("Deleting old file={}", fileToRemove);
-                Files.deleteIfExists(outputDirectory.resolve(fileToRemove));
-            }
+            Manifests.cleanup(outputDirectory, oldManifest.getFiles(), newManifest.getFiles(),
+                file -> log.debug("Deleting old file={}", file)
+            );
         }
 
         objectMapper.writerWithDefaultPrettyPrinter()

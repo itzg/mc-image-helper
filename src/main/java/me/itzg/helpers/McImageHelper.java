@@ -15,6 +15,7 @@ import me.itzg.helpers.singles.YamlPathCmd;
 import me.itzg.helpers.sync.InterpolateCommand;
 import me.itzg.helpers.sync.Sync;
 import me.itzg.helpers.sync.SyncAndInterpolate;
+import me.itzg.helpers.vanillatweaks.VanillaTweaksCommand;
 import me.itzg.helpers.versions.CompareVersionsCommand;
 import me.itzg.helpers.versions.JavaReleaseCommand;
 import org.slf4j.LoggerFactory;
@@ -36,6 +37,7 @@ import picocli.CommandLine.Option;
         Sync.class,
         SyncAndInterpolate.class,
         YamlPathCmd.class,
+        VanillaTweaksCommand.class,
     }
 )
 public class McImageHelper {

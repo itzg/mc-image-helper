@@ -1,4 +1,4 @@
-package me.itzg.helpers.modrinth;
+package me.itzg.helpers.http;
 
 import io.netty.handler.codec.http.HttpResponseStatus;
 import lombok.Getter;
@@ -16,7 +16,14 @@ public class HttpClientException extends RuntimeException {
     this.body = body;
   }
 
-  @SuppressWarnings("unused")
+  public static boolean isNotFound(Throwable throwable) {
+    if (throwable instanceof HttpClientException) {
+      return ((HttpClientException) throwable).isNotFound();
+    }
+    return false;
+  }
+
+    @SuppressWarnings("unused")
   public boolean isNotFound() {
     return status.code() == 404;
   }

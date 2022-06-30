@@ -9,7 +9,6 @@ import java.io.InputStream;
 import java.util.function.BiFunction;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.json.ObjectMappers;
-import me.itzg.helpers.modrinth.HttpClientException;
 import reactor.core.publisher.Mono;
 import reactor.netty.ByteBufMono;
 import reactor.netty.http.client.HttpClient;
