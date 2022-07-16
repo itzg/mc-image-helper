@@ -8,19 +8,11 @@
         </encoder>
     </appender>
 
-    <appender name="TEST" class="me.itzg.helpers.TestLoggingAppender">
-        <!-- IMPORTANT: use same filter as main config -->
-        <filter class="me.itzg.helpers.LowerThanThresholdLogbackFilter">
-            <level>WARN</level>
-        </filter>
-    </appender>
-
     <!-- it's noisy at info level -->
     <logger name="org.mockserver.log.MockServerEventLog" level="${mockServerLogLevel:-warn}"/>
 
     <root level="info">
         <!-- for test only, output all levels to stderr -->
         <appender-ref ref="STDERR"/>
-        <appender-ref ref="TEST"/>
     </root>
 </configuration>
