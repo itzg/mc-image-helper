@@ -1,11 +1,13 @@
-package me.itzg.helpers.get;
+package me.itzg.helpers.http;
 
 import java.net.URI;
 import java.net.URLEncoder;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import lombok.extern.slf4j.Slf4j;
 import picocli.CommandLine.ITypeConverter;
 
+@Slf4j
 public class LenientUriConverter implements ITypeConverter<URI> {
 
   /**
@@ -29,6 +31,13 @@ public class LenientUriConverter implements ITypeConverter<URI> {
 
   @Override
   public URI convert(String s) throws Exception {
+    // first see if it is already a legal URI and avoid re-encoding
+    try {
+      return URI.create(s);
+    } catch (Exception e) {
+      log.debug("Given uri={} was not legal, so processing further", s);
+    }
+
     final Matcher m = URL_PATTERN.matcher(s);
     if (!m.matches()) {
       throw new IllegalArgumentException("Failed to parse url: " + s);
@@ -41,11 +50,7 @@ public class LenientUriConverter implements ITypeConverter<URI> {
       while (pathsMatcher.find()) {
         final String content = pathsMatcher.group(1);
         sb.append("/")
-            .append(URLEncoder.encode(
-                // flip back any pre-encoded spaces
-                content.replace('+', ' '),
-                "utf-8"
-            ));
+            .append(URLEncoder.encode(content, "utf-8"));
       }
     }
     final String trailer = m.group(3);
