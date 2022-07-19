@@ -6,6 +6,7 @@ import lombok.Getter;
 import me.itzg.helpers.assertcmd.AssertCommand;
 import me.itzg.helpers.errors.ExceptionHandler;
 import me.itzg.helpers.errors.ExitCodeMapper;
+import me.itzg.helpers.find.FindCommand;
 import me.itzg.helpers.get.GetCommand;
 import me.itzg.helpers.modrinth.ModrinthCommand;
 import me.itzg.helpers.patch.PatchCommand;
@@ -28,6 +29,7 @@ import picocli.CommandLine.Option;
         Asciify.class,
         AssertCommand.class,
         CompareVersionsCommand.class,
+        FindCommand.class,
         GetCommand.class,
         HashCommand.class,
         InterpolateCommand.class,
