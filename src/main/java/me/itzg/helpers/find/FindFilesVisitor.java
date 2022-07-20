@@ -7,7 +7,6 @@ import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.List;
-import java.util.function.Function;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -16,16 +15,18 @@ public class FindFilesVisitor implements FileVisitor<Path> {
     private final FindType type;
     private final List<PathMatcher> names;
     private final List<PathMatcher> excludeNames;
-    private final Function<Path, FileVisitResult> handleMatch;
+    private final Path startingPoint;
+    private final MatchHandler handleMatch;
     private int matchCount;
 
     public FindFilesVisitor(FindType type, List<PathMatcher> names, List<PathMatcher> excludeNames,
-        Function<Path, FileVisitResult> handleMatch
+        Path startingPoint, MatchHandler handleMatch
     ) {
 
         this.type = type;
         this.names = names;
         this.excludeNames = excludeNames;
+        this.startingPoint = startingPoint;
         this.handleMatch = handleMatch;
     }
 
@@ -43,7 +44,7 @@ public class FindFilesVisitor implements FileVisitor<Path> {
             names != null &&
             names.stream().anyMatch(pathMatcher -> pathMatcher.matches(dirName))
         ) {
-            return handleMatch.apply(dir);
+            return handleMatch.handle(startingPoint, dir);
         }
 
         return FileVisitResult.CONTINUE;
@@ -66,7 +67,7 @@ public class FindFilesVisitor implements FileVisitor<Path> {
         if (names != null &&
             names.stream().anyMatch(pathMatcher -> pathMatcher.matches(fileName))) {
             ++matchCount;
-            return handleMatch.apply(path);
+            return handleMatch.handle(startingPoint, path);
         }
 
         return FileVisitResult.CONTINUE;
