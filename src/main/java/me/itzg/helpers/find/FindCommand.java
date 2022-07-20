@@ -9,33 +9,39 @@ import java.nio.file.PathMatcher;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
-@Command(name = "find")
+@Command(name = "find", description = "Specialized replacement for GNU's find")
 @Slf4j
 public class FindCommand implements Callable<Integer> {
+    @SuppressWarnings("unused")
+    @Option(names = {"-h", "--help"}, usageHelp = true)
+    boolean help;
 
-    @Option(names = "--type", defaultValue = "file", description = "Valid values: ${COMPLETION-CANDIDATES}")
+    @Option(names = {"--type", "-t"}, defaultValue = "file", description = "Valid values: ${COMPLETION-CANDIDATES}",
+        converter = FindTypeConverter.class
+    )
     FindType type;
 
-    @Option(names = "--name", split = ",", converter = PathMatcherConverter.class,
+    @Option(names = "--name", split = ",", paramLabel = "glob", converter = PathMatcherConverter.class,
         description = "One or more glob patterns to match name part of the path")
     List<PathMatcher> names;
 
-    @Option(names = "--exclude-name", split = ",", converter = PathMatcherConverter.class,
+    @Option(names = "--exclude-name", split = ",", paramLabel = "glob", converter = PathMatcherConverter.class,
         description = "One or more glob patterns to exclude by looking at name part of the path. "
             + "If a pattern matches a directory's name, then its entire subtree is excluded.")
     List<PathMatcher> excludeNames;
 
-    @Option(names = "--max-depth", description = "Unlimited depth if zero or negative")
+    @Option(names = "--max-depth", paramLabel = "N", description = "Unlimited depth if zero or negative")
     int maxDepth;
 
-    @Option(names = "--just-shallowest")
+    @Option(names = "--only-shallowest")
     boolean justShallowest;
 
     @Option(names = "--stop-on-first")
@@ -47,7 +53,13 @@ public class FindCommand implements Callable<Integer> {
     @Option(names = "--output-count-only")
     boolean outputCountOnly;
 
-    @Parameters(arity = "1..*")
+    @Option(names = "--format", description = "Applies a format when printing each matched entry. Supports the following directives%n"
+        + "%%%% a literal %%%n"
+        + "%%h leading directory of the entry%n"
+        + "%%P path of the entry relative to the starting point")
+    String format;
+
+    @Parameters(arity = "1..*", paramLabel = "startingPoint")
     List<Path> startingPoints;
 
     @Override
@@ -59,17 +71,17 @@ public class FindCommand implements Callable<Integer> {
         if (justShallowest) {
             final TrackShallowest track = new TrackShallowest();
             walkStartingPoints(track);
-            if (track.getShallowest() != null) {
-                System.out.println(track.getShallowest().toString());
+            if (track.matched()) {
+                printEntry(track.getShallowestStartingPoint(), track.getShallowest());
             }
             else if (failWhenMissing){
                 return ExitCode.SOFTWARE;
             }
         }
         else {
-            final int matchCount = walkStartingPoints(path -> {
+            final int matchCount = walkStartingPoints((startingPoint, path) -> {
                 if (!outputCountOnly) {
-                    System.out.println(path.toString());
+                    printEntry(startingPoint, path);
                 }
                 return stopOnFirst ? FileVisitResult.TERMINATE : FileVisitResult.CONTINUE;
             });
@@ -85,33 +97,49 @@ public class FindCommand implements Callable<Integer> {
         return ExitCode.OK;
     }
 
-    private int walkStartingPoints(Function<Path,FileVisitResult> handleMatch) throws IOException {
-        final FindFilesVisitor visitor = new FindFilesVisitor(type, names, excludeNames, handleMatch);
+    protected void printEntry(Path startingPoint, Path path) {
+        if (format != null) {
+            final Pattern directive = Pattern.compile("%(.)");
+
+            final Matcher m = directive.matcher(format);
+            final StringBuffer sb = new StringBuffer();
+
+            while (m.find()) {
+                switch (m.group(1)) {
+                    case "%":
+                        m.appendReplacement(sb, "%");
+                        break;
+                    case "h":
+                        m.appendReplacement(sb, Matcher.quoteReplacement(path.getParent().toString()));
+                        break;
+                    case "P":
+                        m.appendReplacement(sb, Matcher.quoteReplacement(startingPoint.relativize(path).toString()));
+                        break;
+                    default:
+                        throw new IllegalArgumentException("Unsupported format directive: " + m.group());
+                }
+            }
+            m.appendTail(sb);
+            System.out.println(sb);
+        }
+        else {
+            System.out.println(path.toString());
+        }
+    }
+
+    private int walkStartingPoints(MatchHandler matchHandler) throws IOException {
+        int total = 0;
         for (final Path startingPoint : startingPoints) {
+            final FindFilesVisitor visitor = new FindFilesVisitor(type, names, excludeNames, startingPoint, matchHandler);
             Files.walkFileTree(
                 startingPoint,
                 EnumSet.noneOf(FileVisitOption.class),
                 maxDepth,
                 visitor
             );
+            total += visitor.getMatchCount();
         }
-        return visitor.getMatchCount();
+        return total;
     }
 
-    static class TrackShallowest implements Function<Path,FileVisitResult> {
-
-        private Path shallowest;
-
-        @Override
-        public FileVisitResult apply(Path path) {
-            if (shallowest == null || path.getNameCount() < shallowest.getNameCount()) {
-                shallowest = path;
-            }
-            return FileVisitResult.SKIP_SIBLINGS;
-        }
-
-        public Path getShallowest() {
-            return shallowest;
-        }
-    }
 }

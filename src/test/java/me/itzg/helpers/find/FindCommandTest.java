@@ -7,6 +7,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import picocli.CommandLine;
@@ -129,7 +130,7 @@ class FindCommandTest {
         final String stdout = tapSystemOut(() -> {
             final int exitCode = new CommandLine(new FindCommand())
                 .execute(
-                    "--just-shallowest",
+                    "--only-shallowest",
                     "--name", "this.txt",
                     tempDir.toString()
                 );
@@ -149,7 +150,7 @@ class FindCommandTest {
         final String stdout = tapSystemOut(() -> {
             final int exitCode = new CommandLine(new FindCommand())
                 .execute(
-                    "--just-shallowest",
+                    "--only-shallowest",
                     "--type", "directory",
                     "--name", "config",
                     tempDir.toString()
@@ -350,4 +351,172 @@ class FindCommandTest {
             three.toString()
         );
     }
+
+    @Test
+    void acceptsShortFindTypes() throws Exception {
+        final Path expected = Files.createDirectories(tempDir.resolve("b"));
+        final String stdout = tapSystemOut(() -> {
+            final int exitCode = new CommandLine(new FindCommand())
+                .execute(
+                    "--name=b",
+                    "--type", "d",
+                    tempDir.toString()
+                );
+
+            assertThat(exitCode).isEqualTo(ExitCode.OK);
+        });
+
+        assertThat(stdout).hasLineCount(1);
+        assertThat(stdout).contains(
+            expected.toString()
+        );
+    }
+
+    @Nested
+    class formatsDirname {
+        @Test
+        void atStartingPoint() throws Exception {
+            Files.createFile(tempDir.resolve("one.txt"));
+
+            final String stdout = tapSystemOut(() -> {
+                final int exitCode = new CommandLine(new FindCommand())
+                    .execute(
+                        "--name=*.txt",
+                        "--format", "%h",
+                        tempDir.toString()
+                    );
+
+                assertThat(exitCode).isEqualTo(ExitCode.OK);
+            });
+
+            assertThat(stdout).hasLineCount(1);
+            assertThat(stdout).isEqualToNormalizingNewlines(
+                tempDir.toString() + "\n"
+            );
+        }
+
+        @Test
+        void oneLevelDeep() throws Exception {
+            final Path expected = Files.createDirectories(tempDir.resolve("a"));
+            Files.createFile(expected.resolve("one.txt"));
+
+            final String stdout = tapSystemOut(() -> {
+                final int exitCode = new CommandLine(new FindCommand())
+                    .execute(
+                        "--name=*.txt",
+                        "--format", "%h",
+                        tempDir.toString()
+                    );
+
+                assertThat(exitCode).isEqualTo(ExitCode.OK);
+            });
+
+            assertThat(stdout).hasLineCount(1);
+            assertThat(stdout).isEqualToNormalizingNewlines(
+                expected + "\n"
+            );
+        }
+
+        @Test
+        void shallowest() throws Exception {
+            Files.createDirectories(tempDir.resolve("config"));
+            Files.createDirectories(tempDir.resolve("a").resolve("config"));
+
+            final String stdout = tapSystemOut(() -> {
+                final int exitCode = new CommandLine(new FindCommand())
+                    .execute(
+                        "--name=config",
+                        "--type=d",
+                        "--only-shallowest",
+                        "--format", "%h",
+                        tempDir.toString()
+                    );
+
+                assertThat(exitCode).isEqualTo(ExitCode.OK);
+            });
+
+            assertThat(stdout).hasLineCount(1);
+            assertThat(stdout).isEqualToNormalizingNewlines(
+                tempDir.toString() + "\n"
+            );
+        }
+    }
+
+    @Nested
+    class formatsRelative {
+
+        @Test
+        void topLevel() throws Exception {
+            Files.createFile(tempDir.resolve("one.txt"));
+
+            final String stdout = tapSystemOut(() -> {
+                final int exitCode = new CommandLine(new FindCommand())
+                    .execute(
+                        "--name=*.txt",
+                        "--format", "- %P",
+                        tempDir.toString()
+                    );
+
+                assertThat(exitCode).isEqualTo(ExitCode.OK);
+            });
+
+            assertThat(stdout).hasLineCount(1);
+            assertThat(stdout).isEqualToNormalizingNewlines(
+                "- one.txt\n"
+            );
+        }
+
+        @Test
+        void shallowest() throws Exception {
+            Files.createDirectories(tempDir.resolve("config"));
+            Files.createDirectories(tempDir.resolve("a").resolve("config"));
+
+            final String stdout = tapSystemOut(() -> {
+                final int exitCode = new CommandLine(new FindCommand())
+                    .execute(
+                        "--name=config",
+                        "--type=d",
+                        "--only-shallowest",
+                        "--format", "%P",
+                        tempDir.toString()
+                    );
+
+                assertThat(exitCode).isEqualTo(ExitCode.OK);
+            });
+
+            assertThat(stdout).hasLineCount(1);
+            assertThat(stdout).isEqualToNormalizingNewlines(
+                "config\n"
+            );
+        }
+
+        @Test
+        void shallowestMultipleStartingPoints() throws Exception {
+            final Path start1 = Files.createDirectories(tempDir.resolve("start1"));
+            final Path start2 = Files.createDirectories(tempDir.resolve("deeper").resolve("start2"));
+
+            Files.createDirectories(start1.resolve("a").resolve("config"));
+            Files.createDirectories(start2.resolve("config"));
+
+            final String stdout = tapSystemOut(() -> {
+                final int exitCode = new CommandLine(new FindCommand())
+                    .execute(
+                        "--name=config",
+                        "--type=d",
+                        "--only-shallowest",
+                        "--format", "%P",
+                        start1.toString(),
+                        start2.toString()
+                    );
+
+                assertThat(exitCode).isEqualTo(ExitCode.OK);
+            });
+
+            assertThat(stdout).hasLineCount(1);
+            assertThat(stdout).isEqualToNormalizingNewlines(
+                "config\n"
+            );
+        }
+    }
+
 }
