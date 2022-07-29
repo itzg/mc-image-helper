@@ -93,6 +93,41 @@ Usage: mc-image-helper patch [-h] [--patch-env-prefix=<envPrefix>] FILE_OR_DIR
 
 [See below](#patch-schemas) for a description of [PatchSet](#patchset) and [PatchDefinition](#patchdefinition) JSON schemas.
 
+### find
+
+```
+Usage: mc-image-helper find [-hq] [--delete] [--fail-no-matches]
+                            [--only-shallowest] [--output-count-only]
+                            [--stop-on-first] [--format=<format>]
+                            [--max-depth=N] [-t=<type>] [--exclude-name=glob[,
+                            glob...]]... [--name=glob[,glob...]]... startDir...
+Specialized replacement for GNU's find
+      startDir...           One or more starting directories
+      --delete              Deletes the matched entries. When searching for
+                              directories, each directory and its contents will
+                              be recursively deleted.
+      --exclude-name=glob[,glob...]
+                            One or more glob patterns to exclude by looking at
+                              name part of the path. If a pattern matches a
+                              directory's name, then its entire subtree is
+                              excluded.
+      --fail-no-matches
+      --format=<format>     Applies a format when printing each matched entry.
+                              Supports the following directives
+                            %% a literal %
+                            %h leading directory of the entry
+                            %P path of the entry relative to the starting point
+  -h, --help
+      --max-depth=N         Unlimited depth if zero or negative
+      --name=glob[,glob...] One or more glob patterns to match name part of the
+                              path
+      --only-shallowest
+      --output-count-only
+  -q, --quiet
+      --stop-on-first
+  -t, --type=<type>         Valid values: file, directory
+```
+
 ### get
 
 ```

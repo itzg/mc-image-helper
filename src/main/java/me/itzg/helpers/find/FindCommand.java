@@ -68,7 +68,8 @@ public class FindCommand implements Callable<Integer> {
         + " When searching for directories, each directory and its contents will be recursively deleted.")
     boolean delete;
 
-    @Parameters(arity = "1..*", paramLabel = "startingPoint")
+    @Parameters(arity = "1..*", paramLabel = "startDir",
+        description = "One or more starting directories")
     List<Path> startingPoints;
 
     @Override
