@@ -1,5 +1,6 @@
 package me.itzg.helpers.find;
 
+import java.io.IOException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Path;
 
@@ -18,7 +19,7 @@ class TrackShallowest implements MatchHandler {
     }
 
     @Override
-    public FileVisitResult handle(Path startingPath, Path matched) {
+    public FileVisitResult handle(Path startingPath, Path matched) throws IOException {
         final int nameCount = startingPath.relativize(matched).getNameCount();
         if (shallowest == null || nameCount < shallowestNameCount) {
             shallowest = matched;
