@@ -519,4 +519,73 @@ class FindCommandTest {
         }
     }
 
+    @Nested
+    class deletes {
+
+        @Test
+        void nothingWhenNoMatches() throws IOException {
+            final Path a = Files.createDirectories(tempDir.resolve("a"));
+            final Path b = Files.createFile(a.resolve("b"));
+            final Path c = Files.createFile(tempDir.resolve("c"));
+
+            final int exitCode = new CommandLine(new FindCommand())
+                .execute(
+                    "--delete",
+                    tempDir.toString()
+                );
+
+            assertThat(exitCode).isEqualTo(ExitCode.OK);
+
+            assertThat(a).exists();
+            assertThat(b).exists();
+            assertThat(c).exists();
+        }
+
+        @Test
+        void files() throws IOException {
+            final Path a = Files.createDirectories(tempDir.resolve("a"));
+            final Path b = Files.createFile(a.resolve("b.txt"));
+            final Path c = Files.createFile(tempDir.resolve("c.txt"));
+
+            final int exitCode = new CommandLine(new FindCommand())
+                .execute(
+                    "--name=*.txt",
+                    "--delete",
+                    tempDir.toString()
+                );
+
+            assertThat(exitCode).isEqualTo(ExitCode.OK);
+
+            assertThat(a).exists();
+            assertThat(b).doesNotExist();
+            assertThat(c).doesNotExist();
+        }
+
+        @Test
+        void directories() throws IOException {
+            final Path a = Files.createDirectories(tempDir.resolve("dir-a"));
+            final Path b = Files.createFile(a.resolve("b.txt"));
+            final Path c = Files.createFile(tempDir.resolve("c.txt"));
+            final Path d = Files.createDirectories(tempDir.resolve("dir-d"));
+            final Path e = Files.createFile(d.resolve("e.txt"));
+
+            final int exitCode = new CommandLine(new FindCommand())
+                .execute(
+                    "--name=dir-*",
+                    "--exclude-name=dir-d",
+                    "--type=directory",
+                    "--delete",
+                    tempDir.toString()
+                );
+
+            assertThat(exitCode).isEqualTo(ExitCode.OK);
+
+            assertThat(a).doesNotExist();
+            assertThat(b).doesNotExist();
+            assertThat(c).exists();
+            assertThat(d).exists();
+            assertThat(e).exists();
+        }
+
+    }
 }

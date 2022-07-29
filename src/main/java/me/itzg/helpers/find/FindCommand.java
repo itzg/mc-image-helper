@@ -6,6 +6,8 @@ import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -53,11 +55,18 @@ public class FindCommand implements Callable<Integer> {
     @Option(names = "--output-count-only")
     boolean outputCountOnly;
 
+    @Option(names = {"--quiet", "-q"})
+    boolean quiet;
+
     @Option(names = "--format", description = "Applies a format when printing each matched entry. Supports the following directives%n"
         + "%%%% a literal %%%n"
         + "%%h leading directory of the entry%n"
         + "%%P path of the entry relative to the starting point")
     String format;
+
+    @Option(names = "--delete", description = "Deletes the matched entries."
+        + " When searching for directories, each directory and its contents will be recursively deleted.")
+    boolean delete;
 
     @Parameters(arity = "1..*", paramLabel = "startingPoint")
     List<Path> startingPoints;
@@ -72,7 +81,7 @@ public class FindCommand implements Callable<Integer> {
             final TrackShallowest track = new TrackShallowest();
             walkStartingPoints(track);
             if (track.matched()) {
-                printEntry(track.getShallowestStartingPoint(), track.getShallowest());
+                handleEntry(track.getShallowestStartingPoint(), track.getShallowest());
             }
             else if (failWhenMissing){
                 return ExitCode.SOFTWARE;
@@ -81,7 +90,7 @@ public class FindCommand implements Callable<Integer> {
         else {
             final int matchCount = walkStartingPoints((startingPoint, path) -> {
                 if (!outputCountOnly) {
-                    printEntry(startingPoint, path);
+                    handleEntry(startingPoint, path);
                 }
                 return stopOnFirst ? FileVisitResult.TERMINATE : FileVisitResult.CONTINUE;
             });
@@ -97,33 +106,60 @@ public class FindCommand implements Callable<Integer> {
         return ExitCode.OK;
     }
 
-    protected void printEntry(Path startingPoint, Path path) {
-        if (format != null) {
-            final Pattern directive = Pattern.compile("%(.)");
+    protected void handleEntry(Path startingPoint, Path path) throws IOException {
+        if (delete) {
+            delete(path);
+        }
 
-            final Matcher m = directive.matcher(format);
-            final StringBuffer sb = new StringBuffer();
+        if (!quiet) {
+            if (format != null) {
+                final Pattern directive = Pattern.compile("%(.)");
 
-            while (m.find()) {
-                switch (m.group(1)) {
-                    case "%":
-                        m.appendReplacement(sb, "%");
-                        break;
-                    case "h":
-                        m.appendReplacement(sb, Matcher.quoteReplacement(path.getParent().toString()));
-                        break;
-                    case "P":
-                        m.appendReplacement(sb, Matcher.quoteReplacement(startingPoint.relativize(path).toString()));
-                        break;
-                    default:
-                        throw new IllegalArgumentException("Unsupported format directive: " + m.group());
+                final Matcher m = directive.matcher(format);
+                final StringBuffer sb = new StringBuffer();
+
+                while (m.find()) {
+                    switch (m.group(1)) {
+                        case "%":
+                            m.appendReplacement(sb, "%");
+                            break;
+                        case "h":
+                            m.appendReplacement(sb, Matcher.quoteReplacement(path.getParent().toString()));
+                            break;
+                        case "P":
+                            m.appendReplacement(sb, Matcher.quoteReplacement(startingPoint.relativize(path).toString()));
+                            break;
+                        default:
+                            throw new IllegalArgumentException("Unsupported format directive: " + m.group());
+                    }
                 }
+                m.appendTail(sb);
+                System.out.println(sb);
             }
-            m.appendTail(sb);
-            System.out.println(sb);
+            else {
+                System.out.println(path.toString());
+            }
+        }
+    }
+
+    private void delete(Path path) throws IOException {
+        if (Files.isDirectory(path)) {
+            Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                    Files.delete(file);
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                    Files.delete(dir);
+                    return FileVisitResult.CONTINUE;
+                }
+            });
         }
         else {
-            System.out.println(path.toString());
+            Files.delete(path);
         }
     }
 

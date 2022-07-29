@@ -44,7 +44,11 @@ public class FindFilesVisitor implements FileVisitor<Path> {
             names != null &&
             names.stream().anyMatch(pathMatcher -> pathMatcher.matches(dirName))
         ) {
-            return handleMatch.handle(startingPoint, dir);
+            try {
+                return handleMatch.handle(startingPoint, dir);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
 
         return FileVisitResult.CONTINUE;
@@ -67,7 +71,11 @@ public class FindFilesVisitor implements FileVisitor<Path> {
         if (names != null &&
             names.stream().anyMatch(pathMatcher -> pathMatcher.matches(fileName))) {
             ++matchCount;
-            return handleMatch.handle(startingPoint, path);
+            try {
+                return handleMatch.handle(startingPoint, path);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
 
         return FileVisitResult.CONTINUE;
