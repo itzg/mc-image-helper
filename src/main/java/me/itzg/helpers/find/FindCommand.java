@@ -26,10 +26,11 @@ public class FindCommand implements Callable<Integer> {
     @Option(names = {"-h", "--help"}, usageHelp = true)
     boolean help;
 
-    @Option(names = {"--type", "-t"}, defaultValue = "file", description = "Valid values: ${COMPLETION-CANDIDATES}",
+    @Option(names = {"--type", "-t"}, defaultValue = "file", split = ",",
+        description = "Valid values: ${COMPLETION-CANDIDATES}",
         converter = FindTypeConverter.class
     )
-    FindType type;
+    EnumSet<FindType> type;
 
     @Option(names = "--name", split = ",", paramLabel = "glob", converter = PathMatcherConverter.class,
         description = "One or more glob patterns to match name part of the path")
@@ -40,8 +41,12 @@ public class FindCommand implements Callable<Integer> {
             + "If a pattern matches a directory's name, then its entire subtree is excluded.")
     List<PathMatcher> excludeNames;
 
-    @Option(names = "--max-depth", paramLabel = "N", description = "Unlimited depth if zero or negative")
-    int maxDepth;
+    @Option(names = "--min-depth", paramLabel = "N", defaultValue = "0",
+        description = "Minimum match depth where 0 is a starting point")
+    int minDepth;
+
+    @Option(names = "--max-depth", paramLabel = "N", description = "Unlimited depth if negative")
+    Integer maxDepth;
 
     @Option(names = "--only-shallowest")
     boolean justShallowest;
@@ -74,10 +79,6 @@ public class FindCommand implements Callable<Integer> {
 
     @Override
     public Integer call() throws Exception {
-        if (maxDepth <= 0) {
-            maxDepth = Integer.MAX_VALUE;
-        }
-
         if (justShallowest) {
             final TrackShallowest track = new TrackShallowest();
             walkStartingPoints(track);
@@ -108,6 +109,15 @@ public class FindCommand implements Callable<Integer> {
     }
 
     protected void handleEntry(Path startingPoint, Path path) throws IOException {
+        final Path relPath = startingPoint.relativize(path);
+        // FYI the empty relative path still has a name count of 1
+        final int depth = startingPoint.equals(path) ? 0 : relPath.getNameCount();
+
+        if (depth < minDepth) {
+            log.debug("Skipping {} since it is not deeper than min depth", path);
+            return;
+        }
+
         if (delete) {
             delete(path);
         }
@@ -128,7 +138,7 @@ public class FindCommand implements Callable<Integer> {
                             m.appendReplacement(sb, Matcher.quoteReplacement(path.getParent().toString()));
                             break;
                         case "P":
-                            m.appendReplacement(sb, Matcher.quoteReplacement(startingPoint.relativize(path).toString()));
+                            m.appendReplacement(sb, Matcher.quoteReplacement(relPath.toString()));
                             break;
                         default:
                             throw new IllegalArgumentException("Unsupported format directive: " + m.group());
@@ -148,12 +158,14 @@ public class FindCommand implements Callable<Integer> {
             Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                    log.debug("Deleting file={}", file);
                     Files.delete(file);
                     return FileVisitResult.CONTINUE;
                 }
 
                 @Override
                 public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                    log.debug("Deleting directory={}", dir);
                     Files.delete(dir);
                     return FileVisitResult.CONTINUE;
                 }
@@ -171,7 +183,7 @@ public class FindCommand implements Callable<Integer> {
             Files.walkFileTree(
                 startingPoint,
                 EnumSet.noneOf(FileVisitOption.class),
-                maxDepth,
+                maxDepth == null || maxDepth < 0 ? Integer.MAX_VALUE : maxDepth,
                 visitor
             );
             total += visitor.getMatchCount();
