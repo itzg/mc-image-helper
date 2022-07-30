@@ -6,23 +6,23 @@ import java.nio.file.FileVisitor;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.EnumSet;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class FindFilesVisitor implements FileVisitor<Path> {
 
-    private final FindType type;
+    private final EnumSet<FindType> type;
     private final List<PathMatcher> names;
     private final List<PathMatcher> excludeNames;
     private final Path startingPoint;
     private final MatchHandler handleMatch;
     private int matchCount;
 
-    public FindFilesVisitor(FindType type, List<PathMatcher> names, List<PathMatcher> excludeNames,
+    public FindFilesVisitor(EnumSet<FindType> type, List<PathMatcher> names, List<PathMatcher> excludeNames,
         Path startingPoint, MatchHandler handleMatch
     ) {
-
         this.type = type;
         this.names = names;
         this.excludeNames = excludeNames;
@@ -40,7 +40,7 @@ public class FindFilesVisitor implements FileVisitor<Path> {
             return FileVisitResult.SKIP_SUBTREE;
         }
 
-        if (type == FindType.directory &&
+        if (type.contains(FindType.directory) &&
             names != null &&
             names.stream().anyMatch(pathMatcher -> pathMatcher.matches(dirName))
         ) {
@@ -56,7 +56,7 @@ public class FindFilesVisitor implements FileVisitor<Path> {
 
     @Override
     public FileVisitResult visitFile(Path path, BasicFileAttributes attrs) {
-        if (type == FindType.directory) {
+        if (!type.contains(FindType.file)) {
             // this method is only given files, so skip them all
             return FileVisitResult.CONTINUE;
         }

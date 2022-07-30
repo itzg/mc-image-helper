@@ -7,6 +7,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
+import org.assertj.core.api.ListAssert;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -63,8 +65,7 @@ class FindCommandTest {
             assertThat(exitCode).isEqualTo(ExitCode.OK);
         });
 
-        assertThat(stdout).hasLineCount(2);
-        assertThat(stdout).containsIgnoringNewLines(
+        assertThatLines(stdout).containsExactlyInAnyOrder(
             one.toString(),
             two.toString()
         );
@@ -86,8 +87,33 @@ class FindCommandTest {
             assertThat(exitCode).isEqualTo(ExitCode.OK);
         });
 
-        assertThat(stdout).hasLineCount(1);
-        assertThat(stdout).containsIgnoringNewLines(thisDir.toString());
+        assertThatLines(stdout).containsExactlyInAnyOrder(
+            thisDir.toString()
+        );
+    }
+
+    @Test
+    void findsFilesAndDirectories() throws Exception {
+        final Path a1 = Files.createDirectories(tempDir.resolve("a1"));
+        final Path a2 = Files.createFile(tempDir.resolve("a2"));
+        Files.createFile(tempDir.resolve("b1"));
+
+        final String stdout = tapSystemOut(() -> {
+            final int exitCode = new CommandLine(new FindCommand())
+                .execute(
+                    "--type=file",
+                    "--type=directory",
+                    "--name", "a*",
+                    tempDir.toString()
+                );
+
+            assertThat(exitCode).isEqualTo(ExitCode.OK);
+        });
+
+        assertThatLines(stdout).containsExactlyInAnyOrder(
+            a1.toString(),
+            a2.toString()
+        );
     }
 
     @Test
@@ -107,13 +133,11 @@ class FindCommandTest {
             assertThat(exitCode).isEqualTo(ExitCode.OK);
         });
 
-        assertThat(stdout).hasLineCount(3);
-        assertThat(stdout).containsIgnoringNewLines(
+        assertThatLines(stdout).containsExactlyInAnyOrder(
             this1.toString(),
             this2.toString(),
             this3.toString()
         );
-
     }
 
     @Test
@@ -138,8 +162,9 @@ class FindCommandTest {
             assertThat(exitCode).isEqualTo(ExitCode.OK);
         });
 
-        assertThat(stdout).hasLineCount(1);
-        assertThat(stdout).containsIgnoringNewLines(expected.toString());
+        assertThatLines(stdout).containsExactlyInAnyOrder(
+            expected.toString()
+        );
     }
 
     @Test
@@ -159,8 +184,9 @@ class FindCommandTest {
             assertThat(exitCode).isEqualTo(ExitCode.OK);
         });
 
-        assertThat(stdout).hasLineCount(1);
-        assertThat(stdout).containsIgnoringNewLines(expected.toString());
+        assertThatLines(stdout).containsExactlyInAnyOrder(
+            expected.toString()
+        );
     }
 
     @Test
@@ -186,12 +212,82 @@ class FindCommandTest {
             assertThat(exitCode).isEqualTo(ExitCode.OK);
         });
 
-        assertThat(stdout).hasLineCount(2);
-        assertThat(stdout).contains(
-            expected1.toString(),
-            expected2.toString()
-        );
+        assertThatLines(stdout)
+            .containsExactlyInAnyOrder(
+                expected1.toString(),
+                expected2.toString()
+            );
+    }
 
+    @Nested
+    class appliesMinDepth {
+
+        @Test
+        void dirAtStartingPoint() throws Exception {
+            final Path a = Files.createDirectories(tempDir.resolve("a"));
+
+            final String stdout = tapSystemOut(() -> {
+                final int exitCode = new CommandLine(new FindCommand())
+                    .execute(
+                        "--name=*",
+                        "--type=directory",
+                        "--min-depth=1",
+                        tempDir.toString()
+                    );
+
+                assertThat(exitCode).isEqualTo(ExitCode.OK);
+            });
+
+            assertThatLines(stdout)
+                .containsExactlyInAnyOrder(
+                    a.toString()
+                );
+        }
+
+        @Test
+        void defaultDepthZero() throws Exception {
+            final Path a = Files.createDirectories(tempDir.resolve("a"));
+
+            final String stdout = tapSystemOut(() -> {
+                final int exitCode = new CommandLine(new FindCommand())
+                    .execute(
+                        "--name=*",
+                        "--type=directory",
+                        tempDir.toString()
+                    );
+
+                assertThat(exitCode).isEqualTo(ExitCode.OK);
+            });
+
+            assertThatLines(stdout)
+                .containsExactlyInAnyOrder(
+                    tempDir.toString(),
+                    a.toString()
+                );
+        }
+
+        @Test
+        void fileInDir() throws Exception {
+            final Path a = Files.createDirectories(tempDir.resolve("a"));
+            final Path b = Files.createFile(a.resolve("b.txt"));
+            Files.createFile(tempDir.resolve("c.txt"));
+
+            final String stdout = tapSystemOut(() -> {
+                final int exitCode = new CommandLine(new FindCommand())
+                    .execute(
+                        "--name=*.txt",
+                        "--min-depth=2",
+                        tempDir.toString()
+                    );
+
+                assertThat(exitCode).isEqualTo(ExitCode.OK);
+            });
+
+            assertThatLines(stdout)
+                .containsExactlyInAnyOrder(
+                    b.toString()
+                );
+        }
     }
 
     @Test
@@ -244,8 +340,7 @@ class FindCommandTest {
             assertThat(exitCode).isEqualTo(ExitCode.OK);
         });
 
-        assertThat(stdout).hasLineCount(3);
-        assertThat(stdout).contains(
+        assertThatLines(stdout).containsExactlyInAnyOrder(
             one.toString(),
             two.toString(),
             three.toString()
@@ -269,8 +364,7 @@ class FindCommandTest {
             assertThat(exitCode).isEqualTo(ExitCode.OK);
         });
 
-        assertThat(stdout).hasLineCount(1);
-        assertThat(stdout).containsAnyOf(
+        assertThatLines(stdout).containsAnyOf(
             a.toString(),
             b.toString(),
             c.toString()
@@ -294,8 +388,7 @@ class FindCommandTest {
             assertThat(exitCode).isEqualTo(ExitCode.OK);
         });
 
-        assertThat(stdout).hasLineCount(2);
-        assertThat(stdout).contains(
+        assertThatLines(stdout).containsExactlyInAnyOrder(
             one.toString(),
             two.toString()
         );
@@ -318,8 +411,7 @@ class FindCommandTest {
             assertThat(exitCode).isEqualTo(ExitCode.OK);
         });
 
-        assertThat(stdout).hasLineCount(2);
-        assertThat(stdout).contains(
+        assertThatLines(stdout).containsExactlyInAnyOrder(
             a.toString(),
             c.toString()
         );
@@ -345,8 +437,7 @@ class FindCommandTest {
             assertThat(exitCode).isEqualTo(ExitCode.OK);
         });
 
-        assertThat(stdout).hasLineCount(2);
-        assertThat(stdout).contains(
+        assertThatLines(stdout).containsExactlyInAnyOrder(
             two.toString(),
             three.toString()
         );
@@ -366,14 +457,14 @@ class FindCommandTest {
             assertThat(exitCode).isEqualTo(ExitCode.OK);
         });
 
-        assertThat(stdout).hasLineCount(1);
-        assertThat(stdout).contains(
+        assertThatLines(stdout).containsExactlyInAnyOrder(
             expected.toString()
         );
     }
 
     @Nested
     class formatsDirname {
+
         @Test
         void atStartingPoint() throws Exception {
             Files.createFile(tempDir.resolve("one.txt"));
@@ -550,6 +641,7 @@ class FindCommandTest {
             final int exitCode = new CommandLine(new FindCommand())
                 .execute(
                     "--name=*.txt",
+                    "--quiet",
                     "--delete",
                     tempDir.toString()
                 );
@@ -574,6 +666,7 @@ class FindCommandTest {
                     "--name=dir-*",
                     "--exclude-name=dir-d",
                     "--type=directory",
+                    "--quiet",
                     "--delete",
                     tempDir.toString()
                 );
@@ -587,5 +680,12 @@ class FindCommandTest {
             assertThat(e).exists();
         }
 
+    }
+
+    static ListAssert<String> assertThatLines(String content) {
+        final String[] lines = content.split("\n|\r\n|\r");
+        return new ListAssert<>(Arrays.stream(lines, 0,
+            lines[lines.length - 1].isEmpty() ? lines.length - 1 : lines.length
+        ));
     }
 }
