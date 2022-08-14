@@ -51,6 +51,28 @@ interpolation.
                  modification time than the source.
 ```
 
+### install-forge
+
+```
+Usage: mc-image-helper install-forge [-hV] [--forge-version=<forgeVersion>]
+                                     --minecraft-version=<minecraftVersion>
+                                     [--output-directory=DIR]
+                                     [--results-file=<resultsFile>]
+      --forge-version=<forgeVersion>
+                  A specific Forge version or to auto-resolve the version
+                    provide 'latest' or 'recommended'. Default value is
+                    recommended
+  -h, --help      Show this help message and exit.
+      --minecraft-version=<minecraftVersion>
+
+      --output-directory=DIR
+
+      --results-file=<resultsFile>
+                  A key=value file suitable for scripted environment variables.
+                    Currently includes
+                    SERVER: the entry point jar or script
+```
+
 ### interpolate
 
 ```

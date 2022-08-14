@@ -11,6 +11,8 @@ import java.io.PrintWriter;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
+import me.itzg.helpers.http.LoggingResponseHandler;
+import me.itzg.helpers.http.OutputResponseHandler;
 import org.apache.hc.core5.http.HttpEntity;
 
 class JsonPathOutputHandler extends LoggingResponseHandler<Path> implements OutputResponseHandler {

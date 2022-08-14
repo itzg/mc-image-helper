@@ -11,6 +11,8 @@ import lombok.extern.jackson.Jacksonized;
 @Jacksonized
 public class Manifest {
 
+    public static final String FILENAME = ".modrinth-files.manifest";
+
     Instant timestamp;
 
     Set<String> files;

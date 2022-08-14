@@ -1,4 +1,4 @@
-package me.itzg.helpers.get;
+package me.itzg.helpers.http;
 
 import java.io.IOException;
 import java.nio.file.Path;

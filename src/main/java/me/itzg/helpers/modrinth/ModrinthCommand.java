@@ -37,7 +37,6 @@ public class ModrinthCommand implements Callable<Integer> {
 
     public static final TypeReference<List<Version>> VERSION_LIST = new TypeReference<List<Version>>() {
     };
-    public static final String MANIFEST_FILENAME = ".modrinth-files.manifest";
     public static final String MODS_SUBDIR = "mods";
 
     private final ReactorNettyBits bits = new ReactorNettyBits();
@@ -80,7 +79,7 @@ public class ModrinthCommand implements Callable<Integer> {
 
         Files.createDirectories(outputDirectory);
 
-        final Path manifestPath = outputDirectory.resolve(MANIFEST_FILENAME);
+        final Path manifestPath = outputDirectory.resolve(Manifest.FILENAME);
 
         final Manifest oldManifest;
         if (Files.exists(manifestPath)) {
