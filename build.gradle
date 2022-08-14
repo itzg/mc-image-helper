@@ -23,10 +23,10 @@ gitVersioning.apply {
             version = '${ref}'
         }
         branch('main') {
-            version = '${describe.tag}-SNAPSHOT'
+            version = '0.0.0-${describe.tag}-SNAPSHOT'
         }
         branch('.+') {
-            version = '${ref}-SNAPSHOT'
+            version = '0.0.0-${ref}-SNAPSHOT'
         }
     }
 
@@ -37,8 +37,8 @@ gitVersioning.apply {
 
 }
 
-compileJava {
-    options.release = 8
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
 }
 
 test {
@@ -79,6 +79,7 @@ jreleaser {
             prerelease {
                 pattern = '.*-SNAPSHOT'
             }
+            overwrite = project.version.map(v -> v.endsWith('-SNAPSHOT'))
             changelog {
                 formatted = 'ALWAYS'
                 preset = 'conventional-commits'
