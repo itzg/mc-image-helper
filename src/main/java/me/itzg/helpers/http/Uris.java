@@ -1,6 +1,7 @@
 package me.itzg.helpers.http;
 
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
 import java.net.URLEncoder;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -28,6 +29,10 @@ public final class Uris {
     m.appendTail(sb);
 
     return sb.toString();
+  }
+
+  public static URI populateToUri(String url, String... values) {
+    return URI.create(populate(url, values));
   }
 
   private Uris() {

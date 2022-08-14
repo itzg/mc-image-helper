@@ -1,5 +1,7 @@
 package me.itzg.helpers.get;
 
+import static me.itzg.helpers.http.Fetch.fetch;
+
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URI;
@@ -23,7 +25,11 @@ import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.InvalidParameterException;
+import me.itzg.helpers.http.LatchingUrisInterceptor;
 import me.itzg.helpers.http.LenientUriConverter;
+import me.itzg.helpers.http.NotModifiedHandler;
+import me.itzg.helpers.http.OutputResponseHandler;
+import me.itzg.helpers.http.OutputToDirectoryHandler;
 import org.apache.hc.client5.http.HttpResponseException;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.classic.methods.HttpHead;
@@ -196,10 +202,13 @@ public class GetCommand implements Callable<Integer> {
                         stdout.println(outputFile);
                     }
                 } else {
-                    final Path file = processSingleUri(uris.get(0), client,
-                        skipUpToDate ? outputFile : null,
-                        new SaveToFileHandler(outputFile, logProgressEach));
-                    if (outputFilename) {
+                    final Path file = fetch(uris.get(0))
+                        .toFile(outputFile)
+                        .skipUpToDate(skipUpToDate)
+                        .acceptContentTypes(acceptContentTypes)
+                        .logProgressEach(logProgressEach)
+                        .execute();
+                    if (this.outputFilename) {
                         stdout.println(file);
                     }
                 }

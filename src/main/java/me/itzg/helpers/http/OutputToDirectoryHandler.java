@@ -1,4 +1,4 @@
-package me.itzg.helpers.get;
+package me.itzg.helpers.http;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -6,16 +6,18 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import me.itzg.helpers.get.ContentTypeValidator;
+import me.itzg.helpers.get.FilenameExtractor;
 import org.apache.hc.core5.http.ClassicHttpResponse;
 import org.apache.hc.core5.http.HttpException;
 
 @Slf4j
+public
 class OutputToDirectoryHandler implements OutputResponseHandler {
 
   private final Path directory;
   final FilenameExtractor filenameExtractor;
   private final boolean logProgressEach;
-  private String expectedContentType;
   private ContentTypeValidator contentTypeValidator;
 
   public OutputToDirectoryHandler(Path directory,

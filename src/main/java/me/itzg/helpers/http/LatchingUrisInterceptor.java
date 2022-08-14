@@ -1,4 +1,4 @@
-package me.itzg.helpers.get;
+package me.itzg.helpers.http;
 
 import java.net.URI;
 import java.util.Deque;
@@ -13,6 +13,7 @@ import org.apache.hc.core5.http.ClassicHttpRequest;
 import org.apache.hc.core5.http.ClassicHttpResponse;
 
 @Slf4j
+public
 class LatchingUrisInterceptor implements ExecChainHandler {
 
   private final Deque<URI> uris = new ConcurrentLinkedDeque<>();

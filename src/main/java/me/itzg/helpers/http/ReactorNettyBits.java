@@ -25,6 +25,15 @@ public class ReactorNettyBits {
         V readFrom(InputStream inputStream) throws IOException;
     }
 
+    /***
+     * Example:
+     * <pre>
+     *     bits.jsonClient()
+     *     .get()
+     *     .uri(...)
+     *     .responseSingle(bits.readInto(Version.class));
+     * </pre>
+     */
     public <V> BiFunction<HttpClientResponse, ByteBufMono, Mono<V>> readInto(
         Class<V> valueType
     ) {
@@ -77,4 +86,5 @@ public class ReactorNettyBits {
                 log.debug("Response status={}", resp.status())
             );
     }
+
 }
