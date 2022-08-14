@@ -76,7 +76,7 @@ public class ForgeInstaller {
                 );
                 needsInstall = false;
             } else {
-                log.info("Removing previously installed files due to upgrade/downgrade from MC {}/Forge {} to MC {}/Forge {}",
+                log.info("Removing previously installed files due to version change from MC {}/Forge {} to MC {}/Forge {}",
                     oldManifest.getMinecraftVersion(), oldManifest.getForgeVersion(),
                     minecraftVersion, resolvedForgeVersion);
                 removeOldFiles(outputDir, oldManifest.getFiles());
