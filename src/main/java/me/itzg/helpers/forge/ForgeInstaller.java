@@ -11,6 +11,7 @@ import java.lang.ProcessBuilder.Redirect;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
@@ -41,7 +42,10 @@ public class ForgeInstaller {
         "Exec:\\s+(?<exec>.+)"
             + "|The server installed successfully, you should now be able to run the file (?<universalJar>.+)");
 
-    public void install(String minecraftVersion, String forgeVersion, Path outputDir, Path resultsFile) {
+    public void install(String minecraftVersion, String forgeVersion,
+        Path outputDir, Path resultsFile,
+        boolean forgeReinstall
+    ) {
         final ObjectMapper objectMapper = ObjectMappers.defaultMapper();
 
         final Path manifestPath = outputDir.resolve(Manifest.FILENAME);
@@ -63,7 +67,8 @@ public class ForgeInstaller {
 
         boolean needsInstall = true;
         if (oldManifest != null) {
-            if (Objects.equals(oldManifest.getMinecraftVersion(), minecraftVersion) &&
+            if (!forgeReinstall &&
+                Objects.equals(oldManifest.getMinecraftVersion(), minecraftVersion) &&
                 Objects.equals(oldManifest.getForgeVersion(), resolvedForgeVersion)) {
 
                 log.info("Forge version {} for minecraft version {} is already installed",
@@ -110,7 +115,11 @@ public class ForgeInstaller {
                 final Path filePath = dir.resolve(file);
                 log.debug("Deleting {}", filePath);
                 Files.delete(filePath);
-            } catch (IOException e) {
+            }
+            catch (NoSuchFileException e) {
+                log.debug("Skipping deletion of non-existent file {}", file);
+            }
+            catch (IOException e) {
                 log.warn("Failed to delete old file {} in {}: {}", file, dir, e.getMessage());
             }
         }

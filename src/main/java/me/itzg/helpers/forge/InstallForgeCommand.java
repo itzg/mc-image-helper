@@ -5,6 +5,7 @@ import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
+import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.ParameterException;
 import picocli.CommandLine.Spec;
@@ -44,10 +45,14 @@ public class InstallForgeCommand implements Callable<Integer> {
         + "\n  SERVER: the entry point jar or script")
     Path resultsFile;
 
+    @Option(names = "--force-reinstall")
+    boolean forceReinstall;
+
     @Override
     public Integer call() throws Exception {
         final ForgeInstaller installer = new ForgeInstaller();
-        installer.install(minecraftVersion, forgeVersion, outputDirectory, resultsFile);
-        return null;
+        installer.install(minecraftVersion, forgeVersion, outputDirectory, resultsFile, forceReinstall);
+
+        return ExitCode.OK;
     }
 }
