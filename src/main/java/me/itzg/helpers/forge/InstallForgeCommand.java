@@ -4,6 +4,7 @@ import java.nio.file.Path;
 import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 import picocli.CommandLine;
+import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.Option;
@@ -14,29 +15,37 @@ import picocli.CommandLine.Spec;
 public class InstallForgeCommand implements Callable<Integer> {
 
     public static final Pattern ALLOWED_FORGE_VERSION = Pattern.compile(
-        String.join("|", ForgeInstaller.LATEST, ForgeInstaller.RECOMMENDED, "\\d+(\\.\\d+)"),
+        String.join("|", ForgeInstaller.LATEST, ForgeInstaller.RECOMMENDED, "\\d+(\\.\\d+)+"),
         Pattern.CASE_INSENSITIVE
     );
-
-    @Spec
-    CommandLine.Model.CommandSpec spec;
 
     @Option(names = "--minecraft-version", required = true)
     String minecraftVersion;
 
-    private String forgeVersion;
-    @Option(names = "--forge-version", required = true, defaultValue = ForgeInstaller.RECOMMENDED,
-        description = "A specific Forge version or to auto-resolve the version provide 'latest' or 'recommended'."
-            + " Default value is ${DEFAULT-VALUE}"
-    )
-    public void setForgeVersion(String forgeVersion) {
-        if (!ALLOWED_FORGE_VERSION.matcher(forgeVersion).matches()) {
-            throw new ParameterException(spec.commandLine(),
-                "Invalid value for --forge-version"
+    static class VersionOrInstaller {
+        @Spec
+        CommandLine.Model.CommandSpec spec;
+
+        String version;
+        @Option(names = "--forge-version", required = true, defaultValue = ForgeInstaller.RECOMMENDED,
+            description = "A specific Forge version or to auto-resolve the version provide 'latest' or 'recommended'."
+                + " Default value is ${DEFAULT-VALUE}"
+        )
+        public void setVersion(String version) {
+            if (!ALLOWED_FORGE_VERSION.matcher(version).matches()) {
+                throw new ParameterException(spec.commandLine(),
+                    "Invalid value for --forge-version: "+ version
                 );
+            }
+            this.version = version.toLowerCase();
         }
-        this.forgeVersion = forgeVersion.toLowerCase();
+
+        @Option(names = "--forge-installer", description = "Use a local forge installer")
+        Path installer;
     }
+
+    @ArgGroup
+    VersionOrInstaller versionOrInstaller = new VersionOrInstaller();
 
     @Option(names = "--output-directory", defaultValue = ".", paramLabel = "DIR")
     Path outputDirectory;
@@ -51,7 +60,7 @@ public class InstallForgeCommand implements Callable<Integer> {
     @Override
     public Integer call() throws Exception {
         final ForgeInstaller installer = new ForgeInstaller();
-        installer.install(minecraftVersion, forgeVersion, outputDirectory, resultsFile, forceReinstall);
+        installer.install(minecraftVersion, versionOrInstaller.version, outputDirectory, resultsFile, forceReinstall, versionOrInstaller.installer);
 
         return ExitCode.OK;
     }
