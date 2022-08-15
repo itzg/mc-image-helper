@@ -2,12 +2,15 @@ package me.itzg.helpers.http;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.get.ExtendedRequestRetryStrategy;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
@@ -16,6 +19,7 @@ import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.core5.http.HttpHeaders;
 import org.apache.hc.core5.http.message.BasicHttpRequest;
 
+@Slf4j
 public class FetchBuilder<SELF extends FetchBuilder<SELF>> {
 
     static class Config {
@@ -95,6 +99,14 @@ public class FetchBuilder<SELF extends FetchBuilder<SELF>> {
 
     protected HttpClientBuilder configureClient(HttpClientBuilder clientBuilder) {
         clientBuilder
+            .addRequestInterceptorFirst((request, entity, context) -> {
+                try {
+                    log.debug("Request: {} {} with headers {}",
+                        request.getMethod(), request.getUri(), Arrays.toString(request.getHeaders()));
+                } catch (URISyntaxException e) {
+                    throw new RuntimeException(e);
+                }
+            })
             .useSystemProperties()
             .setUserAgent(config.userAgent)
             .setRetryStrategy(

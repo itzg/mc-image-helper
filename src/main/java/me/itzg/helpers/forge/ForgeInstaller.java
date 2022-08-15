@@ -44,7 +44,8 @@ public class ForgeInstaller {
 
     public void install(String minecraftVersion, String forgeVersion,
         Path outputDir, Path resultsFile,
-        boolean forgeReinstall
+        boolean forgeReinstall,
+        Path forgeInstaller
     ) {
         final ObjectMapper objectMapper = ObjectMappers.defaultMapper();
 
@@ -59,10 +60,15 @@ public class ForgeInstaller {
         }
 
         final String resolvedForgeVersion;
-        try {
-            resolvedForgeVersion = resolveForgeVersion(minecraftVersion, forgeVersion);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to resolve forge version", e);
+        if (forgeInstaller == null) {
+            try {
+                resolvedForgeVersion = resolveForgeVersion(minecraftVersion, forgeVersion);
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to resolve forge version", e);
+            }
+        }
+        else {
+            resolvedForgeVersion = forgeInstaller.toString();
         }
 
         boolean needsInstall = true;
@@ -85,7 +91,12 @@ public class ForgeInstaller {
 
         final Manifest newManifest;
         if (needsInstall) {
-            newManifest = downloadAndInstall(minecraftVersion, resolvedForgeVersion, outputDir);
+            if (forgeInstaller == null) {
+                newManifest = downloadAndInstall(minecraftVersion, resolvedForgeVersion, outputDir);
+            }
+            else {
+                newManifest = installUsingExisting(minecraftVersion, resolvedForgeVersion, outputDir, forgeInstaller);
+            }
         }
         else {
             newManifest = null;
@@ -106,6 +117,18 @@ public class ForgeInstaller {
                 throw new RuntimeException("Failed to write manifest", e);
             }
         }
+    }
+
+    private Manifest installUsingExisting(String minecraftVersion, String forgeVersion, Path outputDir, Path forgeInstaller) {
+        final Manifest newManifest;
+        final ManifestBuilder manifestBuilder = Manifest.builder()
+            .timestamp(Instant.now())
+            .minecraftVersion(minecraftVersion)
+            .forgeVersion(forgeVersion);
+
+        install(forgeInstaller, outputDir, minecraftVersion, forgeVersion, manifestBuilder);
+        newManifest = manifestBuilder.build();
+        return newManifest;
     }
 
     private void removeOldFiles(Path dir, Set<String> files) {
@@ -279,7 +302,7 @@ public class ForgeInstaller {
         }
 
         if (!success) {
-            throw new RuntimeException("Failed to locate forge isntaller");
+            throw new RuntimeException("Failed to locate forge installer");
         }
 
         return installerJar;
