@@ -45,6 +45,9 @@ public class MavenDownloadCommand implements Callable<Integer> {
     @Option(names = "--skip-up-to-date", defaultValue = "true")
     boolean skipUpToDate;
 
+    @Option(names = "--skip-existing", defaultValue = "false")
+    boolean skipExisting;
+
     @Override
     public Integer call() throws Exception {
         final MavenMetadata mavenMetadata = getMavenMetadata();
@@ -78,11 +81,12 @@ public class MavenDownloadCommand implements Callable<Integer> {
         return fetch(uri)
             .toFile(outputDirectory.resolve(filename))
             .skipUpToDate(skipUpToDate)
+            .skipExisting(skipExisting)
             .execute();
     }
 
     private String resolveVersion(MavenMetadata mavenMetadata) {
-        log.debug("Resolving version {} given metadata={}", version, mavenMetadata);
+        log.debug("Resolving version={} given metadata={}", version, mavenMetadata);
 
         if (version.equalsIgnoreCase("release")) {
             final String resolved = mavenMetadata.getVersioning().getRelease();
