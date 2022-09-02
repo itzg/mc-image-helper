@@ -10,6 +10,7 @@ import me.itzg.helpers.find.FindCommand;
 import me.itzg.helpers.forge.InstallForgeCommand;
 import me.itzg.helpers.get.GetCommand;
 import me.itzg.helpers.modrinth.ModrinthCommand;
+import me.itzg.helpers.mvn.MavenDownloadCommand;
 import me.itzg.helpers.patch.PatchCommand;
 import me.itzg.helpers.singles.Asciify;
 import me.itzg.helpers.singles.HashCommand;
@@ -36,6 +37,7 @@ import picocli.CommandLine.Option;
         InstallForgeCommand.class,
         InterpolateCommand.class,
         JavaReleaseCommand.class,
+        MavenDownloadCommand.class,
         ModrinthCommand.class,
         PatchCommand.class,
         Sync.class,
