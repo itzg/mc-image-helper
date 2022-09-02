@@ -38,10 +38,6 @@ public class FetchBuilder<SELF extends FetchBuilder<SELF>> {
     }
     private final Config config;
 
-    public static FetchBuilder<?> fetch(URI uri) {
-        return new FetchBuilder<>(uri);
-    }
-
     public FetchBuilder(URI uri) {
         this.config = new Config(uri);
     }

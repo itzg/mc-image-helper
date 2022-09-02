@@ -1,6 +1,6 @@
 package me.itzg.helpers.mvn;
 
-import static me.itzg.helpers.http.FetchBuilder.fetch;
+import static me.itzg.helpers.http.Fetch.fetch;
 
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import java.io.IOException;
@@ -42,6 +42,9 @@ public class MavenDownloadCommand implements Callable<Integer> {
     @Option(names = "--print-filename", defaultValue = "true")
     boolean printFilename;
 
+    @Option(names = "--skip-up-to-date", defaultValue = "true")
+    boolean skipUpToDate;
+
     @Override
     public Integer call() throws Exception {
         final MavenMetadata mavenMetadata = getMavenMetadata();
@@ -74,6 +77,7 @@ public class MavenDownloadCommand implements Callable<Integer> {
         log.debug("Downloading from {}", uri);
         return fetch(uri)
             .toFile(outputDirectory.resolve(filename))
+            .skipUpToDate(skipUpToDate)
             .execute();
     }
 
