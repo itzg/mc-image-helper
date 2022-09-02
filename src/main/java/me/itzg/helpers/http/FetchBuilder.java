@@ -1,5 +1,6 @@
 package me.itzg.helpers.http;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -37,6 +38,10 @@ public class FetchBuilder<SELF extends FetchBuilder<SELF>> {
     }
     private final Config config;
 
+    public static FetchBuilder<?> fetch(URI uri) {
+        return new FetchBuilder<>(uri);
+    }
+
     public FetchBuilder(URI uri) {
         this.config = new Config(uri);
     }
@@ -51,6 +56,10 @@ public class FetchBuilder<SELF extends FetchBuilder<SELF>> {
 
     public <T> ObjectFetchBuilder<T> toObject(Class<T> type) {
         return new ObjectFetchBuilder<>(this.config, type);
+    }
+
+    public <T> ObjectFetchBuilder<T> toObject(Class<T> type, ObjectMapper objectMapper) {
+        return new ObjectFetchBuilder<>(this.config, type, objectMapper);
     }
 
     protected HttpGet get() throws IOException {
