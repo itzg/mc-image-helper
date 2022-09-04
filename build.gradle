@@ -143,9 +143,14 @@ repositories {
 
 dependencies {
     implementation(platform('com.fasterxml.jackson:jackson-bom:2.13.3'))
-    implementation(platform('ch.qos.logback:logback-parent:1.4.0'))
+    implementation(platform('ch.qos.logback:logback-parent:1.3.0')) {
+        because '1.4.+ requires Java 11 and we are stuck on 8'
+        version {
+            reject '1.4.+'
+        }
+    }
 
-    implementation 'ch.qos.logback:logback-core'
+    implementation('ch.qos.logback:logback-core')
     implementation 'ch.qos.logback:logback-classic'
     implementation "info.picocli:picocli:${picocliVersion}"
     implementation 'com.fasterxml.jackson.core:jackson-databind'
