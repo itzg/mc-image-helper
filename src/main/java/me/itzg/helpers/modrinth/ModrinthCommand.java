@@ -177,9 +177,13 @@ public class ModrinthCommand implements Callable<Integer> {
         if (projectType != ProjectType.mod) {
             throw new IllegalStateException("Only mod project types can be downloaded for now");
         }
-        final Path outPath = outputDirectory
-            .resolve(MODS_SUBDIR)
-            .resolve(versionFile.getFilename());
+        final Path outPath;
+        try {
+            outPath = Files.createDirectories(outputDirectory.resolve(MODS_SUBDIR))
+                .resolve(versionFile.getFilename());
+        } catch (IOException e) {
+            throw new RuntimeException("Creating mods directory", e);
+        }
 
         try {
             return fetch(URI.create(versionFile.getUrl()))
@@ -187,7 +191,7 @@ public class ModrinthCommand implements Callable<Integer> {
                 .skipExisting(true)
                 .execute();
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Downloading mod file", e);
         }
     }
 
