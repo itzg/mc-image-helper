@@ -54,6 +54,10 @@ public class FetchBuilder<SELF extends FetchBuilder<SELF>> {
         return new ObjectFetchBuilder<>(this.config, type);
     }
 
+    public <T> ObjectListFetchBuilder<T> toObjectList(Class<T> type) {
+        return new ObjectListFetchBuilder<>(this.config, type);
+    }
+
     public <T> ObjectFetchBuilder<T> toObject(Class<T> type, ObjectMapper objectMapper) {
         return new ObjectFetchBuilder<>(this.config, type, objectMapper);
     }
