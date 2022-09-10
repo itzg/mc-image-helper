@@ -11,8 +11,10 @@ import picocli.CommandLine.Option;
 import picocli.CommandLine.ParameterException;
 import picocli.CommandLine.Spec;
 
-@Command(name = "install-forge", mixinStandardHelpOptions = true)
+@Command(name = "install-forge", description = "Downloads and installs a requested version of Forge")
 public class InstallForgeCommand implements Callable<Integer> {
+    @Option(names = {"--help","-h"}, usageHelp = true)
+    boolean help;
 
     public static final Pattern ALLOWED_FORGE_VERSION = Pattern.compile(
         String.join("|", ForgeInstaller.LATEST, ForgeInstaller.RECOMMENDED, "\\d+(\\.\\d+)+"),

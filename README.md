@@ -5,115 +5,38 @@ This tool does the complicated bits for the [itzg/minecraft-server](https://gith
 
 ## Usage
 
-> **NOTE** The following documentation may not always be up to date. Please be sure to use `-h` or `--help` after any subcommand to view the current usage.
+> **NOTE** The following documentation may not always be up-to-date. Please be sure to use `-h` or `--help` after any subcommand to view the current usage.
 
 ```
-Usage: mc-image-helper [-h] [--debug] [COMMAND]
-      --debug   Enable debug output
-  -h, --help    Show this usage and exit
+Usage: mc-image-helper [-hs] [--debug] [COMMAND]
+      --debug    Enable debug output. Can also set environment variable
+                   DEBUG_HELPER
+  -h, --help     Show this usage and exit
+  -s, --silent   Don't output logs even if there's an error
 Commands:
-  sync-and-interpolate  Synchronizes the contents of one directory to another
-                          with conditional variable interpolation.
-  interpolate           Interpolates existing files in one or more directories
-  sync                  Synchronizes the contents of one directory to another.
   asciify               Converts UTF-8 on stdin to ASCII by escaping Unicode
                           characters
+  assert                Provides assertion operators for verifying container
+                          setup
+  compare-versions      Used for shell scripting, exits with success(0) when
+                          comparison is satisfied or 1 when not
+  find                  Specialized replacement for GNU's find
+  get                   Download a file
+  hash                  Outputs an MD5 hash of the standard input
+  install-forge         Downloads and installs a requested version of Forge
+  interpolate           Interpolates existing files in one or more directories
+  java-release          Outputs the Java release number, such as 8, 11, 17
+  maven-download        Downloads a maven artifact from a Maven repository
+  modrinth              Automates downloading of modrinth resources
   patch                 Patches one or more existing files using JSON path
                           based operations
-  get                   Download a file
+  sync                  Synchronizes the contents of one directory to another.
+  sync-and-interpolate  Synchronizes the contents of one directory to another
+                          with conditional variable interpolation.
+  yaml-path             Extracts a path from a YAML file using json-path syntax
+  vanillatweaks         Downloads Vanilla Tweaks resource packs, data packs, or
+                          crafting tweaks given a share code or pack file
 ```
-
-### sync-and-interpolate
-
-```
-Usage: mc-image-helper sync-and-interpolate [-h] [--skip-newer-in-destination]
-       ([--replace-env-prefix=<prefix>] [--replace-env-excludes=FILENAME[,
-       FILENAME...]]... [--replace-env-exclude-paths=PATH[,PATH...]]...
-       --replace-env-file-suffixes=PATH[,PATH...]
-       [--replace-env-file-suffixes=PATH[,PATH...]]...) <src> <dest>
-Synchronizes the contents of one directory to another with conditional variable
-interpolation.
-      <src>    source directory
-      <dest>   destination directory
-  -h, --help   Show this usage and exit
-      --replace-env-exclude-paths=PATH[,PATH...]
-               Destination paths that will be excluded from processing
-      --replace-env-excludes=FILENAME[,FILENAME...]
-               Filenames (without path) that should be excluded from processing.
-      --replace-env-file-suffixes=PATH[,PATH...]
-               Filename suffixes (without dot) that should be processed. For
-                 example: txt,json,yaml
-      --replace-env-prefix=<prefix>
-               Only placeholder variables with this prefix will be processed.
-                 Default: CFG_
-      --skip-newer-in-destination
-               Skip any files that exist in the destination and have a newer
-                 modification time than the source.
-```
-
-### install-forge
-
-```
-Usage: mc-image-helper install-forge [-hV] [--forge-version=<forgeVersion>]
-                                     --minecraft-version=<minecraftVersion>
-                                     [--output-directory=DIR]
-                                     [--results-file=<resultsFile>]
-      --forge-version=<forgeVersion>
-                  A specific Forge version or to auto-resolve the version
-                    provide 'latest' or 'recommended'. Default value is
-                    recommended
-  -h, --help      Show this help message and exit.
-      --minecraft-version=<minecraftVersion>
-
-      --output-directory=DIR
-
-      --results-file=<resultsFile>
-                  A key=value file suitable for scripted environment variables.
-                    Currently includes
-                    SERVER: the entry point jar or script
-```
-
-### interpolate
-
-```
-Usage: mc-image-helper interpolate [-h] ([--replace-env-prefix=<prefix>]
-                                   [--replace-env-excludes=FILENAME[,
-                                   FILENAME...]]...
-                                   [--replace-env-exclude-paths=PATH[,
-                                   PATH...]]... --replace-env-file-suffixes=PATH
-                                   [,PATH...] [--replace-env-file-suffixes=PATH
-                                   [,PATH...]]...) [DIRECTORY...]
-Interpolates existing files in one or more directories
-      [DIRECTORY...]
-  -h, --help           Show this usage and exit
-      --replace-env-exclude-paths=PATH[,PATH...]
-                       Destination paths that will be excluded from processing
-      --replace-env-excludes=FILENAME[,FILENAME...]
-                       Filenames (without path) that should be excluded from
-                         processing.
-      --replace-env-file-suffixes=PATH[,PATH...]
-                       Filename suffixes (without dot) that should be
-                         processed. For example: txt,json,yaml
-      --replace-env-prefix=<prefix>
-                       Only placeholder variables with this prefix will be
-                         processed.
-                         Default: CFG_
-```
-
-### patch
-
-```
-Usage: mc-image-helper patch [-h] [--patch-env-prefix=<envPrefix>] FILE_OR_DIR
-      FILE_OR_DIR   Path to a PatchSet json file or directory containing
-                      PatchDefinition json files
-  -h, --help        Show this usage and exit
-      --patch-env-prefix=<envPrefix>
-                    Only placeholder variables with this prefix will be
-                      processed
-                      Default: CFG_
-```
-
-[See below](#patch-schemas) for a description of [PatchSet](#patchset) and [PatchDefinition](#patchdefinition) JSON schemas.
 
 ### find
 
@@ -190,6 +113,127 @@ Download a file
                             A file that contains a URL per line
   -z, --skip-up-to-date     Skips re-downloading a file that is up to date
 ```
+
+### install-forge
+
+```
+Usage: mc-image-helper install-forge [-hV] [--forge-version=<forgeVersion>]
+                                     --minecraft-version=<minecraftVersion>
+                                     [--output-directory=DIR]
+                                     [--results-file=<resultsFile>]
+      --forge-version=<forgeVersion>
+                  A specific Forge version or to auto-resolve the version
+                    provide 'latest' or 'recommended'. Default value is
+                    recommended
+  -h, --help      Show this help message and exit.
+      --minecraft-version=<minecraftVersion>
+
+      --output-directory=DIR
+
+      --results-file=<resultsFile>
+                  A key=value file suitable for scripted environment variables.
+                    Currently includes
+                    SERVER: the entry point jar or script
+```
+
+### interpolate
+
+```
+Usage: mc-image-helper interpolate [-h] ([--replace-env-prefix=<prefix>]
+                                   [--replace-env-excludes=FILENAME[,
+                                   FILENAME...]]...
+                                   [--replace-env-exclude-paths=PATH[,
+                                   PATH...]]... --replace-env-file-suffixes=PATH
+                                   [,PATH...] [--replace-env-file-suffixes=PATH
+                                   [,PATH...]]...) [DIRECTORY...]
+Interpolates existing files in one or more directories
+      [DIRECTORY...]
+  -h, --help           Show this usage and exit
+      --replace-env-exclude-paths=PATH[,PATH...]
+                       Destination paths that will be excluded from processing
+      --replace-env-excludes=FILENAME[,FILENAME...]
+                       Filenames (without path) that should be excluded from
+                         processing.
+      --replace-env-file-suffixes=PATH[,PATH...]
+                       Filename suffixes (without dot) that should be
+                         processed. For example: txt,json,yaml
+      --replace-env-prefix=<prefix>
+                       Only placeholder variables with this prefix will be
+                         processed.
+                         Default: CFG_
+```
+
+### maven-download
+
+```
+Usage: mc-image-helper maven-download [-h] [--print-filename] [--skip-existing]
+                                      [--skip-up-to-date] -a=<artifact>
+                                      [--classifier=<classifier>] -g=<group>
+                                      [--output-directory=<outputDirectory>]
+                                      [--packaging=<packaging>]
+                                      [-r=<mavenRepo>] [-v=<version>]
+Downloads a maven artifact from a Maven repository
+  -a, -m, --module, --artifact=<artifact>
+
+      --classifier=<classifier>
+
+  -g, --group=<group>
+  -h, --help
+      --output-directory=<outputDirectory>
+
+      --packaging=<packaging>
+
+      --print-filename
+  -r, --maven-repo=<mavenRepo>
+
+      --skip-existing
+      --skip-up-to-date
+  -v, --version=<version>
+```
+
+### patch
+
+```
+Usage: mc-image-helper patch [-h] [--patch-env-prefix=<envPrefix>] FILE_OR_DIR
+      FILE_OR_DIR   Path to a PatchSet json file or directory containing
+                      PatchDefinition json files
+  -h, --help        Show this usage and exit
+      --patch-env-prefix=<envPrefix>
+                    Only placeholder variables with this prefix will be
+                      processed
+                      Default: CFG_
+```
+
+[See below](#patch-schemas) for a description of [PatchSet](#patchset) and [PatchDefinition](#patchdefinition) JSON schemas.
+
+### sync-and-interpolate
+
+```
+Usage: mc-image-helper sync-and-interpolate [-h] [--skip-newer-in-destination]
+       ([--replace-env-prefix=<prefix>] [--replace-env-excludes=FILENAME[,
+       FILENAME...]]... [--replace-env-exclude-paths=PATH[,PATH...]]...
+       --replace-env-file-suffixes=PATH[,PATH...]
+       [--replace-env-file-suffixes=PATH[,PATH...]]...) <src> <dest>
+Synchronizes the contents of one directory to another with conditional variable
+interpolation.
+      <src>    source directory
+      <dest>   destination directory
+  -h, --help   Show this usage and exit
+      --replace-env-exclude-paths=PATH[,PATH...]
+               Destination paths that will be excluded from processing
+      --replace-env-excludes=FILENAME[,FILENAME...]
+               Filenames (without path) that should be excluded from processing.
+      --replace-env-file-suffixes=PATH[,PATH...]
+               Filename suffixes (without dot) that should be processed. For
+                 example: txt,json,yaml
+      --replace-env-prefix=<prefix>
+               Only placeholder variables with this prefix will be processed.
+                 Default: CFG_
+      --skip-newer-in-destination
+               Skip any files that exist in the destination and have a newer
+                 modification time than the source.
+```
+
 
 ## Patch Schemas
 
