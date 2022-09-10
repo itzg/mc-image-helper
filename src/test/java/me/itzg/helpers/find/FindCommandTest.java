@@ -7,8 +7,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
-import org.assertj.core.api.ListAssert;
+import me.itzg.helpers.MoreAssertions;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -65,7 +64,7 @@ class FindCommandTest {
             assertThat(exitCode).isEqualTo(ExitCode.OK);
         });
 
-        assertThatLines(stdout).containsExactlyInAnyOrder(
+        MoreAssertions.assertThatLines(stdout).containsExactlyInAnyOrder(
             one.toString(),
             two.toString()
         );
@@ -87,7 +86,7 @@ class FindCommandTest {
             assertThat(exitCode).isEqualTo(ExitCode.OK);
         });
 
-        assertThatLines(stdout).containsExactlyInAnyOrder(
+        MoreAssertions.assertThatLines(stdout).containsExactlyInAnyOrder(
             thisDir.toString()
         );
     }
@@ -110,7 +109,7 @@ class FindCommandTest {
             assertThat(exitCode).isEqualTo(ExitCode.OK);
         });
 
-        assertThatLines(stdout).containsExactlyInAnyOrder(
+        MoreAssertions.assertThatLines(stdout).containsExactlyInAnyOrder(
             a1.toString(),
             a2.toString()
         );
@@ -133,7 +132,7 @@ class FindCommandTest {
             assertThat(exitCode).isEqualTo(ExitCode.OK);
         });
 
-        assertThatLines(stdout).containsExactlyInAnyOrder(
+        MoreAssertions.assertThatLines(stdout).containsExactlyInAnyOrder(
             this1.toString(),
             this2.toString(),
             this3.toString()
@@ -162,7 +161,7 @@ class FindCommandTest {
             assertThat(exitCode).isEqualTo(ExitCode.OK);
         });
 
-        assertThatLines(stdout).containsExactlyInAnyOrder(
+        MoreAssertions.assertThatLines(stdout).containsExactlyInAnyOrder(
             expected.toString()
         );
     }
@@ -184,7 +183,7 @@ class FindCommandTest {
             assertThat(exitCode).isEqualTo(ExitCode.OK);
         });
 
-        assertThatLines(stdout).containsExactlyInAnyOrder(
+        MoreAssertions.assertThatLines(stdout).containsExactlyInAnyOrder(
             expected.toString()
         );
     }
@@ -212,7 +211,7 @@ class FindCommandTest {
             assertThat(exitCode).isEqualTo(ExitCode.OK);
         });
 
-        assertThatLines(stdout)
+        MoreAssertions.assertThatLines(stdout)
             .containsExactlyInAnyOrder(
                 expected1.toString(),
                 expected2.toString()
@@ -238,7 +237,7 @@ class FindCommandTest {
                 assertThat(exitCode).isEqualTo(ExitCode.OK);
             });
 
-            assertThatLines(stdout)
+            MoreAssertions.assertThatLines(stdout)
                 .containsExactlyInAnyOrder(
                     a.toString()
                 );
@@ -259,7 +258,7 @@ class FindCommandTest {
                 assertThat(exitCode).isEqualTo(ExitCode.OK);
             });
 
-            assertThatLines(stdout)
+            MoreAssertions.assertThatLines(stdout)
                 .containsExactlyInAnyOrder(
                     tempDir.toString(),
                     a.toString()
@@ -283,7 +282,7 @@ class FindCommandTest {
                 assertThat(exitCode).isEqualTo(ExitCode.OK);
             });
 
-            assertThatLines(stdout)
+            MoreAssertions.assertThatLines(stdout)
                 .containsExactlyInAnyOrder(
                     b.toString()
                 );
@@ -340,7 +339,7 @@ class FindCommandTest {
             assertThat(exitCode).isEqualTo(ExitCode.OK);
         });
 
-        assertThatLines(stdout).containsExactlyInAnyOrder(
+        MoreAssertions.assertThatLines(stdout).containsExactlyInAnyOrder(
             one.toString(),
             two.toString(),
             three.toString()
@@ -364,7 +363,7 @@ class FindCommandTest {
             assertThat(exitCode).isEqualTo(ExitCode.OK);
         });
 
-        assertThatLines(stdout).containsAnyOf(
+        MoreAssertions.assertThatLines(stdout).containsAnyOf(
             a.toString(),
             b.toString(),
             c.toString()
@@ -388,7 +387,7 @@ class FindCommandTest {
             assertThat(exitCode).isEqualTo(ExitCode.OK);
         });
 
-        assertThatLines(stdout).containsExactlyInAnyOrder(
+        MoreAssertions.assertThatLines(stdout).containsExactlyInAnyOrder(
             one.toString(),
             two.toString()
         );
@@ -411,7 +410,7 @@ class FindCommandTest {
             assertThat(exitCode).isEqualTo(ExitCode.OK);
         });
 
-        assertThatLines(stdout).containsExactlyInAnyOrder(
+        MoreAssertions.assertThatLines(stdout).containsExactlyInAnyOrder(
             a.toString(),
             c.toString()
         );
@@ -437,7 +436,7 @@ class FindCommandTest {
             assertThat(exitCode).isEqualTo(ExitCode.OK);
         });
 
-        assertThatLines(stdout).containsExactlyInAnyOrder(
+        MoreAssertions.assertThatLines(stdout).containsExactlyInAnyOrder(
             two.toString(),
             three.toString()
         );
@@ -457,7 +456,7 @@ class FindCommandTest {
             assertThat(exitCode).isEqualTo(ExitCode.OK);
         });
 
-        assertThatLines(stdout).containsExactlyInAnyOrder(
+        MoreAssertions.assertThatLines(stdout).containsExactlyInAnyOrder(
             expected.toString()
         );
     }
@@ -682,10 +681,4 @@ class FindCommandTest {
 
     }
 
-    static ListAssert<String> assertThatLines(String content) {
-        final String[] lines = content.split("\n|\r\n|\r");
-        return new ListAssert<>(Arrays.stream(lines, 0,
-            lines[lines.length - 1].isEmpty() ? lines.length - 1 : lines.length
-        ));
-    }
 }
