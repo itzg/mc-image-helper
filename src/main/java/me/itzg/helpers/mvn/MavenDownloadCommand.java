@@ -18,6 +18,9 @@ import picocli.CommandLine.Option;
 @Slf4j
 public class MavenDownloadCommand implements Callable<Integer> {
 
+    @Option(names = {"--help", "-h"}, usageHelp = true)
+    boolean help;
+
     @Option(names = "--output-directory", defaultValue = ".")
     Path outputDirectory;
 

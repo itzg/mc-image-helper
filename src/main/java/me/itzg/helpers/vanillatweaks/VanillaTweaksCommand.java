@@ -40,13 +40,15 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
-@Command(name = "vanillatweaks")
+@Command(name = "vanillatweaks", description = "Downloads Vanilla Tweaks resource packs, data packs, or crafting tweaks"
+    + " given a share code or pack file")
 @Slf4j
 public class VanillaTweaksCommand implements Callable<Integer> {
 
     public static final String MANIFEST_FILENAME = ".vanillatweaks.manifest";
     private static final int FINGERPRINT_LENGTH = 7;
 
+    @SuppressWarnings("unused") // used by picocli
     public VanillaTweaksCommand() {
         this("https://vanillatweaks.net");
     }

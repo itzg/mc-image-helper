@@ -12,7 +12,7 @@ import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
-@Command(name = "yaml-path")
+@Command(name = "yaml-path", description = "Extracts a path from a YAML file using json-path syntax")
 public class YamlPathCmd implements Callable<Integer> {
 
   @Option(names = "--file", description = "A YAML file to query")
