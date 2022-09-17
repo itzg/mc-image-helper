@@ -7,6 +7,7 @@ import static org.mockserver.model.HttpResponse.response;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import me.itzg.helpers.TestLoggingAppender;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -50,6 +51,26 @@ class GetCommandTest {
 
     assertThat(status).isEqualTo(0);
     assertThat(output.toString()).isEqualTo("Response content");
+  }
+
+  @Test
+  void usesBasicAuth() throws MalformedURLException, URISyntaxException {
+    mock.expectRequest("GET","/",
+        request -> request.withHeader("Authorization", "Basic dXNlcjpwYXNz"),
+        response()
+            .withBody("You're in", MediaType.TEXT_PLAIN)
+    );
+
+    final StringWriter output = new StringWriter();
+    final int status =
+        new CommandLine(new GetCommand())
+            .setOut(new PrintWriter(output))
+            .execute(
+                mock.buildMockedUrl("/", "user:pass").toString()
+            );
+
+    assertThat(status).isEqualTo(0);
+    assertThat(output.toString()).isEqualTo("You're in");
   }
 
   @Test

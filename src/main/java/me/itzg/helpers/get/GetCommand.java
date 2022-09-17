@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -14,6 +15,7 @@ import java.nio.file.attribute.FileTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -375,12 +377,26 @@ public class GetCommand implements Callable<Integer> {
 
     private Path processSingleUri(URI uri, CloseableHttpClient client,
         Path modifiedSinceFile, OutputResponseHandler handler) throws URISyntaxException, IOException {
-        final URI requestUri = uri.getPath().startsWith("//") ?
+        URI requestUri = uri.getPath().startsWith("//") ?
             alterUriPath(uri, uri.getPath().substring(1)) : uri;
+
+        final String authHeader;
+        if (requestUri.getUserInfo() != null) {
+            authHeader = "Basic " +
+                Base64.getEncoder().withoutPadding()
+                    .encodeToString(requestUri.getUserInfo().getBytes(StandardCharsets.UTF_8));
+            requestUri = removeUserInfo(requestUri);
+        }
+        else {
+            authHeader = null;
+        }
 
         log.debug("Getting uri={}", requestUri);
 
         final HttpGet request = new HttpGet(requestUri);
+        if (authHeader != null) {
+            request.addHeader(HttpHeaders.AUTHORIZATION, authHeader);
+        }
         if (acceptContentTypes != null) {
             for (String acceptContentType : acceptContentTypes) {
                 request.addHeader(HttpHeaders.ACCEPT, acceptContentType);
@@ -430,5 +446,18 @@ public class GetCommand implements Callable<Integer> {
             uri.getFragment()
         );
     }
+
+    private static URI removeUserInfo(URI uri) throws URISyntaxException {
+        return new URI(
+            uri.getScheme(),
+            null,
+            uri.getHost(),
+            uri.getPort(),
+            uri.getPath(),
+            uri.getQuery(),
+            uri.getFragment()
+        );
+    }
+
 
 }
