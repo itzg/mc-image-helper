@@ -9,8 +9,8 @@ plugins {
     id "io.freefair.lombok" version "6.2.0"
     // https://github.com/qoomon/gradle-git-versioning-plugin
     id 'me.qoomon.git-versioning' version '6.1.1'
-    // https://jreleaser.org/guide/latest/index.html
-    id 'org.jreleaser' version '1.0.0'
+    // https://github.com/itzg/github-releaser-gradle-plugin
+    id 'io.github.itzg.github-releaser' version '0.1.1'
 }
 
 group = 'com.github.itzg'
@@ -52,80 +52,6 @@ application {
     mainClass = 'me.itzg.helpers.McImageHelper'
 }
 
-jreleaser {
-    project {
-        website = 'https://github.com/itzg/mc-image-helper'
-        docsUrl = 'https://github.com/itzg/mc-image-helper'
-        authors = ['Geoff Bourne']
-        tags = ['cli']
-        license = 'MIT'
-        extraProperties.put('inceptionYear', '2021')
-    }
-    distributions {
-        'mc-image-helper' {
-            artifact {
-                path = "build/distributions/{{projectName}}-{{projectVersion}}.tgz"
-            }
-            artifact {
-                path = "build/distributions/{{projectName}}-{{projectVersion}}.zip"
-            }
-        }
-    }
-    release {
-        github {
-            //noinspection GroovyAccessibility
-            owner = 'itzg'
-            branch = 'master'
-            prerelease {
-                pattern = '.*-SNAPSHOT'
-            }
-            overwrite = project.version.map(v -> v.endsWith('-SNAPSHOT'))
-            changelog {
-                formatted = 'ALWAYS'
-                preset = 'conventional-commits'
-                labeler {
-                    label = 'release'
-                    title = '^Prepare next release '
-                }
-                labeler {
-                    label = 'release'
-                    title = '^Release '
-                }
-                category {
-                    title = 'Internal'
-                    labels = ['release']
-                }
-                hide {
-                    categories = ['Internal']
-                }
-                contributors {
-                    format = '- {{contributorName}}'
-                }
-            }
-        }
-    }
-/* Something is broken in jreleaser and its logs don't explain what it is
-   Example build failure https://github.com/itzg/mc-image-helper/runs/7073392053?check_suite_focus=true#step:6:84
-
-    packagers {
-        scoop {
-            active = 'RELEASE'
-            bucket {
-                owner = 'itzg'
-                name = 'scoop-bucket'
-            }
-        }
-        brew {
-            active = 'RELEASE'
-            repoTap {
-                owner = 'itzg'
-                name = 'homebrew-tap'
-            }
-        }
-    }
-*/
-}
-
 project.tasks.distTar {
     compression = Compression.GZIP
 }
@@ -142,7 +68,7 @@ repositories {
 }
 
 dependencies {
-    implementation(platform('com.fasterxml.jackson:jackson-bom:2.13.3'))
+    implementation(platform('com.fasterxml.jackson:jackson-bom:2.14.1'))
     implementation(platform('ch.qos.logback:logback-parent:1.3.0')) {
         because '1.4.+ requires Java 11 and we are stuck on 8'
         version {
@@ -150,7 +76,7 @@ dependencies {
         }
     }
 
-    implementation('ch.qos.logback:logback-core')
+    implementation 'ch.qos.logback:logback-core'
     implementation 'ch.qos.logback:logback-classic'
     implementation "info.picocli:picocli:${picocliVersion}"
     implementation 'com.fasterxml.jackson.core:jackson-databind'
@@ -159,7 +85,7 @@ dependencies {
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
     implementation 'com.jayway.jsonpath:json-path:2.7.0'
     implementation 'org.apache.httpcomponents.client5:httpclient5:5.1.3'
-    implementation 'io.projectreactor.netty:reactor-netty-http:1.0.22'
+    implementation 'io.projectreactor.netty:reactor-netty-http:1.0.24'
     implementation 'org.apache.maven:maven-artifact:3.8.5'
 
     testImplementation 'org.assertj:assertj-core:3.23.1'
@@ -177,3 +103,9 @@ java {
     sourceCompatibility = JavaVersion.VERSION_1_8
 }
 
+githubReleaser {
+    project {
+        homepage = 'https://github.com/itzg/mc-image-helper'
+        license = 'MIT'
+    }
+}

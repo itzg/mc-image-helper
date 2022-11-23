@@ -40,7 +40,7 @@ public class ModrinthCommand implements Callable<Integer> {
 
     private final String baseUrl;
 
-    @Option(names = "--projects", description = "Project ID or Slug", required = true, split = ",", paramLabel = "id|slug")
+    @Option(names = "--projects", description = "Project ID or Slug", required = true, split = OPTION_SPLIT_COMMAS, paramLabel = "id|slug")
     List<String> projects;
 
     @Option(names = "--game-version", description = "Applicable Minecraft version", required = true)

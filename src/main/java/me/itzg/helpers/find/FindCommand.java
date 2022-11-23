@@ -1,5 +1,7 @@
 package me.itzg.helpers.find;
 
+import static me.itzg.helpers.McImageHelper.OPTION_SPLIT_COMMAS;
+
 import java.io.IOException;
 import java.nio.file.FileVisitOption;
 import java.nio.file.FileVisitResult;
@@ -26,17 +28,17 @@ public class FindCommand implements Callable<Integer> {
     @Option(names = {"-h", "--help"}, usageHelp = true)
     boolean help;
 
-    @Option(names = {"--type", "-t"}, defaultValue = "file", split = ",",
+    @Option(names = {"--type", "-t"}, defaultValue = "file", split = OPTION_SPLIT_COMMAS,
         description = "Valid values: ${COMPLETION-CANDIDATES}",
         converter = FindTypeConverter.class
     )
     EnumSet<FindType> type;
 
-    @Option(names = "--name", split = ",", paramLabel = "glob", converter = PathMatcherConverter.class,
+    @Option(names = "--name", split = OPTION_SPLIT_COMMAS, paramLabel = "glob", converter = PathMatcherConverter.class,
         description = "One or more glob patterns to match name part of the path")
     List<PathMatcher> names;
 
-    @Option(names = "--exclude-name", split = ",", paramLabel = "glob", converter = PathMatcherConverter.class,
+    @Option(names = "--exclude-name", split = OPTION_SPLIT_COMMAS, paramLabel = "glob", converter = PathMatcherConverter.class,
         description = "One or more glob patterns to exclude by looking at name part of the path. "
             + "If a pattern matches a directory's name, then its entire subtree is excluded.")
     List<PathMatcher> excludeNames;
@@ -148,7 +150,7 @@ public class FindCommand implements Callable<Integer> {
                 System.out.println(sb);
             }
             else {
-                System.out.println(path.toString());
+                System.out.println(path);
             }
         }
     }

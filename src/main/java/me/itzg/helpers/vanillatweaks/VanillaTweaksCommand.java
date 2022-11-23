@@ -57,10 +57,10 @@ public class VanillaTweaksCommand implements Callable<Integer> {
         this.baseUrl = baseUrl;
     }
 
-    @Option(names = "--share-codes", required = true, split = ",", paramLabel = "CODE")
+    @Option(names = "--share-codes", required = true, split = OPTION_SPLIT_COMMAS, paramLabel = "CODE")
     List<String> shareCodes;
 
-    @Option(names = "--pack-files", split = ",", paramLabel = "FILE")
+    @Option(names = "--pack-files", split = OPTION_SPLIT_COMMAS, paramLabel = "FILE")
     List<Path> packFiles;
 
     @Option(names = "--output-directory", defaultValue = ".", paramLabel = "DIR")
