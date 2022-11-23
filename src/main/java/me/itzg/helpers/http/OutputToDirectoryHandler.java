@@ -12,8 +12,7 @@ import org.apache.hc.core5.http.ClassicHttpResponse;
 import org.apache.hc.core5.http.HttpException;
 
 @Slf4j
-public
-class OutputToDirectoryHandler implements OutputResponseHandler {
+public class OutputToDirectoryHandler implements OutputResponseHandler {
 
   private final Path directory;
   final FilenameExtractor filenameExtractor;

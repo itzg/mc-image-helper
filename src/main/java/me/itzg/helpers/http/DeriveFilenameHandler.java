@@ -1,17 +1,21 @@
-package me.itzg.helpers.get;
+package me.itzg.helpers.http;
 
 import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
-import me.itzg.helpers.http.LatchingUrisInterceptor;
+import me.itzg.helpers.get.FilenameExtractor;
 import org.apache.hc.core5.http.ClassicHttpResponse;
 import org.apache.hc.core5.http.HttpException;
 import org.apache.hc.core5.http.io.HttpClientResponseHandler;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
 
 @Slf4j
-class DeriveFilenameHandler implements HttpClientResponseHandler<String> {
+public class DeriveFilenameHandler implements HttpClientResponseHandler<String> {
 
   final FilenameExtractor filenameExtractor;
+
+  public DeriveFilenameHandler() {
+    filenameExtractor = new FilenameExtractor(new LatchingUrisInterceptor());
+  }
 
   public DeriveFilenameHandler(LatchingUrisInterceptor interceptor) {
     filenameExtractor = new FilenameExtractor(interceptor);

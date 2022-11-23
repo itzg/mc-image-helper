@@ -22,10 +22,10 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import me.itzg.helpers.files.FileTreeSnapshot;
 import me.itzg.helpers.forge.Manifest.ManifestBuilder;
 import me.itzg.helpers.forge.model.PromotionsSlim;
 import me.itzg.helpers.http.Uris;
@@ -186,9 +186,9 @@ public class ForgeInstaller {
         ManifestBuilder manifestBuilder
     ) {
         log.debug("Gathering snapshot of {} before installer", outputDir);
-        final Set<String> snapshotBefore;
+        final FileTreeSnapshot snapshotBefore;
         try {
-            snapshotBefore = snapshotContents(outputDir);
+            snapshotBefore = FileTreeSnapshot.takeSnapshot(outputDir);
         } catch (IOException e) {
             throw new RuntimeException("Tried to snapshot files before forge installer", e);
         }
@@ -247,21 +247,10 @@ public class ForgeInstaller {
 
             log.debug("Gathering and comparing snapshot after installer");
             manifestBuilder.files(
-                snapshotContents(outputDir).stream()
-                    // looking for new files
-                    .filter(path -> !snapshotBefore.contains(path))
-                    .collect(Collectors.toSet())
+                snapshotBefore.findNewFiles()
             );
         } catch (IOException e) {
             throw new RuntimeException("Trying to run installer", e);
-        }
-    }
-
-    private Set<String> snapshotContents(Path dir) throws IOException {
-        try (Stream<Path> stream = Files.walk(dir)) {
-            return stream.filter(Files::isRegularFile)
-                .map(path -> dir.relativize(path).toString())
-                .collect(Collectors.toSet());
         }
     }
 

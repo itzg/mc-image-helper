@@ -1,4 +1,4 @@
-package me.itzg.helpers;
+package me.itzg.helpers.files;
 
 import java.io.IOException;
 import java.nio.file.Files;

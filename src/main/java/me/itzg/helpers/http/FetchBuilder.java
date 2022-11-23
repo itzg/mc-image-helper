@@ -15,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.McImageHelper;
 import me.itzg.helpers.get.ExtendedRequestRetryStrategy;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.classic.methods.HttpHead;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
@@ -40,7 +41,7 @@ public class FetchBuilder<SELF extends FetchBuilder<SELF>> {
     }
     private final Config config;
 
-    public FetchBuilder(URI uri) {
+    FetchBuilder(URI uri) {
         this.config = new Config(uri);
     }
 
@@ -50,6 +51,11 @@ public class FetchBuilder<SELF extends FetchBuilder<SELF>> {
 
     public SpecificFileFetchBuilder toFile(Path file) {
         return new SpecificFileFetchBuilder(this.config, file);
+    }
+
+    @SuppressWarnings("unused")
+    public OutputToDirectoryFetchBuilder toDirectory(Path directory) {
+        return new OutputToDirectoryFetchBuilder(this.config, directory);
     }
 
     public <T> ObjectFetchBuilder<T> toObject(Class<T> type) {
@@ -67,6 +73,14 @@ public class FetchBuilder<SELF extends FetchBuilder<SELF>> {
     protected HttpGet get() throws IOException {
         final HttpGet request = new HttpGet(config.uri);
         configureRequest(request);
+        return request;
+    }
+
+    protected HttpHead head(boolean withConfigure) throws IOException {
+        final HttpHead request = new HttpHead(config.uri);
+        if (withConfigure) {
+            configureRequest(request);
+        }
         return request;
     }
 
