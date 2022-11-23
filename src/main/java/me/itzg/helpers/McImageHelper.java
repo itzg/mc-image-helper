@@ -48,6 +48,8 @@ import picocli.CommandLine.Option;
 )
 public class McImageHelper {
 
+  public static final String OPTION_SPLIT_COMMAS = "\\s*,\\s*";
+
   @SuppressWarnings("unused")
   @CommandLine.Option(names = {"-h",
       "--help"}, usageHelp = true, description = "Show this usage and exit")

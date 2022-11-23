@@ -1,5 +1,6 @@
 package me.itzg.helpers.get;
 
+import static me.itzg.helpers.McImageHelper.OPTION_SPLIT_COMMAS;
 import static me.itzg.helpers.http.Fetch.fetch;
 
 import java.io.IOException;

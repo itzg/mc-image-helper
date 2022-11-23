@@ -1,5 +1,6 @@
 package me.itzg.helpers.modrinth;
 
+import static me.itzg.helpers.McImageHelper.OPTION_SPLIT_COMMAS;
 import static me.itzg.helpers.http.Fetch.fetch;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -34,8 +35,6 @@ import picocli.CommandLine.Option;
 @Slf4j
 public class ModrinthCommand implements Callable<Integer> {
 
-    public static final TypeReference<List<Version>> VERSION_LIST = new TypeReference<List<Version>>() {
-    };
     public static final String MODS_SUBDIR = "mods";
 
     private final String baseUrl;
@@ -137,9 +136,7 @@ public class ModrinthCommand implements Callable<Integer> {
                                 Stream.of(depVersion),
                                 expandDependencies(depVersion)
                             )
-                            .peek(expandedVer -> {
-                                log.debug("Expanded dependency={} into version={}", dep, expandedVer);
-                            });
+                            .peek(expandedVer -> log.debug("Expanded dependency={} into version={}", dep, expandedVer));
                     } else {
                         return Stream.empty();
                     }

@@ -1,5 +1,7 @@
 package me.itzg.helpers.patch;
 
+import static me.itzg.helpers.McImageHelper.OPTION_SPLIT_COMMAS;
+
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -49,7 +51,7 @@ public class ValueTypeConverter {
 
     public Object convert(String strValue) {
         if (isListType) {
-            final String[] parts = strValue.split("\\s*,\\s*");
+            final String[] parts = strValue.split(OPTION_SPLIT_COMMAS);
             return Arrays.stream(parts)
                     .map(converter)
                     .collect(Collectors.toList());

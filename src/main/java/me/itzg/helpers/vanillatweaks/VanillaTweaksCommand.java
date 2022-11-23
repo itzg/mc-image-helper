@@ -1,5 +1,7 @@
 package me.itzg.helpers.vanillatweaks;
 
+import static me.itzg.helpers.McImageHelper.OPTION_SPLIT_COMMAS;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.handler.codec.http.HttpHeaderNames;
