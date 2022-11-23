@@ -1,5 +1,6 @@
 package me.itzg.helpers.get;
 
+import static me.itzg.helpers.McImageHelper.OPTION_SPLIT_COMMAS;
 import static me.itzg.helpers.http.Fetch.fetch;
 
 import java.io.IOException;
@@ -92,7 +93,7 @@ public class GetCommand implements Callable<Integer> {
         description = "When set and using an output directory, files that match the given"
             + " glob patterns will be pruned if not part of the download set. For example *.jar",
         paramLabel = "GLOB",
-        split = ","
+        split = OPTION_SPLIT_COMMAS
     )
     List<String> pruneOthers;
 
@@ -109,7 +110,7 @@ public class GetCommand implements Callable<Integer> {
 
     @Option(names = "--accept",
         description = "Specifies the accepted content type(s) to use with the request",
-        split = ","
+        split = OPTION_SPLIT_COMMAS
     )
     List<String> acceptContentTypes;
 
@@ -129,7 +130,7 @@ public class GetCommand implements Callable<Integer> {
     @Option(names = "--retry-delay", description = "in seconds", defaultValue = "2")
     int retryDelay;
 
-    @Parameters(split = ",", paramLabel = "URI",
+    @Parameters(split = OPTION_SPLIT_COMMAS, paramLabel = "URI",
         description = "The URI of the resource to retrieve. When the output is a directory,"
             + " more than one URI can be requested.",
         converter = LenientUriConverter.class

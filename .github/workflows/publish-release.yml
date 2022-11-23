@@ -18,7 +18,6 @@ jobs:
     - name: Setup Java JDK
       uses: actions/setup-java@v3
       with:
-        # maximize compatibility with minecraft images
         distribution: 'temurin'
         java-version: '17'
 
@@ -33,15 +32,10 @@ jobs:
     - name: Release
       uses: gradle/gradle-build-action@v2
       with:
-        arguments: jreleaserFullRelease
+        arguments: githubReleaseApplication
       env:
-        JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        JRELEASER_SCOOP_GITHUB_TOKEN: ${{ secrets.PUSH_ACCESS_GITHUB_TOKEN }}
-        JRELEASER_HOMEBREW_GITHUB_TOKEN: ${{ secrets.PUSH_ACCESS_GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_PUBLISH_TOKEN: ${{ secrets.PUSH_ACCESS_GITHUB_TOKEN }}
+        SCOOP_BUCKET_REPO: itzg/scoop-bucket
+        HOMEBREW_TAP_REPO: itzg/homebrew-tap
 
-    - name: Archive jreleaser trace log
-      uses: actions/upload-artifact@v3
-      if: success() || failure()    # run this step even if previous step failed
-      with:
-        name: jrelease-trace-log
-        path: build/jreleaser/trace.log
