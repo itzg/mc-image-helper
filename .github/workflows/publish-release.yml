@@ -24,15 +24,12 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
-    - name: Test
-      uses: gradle/gradle-build-action@v2
-      with:
-        arguments: test
-
     - name: Release
       uses: gradle/gradle-build-action@v2
       with:
-        arguments: githubReleaseApplication
+        arguments: |
+          test 
+          githubPublishApplication
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         GITHUB_PUBLISH_TOKEN: ${{ secrets.PUSH_ACCESS_GITHUB_TOKEN }}
