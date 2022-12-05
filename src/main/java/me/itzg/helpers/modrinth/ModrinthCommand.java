@@ -60,8 +60,7 @@ public class ModrinthCommand implements Callable<Integer> {
 
     @SuppressWarnings("unused")
     public ModrinthCommand() {
-        this("http://localhost:8080");
-//        this("https://api.modrinth.com/v2");
+        this("https://api.modrinth.com/v2");
     }
 
     public ModrinthCommand(String baseUrl) {
