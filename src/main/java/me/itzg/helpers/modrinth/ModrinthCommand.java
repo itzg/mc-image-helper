@@ -3,7 +3,6 @@ package me.itzg.helpers.modrinth;
 import static me.itzg.helpers.McImageHelper.OPTION_SPLIT_COMMAS;
 import static me.itzg.helpers.http.Fetch.fetch;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.net.URI;
@@ -61,7 +60,8 @@ public class ModrinthCommand implements Callable<Integer> {
 
     @SuppressWarnings("unused")
     public ModrinthCommand() {
-        this("https://api.modrinth.com/v2");
+        this("http://localhost:8080");
+//        this("https://api.modrinth.com/v2");
     }
 
     public ModrinthCommand(String baseUrl) {
@@ -151,6 +151,7 @@ public class ModrinthCommand implements Callable<Integer> {
         return fetch(Uris.populateToUri(
             baseUrl + "/version/{id}", versionId
         ))
+            .userAgentCommand("modrinth")
             .toObject(Version.class)
             .execute();
     }
@@ -184,6 +185,7 @@ public class ModrinthCommand implements Callable<Integer> {
 
         try {
             return fetch(URI.create(versionFile.getUrl()))
+                .userAgentCommand("modrinth")
                 .toFile(outPath)
                 .skipExisting(true)
                 .execute();
@@ -209,6 +211,7 @@ public class ModrinthCommand implements Callable<Integer> {
                 baseUrl + "/project/{id|slug}",
                 projectIdOrSlug
             ))
+                .userAgentCommand("modrinth")
                 .toObject(Project.class)
                 .execute();
         } catch (IOException e) {
@@ -222,6 +225,7 @@ public class ModrinthCommand implements Callable<Integer> {
                 baseUrl + "/project/{id|slug}/version?loaders={loader}&game_versions={gameVersion}",
                 project, arrayOfQuoted(loader.toString()), arrayOfQuoted(gameVersion)
             ))
+                .userAgentCommand("modrinth")
                 .toObjectList(Version.class)
                 .execute();
         } catch (IOException e) {

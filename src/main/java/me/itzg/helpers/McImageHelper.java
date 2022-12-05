@@ -2,7 +2,15 @@ package me.itzg.helpers;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.Enumeration;
+import java.util.jar.Attributes;
+import java.util.jar.Attributes.Name;
+import java.util.jar.Manifest;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.assertcmd.AssertCommand;
 import me.itzg.helpers.errors.ExceptionHandler;
 import me.itzg.helpers.errors.ExitCodeMapper;
@@ -24,9 +32,11 @@ import me.itzg.helpers.versions.JavaReleaseCommand;
 import org.slf4j.LoggerFactory;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
+import picocli.CommandLine.IVersionProvider;
 import picocli.CommandLine.Option;
 
 @Command(name = "mc-image-helper",
+    versionProvider = McImageHelper.AppVersionProvider.class,
     subcommands = {
         Asciify.class,
         AssertCommand.class,
@@ -46,6 +56,7 @@ import picocli.CommandLine.Option;
         VanillaTweaksCommand.class,
     }
 )
+@Slf4j
 public class McImageHelper {
 
   public static final String OPTION_SPLIT_COMMAS = "\\s*,\\s*";
@@ -54,6 +65,9 @@ public class McImageHelper {
   @CommandLine.Option(names = {"-h",
       "--help"}, usageHelp = true, description = "Show this usage and exit")
   boolean showHelp;
+
+  @Option(names = {"-V", "--version"}, versionHelp = true)
+  boolean showVersion;
 
   @SuppressWarnings("unused")
   @Option(names = "--debug", description = "Enable debug output. Can also set environment variable DEBUG_HELPER",
@@ -67,8 +81,17 @@ public class McImageHelper {
   @Getter
   boolean silent;
 
+  private static String version;
+
   public static void main(String[] args) {
     final McImageHelper rootCommand = new McImageHelper();
+    try {
+      version = McImageHelper.loadVersion();
+    } catch (IOException e) {
+      log.error("Failed to load version", e);
+      System.exit(1);
+    }
+
     System.exit(
         new CommandLine(rootCommand)
             .setExitCodeExceptionMapper(new ExitCodeMapper())
@@ -77,4 +100,33 @@ public class McImageHelper {
     );
   }
 
+  private static String loadVersion() throws IOException {
+    final Enumeration<URL> resources = McImageHelper.class.getClassLoader().getResources("META-INF/MANIFEST.MF");
+    while (resources.hasMoreElements()) {
+      final URL url = resources.nextElement();
+      try (InputStream inputStream = url.openStream()) {
+        final Manifest manifest = new Manifest(inputStream);
+        final Attributes attributes = manifest.getMainAttributes();
+        if ("mc-image-helper".equals(attributes.getValue(Name.IMPLEMENTATION_TITLE))) {
+          return attributes.getValue(Name.IMPLEMENTATION_VERSION);
+        }
+      }
+    }
+    return "???";
+  }
+
+  public static String getVersion() {
+    return version;
+  }
+
+  public static class AppVersionProvider implements IVersionProvider {
+    @Override
+    public String[] getVersion() {
+
+          return new String[]{
+              "${COMMAND-FULL-NAME}",
+              version
+          };
+    }
+  }
 }

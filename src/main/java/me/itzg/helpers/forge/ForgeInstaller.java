@@ -286,6 +286,7 @@ public class ForgeInstaller {
                     "https://maven.minecraftforge.net/net/minecraftforge/forge/{version}/forge-{version}-installer.jar",
                     installerUrlVersion, installerUrlVersion
                 ))
+                    .userAgentCommand("forge")
                     .toFile(installerJar)
                     .acceptContentTypes(Collections.singletonList("application/java-archive"))
                     .execute();
@@ -325,6 +326,7 @@ public class ForgeInstaller {
 
         final PromotionsSlim promotionsSlim =
             fetch(URI.create("https://files.minecraftforge.net/maven/net/minecraftforge/forge/promotions_slim.json"))
+                .userAgentCommand("forge")
                 .toObject(PromotionsSlim.class)
                 .execute();
 

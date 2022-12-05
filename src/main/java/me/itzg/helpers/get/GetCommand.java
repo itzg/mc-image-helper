@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import me.itzg.helpers.McImageHelper;
 import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.http.LatchingUrisInterceptor;
 import me.itzg.helpers.http.LenientUriConverter;
@@ -160,7 +161,7 @@ public class GetCommand implements Callable<Integer> {
         try (CloseableHttpClient client = HttpClients.custom()
             .addExecInterceptorFirst("latchRequestUris", interceptor)
             .useSystemProperties()
-            .setUserAgent("mc-image-helper/0")
+            .setUserAgent("mc-image-helper/"+ McImageHelper.getVersion()+" (cmd=get)")
             .setRetryStrategy(
                 new ExtendedRequestRetryStrategy(retryCount, retryDelay)
             )

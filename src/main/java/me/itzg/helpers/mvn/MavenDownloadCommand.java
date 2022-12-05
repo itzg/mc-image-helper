@@ -82,6 +82,7 @@ public class MavenDownloadCommand implements Callable<Integer> {
 
         log.debug("Downloading from {}", uri);
         return fetch(uri)
+            .userAgentCommand("maven-download")
             .toFile(outputDirectory.resolve(filename))
             .skipUpToDate(skipUpToDate)
             .skipExisting(skipExisting)
@@ -120,6 +121,7 @@ public class MavenDownloadCommand implements Callable<Integer> {
         log.debug("Fetching metadata from {}", metadataUri);
         try {
             return fetch(metadataUri)
+                .userAgentCommand("maven-download")
                 .toObject(MavenMetadata.class, new XmlMapper())
                 .execute();
         } catch (IOException e) {

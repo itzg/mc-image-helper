@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import lombok.extern.slf4j.Slf4j;
+import me.itzg.helpers.McImageHelper;
 import me.itzg.helpers.get.ExtendedRequestRetryStrategy;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
@@ -27,6 +28,7 @@ public class FetchBuilder<SELF extends FetchBuilder<SELF>> {
         private final URI uri;
         private List<String> acceptContentTypes;
         private String userAgent;
+        private String userAgentCommand;
         private final Map<String, String> headers = new HashMap<>();
 
         private int retryCount = 5;
@@ -88,6 +90,11 @@ public class FetchBuilder<SELF extends FetchBuilder<SELF>> {
         return self();
     }
 
+    public SELF userAgentCommand(String userAgentCommand) {
+        config.userAgentCommand = userAgentCommand;
+        return self();
+    }
+
     @SuppressWarnings("unused")
     public SELF header(String name, String value) {
         config.headers.put(name, value);
@@ -117,11 +124,22 @@ public class FetchBuilder<SELF extends FetchBuilder<SELF>> {
                 }
             })
             .useSystemProperties()
-            .setUserAgent(config.userAgent)
+            .setUserAgent(resolveUserAgent())
             .setRetryStrategy(
                 new ExtendedRequestRetryStrategy(config.retryCount, (int) config.retryDelay.getSeconds())
             );
         return clientBuilder;
+    }
+
+    private String resolveUserAgent() {
+        if (config.userAgent != null) {
+            return config.userAgent;
+        }
+        return String.format("%s/%s (cmd=%s)",
+            "mc-image-helper",
+            McImageHelper.getVersion(),
+            config.userAgentCommand != null ? config.userAgentCommand : "unspecified"
+        );
     }
 
     protected void configureRequest(BasicHttpRequest request) throws IOException {
