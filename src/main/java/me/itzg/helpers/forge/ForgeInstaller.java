@@ -4,7 +4,6 @@ import static me.itzg.helpers.http.Fetch.fetch;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.ProcessBuilder.Redirect;
@@ -26,6 +25,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.files.FileTreeSnapshot;
+import me.itzg.helpers.files.ResultsFileWriter;
 import me.itzg.helpers.forge.Manifest.ManifestBuilder;
 import me.itzg.helpers.forge.model.PromotionsSlim;
 import me.itzg.helpers.http.Uris;
@@ -151,9 +151,8 @@ public class ForgeInstaller {
     private void populateResultsFile(Path resultsFile, Manifest manifest) throws IOException {
         log.debug("Populating results file {}", resultsFile);
 
-        try (BufferedWriter writer = Files.newBufferedWriter(resultsFile)) {
-            writer.write("SERVER="+manifest.getServerEntry());
-            writer.newLine();
+        try (ResultsFileWriter writer = new ResultsFileWriter(resultsFile)) {
+            writer.write("SERVER", manifest.getServerEntry());
         }
     }
 

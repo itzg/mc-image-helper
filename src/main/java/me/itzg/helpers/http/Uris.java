@@ -31,10 +31,14 @@ public final class Uris {
     return sb.toString();
   }
 
+  /**
+   * @param values replaces {@code {...}} placeholders in {@code url}
+   */
   public static URI populateToUri(String url, String... values) {
     return URI.create(populate(url, values));
   }
 
   private Uris() {
   }
+
 }
