@@ -37,6 +37,15 @@ gitVersioning.apply {
 
 }
 
+jar {
+    manifest {
+        attributes(
+            "Implementation-Title": 'mc-image-helper',
+            "Implementation-Version": project.version
+        )
+    }
+}
+
 java {
     sourceCompatibility = JavaVersion.VERSION_1_8
 }
