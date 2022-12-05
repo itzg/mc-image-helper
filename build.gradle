@@ -13,8 +13,8 @@ plugins {
     id 'io.github.itzg.github-releaser' version '0.1.1'
 }
 
-group = 'com.github.itzg'
-description = 'mc-image-helper'
+group = 'io.github.itzg'
+description = 'This tool does the complicated bits for itzg/minecraft-server'
 
 version = '0.0.1-SNAPSHOT'
 gitVersioning.apply {
