@@ -143,7 +143,7 @@ public class ForgeInstaller {
                 log.debug("Skipping deletion of non-existent file {}", file);
             }
             catch (IOException e) {
-                log.warn("Failed to delete old file {} in {}: {}", file, dir, e.getMessage());
+                log.warn("Failed to delete old file {} in {}", file, dir, e);
             }
         }
     }
