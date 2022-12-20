@@ -17,11 +17,12 @@ public class ResultsFileWriter implements AutoCloseable {
         writer = Files.newBufferedWriter(resultsFile);
     }
 
-    public void write(String field, String value) throws IOException {
+    public ResultsFileWriter write(String field, String value) throws IOException {
         writer.write(field);
         writer.write("=");
         writer.write(value);
         writer.newLine();
+        return this;
     }
 
     @Override

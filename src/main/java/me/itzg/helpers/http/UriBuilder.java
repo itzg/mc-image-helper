@@ -14,6 +14,10 @@ public class UriBuilder {
         return new UriBuilder(baseUrl);
     }
 
+    public static UriBuilder withNoBaseUrl() {
+        return new UriBuilder("");
+    }
+
     public URI resolve(String path, String... variables) {
         return Uris.populateToUri(baseUrl + path, variables);
     }

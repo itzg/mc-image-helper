@@ -2,7 +2,10 @@
 GET https://meta.fabricmc.net/v2/versions/loader/{{game_version}}
 
 ###
-GET https://meta.fabricmc.net/v2/versions/loader/{{game_version}}/{{loader_version}}
+GET https://meta.fabricmc.net/v2/versions/loader/{{game_version}}/{{loader_version}}/server/json
 
 ###
 GET https://meta.fabricmc.net/v2/versions/installer
+
+###
+GET https://meta.fabricmc.net/v2/versions/loader/{{game_version}}/{{loader_version}}/{{installer_version}}/server/jar
