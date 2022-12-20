@@ -1,17 +1,18 @@
 package me.itzg.helpers.sync;
 
-import lombok.SneakyThrows;
-import lombok.ToString;
-import lombok.extern.slf4j.Slf4j;
-import me.itzg.helpers.env.Interpolator;
-import me.itzg.helpers.env.StandardEnvironmentVariablesProvider;
-import picocli.CommandLine;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.stream.Stream;
+import lombok.SneakyThrows;
+import lombok.ToString;
+import lombok.extern.slf4j.Slf4j;
+import me.itzg.helpers.env.Interpolator;
+import me.itzg.helpers.env.StandardEnvironmentVariablesProvider;
+import me.itzg.helpers.errors.GenericException;
+import picocli.CommandLine;
 
 @CommandLine.Command(name = "interpolate",
 description = "Interpolates existing files in one or more directories")
@@ -39,9 +40,7 @@ public class InterpolateCommand implements Callable<Integer> {
             try {
                 processDirectory(directory, interpolator);
             } catch (IOException e) {
-                log.error("Failed to process directory={}: {}", directory, e.getMessage());
-                log.debug("Details", e);
-                return 2;
+                throw new GenericException("Failed to process the directory " + directory, e);
             }
         }
 
@@ -49,10 +48,12 @@ public class InterpolateCommand implements Callable<Integer> {
     }
 
     private void processDirectory(Path directory, Interpolator interpolator) throws IOException {
-        Files.walk(directory)
+        try (Stream<Path> paths = Files.walk(directory)) {
+            paths
                 .filter(Files::isRegularFile)
                 .filter(replaceEnv::matches)
                 .forEach(path -> processFile(path, interpolator));
+        }
     }
 
     @SneakyThrows

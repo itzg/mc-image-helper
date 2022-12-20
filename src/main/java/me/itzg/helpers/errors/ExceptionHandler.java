@@ -21,21 +21,8 @@ public class ExceptionHandler implements IExecutionExceptionHandler {
       ParseResult parseResult) {
 
     if (!mcImageHelper.isSilent()) {
-      if (e.getCause() != null) {
-        log.error("'{}' command failed: {} caused by {}",
-            commandLine.getCommandName(),
-            e.getMessage() != null ? e.getMessage() : e.getClass(),
-            e.getCause().getMessage()
-            );
-      }
-      else {
-        log.error("'{}' command failed: {}",
-            commandLine.getCommandName(),
-            e.getMessage() != null ? e.getMessage() : e.getClass());
-      }
+      log.error("'{}' command failed", commandLine.getCommandName(), e);
     }
-
-    log.debug("Details", e);
 
     final IExitCodeExceptionMapper mapper = commandLine.getExitCodeExceptionMapper();
     return mapper != null ? mapper.getExitCode(e) : 1;
