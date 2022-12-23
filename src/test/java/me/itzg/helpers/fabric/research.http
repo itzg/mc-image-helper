@@ -1,5 +1,8 @@
 ###
-GET https://meta.fabricmc.net/v2/versions/loader/{{game_version}}
+GET https://meta.fabricmc.net/v2/versions/loader/1.19.2
+
+###
+GET https://meta.fabricmc.net/v2/versions/loader/1.19.3
 
 ###
 GET https://meta.fabricmc.net/v2/versions/loader/{{game_version}}/{{loader_version}}/server/json

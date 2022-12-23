@@ -13,7 +13,7 @@ import org.apache.commons.codec.binary.Hex;
 
 public class Checksums {
 
-    public static final String DEFAULT_PREFIX = "sha1";
+    public static final String DEFAULT_PREFIX = "sha256";
 
     private static final Map<String/*prefix*/, String/*algo*/> prefixAlgos = new HashMap<>();
     private static final String DELIMITER = ":";

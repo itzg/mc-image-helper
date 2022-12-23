@@ -5,6 +5,7 @@ import static me.itzg.helpers.http.Fetch.fetch;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -14,9 +15,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
-import me.itzg.helpers.fabric.FabricManifest.LocalFile;
-import me.itzg.helpers.fabric.FabricManifest.RemoteFile;
-import me.itzg.helpers.fabric.FabricManifest.Versions;
 import me.itzg.helpers.fabric.LoaderResponseEntry.Loader;
 import me.itzg.helpers.files.Checksums;
 import me.itzg.helpers.files.Manifests;
@@ -36,7 +34,13 @@ public class FabricLauncherInstaller {
     @Getter @Setter
     private String fabricMetaBaseUrl = "https://meta.fabricmc.net";
 
-    public void useVersions(@NonNull String minecraftVersion, String loaderVersion, String installerVersion)
+    /**
+     * @param minecraftVersion required
+     * @param loaderVersion optional
+     * @param installerVersion optional
+     * @return the launcher's path
+     */
+    public Path installUsingVersions(@NonNull String minecraftVersion, String loaderVersion, String installerVersion)
         throws IOException {
         Objects.requireNonNull(outputDir, "outputDir is required");
 
@@ -49,15 +53,16 @@ public class FabricLauncherInstaller {
         final FabricManifest manifest = Manifests.load(outputDir, MANIFEST_ID, FabricManifest.class);
 
         final Versions versions = Versions.builder()
-            .gameVersion(minecraftVersion)
-            .loaderVersion(loaderVersion)
-            .installerVersion(installerVersion)
+            .game(minecraftVersion)
+            .loader(loaderVersion)
+            .installer(installerVersion)
             .build();
 
         final boolean needsInstall = manifest == null || manifest.getOrigin() == null ||
             !manifest.getOrigin().equals(versions);
 
         if (needsInstall) {
+            // TODO cleanup if manifest != null
             if (manifest != null && manifest.getOrigin() != null) {
                 log.info("Upgrading Fabric from {} to {}", manifest.getOrigin(), versions);
             }
@@ -85,15 +90,21 @@ public class FabricLauncherInstaller {
                 .files(
                     Manifests.relativizeAll(outputDir, Collections.singletonList(launcherPath))
                 )
+                .launcherPath(launcherPath.toString())
                 .build();
 
             Manifests.cleanup(outputDir, manifest, newManifest, f -> log.debug("Removing {}", f));
 
             Manifests.save(outputDir, MANIFEST_ID, newManifest);
+
+            return launcherPath;
+        }
+        else {
+            return Paths.get(manifest.getLauncherPath());
         }
     }
 
-    public void useLauncherFile(Path launcher) throws IOException {
+    public void installGivenLauncherFile(Path launcher) throws IOException {
         if (resultsFile != null) {
             try (ResultsFileWriter writer = new ResultsFileWriter(resultsFile)) {
                 writer.write(RESULT_LAUNCHER, launcher.toString());
@@ -105,7 +116,7 @@ public class FabricLauncherInstaller {
 
             final FabricManifest manifest = Manifests.load(outputDir, MANIFEST_ID, FabricManifest.class);
             final String previousChecksum;
-            if (manifest != null && manifest.getOrigin() instanceof FabricManifest.LocalFile) {
+            if (manifest != null && manifest.getOrigin() instanceof LocalFile) {
                 previousChecksum = ((LocalFile) manifest.getOrigin()).getChecksum();
             }
             else {
@@ -117,6 +128,7 @@ public class FabricLauncherInstaller {
                 .origin(LocalFile.builder()
                     .checksum(newChecksum)
                     .build())
+                .launcherPath(launcher.toString())
                 .build();
 
             if (previousChecksum != null) {
@@ -124,15 +136,22 @@ public class FabricLauncherInstaller {
                     log.info("Provided launcher has changed");
                 }
             }
-            else if (manifest != null && manifest.getOrigin() != null) {
-                log.info("Switching from {} to provided launcher", manifest.getOrigin());
+            else if (manifest != null) {
+                Manifests.cleanup(outputDir, manifest, newManifest, f -> log.debug("Removing {}", f));
+
+                if (manifest.getOrigin() != null) {
+                    log.info("Switching from {} to provided launcher", manifest.getOrigin());
+                }
             }
 
             Manifests.save(outputDir, MANIFEST_ID, newManifest);
         }
     }
 
-    public void useUri(URI loaderUri) {
+    /**
+     * @return launcher's path
+     */
+    public Path installUsingUri(URI loaderUri) throws IOException {
         Objects.requireNonNull(outputDir, "outputDir is required");
 
         final Path launcher;
@@ -161,12 +180,14 @@ public class FabricLauncherInstaller {
             log.info("Using {} downloaded from {}", launcher, loaderUri);
         }
 
-        Manifests.save(outputDir, MANIFEST_ID,
-            FabricManifest.builder()
-                .origin(newOrigin)
-                .files(Manifests.relativizeAll(outputDir, Collections.singletonList(launcher)))
-                .build()
-            );
+        final FabricManifest newManifest = FabricManifest.builder()
+            .origin(newOrigin)
+            .launcherPath(launcher.toString())
+            .files(Manifests.relativizeAll(outputDir, Collections.singletonList(launcher)))
+            .build();
+        Manifests.save(outputDir, MANIFEST_ID, newManifest);
+
+        Manifests.cleanup(outputDir, oldManifest, newManifest, f -> log.debug("Removing {}", f));
 
         if (resultsFile != null) {
             try (ResultsFileWriter results = new ResultsFileWriter(resultsFile)) {
@@ -175,6 +196,8 @@ public class FabricLauncherInstaller {
                 throw new GenericException("Failed to write results file", e);
             }
         }
+
+        return launcher;
     }
 
     private String resolveInstallerVersion(UriBuilder uriBuilder, String installerVersion) {

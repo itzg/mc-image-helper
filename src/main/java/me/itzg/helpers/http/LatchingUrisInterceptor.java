@@ -29,7 +29,7 @@ public class LatchingUrisInterceptor implements ExecChainHandler {
     if (redirectLocations != null) {
       log.debug("Post-request capturing redirectLocations={}", redirectLocations.getAll());
 
-      redirectLocations.getAll().forEach(uris::push);
+      uris.addAll(redirectLocations.getAll());
     }
     return resp;
   }

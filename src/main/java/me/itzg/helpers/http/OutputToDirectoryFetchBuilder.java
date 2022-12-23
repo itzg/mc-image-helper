@@ -28,9 +28,13 @@ public class OutputToDirectoryFetchBuilder extends FetchBuilder<OutputToDirector
     }
 
     public Path execute() throws IOException {
-        try (CloseableHttpClient client = client()) {
+        final LatchingUrisInterceptor interceptor = new LatchingUrisInterceptor();
+
+        try (CloseableHttpClient client = client(
+            httpClientBuilder -> httpClientBuilder.addExecInterceptorFirst("latchRequestUris", interceptor)
+        )) {
             final HttpHead headReq = head(false);
-            final String filename = client.execute(headReq, new DeriveFilenameHandler());
+            final String filename = client.execute(headReq, new DeriveFilenameHandler(interceptor));
 
             final Path outputFile = outputDirectory.resolve(filename);
             if (skipExisting && Files.exists(outputFile)) {

@@ -55,6 +55,7 @@ test {
 
     // Can set with -PmockServerLogLevel=info
     systemProperty 'mockServerLogLevel', findProperty('mockServerLogLevel') ?: 'warn'
+    systemProperty 'testEnableManualTests', findProperty('testEnableManualTests') ?: 'false'
 }
 
 application {
@@ -101,10 +102,15 @@ dependencies {
     implementation 'commons-codec:commons-codec:1.15'
 
     testImplementation 'org.assertj:assertj-core:3.23.1'
+    // https://github.com/webcompere/model-assert
+    // for json assertions
+    testImplementation 'uk.org.webcompere:model-assert:1.0.0'
     testImplementation 'org.junit.jupiter:junit-jupiter:5.9.0'
     testImplementation 'org.junit.jupiter:junit-jupiter-params:5.9.0'
     testImplementation 'org.mockito:mockito-junit-jupiter:4.9.0'
+    // would like to transition these to wiremock
     testImplementation 'org.mock-server:mockserver-junit-jupiter:5.14.0'
+    testImplementation "com.github.tomakehurst:wiremock-jre8:2.35.0"
     // https://github.com/stefanbirkner/system-lambda
     testImplementation 'com.github.stefanbirkner:system-lambda:1.2.1'
 

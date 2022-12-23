@@ -1,0 +1,29 @@
+{
+  "id" : "986d0d46-ff99-4edc-9a53-84146873f238",
+  "name" : "v2_versions_loader_1193",
+  "request" : {
+    "url" : "/v2/versions/loader/1.19.3",
+    "method" : "GET"
+  },
+  "response" : {
+    "status" : 200,
+    "body" : "[\n  {\n    \"loader\": {\n      \"separator\": \".\",\n      \"build\": 12,\n      \"maven\": \"net.fabricmc:fabric-loader:0.14.12\",\n      \"version\": \"0.14.12\",\n      \"stable\": true\n    },\n    \"intermediary\": {\n      \"maven\": \"net.fabricmc:intermediary:1.19.3\",\n      \"version\": \"1.19.3\",\n      \"stable\": true\n    },\n    \"launcherMeta\": {\n      \"version\": 1,\n      \"libraries\": {\n        \"client\": [],\n        \"common\": [\n          {\n            \"name\": \"net.fabricmc:tiny-mappings-parser:0.3.0+build.17\",\n            \"url\": \"https://maven.fabricmc.net/\"\n          },\n          {\n            \"name\": \"net.fabricmc:sponge-mixin:0.11.4+mixin.0.8.5\",\n            \"url\": \"https://maven.fabricmc.net/\"\n          },\n          {\n            \"name\": \"net.fabricmc:tiny-remapper:0.8.2\",\n            \"url\": \"https://maven.fabricmc.net/\"\n          },\n          {\n            \"name\": \"net.fabricmc:access-widener:2.1.0\",\n            \"url\": \"https://maven.fabricmc.net/\"\n          },\n          {\n            \"name\": \"org.ow2.asm:asm:9.4\",\n            \"url\": \"https://maven.fabricmc.net/\"\n          },\n          {\n            \"name\": \"org.ow2.asm:asm-analysis:9.4\",\n            \"url\": \"https://maven.fabricmc.net/\"\n          },\n          {\n            \"name\": \"org.ow2.asm:asm-commons:9.4\",\n            \"url\": \"https://maven.fabricmc.net/\"\n          },\n          {\n            \"name\": \"org.ow2.asm:asm-tree:9.4\",\n            \"url\": \"https://maven.fabricmc.net/\"\n          },\n          {\n            \"name\": \"org.ow2.asm:asm-util:9.4\",\n            \"url\": \"https://maven.fabricmc.net/\"\n          }\n        ],\n        \"server\": []\n      },\n      \"mainClass\": {\n        \"client\": \"net.fabricmc.loader.impl.launch.knot.KnotClient\",\n        \"server\": \"net.fabricmc.loader.impl.launch.knot.KnotServer\"\n      }\n    }\n  },\n  {\n    \"loader\": {\n      \"separator\": \".\",\n      \"build\": 11,\n      \"maven\": \"net.fabricmc:fabric-loader:0.14.11\",\n      \"version\": \"0.14.11\",\n      \"stable\": false\n    },\n    \"intermediary\": {\n      \"maven\": \"net.fabricmc:intermediary:1.19.3\",\n      \"version\": \"1.19.3\",\n      \"stable\": true\n    },\n    \"launcherMeta\": {\n      \"version\": 1,\n      \"libraries\": {\n        \"client\": [],\n        \"common\": [\n          {\n            \"name\": \"net.fabricmc:tiny-mappings-parser:0.3.0+build.17\",\n            \"url\": \"https://maven.fabricmc.net/\"\n          },\n          {\n            \"name\": \"net.fabricmc:sponge-mixin:0.11.4+mixin.0.8.5\",\n            \"url\": \"https://maven.fabricmc.net/\"\n          },\n          {\n            \"name\": \"net.fabricmc:tiny-remapper:0.8.2\",\n            \"url\": \"https://maven.fabricmc.net/\"\n          },\n          {\n            \"name\": \"net.fabricmc:access-widener:2.1.0\",\n            \"url\": \"https://maven.fabricmc.net/\"\n          },\n          {\n            \"name\": \"org.ow2.asm:asm:9.3\",\n            \"url\": \"https://maven.fabricmc.net/\"\n          },\n          {\n            \"name\": \"org.ow2.asm:asm-analysis:9.3\",\n            \"url\": \"https://maven.fabricmc.net/\"\n          },\n          {\n            \"name\": \"org.ow2.asm:asm-commons:9.3\",\n            \"url\": \"https://maven.fabricmc.net/\"\n          },\n          {\n            \"name\": \"org.ow2.asm:asm-tree:9.3\",\n            \"url\": \"https://maven.fabricmc.net/\"\n          },\n          {\n            \"name\": \"org.ow2.asm:asm-util:9.3\",\n            \"url\": \"https://maven.fabricmc.net/\"\n          }\n        ],\n        \"server\": []\n      },\n      \"mainClass\": {\n        \"client\": \"net.fabricmc.loader.impl.launch.knot.KnotClient\",\n        \"server\": \"net.fabricmc.loader.impl.launch.knot.KnotServer\"\n      }\n    }\n  }\n]",
+    "headers" : {
+      "Date" : "Wed, 21 Dec 2022 17:17:30 GMT",
+      "Content-Type" : "application/json",
+      "Cache-Control" : "public, max-age=1800",
+      "access-control-allow-origin" : "*",
+      "CF-Cache-Status" : "EXPIRED",
+      "Last-Modified" : "Wed, 21 Dec 2022 16:38:00 GMT",
+      "Accept-Ranges" : "bytes",
+      "Report-To" : "{\"endpoints\":[{\"url\":\"https:\\/\\/a.nel.cloudflare.com\\/report\\/v3?s=dKMH%2BfYCfqwb%2BZqec75ijE5yTdVQvWuBIvYicv%2B%2Bf0M1psHI73q0N88kTDivy1dPOOoMHRo9FL5YMCx8J39P%2FiKv2JPqJPN%2BI4AdNhTF9XgJhwjaaMzMJNWMEJBE%2FQChJ%2Fi%2F3g%3D%3D\"}],\"group\":\"cf-nel\",\"max_age\":604800}",
+      "NEL" : "{\"success_fraction\":0,\"report_to\":\"cf-nel\",\"max_age\":604800}",
+      "Vary" : "Accept-Encoding",
+      "Server" : "cloudflare",
+      "CF-RAY" : "77d245883a9ae76e-DFW",
+      "alt-svc" : "h3=\":443\"; ma=86400, h3-29=\":443\"; ma=86400"
+    }
+  },
+  "uuid" : "986d0d46-ff99-4edc-9a53-84146873f238",
+  "insertionIndex" : 1
+}

@@ -15,14 +15,22 @@ public class Manifests {
     private static final String SUFFIX = ".json";
 
     /**
+     * @param oldFiles if null, nothing is done
+     * @param currentFiles if null, all old files are removed
      * @param removeListener passed the path of a file being removed. Useful for debug logging as removed.
      */
     public static void cleanup(Path baseDir, Collection<String> oldFiles, Collection<String> currentFiles,
         Consumer<String> removeListener
     )
         throws IOException {
+        if (oldFiles == null) {
+            return;
+        }
+
         final HashSet<String> filesToRemove = new HashSet<>(oldFiles);
-        filesToRemove.removeAll(currentFiles);
+        if (currentFiles != null) {
+            filesToRemove.removeAll(currentFiles);
+        }
         for (final String fileToRemove : filesToRemove) {
             removeListener.accept(fileToRemove);
             Files.deleteIfExists(baseDir.resolve(fileToRemove));

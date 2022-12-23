@@ -1,6 +1,7 @@
 package me.itzg.helpers.get;
 
 import java.io.IOException;
+import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.http.LatchingUrisInterceptor;
 import org.apache.hc.client5.http.HttpResponseException;
@@ -16,7 +17,7 @@ public class FilenameExtractor {
   private final LatchingUrisInterceptor interceptor;
 
   public FilenameExtractor(LatchingUrisInterceptor interceptor) {
-    this.interceptor = interceptor;
+    this.interceptor = Objects.requireNonNull(interceptor, "interceptor is required");
   }
 
   public String extract(ClassicHttpResponse response) throws IOException, ProtocolException {

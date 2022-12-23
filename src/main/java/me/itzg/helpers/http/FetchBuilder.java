@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.McImageHelper;
 import me.itzg.helpers.get.ExtendedRequestRetryStrategy;
@@ -85,8 +86,15 @@ public class FetchBuilder<SELF extends FetchBuilder<SELF>> {
     }
 
     protected CloseableHttpClient client() {
-        return configureClient(HttpClients.custom())
-            .build();
+        return client(null);
+    }
+
+    protected CloseableHttpClient client(Consumer<HttpClientBuilder> customizer) {
+        final HttpClientBuilder builder = configureClient(HttpClients.custom());
+        if (customizer != null) {
+            customizer.accept(builder);
+        }
+        return builder.build();
     }
 
     public List<String> getAcceptContentTypes() {

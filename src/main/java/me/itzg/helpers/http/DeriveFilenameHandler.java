@@ -13,10 +13,6 @@ public class DeriveFilenameHandler implements HttpClientResponseHandler<String> 
 
   final FilenameExtractor filenameExtractor;
 
-  public DeriveFilenameHandler() {
-    filenameExtractor = new FilenameExtractor(new LatchingUrisInterceptor());
-  }
-
   public DeriveFilenameHandler(LatchingUrisInterceptor interceptor) {
     filenameExtractor = new FilenameExtractor(interceptor);
   }
