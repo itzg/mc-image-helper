@@ -1,6 +1,7 @@
 package me.itzg.helpers.fabric;
 
 import static me.itzg.helpers.http.Fetch.fetch;
+import static me.itzg.helpers.http.Fetch.sharedFetch;
 
 import java.io.IOException;
 import java.net.URI;
@@ -19,6 +20,7 @@ import me.itzg.helpers.fabric.LoaderResponseEntry.Loader;
 import me.itzg.helpers.files.Checksums;
 import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.files.ResultsFileWriter;
+import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.http.UriBuilder;
 
 @RequiredArgsConstructor
@@ -46,62 +48,71 @@ public class FabricLauncherInstaller {
 
         final UriBuilder uriBuilder = UriBuilder.withBaseUrl(fabricMetaBaseUrl);
 
-        loaderVersion = resolveLoaderVersion(uriBuilder, minecraftVersion, loaderVersion);
+        try (SharedFetch sharedFetch = sharedFetch("fabric")) {
+            loaderVersion = resolveLoaderVersion(uriBuilder, sharedFetch, minecraftVersion, loaderVersion);
 
-        installerVersion = resolveInstallerVersion(uriBuilder, installerVersion);
+            installerVersion = resolveInstallerVersion(uriBuilder, sharedFetch, installerVersion);
 
-        final FabricManifest manifest = Manifests.load(outputDir, MANIFEST_ID, FabricManifest.class);
+            final FabricManifest manifest = Manifests.load(outputDir, MANIFEST_ID, FabricManifest.class);
 
-        final Versions versions = Versions.builder()
-            .game(minecraftVersion)
-            .loader(loaderVersion)
-            .installer(installerVersion)
-            .build();
-
-        final boolean needsInstall = manifest == null || manifest.getOrigin() == null ||
-            !manifest.getOrigin().equals(versions);
-
-        if (needsInstall) {
-            // TODO cleanup if manifest != null
-            if (manifest != null && manifest.getOrigin() != null) {
-                log.info("Upgrading Fabric from {} to {}", manifest.getOrigin(), versions);
-            }
-            else {
-                log.info("Installing Fabric {}", versions);
-            }
-
-            final Path launcherPath = fetch(
-                uriBuilder.resolve(
-                    "/v2/versions/loader/{game_version}/{loader_version}/{installer_version}/server/jar",
-                    minecraftVersion, loaderVersion, installerVersion
-                )
-            )
-                .toDirectory(outputDir)
-                .execute();
-
-            if (resultsFile != null) {
-                try (ResultsFileWriter results = new ResultsFileWriter(resultsFile)) {
-                    results.write(RESULT_LAUNCHER, launcherPath.toString());
-                }
-            }
-
-            final FabricManifest newManifest = FabricManifest.builder()
-                .origin(versions)
-                .files(
-                    Manifests.relativizeAll(outputDir, Collections.singletonList(launcherPath))
-                )
-                .launcherPath(launcherPath.toString())
+            final Versions versions = Versions.builder()
+                .game(minecraftVersion)
+                .loader(loaderVersion)
+                .installer(installerVersion)
                 .build();
 
-            Manifests.cleanup(outputDir, manifest, newManifest, f -> log.debug("Removing {}", f));
+            final boolean needsInstall = manifest == null || manifest.getOrigin() == null ||
+                !manifest.getOrigin().equals(versions);
 
-            Manifests.save(outputDir, MANIFEST_ID, newManifest);
+            if (needsInstall) {
+                return processInstallUsingVersions(minecraftVersion, loaderVersion, installerVersion, uriBuilder, sharedFetch, manifest, versions);
+            }
+            else {
+                return Paths.get(manifest.getLauncherPath());
+            }
 
-            return launcherPath;
+        }
+
+    }
+
+    private Path processInstallUsingVersions(String minecraftVersion, String loaderVersion, String installerVersion, UriBuilder uriBuilder,
+        SharedFetch sharedFetch, FabricManifest manifest, Versions versions
+    ) throws IOException {
+        if (manifest != null && manifest.getOrigin() != null) {
+            log.info("Upgrading Fabric from {} to {}", manifest.getOrigin(), versions);
         }
         else {
-            return Paths.get(manifest.getLauncherPath());
+            log.info("Installing Fabric {}", versions);
         }
+
+        final Path launcherPath = sharedFetch.fetch(
+            uriBuilder.resolve(
+                "/v2/versions/loader/{game_version}/{loader_version}/{installer_version}/server/jar",
+                minecraftVersion, loaderVersion, installerVersion
+            )
+        )
+            .toDirectory(outputDir)
+            .execute();
+
+        if (resultsFile != null) {
+            try (ResultsFileWriter results = new ResultsFileWriter(resultsFile)) {
+                results.write(RESULT_LAUNCHER, launcherPath.toString());
+            }
+        }
+
+        final FabricManifest newManifest = FabricManifest.builder()
+            .origin(versions)
+            .files(
+                Manifests.relativizeAll(outputDir, Collections.singletonList(launcherPath))
+            )
+            .launcherPath(launcherPath.toString())
+            .build();
+
+        Manifests.cleanup(outputDir, manifest, newManifest, f -> log.debug("Removing {}", f));
+
+        Manifests.save(outputDir, MANIFEST_ID, newManifest);
+
+        return launcherPath;
     }
 
     public void installGivenLauncherFile(Path launcher) throws IOException {
@@ -200,13 +211,13 @@ public class FabricLauncherInstaller {
         return launcher;
     }
 
-    private String resolveInstallerVersion(UriBuilder uriBuilder, String installerVersion) {
+    private String resolveInstallerVersion(UriBuilder uriBuilder, SharedFetch sharedFetch, String installerVersion) {
         if (nonEmptyString(installerVersion)) {
             return installerVersion;
         }
 
         try {
-            final List<InstallerEntry> installerEntries = fetch(uriBuilder.resolve("/v2/versions/installer"))
+            final List<InstallerEntry> installerEntries = sharedFetch.fetch(uriBuilder.resolve("/v2/versions/installer"))
                 .toObjectList(InstallerEntry.class)
                 .execute();
 
@@ -220,14 +231,14 @@ public class FabricLauncherInstaller {
         }
     }
 
-    private String resolveLoaderVersion(UriBuilder uriBuilder, String minecraftVersion, String loaderVersion) {
+    private String resolveLoaderVersion(UriBuilder uriBuilder, SharedFetch sharedFetch, String minecraftVersion, String loaderVersion) {
         if (nonEmptyString(loaderVersion)) {
             return loaderVersion;
         }
 
         final List<LoaderResponseEntry> loaderResponse;
         try {
-            loaderResponse = fetch(
+            loaderResponse = sharedFetch.fetch(
                 uriBuilder.resolve("/v2/versions/loader/{game_version}", minecraftVersion))
                 .toObjectList(LoaderResponseEntry.class)
                 .execute();

@@ -4,23 +4,22 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.util.List;
 import me.itzg.helpers.json.ObjectMappers;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.core5.http.HttpHeaders;
 import org.apache.hc.core5.http.message.BasicHttpRequest;
 
-public class ObjectListFetchBuilder<T> extends FetchBuilder<ObjectListFetchBuilder<T>> {
+public class ObjectListFetchBuilder<T> extends FetchBuilderBase<ObjectListFetchBuilder<T>> {
 
     private final Class<T> type;
     private final ObjectMapper objectMapper;
 
-    ObjectListFetchBuilder(Config config, Class<T> type, ObjectMapper objectMapper) {
-        super(config);
+    ObjectListFetchBuilder(State state, Class<T> type, ObjectMapper objectMapper) {
+        super(state);
         this.type = type;
         this.objectMapper = objectMapper;
     }
 
-    ObjectListFetchBuilder(Config config, Class<T> type) {
-        this(config, type, ObjectMappers.defaultMapper());
+    ObjectListFetchBuilder(State state, Class<T> type) {
+        this(state, type, ObjectMappers.defaultMapper());
     }
 
     @Override
@@ -30,9 +29,9 @@ public class ObjectListFetchBuilder<T> extends FetchBuilder<ObjectListFetchBuild
     }
 
     public List<T> execute() throws IOException {
-        try (CloseableHttpClient client = client()) {
-            return client.execute(get(), new ObjectListMapperHandler<>(type, objectMapper));
-        }
+        return useClient(client ->
+                client.execute(get(), new ObjectListMapperHandler<>(type, objectMapper))
+            );
     }
 
 }

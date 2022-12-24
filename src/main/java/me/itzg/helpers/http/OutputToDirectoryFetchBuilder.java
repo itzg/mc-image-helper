@@ -12,14 +12,14 @@ import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 
 @Slf4j
 @Accessors(fluent = true)
-public class OutputToDirectoryFetchBuilder extends FetchBuilder<OutputToDirectoryFetchBuilder> {
+public class OutputToDirectoryFetchBuilder extends FetchBuilderBase<OutputToDirectoryFetchBuilder> {
 
     private final Path outputDirectory;
     @Setter
     private boolean skipExisting;
 
-    protected OutputToDirectoryFetchBuilder(Config config, Path outputDirectory) {
-        super(config);
+    protected OutputToDirectoryFetchBuilder(State state, Path outputDirectory) {
+        super(state);
 
         if (!Files.isDirectory(outputDirectory)) {
             throw new IllegalArgumentException(outputDirectory + " is not a directory or does not exist");
@@ -28,13 +28,13 @@ public class OutputToDirectoryFetchBuilder extends FetchBuilder<OutputToDirector
     }
 
     public Path execute() throws IOException {
-        final LatchingUrisInterceptor interceptor = new LatchingUrisInterceptor();
+        return usePreparedFetch(preparedFetch -> {
+            final CloseableHttpClient client = preparedFetch.getClient();
 
-        try (CloseableHttpClient client = client(
-            httpClientBuilder -> httpClientBuilder.addExecInterceptorFirst("latchRequestUris", interceptor)
-        )) {
             final HttpHead headReq = head(false);
-            final String filename = client.execute(headReq, new DeriveFilenameHandler(interceptor));
+            final String filename = client.execute(headReq, new DeriveFilenameHandler(
+                preparedFetch.getLatchingUrisInterceptor()
+            ));
 
             final Path outputFile = outputDirectory.resolve(filename);
             if (skipExisting && Files.exists(outputFile)) {
@@ -44,6 +44,7 @@ public class OutputToDirectoryFetchBuilder extends FetchBuilder<OutputToDirector
 
             final HttpGet getReq = get();
             return client.execute(getReq, new SaveToFileHandler(outputFile, false));
-        }
+
+        });
     }
 }
