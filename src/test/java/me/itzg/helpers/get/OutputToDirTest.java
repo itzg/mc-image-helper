@@ -92,6 +92,7 @@ class OutputToDirTest {
     final Path expectedFile = tempDir.resolve("saveFileLikeBukkit.txt");
 
     assertThat(status).isEqualTo(0);
+    assertThat(tempDir.resolve("download")).doesNotExist();
     assertThat(expectedFile).exists();
     assertThat(expectedFile).hasContent("final content");
 

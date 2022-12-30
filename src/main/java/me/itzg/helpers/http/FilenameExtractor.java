@@ -1,9 +1,8 @@
-package me.itzg.helpers.get;
+package me.itzg.helpers.http;
 
 import java.io.IOException;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
-import me.itzg.helpers.http.LatchingUrisInterceptor;
 import org.apache.hc.client5.http.HttpResponseException;
 import org.apache.hc.core5.http.ClassicHttpResponse;
 import org.apache.hc.core5.http.ContentType;

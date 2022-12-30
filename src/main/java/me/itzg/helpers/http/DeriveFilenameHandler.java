@@ -2,7 +2,6 @@ package me.itzg.helpers.http;
 
 import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
-import me.itzg.helpers.get.FilenameExtractor;
 import org.apache.hc.core5.http.ClassicHttpResponse;
 import org.apache.hc.core5.http.HttpException;
 import org.apache.hc.core5.http.io.HttpClientResponseHandler;
