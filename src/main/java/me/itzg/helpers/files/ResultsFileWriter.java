@@ -11,6 +11,9 @@ import java.nio.file.Path;
  */
 public class ResultsFileWriter implements AutoCloseable {
 
+    public static final String OPTION_DESCRIPTION =
+        "A key=value file suitable for scripted environment variables. Currently includes"
+            + "\n  SERVER: the entry point jar or script";
     private final BufferedWriter writer;
 
     public ResultsFileWriter(Path resultsFile) throws IOException {
