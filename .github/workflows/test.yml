@@ -28,7 +28,7 @@ jobs:
 
     - name: Test Report
       uses: dorny/test-reporter@v1
-      if: github.event_name != 'pull_request' && (success() || failure())    # run this step even if previous step failed
+      if: success() || failure()    # run this step even if previous step failed
       with:
         name: test results
         path: build/test-results/test/*.xml
