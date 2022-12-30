@@ -17,3 +17,4 @@ jobs:
     uses: itzg/github-workflows/.github/workflows/gradle-build.yml@main
     with:
       arguments: test
+      include-test-report: true
