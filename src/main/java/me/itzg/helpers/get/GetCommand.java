@@ -29,6 +29,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.McImageHelper;
 import me.itzg.helpers.errors.InvalidParameterException;
+import me.itzg.helpers.http.DeriveFilenameHandler;
 import me.itzg.helpers.http.LatchingUrisInterceptor;
 import me.itzg.helpers.http.LenientUriConverter;
 import me.itzg.helpers.http.NotModifiedHandler;

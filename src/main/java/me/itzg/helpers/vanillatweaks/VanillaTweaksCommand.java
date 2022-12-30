@@ -25,9 +25,9 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import me.itzg.helpers.Manifests;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidParameterException;
+import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.http.HttpClientException;
 import me.itzg.helpers.http.ReactorNettyBits;
 import me.itzg.helpers.http.Uris;
@@ -213,15 +213,16 @@ public class VanillaTweaksCommand implements Callable<Integer> {
         }
     }
 
-    private void unpack(Type type, Path zipPath, String fingerprint) throws IOException {
+    private void unpack(Type type, Path srcZip, String fingerprint) throws IOException {
         switch (type) {
             case resourcepacks: {
-                final Path resourcepacks = outputDirectory.resolve("resourcepacks");
-                Files.createDirectories(resourcepacks);
+                final Path destZip = Files.createDirectories(outputDirectory.resolve("resourcepacks"))
+                    .resolve(String.format("VanillaTweaks_%s.zip", fingerprint));
 
+                log.debug("Moving crafting tweaks {}", destZip);
                 writtenFiles.add(
-                    Files.move(zipPath,
-                        resourcepacks.resolve(String.format("VanillaTweaks_%s.zip", fingerprint)),
+                    Files.move(srcZip,
+                        destZip,
                         StandardCopyOption.REPLACE_EXISTING
                     )
                 );
@@ -229,20 +230,21 @@ public class VanillaTweaksCommand implements Callable<Integer> {
             }
 
             case datapacks: {
-                final Path datapacks = worldPath.resolve("datapacks");
-                Files.createDirectories(datapacks);
-                unzipInto(zipPath, datapacks);
-                Files.delete(zipPath);
+                final Path datapacks = Files.createDirectories(worldPath.resolve("datapacks"));
+                log.debug("Unzipping datapack into {}", datapacks);
+                unzipInto(srcZip, datapacks);
+                Files.delete(srcZip);
                 break;
             }
 
             case craftingtweaks: {
-                final Path datapacks = worldPath.resolve("datapacks");
-                Files.createDirectories(datapacks);
+                final Path destZip = Files.createDirectories(worldPath.resolve("datapacks"))
+                    .resolve(String.format("VanillaTweaks_%s.zip", fingerprint));
 
+                log.debug("Moving resource pack file to {}", destZip);
                 writtenFiles.add(
-                    Files.move(zipPath,
-                        datapacks.resolve(String.format("VanillaTweaks_%s.zip", fingerprint)),
+                    Files.move(srcZip,
+                        destZip,
                         StandardCopyOption.REPLACE_EXISTING
                     )
                 );

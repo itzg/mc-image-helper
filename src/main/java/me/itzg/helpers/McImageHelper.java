@@ -14,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.assertcmd.AssertCommand;
 import me.itzg.helpers.errors.ExceptionHandler;
 import me.itzg.helpers.errors.ExitCodeMapper;
+import me.itzg.helpers.fabric.InstallFabricLoaderCommand;
 import me.itzg.helpers.find.FindCommand;
 import me.itzg.helpers.forge.InstallForgeCommand;
 import me.itzg.helpers.get.GetCommand;
@@ -44,6 +45,7 @@ import picocli.CommandLine.Option;
         FindCommand.class,
         GetCommand.class,
         HashCommand.class,
+        InstallFabricLoaderCommand.class,
         InstallForgeCommand.class,
         InterpolateCommand.class,
         JavaReleaseCommand.class,

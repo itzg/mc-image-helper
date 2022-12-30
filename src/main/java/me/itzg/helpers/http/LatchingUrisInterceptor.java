@@ -13,8 +13,7 @@ import org.apache.hc.core5.http.ClassicHttpRequest;
 import org.apache.hc.core5.http.ClassicHttpResponse;
 
 @Slf4j
-public
-class LatchingUrisInterceptor implements ExecChainHandler {
+public class LatchingUrisInterceptor implements ExecChainHandler {
 
   private final Deque<URI> uris = new ConcurrentLinkedDeque<>();
 
@@ -30,13 +29,13 @@ class LatchingUrisInterceptor implements ExecChainHandler {
     if (redirectLocations != null) {
       log.debug("Post-request capturing redirectLocations={}", redirectLocations.getAll());
 
-      redirectLocations.getAll().forEach(uris::push);
+      uris.addAll(redirectLocations.getAll());
     }
     return resp;
   }
 
   public URI getLastRequestedUri() {
-    return uris.peekFirst();
+    return uris.peekLast();
   }
 
   public void reset() {

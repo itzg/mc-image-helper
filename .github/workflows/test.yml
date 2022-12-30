@@ -7,29 +7,14 @@ on:
     paths-ignore:
       - "*.md"
   pull_request:
+    branches:
+      - master
+    paths-ignore:
+      - "*.md"
 
 jobs:
-  build:
-    runs-on: ubuntu-20.04
-
-    steps:
-    - uses: actions/checkout@v3
-
-    - name: Setup Java JDK
-      uses: actions/setup-java@v3
-      with:
-        # maximize compatibility with minecraft images
-        distribution: 'temurin'
-        java-version: '17'
-        cache: gradle
-
-    - name: Test
-      run: ./gradlew test
-
-    - name: Test Report
-      uses: dorny/test-reporter@v1
-      if: github.event_name != 'pull_request' && (success() || failure())    # run this step even if previous step failed
-      with:
-        name: test results
-        path: build/test-results/test/*.xml
-        reporter: java-junit
+  test:
+    uses: itzg/github-workflows/.github/workflows/gradle-build.yml@main
+    with:
+      arguments: test
+      include-test-report: true

@@ -53,7 +53,7 @@ public class InstallForgeCommand implements Callable<Integer> {
     Path outputDirectory;
 
     @Option(names = "--results-file", description = "A key=value file suitable for scripted environment variables. Currently includes"
-        + "\n  SERVER: the entry point jar or script")
+        + "\n  SERVER: the entry point jar or script", paramLabel = "FILE")
     Path resultsFile;
 
     @Option(names = "--force-reinstall")

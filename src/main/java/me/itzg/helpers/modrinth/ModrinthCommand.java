@@ -17,7 +17,7 @@ import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
-import me.itzg.helpers.Manifests;
+import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.http.Uris;
 import me.itzg.helpers.json.ObjectMappers;
 import me.itzg.helpers.modrinth.model.DependencyType;

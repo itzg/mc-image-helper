@@ -1,0 +1,9 @@
+version: "3.2"
+
+services:
+  wiremock:
+    image: wiremock/wiremock:2.35.0
+    volumes:
+      - ./data:/home/wiremock
+    ports:
+      - "8080:8080"

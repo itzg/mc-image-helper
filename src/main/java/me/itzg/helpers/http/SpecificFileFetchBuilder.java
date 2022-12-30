@@ -7,13 +7,12 @@ import java.nio.file.attribute.FileTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.core5.http.HttpHeaders;
 import org.apache.hc.core5.http.io.HttpClientResponseHandler;
 import org.apache.hc.core5.http.message.BasicHttpRequest;
 
 @Slf4j
-public class SpecificFileFetchBuilder extends FetchBuilder<SpecificFileFetchBuilder> {
+public class SpecificFileFetchBuilder extends FetchBuilderBase<SpecificFileFetchBuilder> {
     private final static DateTimeFormatter httpDateTimeFormatter =
         DateTimeFormatter.RFC_1123_DATE_TIME.withZone(ZoneId.of("GMT"));
 
@@ -23,8 +22,8 @@ public class SpecificFileFetchBuilder extends FetchBuilder<SpecificFileFetchBuil
     private HttpClientResponseHandler<Path> handler;
     private boolean skipExisting;
 
-    public SpecificFileFetchBuilder(FetchBuilder.Config config, Path file) {
-        super(config);
+    public SpecificFileFetchBuilder(State state, Path file) {
+        super(state);
         this.file = file;
     }
 
@@ -49,9 +48,7 @@ public class SpecificFileFetchBuilder extends FetchBuilder<SpecificFileFetchBuil
             return file;
         }
 
-        try (CloseableHttpClient client = client()) {
-            return client.execute(get(), handler);
-        }
+        return useClient(client -> client.execute(get(), handler));
     }
 
     @Override

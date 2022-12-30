@@ -1,0 +1,15 @@
+{
+  "request" : {
+    "url" : "/v2/versions/loader/1.19.3/0.14.12/0.11.1/server/jar",
+    "method" : "HEAD"
+  },
+  "response" : {
+    "status" : 200,
+    "headers" : {
+      "Content-Type" : "application/java-archive",
+      "Content-Disposition" : "attachment; filename=\"fabric-server-mc.1.19.3-loader.0.14.12-launcher.0.11.1.jar\"",
+      "Cache-Control" : "public, max-age=86400",
+      "Last-Modified" : "Tue, 20 Dec 2022 20:56:00 GMT"
+    }
+  }
+}

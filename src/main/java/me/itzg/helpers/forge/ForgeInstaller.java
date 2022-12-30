@@ -4,7 +4,6 @@ import static me.itzg.helpers.http.Fetch.fetch;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.ProcessBuilder.Redirect;
@@ -22,10 +21,11 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import me.itzg.helpers.files.FileTreeSnapshot;
+import me.itzg.helpers.files.ResultsFileWriter;
 import me.itzg.helpers.forge.Manifest.ManifestBuilder;
 import me.itzg.helpers.forge.model.PromotionsSlim;
 import me.itzg.helpers.http.Uris;
@@ -151,9 +151,8 @@ public class ForgeInstaller {
     private void populateResultsFile(Path resultsFile, Manifest manifest) throws IOException {
         log.debug("Populating results file {}", resultsFile);
 
-        try (BufferedWriter writer = Files.newBufferedWriter(resultsFile)) {
-            writer.write("SERVER="+manifest.getServerEntry());
-            writer.newLine();
+        try (ResultsFileWriter writer = new ResultsFileWriter(resultsFile)) {
+            writer.write("SERVER", manifest.getServerEntry());
         }
     }
 
@@ -186,9 +185,9 @@ public class ForgeInstaller {
         ManifestBuilder manifestBuilder
     ) {
         log.debug("Gathering snapshot of {} before installer", outputDir);
-        final Set<String> snapshotBefore;
+        final FileTreeSnapshot snapshotBefore;
         try {
-            snapshotBefore = snapshotContents(outputDir);
+            snapshotBefore = FileTreeSnapshot.takeSnapshot(outputDir);
         } catch (IOException e) {
             throw new RuntimeException("Tried to snapshot files before forge installer", e);
         }
@@ -247,21 +246,10 @@ public class ForgeInstaller {
 
             log.debug("Gathering and comparing snapshot after installer");
             manifestBuilder.files(
-                snapshotContents(outputDir).stream()
-                    // looking for new files
-                    .filter(path -> !snapshotBefore.contains(path))
-                    .collect(Collectors.toSet())
+                snapshotBefore.findNewFiles()
             );
         } catch (IOException e) {
             throw new RuntimeException("Trying to run installer", e);
-        }
-    }
-
-    private Set<String> snapshotContents(Path dir) throws IOException {
-        try (Stream<Path> stream = Files.walk(dir)) {
-            return stream.filter(Files::isRegularFile)
-                .map(path -> dir.relativize(path).toString())
-                .collect(Collectors.toSet());
         }
     }
 
