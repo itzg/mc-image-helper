@@ -34,8 +34,6 @@ import picocli.CommandLine.Option;
 @Slf4j
 public class ModrinthCommand implements Callable<Integer> {
 
-    public static final String MODS_SUBDIR = "mods";
-
     private final String baseUrl;
 
     @Option(names = "--projects", description = "Project ID or Slug", required = true, split = OPTION_SPLIT_COMMAS, paramLabel = "id|slug")
@@ -176,7 +174,7 @@ public class ModrinthCommand implements Callable<Integer> {
         }
         final Path outPath;
         try {
-            outPath = Files.createDirectories(outputDirectory.resolve(MODS_SUBDIR))
+            outPath = Files.createDirectories(outputDirectory.resolve(loader.getType()))
                 .resolve(versionFile.getFilename());
         } catch (IOException e) {
             throw new RuntimeException("Creating mods directory", e);
