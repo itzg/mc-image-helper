@@ -114,6 +114,32 @@ Download a file
   -z, --skip-up-to-date     Skips re-downloading a file that is up to date
 ```
 
+### install-fabric-loader
+
+```
+Usage: mc-image-helper install-fabric-loader [-h] [--output-directory=DIR]
+       [--results-file=FILE] (--from-local-file=FILE | --from-url=URL |
+       [--minecraft-version=VERSION [--installer-version=VERSION]
+       [--loader-version=VERSION]])
+Provides a few ways to obtain a Fabric loader with simple cleanup of previous
+loader instances
+      --from-local-file=FILE
+
+      --from-url=URL
+  -h, --help
+      --installer-version=VERSION
+                            By default the latest installer version is used
+      --loader-version=VERSION
+                            By default the latest launcher version is used
+      --minecraft-version=VERSION
+
+      --output-directory=DIR
+
+      --results-file=FILE   A key=value file suitable for scripted environment
+                              variables. Currently includes
+                              SERVER: the entry point jar or script
+```
+
 ### install-forge
 
 ```
