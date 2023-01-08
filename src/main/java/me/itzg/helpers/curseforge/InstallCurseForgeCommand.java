@@ -32,7 +32,8 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
     @Option(names = "--file-id")
     Integer fileId;
 
-    @Option(names = "--filename-matcher", description = "Substring to select specific modpack filename")
+    @Option(names = "--filename-matcher", paramLabel = "STR",
+        description = "Substring to select specific modpack filename")
     String filenameMatcher;
 
     private static final Pattern PAGE_URL_PATTERN = Pattern.compile(

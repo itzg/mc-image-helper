@@ -27,7 +27,7 @@ import me.itzg.helpers.http.UriBuilder;
 @Slf4j
 public class FabricLauncherInstaller {
 
-    private static final String RESULT_LAUNCHER = "LAUNCHER";
+    private static final String RESULT_LAUNCHER = "SERVER";
     public static final String MANIFEST_ID = "fabric";
 
     private final Path outputDir;
@@ -97,6 +97,7 @@ public class FabricLauncherInstaller {
         if (resultsFile != null) {
             try (ResultsFileWriter results = new ResultsFileWriter(resultsFile)) {
                 results.write(RESULT_LAUNCHER, launcherPath.toString());
+                results.write("FAMILY", "FABRIC");
             }
         }
 
@@ -117,8 +118,9 @@ public class FabricLauncherInstaller {
 
     public void installGivenLauncherFile(Path launcher) throws IOException {
         if (resultsFile != null) {
-            try (ResultsFileWriter writer = new ResultsFileWriter(resultsFile)) {
-                writer.write(RESULT_LAUNCHER, launcher.toString());
+            try (ResultsFileWriter results = new ResultsFileWriter(resultsFile)) {
+                results.write(RESULT_LAUNCHER, launcher.toString());
+                results.write("FAMILY", "FABRIC");
             }
         }
 
@@ -203,6 +205,7 @@ public class FabricLauncherInstaller {
         if (resultsFile != null) {
             try (ResultsFileWriter results = new ResultsFileWriter(resultsFile)) {
                 results.write(RESULT_LAUNCHER, launcher.toString());
+                results.write("FAMILY", "FABRIC");
             } catch (IOException e) {
                 throw new GenericException("Failed to write results file", e);
             }

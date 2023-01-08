@@ -114,6 +114,31 @@ Download a file
   -z, --skip-up-to-date     Skips re-downloading a file that is up to date
 ```
 
+### install-curseforge
+
+```
+Usage: mc-image-helper install-curseforge [-h] [--file-id=<fileId>]
+       [--filename-matcher=STR] [--modpack-page-url=URL]
+       [--output-directory=DIR] [--results-file=FILE] [--slug=<slug>]
+      --file-id=<fileId>
+      --filename-matcher=STR
+                            Substring to select specific modpack filename
+  -h, --help
+      --modpack-page-url=URL
+                            URL of a modpack page such as https://www.
+                              curseforge.
+                              com/minecraft/modpacks/all-the-mods-8or a file
+                              page https://www.curseforge.
+                              com/minecraft/modpacks/all-the-mods-8/files/424839
+                              0
+      --output-directory=DIR
+
+      --results-file=FILE   A key=value file suitable for scripted environment
+                              variables. Currently includes
+                              SERVER: the entry point jar or script
+      --slug=<slug>         The short-URL identifier
+```
+
 ### install-fabric-loader
 
 ```

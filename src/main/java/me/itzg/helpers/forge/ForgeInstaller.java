@@ -151,8 +151,9 @@ public class ForgeInstaller {
     private void populateResultsFile(Path resultsFile, Manifest manifest) throws IOException {
         log.debug("Populating results file {}", resultsFile);
 
-        try (ResultsFileWriter writer = new ResultsFileWriter(resultsFile)) {
-            writer.write("SERVER", manifest.getServerEntry());
+        try (ResultsFileWriter results = new ResultsFileWriter(resultsFile)) {
+            results.write("SERVER", manifest.getServerEntry());
+            results.write("FAMILY", "FORGE");
         }
     }
 
