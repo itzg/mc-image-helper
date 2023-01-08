@@ -8,6 +8,16 @@ import lombok.Builder.Default;
 import lombok.Data;
 import lombok.experimental.SuperBuilder;
 
+/**
+ * Sub-classes should be declared with:
+ * <pre>
+ * {@code
+ * @Getter
+ * @SuperBuilder
+ * @Jacksonized
+ * }
+ * </pre>
+ */
 @Data
 @SuperBuilder
 @JsonTypeInfo(use = Id.CLASS, property = "@type")

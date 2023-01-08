@@ -58,6 +58,11 @@ public class Manifests {
             .collect(Collectors.toList());
     }
 
+    public static boolean allFilesPresent(Path basePath, BaseManifest manifest) {
+        return manifest.getFiles().stream()
+            .allMatch(p -> Files.exists(basePath.resolve(p)));
+    }
+
     /**
      *
      * @param outputDir directory where manifest and other module files are based

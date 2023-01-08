@@ -1,0 +1,1 @@
+package me.itzg.helpers.curseforge;
