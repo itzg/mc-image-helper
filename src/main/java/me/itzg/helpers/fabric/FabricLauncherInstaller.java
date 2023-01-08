@@ -27,7 +27,7 @@ import me.itzg.helpers.http.UriBuilder;
 @Slf4j
 public class FabricLauncherInstaller {
 
-    private static final String RESULT_LAUNCHER = "LAUNCHER";
+    private static final String RESULT_LAUNCHER = "SERVER";
     public static final String MANIFEST_ID = "fabric";
 
     private final Path outputDir;
