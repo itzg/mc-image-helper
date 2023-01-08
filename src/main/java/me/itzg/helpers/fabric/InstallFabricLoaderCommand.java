@@ -3,11 +3,13 @@ package me.itzg.helpers.fabric;
 import java.net.URI;
 import java.nio.file.Path;
 import java.util.concurrent.Callable;
+import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.files.ResultsFileWriter;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.ExitCode;
+import picocli.CommandLine.ITypeConverter;
 import picocli.CommandLine.Option;
 
 @Command(name = "install-fabric-loader",
@@ -44,13 +46,36 @@ public class InstallFabricLoaderCommand implements Callable<Integer> {
         String minecraftVersion;
 
         @Option(names = "--installer-version", paramLabel = "VERSION",
-            description = "By default the latest installer version is used"
+            description = "By default the latest installer version is used",
+            converter = AllowedVersions.class
         )
         String installerVersion;
 
         @Option(names = "--loader-version", paramLabel = "VERSION",
-            description = "By default the latest launcher version is used")
+            description = "By default the latest launcher version is used",
+            converter = AllowedVersions.class
+        )
         String loaderVersion;
+
+        private static final Pattern VERSION_PATTERN = Pattern.compile("\\d+(\\.\\d+){2}");
+
+        private static class AllowedVersions implements ITypeConverter<String> {
+
+            @Override
+            public String convert(String value) throws Exception {
+
+                if (value == null) {
+                    return null;
+                }
+                else if (value.equalsIgnoreCase("latest")) {
+                    return null;
+                }
+                else if (VERSION_PATTERN.matcher(value).matches()) {
+                    return value;
+                }
+                throw new IllegalStateException("Only LATEST and #.#.# allowed for versions: " + value);
+            }
+        }
     }
 
     @Override
