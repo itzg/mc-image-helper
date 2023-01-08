@@ -10,7 +10,7 @@ public final class Uris {
 
   final static Pattern PLACEHOLDERS = Pattern.compile("\\{.*?}");
 
-  public static String populate(String url, String... values) {
+  public static String populate(String url, Object... values) {
     if (values.length == 0) {
       return url;
     }
@@ -20,7 +20,7 @@ public final class Uris {
     int i = 0;
     while (m.find() && i < values.length) {
       try {
-        m.appendReplacement(sb, URLEncoder.encode(values[i], "utf-8"));
+        m.appendReplacement(sb, URLEncoder.encode(values[i].toString(), "utf-8"));
       } catch (UnsupportedEncodingException e) {
         throw new RuntimeException("Internal error", e);
       }
@@ -34,7 +34,7 @@ public final class Uris {
   /**
    * @param values replaces {@code {...}} placeholders in {@code url}
    */
-  public static URI populateToUri(String url, String... values) {
+  public static URI populateToUri(String url, Object... values) {
     return URI.create(populate(url, values));
   }
 
