@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.hc.client5.http.HttpResponseException;
 import org.apache.hc.client5.http.classic.HttpClient;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.classic.methods.HttpHead;
@@ -121,13 +122,19 @@ public class FetchBuilderBase<SELF extends FetchBuilderBase<SELF>> {
         if (state.sharedFetch != null) {
             try {
                 return user.use(state.sharedFetch);
+            } catch (HttpResponseException e) {
+                throw new FailedRequestException(e, state.uri);
             } finally {
                 state.sharedFetch.getLatchingUrisInterceptor().reset();
             }
         }
         else {
             try (SharedFetch sharedFetch = new SharedFetch(state.userAgentCommand)) {
-                return user.use(sharedFetch);
+                try {
+                    return user.use(sharedFetch);
+                } catch (HttpResponseException e) {
+                    throw new FailedRequestException(e, state.uri);
+                }
             }
         }
     }
