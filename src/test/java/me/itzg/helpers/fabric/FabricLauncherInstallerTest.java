@@ -67,7 +67,7 @@ class FabricLauncherInstallerTest {
 
         assertThat(resultsFile)
             .exists()
-            .hasContent("LAUNCHER="+launcherPath);
+            .hasContent("LAUNCHER="+launcherPath+"\nFAMILY=FABRIC");
 
         final Path expectedManifestFile = tempDir.resolve(".fabric-manifest.json");
         assertThat(expectedManifestFile)
