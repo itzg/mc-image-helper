@@ -2,6 +2,8 @@ package me.itzg.helpers.http;
 
 import java.io.IOException;
 import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.hc.client5.http.HttpResponseException;
 import org.apache.hc.core5.http.ClassicHttpResponse;
@@ -13,10 +15,27 @@ import org.apache.hc.core5.http.io.entity.EntityUtils;
 
 @Slf4j
 public class FilenameExtractor {
+  private static final Pattern HTTP_CONTENT_DISPOSITION =
+      Pattern.compile("(inline|attachment)(\\s*;\\s+filename=\"(.+?)\")?");
+
   private final LatchingUrisInterceptor interceptor;
 
   public FilenameExtractor(LatchingUrisInterceptor interceptor) {
     this.interceptor = Objects.requireNonNull(interceptor, "interceptor is required");
+  }
+
+  static String filenameFromContentDisposition(String headerValue) {
+      if (headerValue == null) {
+          return null;
+      }
+
+      final Matcher m = HTTP_CONTENT_DISPOSITION.matcher(headerValue);
+      if (m.matches()) {
+          if (m.group(1).equals("attachment")) {
+              return m.group(2);
+          }
+      }
+      return null;
   }
 
   public String extract(ClassicHttpResponse response) throws IOException, ProtocolException {

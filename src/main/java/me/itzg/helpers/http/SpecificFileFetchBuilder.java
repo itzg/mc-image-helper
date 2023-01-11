@@ -1,24 +1,36 @@
 package me.itzg.helpers.http;
 
+import static io.netty.handler.codec.http.HttpHeaderNames.IF_MODIFIED_SINCE;
+import static io.netty.handler.codec.http.HttpResponseStatus.NOT_MODIFIED;
+import static java.util.Objects.requireNonNull;
+
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.FileTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.hc.core5.http.HttpHeaders;
+import me.itzg.helpers.errors.GenericException;
 import org.apache.hc.core5.http.io.HttpClientResponseHandler;
-import org.apache.hc.core5.http.message.BasicHttpRequest;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 @Slf4j
 public class SpecificFileFetchBuilder extends FetchBuilderBase<SpecificFileFetchBuilder> {
+
     private final static DateTimeFormatter httpDateTimeFormatter =
         DateTimeFormatter.RFC_1123_DATE_TIME.withZone(ZoneId.of("GMT"));
+    private FileDownloadStatusHandler statusHandler = (status, uri, p) -> {
+    };
+    private FileDownloadedHandler downloadedHandler = (uri, p, contentSizeBytes) -> {
+    };
+
 
     private final Path file;
     private boolean skipUpToDate;
-    private boolean logProgressEach = false;
     private HttpClientResponseHandler<Path> handler;
     private boolean skipExisting;
 
@@ -37,38 +49,82 @@ public class SpecificFileFetchBuilder extends FetchBuilderBase<SpecificFileFetch
         return self();
     }
 
-    public SpecificFileFetchBuilder logProgressEach(boolean logProgressEach) {
-        this.logProgressEach = logProgressEach;
+    public SpecificFileFetchBuilder handleStatus(FileDownloadStatusHandler handler) {
+        requireNonNull(handler);
+        this.statusHandler = handler;
+        return self();
+    }
+
+    public SpecificFileFetchBuilder handleDownloaded(FileDownloadedHandler handler) {
+        requireNonNull(handler);
+        this.downloadedHandler = handler;
         return self();
     }
 
     public Path execute() throws IOException {
+        return assemble()
+            .block();
+    }
+
+    public Mono<Path> assemble() throws IOException {
+        final URI uri = uri();
+
         if (skipExisting && Files.exists(file)) {
             log.debug("File already exists and skip requested");
-            return file;
+            statusHandler.call(FileDownloadStatus.SKIP_FILE_EXISTS, uri, file);
+            return Mono.just(file);
         }
 
-        return useClient(client -> client.execute(get(), handler));
+        final boolean useIfModifiedSince = skipUpToDate && Files.exists(file);
+
+        return usePreparedFetch(sharedFetch ->
+            sharedFetch.getReactiveClient()
+                .doOnRequest((httpClientRequest, connection) -> {
+                    statusHandler.call(FileDownloadStatus.DOWNLOADING, uri, file);
+                })
+                .headers(headers -> {
+                    if (useIfModifiedSince) {
+                        try {
+                            final FileTime lastModifiedTime;
+                            lastModifiedTime = Files.getLastModifiedTime(file);
+                            headers.set(
+                                IF_MODIFIED_SINCE.toString(),
+                                httpDateTimeFormatter.format(lastModifiedTime.toInstant())
+                            );
+                        } catch (IOException e) {
+                            throw new GenericException("Unable to get last modified time of " + file, e);
+                        }
+
+                    }
+                })
+                .followRedirect(true)
+                .get()
+                .uri(uri)
+                .responseSingle((httpClientResponse, bodyMono) -> {
+                    if (useIfModifiedSince
+                        && httpClientResponse.status().equals(NOT_MODIFIED)) {
+                        return Mono.just(file);
+                    }
+                    return bodyMono.asInputStream()
+                        .publishOn(Schedulers.boundedElastic())
+                        .flatMap(inputStream -> {
+                            try {
+                                final long size = Files.copy(inputStream, file, StandardCopyOption.REPLACE_EXISTING);
+                                statusHandler.call(FileDownloadStatus.DOWNLOADED, uri, file);
+                                downloadedHandler.call(uri, file, size);
+                            } catch (IOException e) {
+                                return Mono.error(e);
+                            } finally {
+                                try {
+                                    inputStream.close();
+                                } catch (IOException e) {
+                                    log.warn("Unable to close body input stream", e);
+                                }
+                            }
+                            return Mono.just(file);
+                        });
+                })
+        );
     }
 
-    @Override
-    protected void configureRequest(BasicHttpRequest request) throws IOException {
-        super.configureRequest(request);
-
-        final SaveToFileHandler handler = new SaveToFileHandler(file, logProgressEach);
-        handler.setExpectedContentTypes(getAcceptContentTypes());
-
-        if (skipUpToDate && Files.exists(file)) {
-            final FileTime lastModifiedTime = Files.getLastModifiedTime(file);
-            request.addHeader(HttpHeaders.IF_MODIFIED_SINCE,
-                httpDateTimeFormatter.format(lastModifiedTime.toInstant())
-            );
-
-            // wrap the handler to intercept the NotModified response
-            this.handler = new NotModifiedHandler(file, handler, logProgressEach);
-        }
-        else {
-            this.handler = handler;
-        }
-    }
 }
