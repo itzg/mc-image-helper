@@ -269,7 +269,8 @@ public class ForgeInstaller {
         // every few major versions Forge would chane their version qualifier scheme :(
         for (final String installerUrlVersion : new String[]{
             String.join("-", minecraftVersion, forgeVersion),
-            String.join("-", minecraftVersion, forgeVersion, minecraftVersion)
+            String.join("-", minecraftVersion, forgeVersion, minecraftVersion),
+            String.join("-", minecraftVersion, forgeVersion, "mc172")
         }) {
             try {
                 fetch(Uris.populateToUri(
