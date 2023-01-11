@@ -8,6 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
@@ -177,6 +178,7 @@ public class CurseForgeInstaller {
                 .map(fileRef ->
                     downloadModFile(preparedFetch, uriBuilder, modsDir, fileRef.getProjectID(), fileRef.getFileID())
                 )
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
             final List<Path> overrides = applyOverrides(downloaded);
@@ -217,6 +219,11 @@ public class CurseForgeInstaller {
     private Path downloadModFile(SharedFetch preparedFetch, UriBuilder uriBuilder, Path modsDir, int projectID, int fileID) {
         try {
             final CurseForgeFile file = getModFileInfo(preparedFetch, uriBuilder, projectID, fileID);
+            if (isClientMod(file)) {
+                log.debug("Skipping {} since it is a client mod", file.getFileName());
+                return null;
+            }
+
             log.info("Download/confirm mod {} @ {}:{}",
                 // several mods have non-descriptive display names, like "v1.0.0", so filename tends to be better
                 file.getFileName(),
@@ -232,6 +239,11 @@ public class CurseForgeInstaller {
         } catch (IOException e) {
             throw new GenericException(String.format("Failed to locate mod file modId=%s fileId=%d", projectID, fileID), e);
         }
+    }
+
+    private boolean isClientMod(CurseForgeFile file) {
+        return file.getGameVersions().stream()
+            .anyMatch(s -> s.equalsIgnoreCase("client"));
     }
 
     private static CurseForgeFile getModFileInfo(SharedFetch preparedFetch, UriBuilder uriBuilder, int projectID, int fileID)
