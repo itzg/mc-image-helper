@@ -28,6 +28,7 @@ import me.itzg.helpers.files.FileTreeSnapshot;
 import me.itzg.helpers.files.ResultsFileWriter;
 import me.itzg.helpers.forge.Manifest.ManifestBuilder;
 import me.itzg.helpers.forge.model.PromotionsSlim;
+import me.itzg.helpers.http.FailedRequestException;
 import me.itzg.helpers.http.Uris;
 import me.itzg.helpers.json.ObjectMappers;
 import org.apache.hc.client5.http.HttpResponseException;
@@ -268,7 +269,8 @@ public class ForgeInstaller {
         // every few major versions Forge would chane their version qualifier scheme :(
         for (final String installerUrlVersion : new String[]{
             String.join("-", minecraftVersion, forgeVersion),
-            String.join("-", minecraftVersion, forgeVersion, minecraftVersion)
+            String.join("-", minecraftVersion, forgeVersion, minecraftVersion),
+            String.join("-", minecraftVersion, forgeVersion, "mc172")
         }) {
             try {
                 fetch(Uris.populateToUri(
@@ -281,7 +283,7 @@ public class ForgeInstaller {
                     .execute();
                 success = true;
                 break;
-            } catch (HttpResponseException e){
+            } catch (FailedRequestException e){
                 if (e.getStatusCode() != 404) {
                     throw new RuntimeException("Trying to download forge installer", e);
                 }
