@@ -12,6 +12,38 @@ class CurseForgeInstallerTest {
     @TempDir
     Path tempDir;
 
+    /*
+    Scenarios to test
+    "gameVersions": [
+      "Client",
+      "1.16.5",
+      "Forge"
+    ],
+
+Reject
+### Oculus mc1.16.5-1.4.5
+GET https://api.curse.tools/v1/cf/mods/581495/files/4300427
+
+
+Keep
+    ### [Fabric] Resourceful Lib 1.2.2
+GET https://api.curse.tools/v1/cf/mods/570073/files/4326308
+        "gameVersions": [
+      "1.19.3",
+      "Fabric",
+      "Client",
+      "Server"
+    ],
+
+  ### Patchouli-1.19.2-77.jar
+GET https://api.curse.tools/v1/cf/mods/306770/files/4031402
+  "gameVersions": [
+      "1.19.2",
+      "Forge"
+    ],
+
+     */
+
     @Test
     @EnabledIfSystemProperty(named = "testEnableManualTests", matches = "true", disabledReason = "For manual recording")
     void testManual() throws IOException {
