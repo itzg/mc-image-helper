@@ -1,6 +1,6 @@
 package me.itzg.helpers.http;
 
-import static io.netty.handler.codec.http.HttpHeaderNames.IF_MODIFIED_SINCE;
+import static io.netty.handler.codec.http.HttpHeaderNames.*;
 import static io.netty.handler.codec.http.HttpResponseStatus.NOT_MODIFIED;
 import static java.util.Objects.requireNonNull;
 
@@ -12,9 +12,9 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.FileTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
-import org.apache.hc.core5.http.io.HttpClientResponseHandler;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
@@ -31,7 +31,6 @@ public class SpecificFileFetchBuilder extends FetchBuilderBase<SpecificFileFetch
 
     private final Path file;
     private boolean skipUpToDate;
-    private HttpClientResponseHandler<Path> handler;
     private boolean skipExisting;
 
     public SpecificFileFetchBuilder(State state, Path file) {
@@ -79,9 +78,9 @@ public class SpecificFileFetchBuilder extends FetchBuilderBase<SpecificFileFetch
 
         return usePreparedFetch(sharedFetch ->
             sharedFetch.getReactiveClient()
-                .doOnRequest((httpClientRequest, connection) -> {
-                    statusHandler.call(FileDownloadStatus.DOWNLOADING, uri, file);
-                })
+                .doOnRequest((httpClientRequest, connection) ->
+                    statusHandler.call(FileDownloadStatus.DOWNLOADING, uri, file)
+                )
                 .headers(headers -> {
                     if (useIfModifiedSince) {
                         try {
@@ -96,6 +95,13 @@ public class SpecificFileFetchBuilder extends FetchBuilderBase<SpecificFileFetch
                         }
 
                     }
+                    final List<String> contentTypes = getAcceptContentTypes();
+                    if (contentTypes != null && !contentTypes.isEmpty()) {
+                        headers.set(
+                            ACCEPT.toString(),
+                            contentTypes
+                        );
+                    }
                 })
                 .followRedirect(true)
                 .get()
@@ -105,22 +111,35 @@ public class SpecificFileFetchBuilder extends FetchBuilderBase<SpecificFileFetch
                         && httpClientResponse.status().equals(NOT_MODIFIED)) {
                         return Mono.just(file);
                     }
+
+                    final List<String> contentTypes = getAcceptContentTypes();
+                    if (contentTypes != null && !contentTypes.isEmpty()) {
+                        final List<String> respTypes = httpClientResponse.responseHeaders()
+                            .getAll(CONTENT_TYPE);
+                        if (respTypes.stream()
+                            .noneMatch(contentTypes::contains)) {
+                            return Mono.error(new GenericException("Unexpected content type in response"));
+                        }
+                    }
+
                     return bodyMono.asInputStream()
                         .publishOn(Schedulers.boundedElastic())
                         .flatMap(inputStream -> {
                             try {
+                                @SuppressWarnings("BlockingMethodInNonBlockingContext") // see publishOn above
                                 final long size = Files.copy(inputStream, file, StandardCopyOption.REPLACE_EXISTING);
                                 statusHandler.call(FileDownloadStatus.DOWNLOADED, uri, file);
                                 downloadedHandler.call(uri, file, size);
                             } catch (IOException e) {
                                 return Mono.error(e);
-                            } finally {
+                            }/* finally {
                                 try {
+                                    //noinspection BlockingMethodInNonBlockingContext
                                     inputStream.close();
                                 } catch (IOException e) {
                                     log.warn("Unable to close body input stream", e);
                                 }
-                            }
+                            }*/
                             return Mono.just(file);
                         });
                 })

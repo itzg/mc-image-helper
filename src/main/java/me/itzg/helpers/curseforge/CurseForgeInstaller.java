@@ -9,7 +9,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -37,6 +36,7 @@ import me.itzg.helpers.http.UriBuilder;
 import me.itzg.helpers.json.ObjectMappers;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 @RequiredArgsConstructor
 @Slf4j
@@ -52,6 +52,9 @@ public class CurseForgeInstaller {
     private String apiBaseUrl = "https://api.curse.tools/v1/cf";
     @Getter @Setter
     private int parallelism = 4;
+
+    @Getter @Setter
+    private boolean forceReinstall;
 
     public void install(String slug, String fileMatcher, Integer fileId, Set<Integer> excludedModIds) throws IOException {
         requireNonNull(outputDir, "outputDir is required");
@@ -101,13 +104,18 @@ public class CurseForgeInstaller {
             && manifest.getFileId() == modFile.getId()
             && manifest.getModId() == modFile.getModId()
         ) {
-            if (Manifests.allFilesPresent(outputDir, manifest)) {
+            if (forceReinstall) {
+                log.info("Requested force reinstall of {}", modFile.getDisplayName());
+            }
+            else if (Manifests.allFilesPresent(outputDir, manifest)) {
                 log.info("Requested CurseForge modpack {} is already installed for {}",
                     modFile.getDisplayName(), mod.getName()
                 );
                 return;
             }
-            log.warn("Some files from modpack file {} were missing. Proceeding with a re-install", modFile.getFileName());
+            else {
+                log.warn("Some files from modpack file {} were missing. Proceeding with a re-install", modFile.getFileName());
+            }
         }
 
         log.info("Processing modpack {} @ {}:{}", modFile.getDisplayName(), modFile.getModId(), modFile.getId());
@@ -190,12 +198,12 @@ public class CurseForgeInstaller {
 
             final Stream<Path> modFiles = Flux.fromIterable(modpackManifest.getFiles())
                 .parallel(parallelism)
+                .runOn(Schedulers.newParallel("downloader"))
                 .filter(ManifestFileRef::isRequired)
                 .filter(manifestFileRef -> !excludedModIds.contains(manifestFileRef.getProjectID()))
                 .flatMap(fileRef ->
                     downloadModFile(preparedFetch, uriBuilder, modsDir, fileRef.getProjectID(), fileRef.getFileID())
                 )
-                .filter(Objects::nonNull)
                 .sequential()
                 .toStream();
 
@@ -245,7 +253,7 @@ public class CurseForgeInstaller {
             );
             if (!isServerMod(file)) {
                 log.debug("Skipping {} since it is a client mod", file.getFileName());
-                return null;
+                return Mono.empty();
             }
 
             return preparedFetch.fetch(
@@ -256,10 +264,11 @@ public class CurseForgeInstaller {
                 .handleStatus((status, uri, f) -> {
                     switch (status) {
                         case SKIP_FILE_EXISTS:
-                            log.info("Mod file {} already exists", f);
+                            log.info("Mod file {} already exists", outputDir.relativize(f));
                             break;
                         case DOWNLOADED:
-                            log.info("Downloaded mod file {}", f);
+                            log.info("Downloaded mod file {}", outputDir.relativize(f));
+                            break;
                     }
                 })
                 .assemble();

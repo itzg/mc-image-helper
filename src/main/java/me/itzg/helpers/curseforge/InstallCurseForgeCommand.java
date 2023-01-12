@@ -43,6 +43,14 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
         description = "Substring to select specific modpack filename")
     String filenameMatcher;
 
+    @Option(names = "--force-reinstall")
+    boolean forceReinstall;
+
+    @Option(names = "--parallel-downloads", defaultValue = "4",
+        description = "Default: ${DEFAULT-VALUE}"
+    )
+    int parallelDownloads;
+
     private static final Pattern PAGE_URL_PATTERN = Pattern.compile(
         "https://www.curseforge.com/minecraft/modpacks/(?<slug>.+?)(/files(/(?<fileId>\\d+)?)?)?");
 
@@ -71,7 +79,9 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
             return ExitCode.USAGE;
         }
 
-        final CurseForgeInstaller installer = new CurseForgeInstaller(outputDirectory, resultsFile);
+        final CurseForgeInstaller installer = new CurseForgeInstaller(outputDirectory, resultsFile)
+            .setForceReinstall(forceReinstall)
+            .setParallelism(parallelDownloads);
         installer.install(slug, filenameMatcher, fileId, excludedModIds);
 
         return ExitCode.OK;
