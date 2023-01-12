@@ -50,7 +50,7 @@ GET https://api.curse.tools/v1/cf/mods/306770/files/4031402
         final Path resultsFile = tempDir.resolve(".results.env");
 
         final CurseForgeInstaller installer = new CurseForgeInstaller(tempDir, resultsFile);
-        installer.install("all-the-mods-8", "1.0.4", null);
+        installer.install("all-the-mods-8", "1.0.4", null, null);
 
         assertThat(tempDir)
             .isNotEmptyDirectory();

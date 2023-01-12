@@ -7,8 +7,10 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
@@ -48,7 +50,7 @@ public class CurseForgeInstaller {
     @Setter
     private String apiBaseUrl = "https://api.curse.tools/v1/cf";
 
-    public void install(String slug, String fileMatcher, Integer fileId) throws IOException {
+    public void install(String slug, String fileMatcher, Integer fileId, Set<Integer> excludedModIds) throws IOException {
         requireNonNull(outputDir, "outputDir is required");
         requireNonNull(slug, "slug is required");
 
@@ -68,12 +70,16 @@ public class CurseForgeInstaller {
                 throw new GenericException("More than one mod found with slug={}" + slug);
             }
             else {
-                processMod(preparedFetch, uriBuilder, searchResponse.getData().get(0), fileId, fileMatcher);
+                processMod(preparedFetch, uriBuilder, searchResponse.getData().get(0), fileId, fileMatcher,
+                    excludedModIds != null ? excludedModIds : Collections.emptySet()
+                );
             }
         }
     }
 
-    private void processMod(SharedFetch preparedFetch, UriBuilder uriBuilder, CurseForgeMod mod, Integer fileId, String fileMatcher)
+    private void processMod(SharedFetch preparedFetch, UriBuilder uriBuilder, CurseForgeMod mod, Integer fileId, String fileMatcher,
+        Set<Integer> excludedModIds
+    )
         throws IOException {
 
 
@@ -103,7 +109,8 @@ public class CurseForgeInstaller {
 
         log.info("Processing modpack {} @ {}:{}", modFile.getDisplayName(), modFile.getModId(), modFile.getId());
         final List<Path> installedFiles = processModpackFile(preparedFetch, uriBuilder,
-            normalizeDownloadUrl(modFile.getDownloadUrl())
+            normalizeDownloadUrl(modFile.getDownloadUrl()),
+            excludedModIds
         );
 
         final CurseForgeManifest newManifest = CurseForgeManifest.builder()
@@ -155,7 +162,9 @@ public class CurseForgeInstaller {
             );
     }
 
-    private List<Path> processModpackFile(SharedFetch preparedFetch, UriBuilder uriBuilder, URI downloadUrl)
+    private List<Path> processModpackFile(SharedFetch preparedFetch, UriBuilder uriBuilder, URI downloadUrl,
+        Set<Integer> excludedModIds
+    )
         throws IOException {
         final Path downloaded = Files.createTempFile("curseforge-modpack", "zip");
 
@@ -175,6 +184,7 @@ public class CurseForgeInstaller {
 
             final List<Path> modFiles = modpackManifest.getFiles().stream()
                 .filter(ManifestFileRef::isRequired)
+                .filter(manifestFileRef -> !excludedModIds.contains(manifestFileRef.getProjectID()))
                 .map(fileRef ->
                     downloadModFile(preparedFetch, uriBuilder, modsDir, fileRef.getProjectID(), fileRef.getFileID())
                 )

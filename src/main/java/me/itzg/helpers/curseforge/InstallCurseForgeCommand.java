@@ -1,6 +1,7 @@
 package me.itzg.helpers.curseforge;
 
 import java.nio.file.Path;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -31,6 +32,12 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
 
     @Option(names = "--file-id")
     Integer fileId;
+
+    @Option(names = "--exclude-mods", paramLabel = "PROJECT_ID",
+        split = "\\s+|,", splitSynopsisLabel = "Whitespace or commas",
+        description = "For mods that need to be excluded from server deployments, such as those that don't label as client"
+    )
+    Set<Integer> excludedModIds;
 
     @Option(names = "--filename-matcher", paramLabel = "STR",
         description = "Substring to select specific modpack filename")
@@ -65,7 +72,7 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
         }
 
         final CurseForgeInstaller installer = new CurseForgeInstaller(outputDirectory, resultsFile);
-        installer.install(slug, filenameMatcher, fileId);
+        installer.install(slug, filenameMatcher, fileId, excludedModIds);
 
         return ExitCode.OK;
     }
