@@ -7,8 +7,10 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
@@ -19,6 +21,8 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.curseforge.model.CurseForgeFile;
 import me.itzg.helpers.curseforge.model.CurseForgeMod;
+import me.itzg.helpers.curseforge.model.FileDependency;
+import me.itzg.helpers.curseforge.model.FileRelationType;
 import me.itzg.helpers.curseforge.model.GetModFileResponse;
 import me.itzg.helpers.curseforge.model.GetModFilesResponse;
 import me.itzg.helpers.curseforge.model.ManifestFileRef;
@@ -47,6 +51,8 @@ public class CurseForgeInstaller {
     @Getter
     @Setter
     private String apiBaseUrl = "https://api.curse.tools/v1/cf";
+
+    private final Set<ManifestFileRef> filesProcessed = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
     public void install(String slug, String fileMatcher, Integer fileId) throws IOException {
         requireNonNull(outputDir, "outputDir is required");
@@ -175,10 +181,10 @@ public class CurseForgeInstaller {
 
             final List<Path> modFiles = modpackManifest.getFiles().stream()
                 .filter(ManifestFileRef::isRequired)
-                .map(fileRef ->
-                    downloadModFile(preparedFetch, uriBuilder, modsDir, fileRef.getProjectID(), fileRef.getFileID())
+                .flatMap(fileRef ->
+                    downloadModFile(preparedFetch, uriBuilder, modsDir, fileRef)
+                        .stream()
                 )
-                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
             final List<Path> overrides = applyOverrides(downloaded);
@@ -216,12 +222,31 @@ public class CurseForgeInstaller {
         return overrides;
     }
 
-    private Path downloadModFile(SharedFetch preparedFetch, UriBuilder uriBuilder, Path modsDir, int projectID, int fileID) {
+    private List<Path> downloadModFile(SharedFetch preparedFetch, UriBuilder uriBuilder, Path modsDir, ManifestFileRef fileRef) {
+        if (!filesProcessed.add(fileRef)) {
+            log.trace("{} is already processed", fileRef);
+            return Collections.emptyList();
+        }
+
+        final int projectID = fileRef.getProjectID();
+        final int fileID = fileRef.getFileID();
+
+        final List<Path> downloadedFiles = new ArrayList<>();
+
         try {
             final CurseForgeFile file = getModFileInfo(preparedFetch, uriBuilder, projectID, fileID);
-            if (isClientMod(file)) {
+            if (!isServerMod(file)) {
                 log.debug("Skipping {} since it is a client mod", file.getFileName());
-                return null;
+                return Collections.emptyList();
+            }
+
+            for (final FileDependency dependency : file.getDependencies()) {
+                if (dependency.getRelationType() == FileRelationType.RequiredDependency
+                    || dependency.getRelationType() == FileRelationType.Tool) {
+                    downloadedFiles.addAll(
+                        processDependency(dependency)
+                    );
+                }
             }
 
             log.info("Download/confirm mod {} @ {}:{}",
@@ -230,20 +255,29 @@ public class CurseForgeInstaller {
                 projectID, fileID
             );
 
-            return preparedFetch.fetch(
-                    normalizeDownloadUrl(file.getDownloadUrl())
-                )
-                .toDirectory(modsDir)
-                .skipExisting(true)
-                .execute();
+            downloadedFiles.add(
+                preparedFetch.fetch(
+                        normalizeDownloadUrl(file.getDownloadUrl())
+                    )
+                    .toDirectory(modsDir)
+                    .skipExisting(true)
+                    .execute()
+            );
+
+            return downloadedFiles;
         } catch (IOException e) {
             throw new GenericException(String.format("Failed to locate mod file modId=%s fileId=%d", projectID, fileID), e);
         }
     }
 
-    private boolean isClientMod(CurseForgeFile file) {
+    private List<Path> processDependency(FileDependency dependency) {
+        //TODO
+        return Collections.emptyList();
+    }
+
+    private boolean isServerMod(CurseForgeFile file) {
         return file.getGameVersions().stream()
-            .anyMatch(s -> s.equalsIgnoreCase("client"));
+            .anyMatch(s -> s.equalsIgnoreCase("server"));
     }
 
     private static CurseForgeFile getModFileInfo(SharedFetch preparedFetch, UriBuilder uriBuilder, int projectID, int fileID)
