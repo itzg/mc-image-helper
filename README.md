@@ -120,6 +120,11 @@ Download a file
 Usage: mc-image-helper install-curseforge [-h] [--file-id=<fileId>]
        [--filename-matcher=STR] [--modpack-page-url=URL]
        [--output-directory=DIR] [--results-file=FILE] [--slug=<slug>]
+       [--exclude-mods=PROJECT_ID[Whitespace or commasPROJECT_ID...]]...
+      --exclude-mods=PROJECT_ID[Whitespace or commasPROJECT_ID...]
+                            For mods that need to be excluded from server
+                              deployments, such as those that don't label as
+                              client
       --file-id=<fileId>
       --filename-matcher=STR
                             Substring to select specific modpack filename
