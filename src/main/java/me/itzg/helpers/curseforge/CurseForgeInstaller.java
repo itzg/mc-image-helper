@@ -199,6 +199,7 @@ public class CurseForgeInstaller {
             ZipEntry entry;
             while ((entry = zip.getNextEntry()) != null) {
                 if (!entry.isDirectory()) {
+                    // TODO lookup "overrides" from file model
                     if (entry.getName().startsWith("overrides/")) {
                         final String subpath = entry.getName().substring("overrides/".length());
                         final Path outPath = outputDir.resolve(subpath);
@@ -219,7 +220,7 @@ public class CurseForgeInstaller {
     private Path downloadModFile(SharedFetch preparedFetch, UriBuilder uriBuilder, Path modsDir, int projectID, int fileID) {
         try {
             final CurseForgeFile file = getModFileInfo(preparedFetch, uriBuilder, projectID, fileID);
-            if (isClientMod(file)) {
+            if (!isServerMod(file)) {
                 log.debug("Skipping {} since it is a client mod", file.getFileName());
                 return null;
             }
@@ -241,9 +242,24 @@ public class CurseForgeInstaller {
         }
     }
 
-    private boolean isClientMod(CurseForgeFile file) {
-        return file.getGameVersions().stream()
-            .anyMatch(s -> s.equalsIgnoreCase("client"));
+    private boolean isServerMod(CurseForgeFile file) {
+        /*
+            Rules:
+            - if marked server, instant winner
+            - if marked client, keep looking since it might also be marked server
+            - if not marked client (nor server) by end, it's a library so also wins
+         */
+
+        boolean client = false;
+        for (final String entry : file.getGameVersions()) {
+            if (entry.equalsIgnoreCase("server")) {
+                return true;
+            }
+            if (entry.equalsIgnoreCase("client")) {
+                client = true;
+            }
+        }
+        return !client;
     }
 
     private static CurseForgeFile getModFileInfo(SharedFetch preparedFetch, UriBuilder uriBuilder, int projectID, int fileID)
