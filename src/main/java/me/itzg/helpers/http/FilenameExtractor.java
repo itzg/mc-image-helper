@@ -16,7 +16,7 @@ import org.apache.hc.core5.http.io.entity.EntityUtils;
 @Slf4j
 public class FilenameExtractor {
   private static final Pattern HTTP_CONTENT_DISPOSITION =
-      Pattern.compile("(inline|attachment)(\\s*;\\s+filename=\"(.+?)\")?");
+      Pattern.compile("(?<type>inline|attachment)(\\s*;\\s+filename=\"(?<filename>.+?)\")?");
 
   private final LatchingUrisInterceptor interceptor;
 
@@ -31,8 +31,8 @@ public class FilenameExtractor {
 
       final Matcher m = HTTP_CONTENT_DISPOSITION.matcher(headerValue);
       if (m.matches()) {
-          if (m.group(1).equals("attachment")) {
-              return m.group(2);
+          if (m.group("type").equals("attachment")) {
+              return m.group("filename");
           }
       }
       return null;
