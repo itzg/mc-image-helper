@@ -43,8 +43,8 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
         description = "Substring to select specific modpack filename")
     String filenameMatcher;
 
-    @Option(names = "--force-reinstall")
-    boolean forceReinstall;
+    @Option(names = "--force-synchronize")
+    boolean forceSynchronize;
 
     @Option(names = "--parallel-downloads", defaultValue = "4",
         description = "Default: ${DEFAULT-VALUE}"
@@ -80,7 +80,7 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
         }
 
         final CurseForgeInstaller installer = new CurseForgeInstaller(outputDirectory, resultsFile)
-            .setForceReinstall(forceReinstall)
+            .setForceSynchronize(forceSynchronize)
             .setParallelism(parallelDownloads);
         installer.install(slug, filenameMatcher, fileId, excludedModIds);
 
