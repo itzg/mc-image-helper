@@ -1,6 +1,7 @@
 package me.itzg.helpers.curseforge;
 
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
@@ -38,6 +39,12 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
         description = "For mods that need to be excluded from server deployments, such as those that don't label as client"
     )
     Set<Integer> excludedModIds;
+
+    @Option(names = "--force-include-mods", paramLabel = "PROJECT_ID",
+        split = "\\s+|,", splitSynopsisLabel = "Whitespace or commas",
+        description = "Some mods incorrectly declare client-only support, but still need to be included in a server deploy"
+    )
+    Set<Integer> forceIncludeMods;
 
     @Option(names = "--filename-matcher", paramLabel = "STR",
         description = "Substring to select specific modpack filename")
@@ -80,10 +87,16 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
         }
 
         final CurseForgeInstaller installer = new CurseForgeInstaller(outputDirectory, resultsFile)
+            .setExcludedModIds(nonNullSet(excludedModIds))
+            .setForceIncludeMods(nonNullSet(forceIncludeMods))
             .setForceSynchronize(forceSynchronize)
             .setParallelism(parallelDownloads);
-        installer.install(slug, filenameMatcher, fileId, excludedModIds);
+        installer.install(slug, filenameMatcher, fileId);
 
         return ExitCode.OK;
+    }
+
+    private static <T> Set<T> nonNullSet(Set<T> in) {
+        return in != null ? in : Collections.emptySet();
     }
 }

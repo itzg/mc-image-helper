@@ -117,10 +117,12 @@ Download a file
 ### install-curseforge
 
 ```
-Usage: mc-image-helper install-curseforge [-h] [--file-id=<fileId>]
-       [--filename-matcher=STR] [--modpack-page-url=URL]
-       [--output-directory=DIR] [--results-file=FILE] [--slug=<slug>]
-       [--exclude-mods=PROJECT_ID[Whitespace or commasPROJECT_ID...]]...
+Usage: mc-image-helper install-curseforge [-h] [--force-synchronize]
+       [--file-id=<fileId>] [--filename-matcher=STR] [--modpack-page-url=URL]
+       [--output-directory=DIR] [--parallel-downloads=<parallelDownloads>]
+       [--results-file=FILE] [--slug=<slug>] [--exclude-mods=PROJECT_ID
+       [Whitespace or commasPROJECT_ID...]]... [--force-include-mods=PROJECT_ID
+       [Whitespace or commasPROJECT_ID...]]...
       --exclude-mods=PROJECT_ID[Whitespace or commasPROJECT_ID...]
                             For mods that need to be excluded from server
                               deployments, such as those that don't label as
@@ -128,6 +130,10 @@ Usage: mc-image-helper install-curseforge [-h] [--file-id=<fileId>]
       --file-id=<fileId>
       --filename-matcher=STR
                             Substring to select specific modpack filename
+      --force-include-mods=PROJECT_ID[Whitespace or commasPROJECT_ID...]
+                            Some mods incorrectly declare client-only support,
+                              but still need to be included in a server deploy
+      --force-synchronize
   -h, --help
       --modpack-page-url=URL
                             URL of a modpack page such as https://www.
@@ -138,6 +144,8 @@ Usage: mc-image-helper install-curseforge [-h] [--file-id=<fileId>]
                               0
       --output-directory=DIR
 
+      --parallel-downloads=<parallelDownloads>
+                            Default: 4
       --results-file=FILE   A key=value file suitable for scripted environment
                               variables. Currently includes
                               SERVER: the entry point jar or script
