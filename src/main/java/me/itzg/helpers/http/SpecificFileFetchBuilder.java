@@ -132,14 +132,14 @@ public class SpecificFileFetchBuilder extends FetchBuilderBase<SpecificFileFetch
                                 downloadedHandler.call(uri, file, size);
                             } catch (IOException e) {
                                 return Mono.error(e);
-                            }/* finally {
+                            } finally {
                                 try {
                                     //noinspection BlockingMethodInNonBlockingContext
                                     inputStream.close();
                                 } catch (IOException e) {
                                     log.warn("Unable to close body input stream", e);
                                 }
-                            }*/
+                            }
                             return Mono.just(file);
                         });
                 })
