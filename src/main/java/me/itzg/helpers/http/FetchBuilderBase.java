@@ -80,6 +80,10 @@ public class FetchBuilderBase<SELF extends FetchBuilderBase<SELF>> {
         return request;
     }
 
+    protected URI uri() {
+        return state.uri;
+    }
+
     public List<String> getAcceptContentTypes() {
         return state.acceptContentTypes;
     }

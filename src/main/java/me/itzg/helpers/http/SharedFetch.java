@@ -1,5 +1,6 @@
 package me.itzg.helpers.http;
 
+import io.netty.handler.codec.http.HttpHeaderNames;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -13,6 +14,7 @@ import me.itzg.helpers.McImageHelper;
 import me.itzg.helpers.get.ExtendedRequestRetryStrategy;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
+import reactor.netty.http.client.HttpClient;
 
 /**
  * Provides an efficient way to make multiple web requests since a single client
@@ -25,12 +27,16 @@ import org.apache.hc.client5.http.impl.classic.HttpClients;
 @Slf4j
 public class SharedFetch implements AutoCloseable {
 
+    @Getter
     private final CloseableHttpClient client;
 
     @Getter
     private final Map<String, String> headers = new HashMap<>();
     @Getter
     final LatchingUrisInterceptor latchingUrisInterceptor = new LatchingUrisInterceptor();
+
+    @Getter
+    private final HttpClient reactiveClient;
 
     public SharedFetch(String forCommand) {
         this(forCommand, 5, 2);
@@ -42,6 +48,11 @@ public class SharedFetch implements AutoCloseable {
             McImageHelper.getVersion(),
             forCommand != null ? forCommand : "unspecified"
         );
+
+        reactiveClient = HttpClient.create()
+            .headers(headers ->
+                headers.set(HttpHeaderNames.USER_AGENT.toString(), userAgent)
+            );
 
         this.client = HttpClients.custom()
             .addRequestInterceptorFirst((request, entity, context) -> {
@@ -71,10 +82,6 @@ public class SharedFetch implements AutoCloseable {
     public SharedFetch addHeader(String name, String value) {
         headers.put(name, value);
         return this;
-    }
-
-    CloseableHttpClient getClient() {
-        return this.client;
     }
 
     @Override

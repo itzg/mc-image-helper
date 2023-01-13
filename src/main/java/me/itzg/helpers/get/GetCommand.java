@@ -211,7 +211,11 @@ public class GetCommand implements Callable<Integer> {
                         .toFile(outputFile)
                         .skipUpToDate(skipUpToDate)
                         .acceptContentTypes(acceptContentTypes)
-                        .logProgressEach(logProgressEach)
+                        .handleDownloaded((uri, f, contentSizeBytes) -> {
+                            if (logProgressEach) {
+                                log.info("Downloaded {}", f);
+                            }
+                        })
                         .execute();
                     if (this.outputFilename) {
                         stdout.println(file);

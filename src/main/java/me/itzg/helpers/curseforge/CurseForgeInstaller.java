@@ -9,7 +9,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -35,6 +34,9 @@ import me.itzg.helpers.http.Fetch;
 import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.http.UriBuilder;
 import me.itzg.helpers.json.ObjectMappers;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 @RequiredArgsConstructor
 @Slf4j
@@ -49,6 +51,13 @@ public class CurseForgeInstaller {
     @Getter
     @Setter
     private String apiBaseUrl = "https://api.curse.tools/v1/cf";
+    @Getter
+    @Setter
+    private int parallelism = 4;
+
+    @Getter
+    @Setter
+    private boolean forceSynchronize;
 
     public void install(String slug, String fileMatcher, Integer fileId, Set<Integer> excludedModIds) throws IOException {
         requireNonNull(outputDir, "outputDir is required");
@@ -77,11 +86,11 @@ public class CurseForgeInstaller {
         }
     }
 
-    private void processMod(SharedFetch preparedFetch, UriBuilder uriBuilder, CurseForgeMod mod, Integer fileId, String fileMatcher,
+    private void processMod(SharedFetch preparedFetch, UriBuilder uriBuilder, CurseForgeMod mod, Integer fileId,
+        String fileMatcher,
         Set<Integer> excludedModIds
     )
         throws IOException {
-
 
         final CurseForgeFile modFile;
 
@@ -98,13 +107,18 @@ public class CurseForgeInstaller {
             && manifest.getFileId() == modFile.getId()
             && manifest.getModId() == modFile.getModId()
         ) {
-            if (Manifests.allFilesPresent(outputDir, manifest)) {
+            if (forceSynchronize) {
+                log.info("Requested force synchronize of {}", modFile.getDisplayName());
+            }
+            else if (Manifests.allFilesPresent(outputDir, manifest)) {
                 log.info("Requested CurseForge modpack {} is already installed for {}",
                     modFile.getDisplayName(), mod.getName()
                 );
                 return;
             }
-            log.warn("Some files from modpack file {} were missing. Proceeding with a re-install", modFile.getFileName());
+            else {
+                log.warn("Some files from modpack file {} were missing. Proceeding with a re-install", modFile.getFileName());
+            }
         }
 
         log.info("Processing modpack {} @ {}:{}", modFile.getDisplayName(), modFile.getModId(), modFile.getId());
@@ -130,10 +144,10 @@ public class CurseForgeInstaller {
     ) throws IOException {
         // NOTE latestFiles in mod is only one or two files, so retrieve the full list instead
         final GetModFilesResponse resp = preparedFetch.fetch(
-                    uriBuilder.resolve("/mods/{modId}/files", mod.getId())
-                )
-                .toObject(GetModFilesResponse.class)
-                .execute();
+                uriBuilder.resolve("/mods/{modId}/files", mod.getId())
+            )
+            .toObject(GetModFilesResponse.class)
+            .execute();
 
         return resp.getData().stream()
             .filter(file ->
@@ -154,12 +168,12 @@ public class CurseForgeInstaller {
 
         final String filename = downloadUrl.substring(nameStart + 1);
         return URI.create(
-            downloadUrl.substring(0, nameStart+1) +
+            downloadUrl.substring(0, nameStart + 1) +
                 filename
                     .replace(" ", "%20")
                     .replace("[", "%5B")
                     .replace("]", "%5D")
-            );
+        );
     }
 
     private List<Path> processModpackFile(SharedFetch preparedFetch, UriBuilder uriBuilder, URI downloadUrl,
@@ -171,6 +185,9 @@ public class CurseForgeInstaller {
         try {
             preparedFetch.fetch(downloadUrl)
                 .toFile(downloaded)
+                .handleStatus((status, uri, file) ->
+                    log.debug("Modpack file retrieval: status={} uri={} file={}", status, uri, file)
+                )
                 .execute();
 
             final MinecraftModpackManifest modpackManifest = extractModpackManifest(downloaded);
@@ -182,36 +199,40 @@ public class CurseForgeInstaller {
 
             final Path modsDir = Files.createDirectories(outputDir.resolve("mods"));
 
-            final List<Path> modFiles = modpackManifest.getFiles().stream()
+            final List<Path> modFiles = Flux.fromIterable(modpackManifest.getFiles())
+                .parallel(parallelism)
+                .runOn(Schedulers.newParallel("downloader"))
                 .filter(ManifestFileRef::isRequired)
                 .filter(manifestFileRef -> !excludedModIds.contains(manifestFileRef.getProjectID()))
-                .map(fileRef ->
+                .flatMap(fileRef ->
                     downloadModFile(preparedFetch, uriBuilder, modsDir, fileRef.getProjectID(), fileRef.getFileID())
                 )
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+                .sequential()
+                .collectList()
+                .block();
 
-            final List<Path> overrides = applyOverrides(downloaded);
+            final List<Path> overrides = applyOverrides(downloaded, modpackManifest.getOverrides());
 
             prepareModLoader(modLoader.getId(), modpackManifest.getMinecraft().getVersion());
 
-            return Stream.concat(modFiles.stream(), overrides.stream())
+            return Stream.concat(
+                    modFiles != null ? modFiles.stream() : Stream.empty(),
+                    overrides.stream()
+                )
                 .collect(Collectors.toList());
-        }
-        finally {
+        } finally {
             Files.delete(downloaded);
         }
     }
 
-    private List<Path> applyOverrides(Path modpackZip) throws IOException {
+    private List<Path> applyOverrides(Path modpackZip, String overridesDir) throws IOException {
         final ArrayList<Path> overrides = new ArrayList<>();
         try (ZipInputStream zip = new ZipInputStream(Files.newInputStream(modpackZip))) {
             ZipEntry entry;
             while ((entry = zip.getNextEntry()) != null) {
                 if (!entry.isDirectory()) {
-                    // TODO lookup "overrides" from file model
-                    if (entry.getName().startsWith("overrides/")) {
-                        final String subpath = entry.getName().substring("overrides/".length());
+                    if (entry.getName().startsWith(overridesDir + "/")) {
+                        final String subpath = entry.getName().substring(overridesDir.length() + 1/*for slash*/);
                         final Path outPath = outputDir.resolve(subpath);
                         log.debug("Applying override {}", subpath);
 
@@ -227,26 +248,36 @@ public class CurseForgeInstaller {
         return overrides;
     }
 
-    private Path downloadModFile(SharedFetch preparedFetch, UriBuilder uriBuilder, Path modsDir, int projectID, int fileID) {
+    private Mono<Path> downloadModFile(SharedFetch preparedFetch, UriBuilder uriBuilder, Path modsDir, int projectID, int fileID
+    ) {
         try {
             final CurseForgeFile file = getModFileInfo(preparedFetch, uriBuilder, projectID, fileID);
-            if (!isServerMod(file)) {
-                log.debug("Skipping {} since it is a client mod", file.getFileName());
-                return null;
-            }
-
-            log.info("Download/confirm mod {} @ {}:{}",
+            log.debug("Download/confirm mod {} @ {}:{}",
                 // several mods have non-descriptive display names, like "v1.0.0", so filename tends to be better
                 file.getFileName(),
                 projectID, fileID
             );
+            if (!isServerMod(file)) {
+                log.debug("Skipping {} since it is a client mod", file.getFileName());
+                return Mono.empty();
+            }
 
             return preparedFetch.fetch(
                     normalizeDownloadUrl(file.getDownloadUrl())
                 )
-                .toDirectory(modsDir)
+                .toFile(modsDir.resolve(file.getFileName()))
                 .skipExisting(true)
-                .execute();
+                .handleStatus((status, uri, f) -> {
+                    switch (status) {
+                        case SKIP_FILE_EXISTS:
+                            log.info("Mod file {} already exists", outputDir.relativize(f));
+                            break;
+                        case DOWNLOADED:
+                            log.info("Downloaded mod file {}", outputDir.relativize(f));
+                            break;
+                    }
+                })
+                .assemble();
         } catch (IOException e) {
             throw new GenericException(String.format("Failed to locate mod file modId=%s fileId=%d", projectID, fileID), e);
         }
