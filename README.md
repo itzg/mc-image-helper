@@ -120,17 +120,22 @@ Download a file
 Usage: mc-image-helper install-curseforge [-h] [--force-synchronize]
        [--file-id=<fileId>] [--filename-matcher=STR] [--modpack-page-url=URL]
        [--output-directory=DIR] [--parallel-downloads=<parallelDownloads>]
-       [--results-file=FILE] [--slug=<slug>] [--exclude-mods=PROJECT_ID
-       [Whitespace or commasPROJECT_ID...]]... [--force-include-mods=PROJECT_ID
-       [Whitespace or commasPROJECT_ID...]]...
-      --exclude-mods=PROJECT_ID[Whitespace or commasPROJECT_ID...]
+       [--results-file=FILE] [--slug=<slug>] [--exclude-include-file=FILE |
+       [[--exclude-mods=PROJECT_ID|SLUG[,| PROJECT_ID|SLUG...]]...
+       [--force-include-mods=PROJECT_ID|SLUG[,| PROJECT_ID|SLUG...]]...]]
+       [COMMAND]
+      --exclude-include-file=FILE
+                            A JSON file that contains global and per modpack
+                              exclude/include declarations. See README for
+                              schema.
+      --exclude-mods=PROJECT_ID|SLUG[,| PROJECT_ID|SLUG...]
                             For mods that need to be excluded from server
                               deployments, such as those that don't label as
                               client
       --file-id=<fileId>
       --filename-matcher=STR
                             Substring to select specific modpack filename
-      --force-include-mods=PROJECT_ID[Whitespace or commasPROJECT_ID...]
+      --force-include-mods=PROJECT_ID|SLUG[,| PROJECT_ID|SLUG...]
                             Some mods incorrectly declare client-only support,
                               but still need to be included in a server deploy
       --force-synchronize
@@ -150,6 +155,64 @@ Usage: mc-image-helper install-curseforge [-h] [--force-synchronize]
                               variables. Currently includes
                               SERVER: the entry point jar or script
       --slug=<slug>         The short-URL identifier
+Commands:
+  schemas  Output relevant JSON schemas
+```
+
+#### Exclude/Include File Schema
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "Mods Exclude/Include File Content",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "globalExcludes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Mods by slug|id to exclude for all modpacks"
+    },
+    "globalForceIncludes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Mods by slug|id to force include for all modpacks"
+    },
+    "modpacks": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/ExcludeIncludes"
+      },
+      "description": "Specific exclude/includes by modpack slug"
+    }
+  },
+  "definitions": {
+    "ExcludeIncludes": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "excludes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Mods by slug|id to exclude for this modpack"
+        },
+        "forceIncludes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Mods by slug|id to force include for this modpack"
+        }
+      }
+    }
+  }
+}
 ```
 
 ### install-fabric-loader

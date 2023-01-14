@@ -31,7 +31,6 @@ import me.itzg.helpers.forge.model.PromotionsSlim;
 import me.itzg.helpers.http.FailedRequestException;
 import me.itzg.helpers.http.Uris;
 import me.itzg.helpers.json.ObjectMappers;
-import org.apache.hc.client5.http.HttpResponseException;
 
 @Slf4j
 public class ForgeInstaller {
@@ -164,7 +163,7 @@ public class ForgeInstaller {
             .minecraftVersion(minecraftVersion)
             .forgeVersion(forgeVersion);
 
-        final Path installerJar = downloadInstaller(minecraftVersion, forgeVersion);
+        final Path installerJar = downloadInstaller(outputDir, minecraftVersion, forgeVersion);
 
         try {
             install(installerJar, outputDir, minecraftVersion, forgeVersion, manifestBuilder);
@@ -226,6 +225,10 @@ public class ForgeInstaller {
             try {
                 final int exitCode = process.waitFor();
                 if (exitCode != 0) {
+                    final Path installerLog = installerJar.getParent().resolve(installerJar.getFileName().toString() + ".log");
+                    if (Files.exists(installerLog)) {
+                        Files.copy(installerLog, System.err);
+                    }
                     throw new RuntimeException("Forge installer failed with exit code " + exitCode);
                 }
             } catch (InterruptedException e) {
@@ -255,15 +258,12 @@ public class ForgeInstaller {
         }
     }
 
-    private Path downloadInstaller(String minecraftVersion, String forgeVersion) {
+    private Path downloadInstaller(Path outputDir, String minecraftVersion, String forgeVersion) {
         log.info("Downloading Forge installer {} for Minecraft {}", forgeVersion, minecraftVersion);
 
-        final Path installerJar;
-        try {
-            installerJar = Files.createTempFile("forge-installer-", ".jar");
-        } catch (IOException e) {
-            throw new RuntimeException("Trying to allocate forge installer file", e);
-        }
+        final Path installerJar = outputDir.resolve(String.format("forge-installer-%s-%s",
+            minecraftVersion, forgeVersion
+        ) +".jar");
 
         boolean success = false;
         // every few major versions Forge would chane their version qualifier scheme :(
@@ -279,6 +279,7 @@ public class ForgeInstaller {
                 ))
                     .userAgentCommand("forge")
                     .toFile(installerJar)
+                    .skipExisting(true)
                     .acceptContentTypes(Collections.singletonList("application/java-archive"))
                     .execute();
                 success = true;

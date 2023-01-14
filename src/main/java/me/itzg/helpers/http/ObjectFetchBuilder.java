@@ -1,11 +1,17 @@
 package me.itzg.helpers.http;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.netty.handler.codec.http.HttpHeaderNames;
 import java.io.IOException;
+import lombok.extern.slf4j.Slf4j;
+import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.json.ObjectMappers;
 import org.apache.hc.core5.http.HttpHeaders;
 import org.apache.hc.core5.http.message.BasicHttpRequest;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
+@Slf4j
 public class ObjectFetchBuilder<T> extends FetchBuilderBase<ObjectFetchBuilder<T>> {
 
     private final Class<T> type;
@@ -31,6 +37,39 @@ public class ObjectFetchBuilder<T> extends FetchBuilderBase<ObjectFetchBuilder<T
         return useClient(client ->
                 client.execute(get(), new ObjectMapperHandler<>(type, objectMapper))
             );
+    }
+
+    public Mono<T> assemble() throws IOException {
+        return usePreparedFetch(sharedFetch ->
+            sharedFetch.getReactiveClient()
+                .headers(headers ->
+                        headers.set(HttpHeaderNames.ACCEPT, "application/json")
+                    )
+                .followRedirect(true)
+                .get()
+                .uri(uri())
+                .responseContent()
+                .aggregate()
+                .asInputStream()
+                .publishOn(Schedulers.boundedElastic())
+                .flatMap(inputStream -> {
+                    try {
+                        try {
+                            return Mono.just(objectMapper.readValue(inputStream, type));
+                        } catch (IOException e) {
+                            return Mono.error(new GenericException("Failed to parse response body into " + type, e));
+                        }
+                    }
+                    finally {
+                        try {
+                            //noinspection BlockingMethodInNonBlockingContext
+                            inputStream.close();
+                        } catch (IOException e) {
+                            log.warn("Unable to close body input stream", e);
+                        }
+                    }
+                })
+        );
     }
 
 }
