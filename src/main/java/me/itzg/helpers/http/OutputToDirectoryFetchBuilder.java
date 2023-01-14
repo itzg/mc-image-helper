@@ -58,40 +58,45 @@ public class OutputToDirectoryFetchBuilder extends FetchBuilderBase<OutputToDire
         return usePreparedFetch(sharedFetch ->
             sharedFetch.getReactiveClient()
                 .followRedirect(true)
+                .doOnRequest(debugLogRequest(log, "file head fetch"))
                 .head()
                 .uri(uri())
                 .response()
                 .map(OutputToDirectoryFetchBuilder::extractFilename)
                 .map(outputDirectory::resolve)
-                .flatMap(outputFile -> {
-                    if (skipExisting && Files.exists(outputFile)) {
-                        log.debug("File {} already exists", outputFile);
-                        statusHandler.call(FileDownloadStatus.SKIP_FILE_EXISTS, uri(), outputFile);
-                        return Mono.just(outputFile);
-                    }
-
-                    return sharedFetch.getReactiveClient()
-                        .doOnRequest((httpClientRequest, connection) -> {
-                            statusHandler.call(FileDownloadStatus.DOWNLOADING, uri(), null);
-                        })
-                        .followRedirect(true)
-                        .get()
-                        .uri(uri())
-                        .responseContent().aggregate()
-                        .asInputStream()
-                        .publishOn(Schedulers.boundedElastic())
-                        .flatMap((Function<InputStream, Mono<Path>>) inputStream -> {
-                            try {
-                                final long size = Files.copy(inputStream, outputFile, StandardCopyOption.REPLACE_EXISTING);
-                                statusHandler.call(FileDownloadStatus.DOWNLOADED, uri(), outputFile);
-                                downloadedHandler.call(uri(), outputFile, size);
-                                return Mono.just(outputFile);
-                            } catch (IOException e) {
-                                return Mono.error(e);
-                            }
-                        });
-                })
+                .flatMap(outputFile ->
+                    assembleFileDownload(sharedFetch, outputFile)
+                )
         );
+    }
+
+    private Mono<Path> assembleFileDownload(SharedFetch sharedFetch, Path outputFile) {
+        if (skipExisting && Files.exists(outputFile)) {
+            log.debug("File {} already exists", outputFile);
+            statusHandler.call(FileDownloadStatus.SKIP_FILE_EXISTS, uri(), outputFile);
+            return Mono.just(outputFile);
+        }
+
+        return sharedFetch.getReactiveClient()
+            .doOnRequest((httpClientRequest, connection) -> statusHandler.call(FileDownloadStatus.DOWNLOADING, uri(), null))
+            .followRedirect(true)
+            .doOnRequest(debugLogRequest(log, "file fetch"))
+            .get()
+            .uri(uri())
+            .responseContent().aggregate()
+            .asInputStream()
+            .publishOn(Schedulers.boundedElastic())
+            .flatMap((Function<InputStream, Mono<Path>>) inputStream -> {
+                try {
+                    @SuppressWarnings("BlockingMethodInNonBlockingContext") // false warning, see above
+                    final long size = Files.copy(inputStream, outputFile, StandardCopyOption.REPLACE_EXISTING);
+                    statusHandler.call(FileDownloadStatus.DOWNLOADED, uri(), outputFile);
+                    downloadedHandler.call(uri(), outputFile, size);
+                    return Mono.just(outputFile);
+                } catch (IOException e) {
+                    return Mono.error(e);
+                }
+            });
     }
 
     private static String extractFilename(HttpClientResponse resp) {

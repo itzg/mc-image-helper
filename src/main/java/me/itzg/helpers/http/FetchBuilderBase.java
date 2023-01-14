@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.BiConsumer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.hc.client5.http.HttpResponseException;
 import org.apache.hc.client5.http.classic.HttpClient;
@@ -15,6 +16,9 @@ import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.classic.methods.HttpHead;
 import org.apache.hc.core5.http.HttpHeaders;
 import org.apache.hc.core5.http.message.BasicHttpRequest;
+import org.slf4j.Logger;
+import reactor.netty.Connection;
+import reactor.netty.http.client.HttpClientRequest;
 
 @Slf4j
 public class FetchBuilderBase<SELF extends FetchBuilderBase<SELF>> {
@@ -172,5 +176,14 @@ public class FetchBuilderBase<SELF extends FetchBuilderBase<SELF>> {
                 }
             }
         }
+    }
+
+    protected static BiConsumer<? super HttpClientRequest, ? super Connection> debugLogRequest(
+        Logger log, String operation
+    ) {
+        return (req, connection) ->
+            log.debug("{}: uri={} headers={}",
+                operation.toUpperCase(), req.resourceUrl(), req.requestHeaders()
+            );
     }
 }

@@ -65,7 +65,7 @@ public class SpecificFileFetchBuilder extends FetchBuilderBase<SpecificFileFetch
             .block();
     }
 
-    public Mono<Path> assemble() throws IOException {
+    public Mono<Path> assemble() {
         final URI uri = uri();
 
         if (skipExisting && Files.exists(file)) {
@@ -76,74 +76,79 @@ public class SpecificFileFetchBuilder extends FetchBuilderBase<SpecificFileFetch
 
         final boolean useIfModifiedSince = skipUpToDate && Files.exists(file);
 
-        return usePreparedFetch(sharedFetch ->
-            sharedFetch.getReactiveClient()
-                .doOnRequest((httpClientRequest, connection) ->
-                    statusHandler.call(FileDownloadStatus.DOWNLOADING, uri, file)
-                )
-                .headers(headers -> {
-                    if (useIfModifiedSince) {
-                        try {
-                            final FileTime lastModifiedTime;
-                            lastModifiedTime = Files.getLastModifiedTime(file);
-                            headers.set(
-                                IF_MODIFIED_SINCE.toString(),
-                                httpDateTimeFormatter.format(lastModifiedTime.toInstant())
-                            );
-                        } catch (IOException e) {
-                            throw new GenericException("Unable to get last modified time of " + file, e);
-                        }
-
-                    }
-                    final List<String> contentTypes = getAcceptContentTypes();
-                    if (contentTypes != null && !contentTypes.isEmpty()) {
-                        headers.set(
-                            ACCEPT.toString(),
-                            contentTypes
-                        );
-                    }
-                })
-                .followRedirect(true)
-                .get()
-                .uri(uri)
-                .responseSingle((httpClientResponse, bodyMono) -> {
-                    if (useIfModifiedSince
-                        && httpClientResponse.status().equals(NOT_MODIFIED)) {
-                        return Mono.just(file);
-                    }
-
-                    final List<String> contentTypes = getAcceptContentTypes();
-                    if (contentTypes != null && !contentTypes.isEmpty()) {
-                        final List<String> respTypes = httpClientResponse.responseHeaders()
-                            .getAll(CONTENT_TYPE);
-                        if (respTypes.stream()
-                            .noneMatch(contentTypes::contains)) {
-                            return Mono.error(new GenericException("Unexpected content type in response"));
-                        }
-                    }
-
-                    return bodyMono.asInputStream()
-                        .publishOn(Schedulers.boundedElastic())
-                        .flatMap(inputStream -> {
+        try {
+            return usePreparedFetch(sharedFetch ->
+                sharedFetch.getReactiveClient()
+                    .doOnRequest((httpClientRequest, connection) ->
+                        statusHandler.call(FileDownloadStatus.DOWNLOADING, uri, file)
+                    )
+                    .headers(headers -> {
+                        if (useIfModifiedSince) {
                             try {
-                                @SuppressWarnings("BlockingMethodInNonBlockingContext") // see publishOn above
-                                final long size = Files.copy(inputStream, file, StandardCopyOption.REPLACE_EXISTING);
-                                statusHandler.call(FileDownloadStatus.DOWNLOADED, uri, file);
-                                downloadedHandler.call(uri, file, size);
+                                final FileTime lastModifiedTime;
+                                lastModifiedTime = Files.getLastModifiedTime(file);
+                                headers.set(
+                                    IF_MODIFIED_SINCE.toString(),
+                                    httpDateTimeFormatter.format(lastModifiedTime.toInstant())
+                                );
                             } catch (IOException e) {
-                                return Mono.error(e);
-                            } finally {
-                                try {
-                                    //noinspection BlockingMethodInNonBlockingContext
-                                    inputStream.close();
-                                } catch (IOException e) {
-                                    log.warn("Unable to close body input stream", e);
-                                }
+                                throw new GenericException("Unable to get last modified time of " + file, e);
                             }
+
+                        }
+                        final List<String> contentTypes = getAcceptContentTypes();
+                        if (contentTypes != null && !contentTypes.isEmpty()) {
+                            headers.set(
+                                ACCEPT.toString(),
+                                contentTypes
+                            );
+                        }
+                    })
+                    .followRedirect(true)
+                    .doOnRequest(debugLogRequest(log, "file fetch"))
+                    .get()
+                    .uri(uri)
+                    .responseSingle((httpClientResponse, bodyMono) -> {
+                        if (useIfModifiedSince
+                            && httpClientResponse.status().equals(NOT_MODIFIED)) {
                             return Mono.just(file);
-                        });
-                })
-        );
+                        }
+
+                        final List<String> contentTypes = getAcceptContentTypes();
+                        if (contentTypes != null && !contentTypes.isEmpty()) {
+                            final List<String> respTypes = httpClientResponse.responseHeaders()
+                                .getAll(CONTENT_TYPE);
+                            if (respTypes.stream()
+                                .noneMatch(contentTypes::contains)) {
+                                return Mono.error(new GenericException("Unexpected content type in response"));
+                            }
+                        }
+
+                        return bodyMono.asInputStream()
+                            .publishOn(Schedulers.boundedElastic())
+                            .flatMap(inputStream -> {
+                                try {
+                                    @SuppressWarnings("BlockingMethodInNonBlockingContext") // see publishOn above
+                                    final long size = Files.copy(inputStream, file, StandardCopyOption.REPLACE_EXISTING);
+                                    statusHandler.call(FileDownloadStatus.DOWNLOADED, uri, file);
+                                    downloadedHandler.call(uri, file, size);
+                                } catch (IOException e) {
+                                    return Mono.error(e);
+                                } finally {
+                                    try {
+                                        //noinspection BlockingMethodInNonBlockingContext
+                                        inputStream.close();
+                                    } catch (IOException e) {
+                                        log.warn("Unable to close body input stream", e);
+                                    }
+                                }
+                                return Mono.just(file);
+                            });
+                    })
+            );
+        } catch (IOException e) {
+            return Mono.error(e);
+        }
     }
 
 }
