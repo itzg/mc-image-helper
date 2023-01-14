@@ -1,5 +1,7 @@
 package me.itzg.helpers.curseforge;
 
+import static me.itzg.helpers.http.Fetch.fetch;
+
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Set;
@@ -7,6 +9,8 @@ import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import me.itzg.helpers.files.ResultsFileWriter;
+import me.itzg.helpers.http.PathOrUri;
+import me.itzg.helpers.http.PathOrUriConverter;
 import me.itzg.helpers.json.ObjectMappers;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
@@ -45,11 +49,12 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
         @ArgGroup(exclusive = false)
         Listed listed;
 
-        @Option(names = "--exclude-include-file", paramLabel = "FILE",
+        @Option(names = "--exclude-include-file", paramLabel = "FILE|URI",
             description = "A JSON file that contains global and per modpack exclude/include declarations. "
-                + "See README for schema."
+                + "See README for schema.",
+            converter = PathOrUriConverter.class
         )
-        Path exludeIncludeFile;
+        PathOrUri exludeIncludeFile;
 
         static class Listed {
             @Option(names = "--exclude-mods", paramLabel = "PROJECT_ID|SLUG",
@@ -127,10 +132,17 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
         }
         else if (excludeIncludeArgs.exludeIncludeFile != null) {
 
-            return ObjectMappers.defaultMapper()
-                .readValue(excludeIncludeArgs.exludeIncludeFile.toFile(),
-                    ExcludeIncludesContent.class
-                );
+            if (excludeIncludeArgs.exludeIncludeFile.getPath() != null) {
+                return ObjectMappers.defaultMapper()
+                    .readValue(excludeIncludeArgs.exludeIncludeFile.getPath().toFile(),
+                        ExcludeIncludesContent.class
+                    );
+            }
+            else {
+                return fetch(excludeIncludeArgs.exludeIncludeFile.getUri())
+                    .toObject(ExcludeIncludesContent.class)
+                    .execute();
+            }
         }
         else {
             return null;

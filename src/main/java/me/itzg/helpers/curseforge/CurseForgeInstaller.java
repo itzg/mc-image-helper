@@ -111,11 +111,14 @@ public class CurseForgeInstaller {
             modFile = resolveModpackFile(preparedFetch, uriBuilder, mod, fileMatcher);
         }
         else {
-            modFile = getModFileInfo(preparedFetch, uriBuilder, mod.getId(), fileId);
+            modFile = getModFileInfo(preparedFetch, uriBuilder, mod.getId(), fileId)
+                .switchIfEmpty(Mono.error(() -> new GenericException("Unable to resolve modpack's file")))
+                .block();
         }
 
         final CurseForgeManifest manifest = Manifests.load(outputDir, CURSEFORGE_ID, CurseForgeManifest.class);
 
+        //noinspection DataFlowIssue handled by switchIfEmpty
         if (manifest != null
             && manifest.getFileId() == modFile.getId()
             && manifest.getModId() == modFile.getModId()
@@ -134,6 +137,7 @@ public class CurseForgeInstaller {
             }
         }
 
+        //noinspection DataFlowIssue handled by switchIfEmpty
         log.info("Processing modpack '{}' ({}) @ {}:{}", modFile.getDisplayName(),
             mod.getSlug(), modFile.getModId(), modFile.getId());
         final List<Path> installedFiles =
@@ -282,6 +286,7 @@ public class CurseForgeInstaller {
                     safeStreamFrom(global), safeStreamFrom(specific)
                 )
             )
+            .parallel(parallelism)
             .flatMap(s -> {
                 try {
                     final int id = Integer.parseInt(s);
@@ -290,6 +295,7 @@ public class CurseForgeInstaller {
                     return slugToId(preparedFetch, uriBuilder, s);
                 }
             })
+            .sequential()
             .collect(Collectors.toSet());
     }
 
@@ -340,33 +346,35 @@ public class CurseForgeInstaller {
         Set<Integer> forceIncludeIds
     ) {
         try {
-            final CurseForgeFile file = getModFileInfo(preparedFetch, uriBuilder, projectID, fileID);
-            log.debug("Download/confirm mod {} @ {}:{}",
-                // several mods have non-descriptive display names, like "v1.0.0", so filename tends to be better
-                file.getFileName(),
-                projectID, fileID
-            );
-            if (!forceIncludeIds.contains(projectID) && !isServerMod(file)) {
-                log.debug("Skipping {} since it is a client mod", file.getFileName());
-                return Mono.empty();
-            }
-
-            return preparedFetch.fetch(
-                    normalizeDownloadUrl(file.getDownloadUrl())
-                )
-                .toFile(modsDir.resolve(file.getFileName()))
-                .skipExisting(true)
-                .handleStatus((status, uri, f) -> {
-                    switch (status) {
-                        case SKIP_FILE_EXISTS:
-                            log.info("Mod file {} already exists", outputDir.relativize(f));
-                            break;
-                        case DOWNLOADED:
-                            log.info("Downloaded mod file {}", outputDir.relativize(f));
-                            break;
+            return getModFileInfo(preparedFetch, uriBuilder, projectID, fileID)
+                .flatMap(file -> {
+                    log.debug("Download/confirm mod {} @ {}:{}",
+                        // several mods have non-descriptive display names, like "v1.0.0", so filename tends to be better
+                        file.getFileName(),
+                        projectID, fileID
+                    );
+                    if (!forceIncludeIds.contains(projectID) && !isServerMod(file)) {
+                        log.debug("Skipping {} since it is a client mod", file.getFileName());
+                        return Mono.empty();
                     }
-                })
-                .assemble();
+
+                    return preparedFetch.fetch(
+                            normalizeDownloadUrl(file.getDownloadUrl())
+                        )
+                        .toFile(modsDir.resolve(file.getFileName()))
+                        .skipExisting(true)
+                        .handleStatus((status, uri, f) -> {
+                            switch (status) {
+                                case SKIP_FILE_EXISTS:
+                                    log.info("Mod file {} already exists", outputDir.relativize(f));
+                                    break;
+                                case DOWNLOADED:
+                                    log.info("Downloaded mod file {}", outputDir.relativize(f));
+                                    break;
+                            }
+                        })
+                        .assemble();
+                });
         } catch (IOException e) {
             throw new GenericException(String.format("Failed to locate mod file modId=%s fileId=%d", projectID, fileID), e);
         }
@@ -392,18 +400,17 @@ public class CurseForgeInstaller {
         return !client;
     }
 
-    private static CurseForgeFile getModFileInfo(SharedFetch preparedFetch, UriBuilder uriBuilder,
+    private static Mono<CurseForgeFile> getModFileInfo(SharedFetch preparedFetch, UriBuilder uriBuilder,
         int projectID, int fileID
     ) throws IOException {
         log.debug("Getting mod file metadata for {}:{}", projectID, fileID);
 
-        final GetModFileResponse resp = preparedFetch.fetch(
+        return preparedFetch.fetch(
                 uriBuilder.resolve("/mods/{modId}/files/{fileId}", projectID, fileID)
             )
             .toObject(GetModFileResponse.class)
-            .execute();
-
-        return resp.getData();
+            .assemble()
+            .map(GetModFileResponse::getData);
     }
 
     private void prepareModLoader(String id, String minecraftVersion) throws IOException {

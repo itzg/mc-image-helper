@@ -34,9 +34,7 @@ public class ObjectFetchBuilder<T> extends FetchBuilderBase<ObjectFetchBuilder<T
     }
 
     public T execute() throws IOException {
-        return useClient(client ->
-                client.execute(get(), new ObjectMapperHandler<>(type, objectMapper))
-            );
+        return assemble().block();
     }
 
     public Mono<T> assemble() throws IOException {
@@ -46,6 +44,7 @@ public class ObjectFetchBuilder<T> extends FetchBuilderBase<ObjectFetchBuilder<T
                         headers.set(HttpHeaderNames.ACCEPT, "application/json")
                     )
                 .followRedirect(true)
+                .doOnRequest(debugLogRequest(log, "json fetch"))
                 .get()
                 .uri(uri())
                 .responseContent()
