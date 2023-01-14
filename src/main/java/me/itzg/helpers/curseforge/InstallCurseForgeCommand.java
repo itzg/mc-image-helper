@@ -1,17 +1,21 @@
 package me.itzg.helpers.curseforge;
 
+import java.io.IOException;
 import java.nio.file.Path;
-import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import me.itzg.helpers.files.ResultsFileWriter;
+import me.itzg.helpers.json.ObjectMappers;
+import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.Option;
 
-@Command(name = "install-curseforge")
+@Command(name = "install-curseforge", subcommands = {
+    SchemasCommand.class
+})
 public class InstallCurseForgeCommand implements Callable<Integer> {
     @Option(names = {"--help","-h"}, usageHelp = true)
     boolean help;
@@ -34,17 +38,35 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
     @Option(names = "--file-id")
     Integer fileId;
 
-    @Option(names = "--exclude-mods", paramLabel = "PROJECT_ID",
-        split = "\\s+|,", splitSynopsisLabel = "Whitespace or commas",
-        description = "For mods that need to be excluded from server deployments, such as those that don't label as client"
-    )
-    Set<Integer> excludedModIds;
+    @ArgGroup
+    ExcludeIncludeArgs excludeIncludeArgs = new ExcludeIncludeArgs();
 
-    @Option(names = "--force-include-mods", paramLabel = "PROJECT_ID",
-        split = "\\s+|,", splitSynopsisLabel = "Whitespace or commas",
-        description = "Some mods incorrectly declare client-only support, but still need to be included in a server deploy"
-    )
-    Set<Integer> forceIncludeMods;
+    static class ExcludeIncludeArgs {
+        @ArgGroup(exclusive = false)
+        Listed listed;
+
+        @Option(names = "--exclude-include-file", paramLabel = "FILE",
+            description = "A JSON file that contains global and per modpack exclude/include declarations. "
+                + "See README for schema."
+        )
+        Path exludeIncludeFile;
+
+        static class Listed {
+            @Option(names = "--exclude-mods", paramLabel = "PROJECT_ID|SLUG",
+                split = "\\s+|,", splitSynopsisLabel = ",| ",
+                description = "For mods that need to be excluded from server deployments, such as those that don't label as client"
+            )
+            Set<String> excludedMods;
+
+            @Option(names = "--force-include-mods", paramLabel = "PROJECT_ID|SLUG",
+                split = "\\s+|,", splitSynopsisLabel = ",| ",
+                description = "Some mods incorrectly declare client-only support, but still need to be included in a server deploy"
+            )
+            Set<String> forceIncludeMods;
+
+        }
+    }
+
 
     @Option(names = "--filename-matcher", paramLabel = "STR",
         description = "Substring to select specific modpack filename")
@@ -86,9 +108,10 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
             return ExitCode.USAGE;
         }
 
+        final ExcludeIncludesContent excludeIncludes = loadExcludeIncludes();
+
         final CurseForgeInstaller installer = new CurseForgeInstaller(outputDirectory, resultsFile)
-            .setExcludedModIds(nonNullSet(excludedModIds))
-            .setForceIncludeMods(nonNullSet(forceIncludeMods))
+            .setExcludeIncludes(excludeIncludes)
             .setForceSynchronize(forceSynchronize)
             .setParallelism(parallelDownloads);
         installer.install(slug, filenameMatcher, fileId);
@@ -96,7 +119,22 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
         return ExitCode.OK;
     }
 
-    private static <T> Set<T> nonNullSet(Set<T> in) {
-        return in != null ? in : Collections.emptySet();
+    private ExcludeIncludesContent loadExcludeIncludes() throws IOException {
+        if (excludeIncludeArgs.listed != null) {
+            return new ExcludeIncludesContent()
+                .setGlobalExcludes(excludeIncludeArgs.listed.excludedMods)
+                .setGlobalForceIncludes(excludeIncludeArgs.listed.forceIncludeMods);
+        }
+        else if (excludeIncludeArgs.exludeIncludeFile != null) {
+
+            return ObjectMappers.defaultMapper()
+                .readValue(excludeIncludeArgs.exludeIncludeFile.toFile(),
+                    ExcludeIncludesContent.class
+                );
+        }
+        else {
+            return null;
+        }
     }
+
 }
