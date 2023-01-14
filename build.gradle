@@ -95,6 +95,7 @@ dependencies {
     implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
     implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-xml'
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+    // https://github.com/mbknor/mbknor-jackson-jsonSchema
     implementation 'com.kjetland:mbknor-jackson-jsonschema_2.13:1.0.39'
     implementation 'com.jayway.jsonpath:json-path:2.7.0'
     implementation 'org.apache.httpcomponents.client5:httpclient5:5.2.1'
