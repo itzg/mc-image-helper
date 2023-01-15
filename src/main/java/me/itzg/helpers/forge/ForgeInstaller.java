@@ -2,7 +2,6 @@ package me.itzg.helpers.forge;
 
 import static me.itzg.helpers.http.Fetch.fetch;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -10,23 +9,21 @@ import java.lang.ProcessBuilder.Redirect;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import me.itzg.helpers.files.FileTreeSnapshot;
+import me.itzg.helpers.errors.GenericException;
+import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.files.ResultsFileWriter;
-import me.itzg.helpers.forge.Manifest.ManifestBuilder;
 import me.itzg.helpers.forge.model.PromotionsSlim;
 import me.itzg.helpers.http.FailedRequestException;
 import me.itzg.helpers.http.Uris;
@@ -41,22 +38,18 @@ public class ForgeInstaller {
     private static final Pattern RESULT_INFO = Pattern.compile(
         "Exec:\\s+(?<exec>.+)"
             + "|The server installed successfully, you should now be able to run the file (?<universalJar>.+)");
+    public static final String MANIFEST_ID = "forge";
 
     public void install(String minecraftVersion, String forgeVersion,
         Path outputDir, Path resultsFile,
-        boolean forgeReinstall,
+        boolean forceReinstall,
         Path forgeInstaller
     ) {
-        final ObjectMapper objectMapper = ObjectMappers.defaultMapper();
-
-        final Path manifestPath = outputDir.resolve(Manifest.FILENAME);
-        final Manifest oldManifest;
+        final ForgeManifest prevManifest;
         try {
-            oldManifest = Files.exists(manifestPath) ?
-                objectMapper.readValue(manifestPath.toFile(), Manifest.class)
-                : null;
+            prevManifest = loadManifest(outputDir);
         } catch (IOException e) {
-            throw new RuntimeException("Failed to load existing manifest", e);
+            throw new GenericException("Failed to load existing forge manifest", e);
         }
 
         final String resolvedForgeVersion;
@@ -71,25 +64,37 @@ public class ForgeInstaller {
             resolvedForgeVersion = forgeInstaller.toString();
         }
 
-        boolean needsInstall = true;
-        if (oldManifest != null) {
-            if (!forgeReinstall &&
-                Objects.equals(oldManifest.getMinecraftVersion(), minecraftVersion) &&
-                Objects.equals(oldManifest.getForgeVersion(), resolvedForgeVersion)) {
-
+        final boolean needsInstall;
+        if (forceReinstall) {
+            needsInstall = true;
+        }
+        else if (prevManifest != null) {
+            if (!Files.exists(Paths.get(prevManifest.getServerEntry()))) {
+                log.warn("Server entry for Minecraft {} Forge {} is missing. Re-installing.",
+                    prevManifest.getMinecraftVersion(), prevManifest.getForgeVersion()
+                    );
+                needsInstall = true;
+            }
+            else if (
+                Objects.equals(prevManifest.getMinecraftVersion(), minecraftVersion) &&
+                Objects.equals(prevManifest.getForgeVersion(), resolvedForgeVersion)
+            ) {
                 log.info("Forge version {} for minecraft version {} is already installed",
                     resolvedForgeVersion, minecraftVersion
                 );
                 needsInstall = false;
             } else {
-                log.info("Removing previously installed files due to version change from MC {}/Forge {} to MC {}/Forge {}",
-                    oldManifest.getMinecraftVersion(), oldManifest.getForgeVersion(),
+                log.info("Re-installing Forge due to version change from MC {}/Forge {} to MC {}/Forge {}",
+                    prevManifest.getMinecraftVersion(), prevManifest.getForgeVersion(),
                     minecraftVersion, resolvedForgeVersion);
-                removeOldFiles(outputDir, oldManifest.getFiles());
+                needsInstall = true;
             }
         }
+        else {
+            needsInstall = true;
+        }
 
-        final Manifest newManifest;
+        final ForgeManifest newManifest;
         if (needsInstall) {
             if (forgeInstaller == null) {
                 newManifest = downloadAndInstall(minecraftVersion, resolvedForgeVersion, outputDir);
@@ -97,76 +102,79 @@ public class ForgeInstaller {
             else {
                 newManifest = installUsingExisting(minecraftVersion, resolvedForgeVersion, outputDir, forgeInstaller);
             }
+
+            Manifests.save(outputDir, MANIFEST_ID, newManifest);
         }
         else {
             newManifest = null;
         }
 
-        if (resultsFile != null && (newManifest != null || oldManifest != null)) {
+        if (resultsFile != null && (newManifest != null || prevManifest != null)) {
             try {
-                populateResultsFile(resultsFile, newManifest != null ? newManifest : oldManifest);
+                populateResultsFile(resultsFile, (newManifest != null ? newManifest : prevManifest).getServerEntry());
             } catch (IOException e) {
                 throw new RuntimeException("Failed to populate results file", e);
             }
         }
-
-        if (newManifest != null) {
-            try {
-                objectMapper.writeValue(manifestPath.toFile(), newManifest);
-            } catch (IOException e) {
-                throw new RuntimeException("Failed to write manifest", e);
-            }
-        }
     }
 
-    private Manifest installUsingExisting(String minecraftVersion, String forgeVersion, Path outputDir, Path forgeInstaller) {
-        final Manifest newManifest;
-        final ManifestBuilder manifestBuilder = Manifest.builder()
+    private ForgeManifest loadManifest(Path outputDir) throws IOException {
+        // First check for and retrofit legacy manifest format
+        final Path legacyFile = outputDir.resolve(LegacyManifest.FILENAME);
+        if (Files.exists(legacyFile)) {
+            final LegacyManifest legacyManifest = ObjectMappers.defaultMapper()
+                .readValue(legacyFile.toFile(), LegacyManifest.class);
+
+
+            final ForgeManifest converted = ForgeManifest.builder()
+                .serverEntry(legacyManifest.getServerEntry())
+                .minecraftVersion(legacyManifest.getMinecraftVersion())
+                .forgeVersion(legacyManifest.getForgeVersion())
+                .build();
+
+            // switch it out
+            Files.delete(legacyFile);
+            Manifests.save(outputDir, MANIFEST_ID, converted);
+
+            return converted;
+        }
+
+        // otherwise, load the new way
+        return Manifests.load(outputDir, MANIFEST_ID, ForgeManifest.class);
+    }
+
+    private ForgeManifest installUsingExisting(String minecraftVersion, String forgeVersion, Path outputDir, Path forgeInstaller) {
+        final InstallResults results = install(forgeInstaller, outputDir, minecraftVersion, forgeVersion);
+
+        return ForgeManifest.builder()
             .timestamp(Instant.now())
             .minecraftVersion(minecraftVersion)
-            .forgeVersion(forgeVersion);
-
-        install(forgeInstaller, outputDir, minecraftVersion, forgeVersion, manifestBuilder);
-        newManifest = manifestBuilder.build();
-        return newManifest;
+            .forgeVersion(forgeVersion)
+            .serverEntry(Manifests.relativize(outputDir, results.getEntryFile()))
+            .build();
     }
 
-    private void removeOldFiles(Path dir, Set<String> files) {
-        log.debug("Removing old files");
-        for (final String file : files) {
-            try {
-                final Path filePath = dir.resolve(file);
-                log.debug("Deleting {}", filePath);
-                Files.delete(filePath);
-            }
-            catch (NoSuchFileException e) {
-                log.debug("Skipping deletion of non-existent file {}", file);
-            }
-            catch (IOException e) {
-                log.warn("Failed to delete old file {} in {}", file, dir, e);
-            }
-        }
-    }
-
-    private void populateResultsFile(Path resultsFile, Manifest manifest) throws IOException {
+    private void populateResultsFile(Path resultsFile, String serverEntry) throws IOException {
         log.debug("Populating results file {}", resultsFile);
 
         try (ResultsFileWriter results = new ResultsFileWriter(resultsFile)) {
-            results.write("SERVER", manifest.getServerEntry());
+            results.write("SERVER", serverEntry);
             results.write("FAMILY", "FORGE");
         }
     }
 
-    private Manifest downloadAndInstall(String minecraftVersion, String forgeVersion, Path outputDir) {
-        final ManifestBuilder manifestBuilder = Manifest.builder()
-            .timestamp(Instant.now())
-            .minecraftVersion(minecraftVersion)
-            .forgeVersion(forgeVersion);
-
+    private ForgeManifest downloadAndInstall(String minecraftVersion, String forgeVersion, Path outputDir) {
         final Path installerJar = downloadInstaller(outputDir, minecraftVersion, forgeVersion);
 
         try {
-            install(installerJar, outputDir, minecraftVersion, forgeVersion, manifestBuilder);
+            final InstallResults results = install(installerJar, outputDir, minecraftVersion, forgeVersion);
+
+            return ForgeManifest.builder()
+                .timestamp(Instant.now())
+                .minecraftVersion(minecraftVersion)
+                .forgeVersion(forgeVersion)
+                .serverEntry(results.getEntryFile().toString())
+                .build();
         } finally {
             try {
                 log.debug("Deleting installer jar {}", installerJar);
@@ -175,24 +183,17 @@ public class ForgeInstaller {
                 log.warn("Failed to delete installer jar {}", installerJar);
             }
         }
+    }
 
-        return manifestBuilder.build();
+    @Data
+    static class InstallResults {
+        private Path entryFile;
     }
 
     /**
      *
      */
-    private void install(Path installerJar, Path outputDir, String minecraftVersion, String forgeVersion,
-        ManifestBuilder manifestBuilder
-    ) {
-        log.debug("Gathering snapshot of {} before installer", outputDir);
-        final FileTreeSnapshot snapshotBefore;
-        try {
-            snapshotBefore = FileTreeSnapshot.takeSnapshot(outputDir);
-        } catch (IOException e) {
-            throw new RuntimeException("Tried to snapshot files before forge installer", e);
-        }
-
+    private InstallResults install(Path installerJar, Path outputDir, String minecraftVersion, String forgeVersion) {
         log.info("Running Forge installer. This might take a while...");
         try {
             final Process process = new ProcessBuilder("java", "-jar", installerJar.toString(), "--installServer")
@@ -222,10 +223,12 @@ public class ForgeInstaller {
                 }
             }
 
+            final Path installerLog = installerJar.getParent().resolve(
+                installerJar.getFileName().toString() + ".log"
+            );
             try {
                 final int exitCode = process.waitFor();
                 if (exitCode != 0) {
-                    final Path installerLog = installerJar.getParent().resolve(installerJar.getFileName().toString() + ".log");
                     if (Files.exists(installerLog)) {
                         Files.copy(installerLog, System.err);
                     }
@@ -234,6 +237,9 @@ public class ForgeInstaller {
             } catch (InterruptedException e) {
                 throw new RuntimeException("Interrupted waiting for forge installer", e);
             }
+
+            log.debug("Deleting Forge installer log at {}", installerLog);
+            Files.delete(installerLog);
 
             // A 1.12.2 style installer that says nothing useful?
             if (entryFile == null) {
@@ -247,12 +253,8 @@ public class ForgeInstaller {
                 log.debug("Discovered entry file: {}", entryFile);
             }
 
-            manifestBuilder.serverEntry(entryFile.toString());
-
-            log.debug("Gathering and comparing snapshot after installer");
-            manifestBuilder.files(
-                snapshotBefore.findNewFiles()
-            );
+            return new InstallResults()
+                .setEntryFile(entryFile);
         } catch (IOException e) {
             throw new RuntimeException("Trying to run installer", e);
         }

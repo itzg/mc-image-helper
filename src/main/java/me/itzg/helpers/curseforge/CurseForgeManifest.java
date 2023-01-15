@@ -10,7 +10,9 @@ import me.itzg.helpers.files.BaseManifest;
 @Jacksonized
 public class CurseForgeManifest extends BaseManifest {
 
-    int modId;
-    int fileId;
+    private int modId;
+    private int fileId;
 
+    private String minecraftVersion;
+    private String modLoaderId;
 }

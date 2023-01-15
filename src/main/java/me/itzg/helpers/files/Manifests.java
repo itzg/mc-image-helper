@@ -49,6 +49,10 @@ public class Manifests {
         }
     }
 
+    public static String relativize(Path basePath, Path path) {
+        return basePath.relativize(path).toString();
+    }
+
     public static List<String> relativizeAll(Path basePath, List<Path> paths) {
         return paths.stream()
             .map(p ->
