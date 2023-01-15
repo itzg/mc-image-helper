@@ -130,6 +130,12 @@ public class CurseForgeInstaller {
                 log.info("Requested CurseForge modpack {} is already installed for {}",
                     modFile.getDisplayName(), mod.getName()
                 );
+
+                // Double-check the mod loader is still present and ready
+                if (manifest.getMinecraftVersion() != null && manifest.getModLoaderId() != null) {
+                    prepareModLoader(manifest.getModLoaderId(), manifest.getMinecraftVersion());
+                }
+
                 return;
             }
             else {
@@ -140,7 +146,7 @@ public class CurseForgeInstaller {
         //noinspection DataFlowIssue handled by switchIfEmpty
         log.info("Processing modpack '{}' ({}) @ {}:{}", modFile.getDisplayName(),
             mod.getSlug(), modFile.getModId(), modFile.getId());
-        final List<Path> installedFiles =
+        final ModPackResults results =
             downloadAndProcessModpack(
                 preparedFetch, uriBuilder,
                 normalizeDownloadUrl(modFile.getDownloadUrl()),
@@ -150,7 +156,9 @@ public class CurseForgeInstaller {
         final CurseForgeManifest newManifest = CurseForgeManifest.builder()
             .modId(modFile.getModId())
             .fileId(modFile.getId())
-            .files(Manifests.relativizeAll(outputDir, installedFiles))
+            .files(Manifests.relativizeAll(outputDir, results.getFiles()))
+            .minecraftVersion(results.getMinecraftVersion())
+            .modLoaderId(results.getModLoaderId())
             .build();
 
         Manifests.cleanup(outputDir, manifest, newManifest, f -> log.info("Removing old file {}", f));
@@ -183,7 +191,7 @@ public class CurseForgeInstaller {
             });
     }
 
-    private List<Path> downloadAndProcessModpack(
+    private ModPackResults downloadAndProcessModpack(
         SharedFetch preparedFetch, UriBuilder uriBuilder, URI downloadUrl, String modpackSlug
     )
         throws IOException {
@@ -203,7 +211,7 @@ public class CurseForgeInstaller {
         }
     }
 
-    private List<Path> processModpackZip(
+    private ModPackResults processModpackZip(
         SharedFetch preparedFetch, UriBuilder uriBuilder, Path modpackZip, String modpackSlug
     )
         throws IOException {
@@ -239,11 +247,15 @@ public class CurseForgeInstaller {
 
         prepareModLoader(modLoader.getId(), modpackManifest.getMinecraft().getVersion());
 
-        return Stream.concat(
-                modFiles != null ? modFiles.stream() : Stream.empty(),
-                overrides.stream()
+        return new ModPackResults()
+            .setFiles(Stream.concat(
+                        modFiles != null ? modFiles.stream() : Stream.empty(),
+                        overrides.stream()
+                    )
+                    .collect(Collectors.toList())
             )
-            .collect(Collectors.toList());
+            .setMinecraftVersion(modpackManifest.getMinecraft().getVersion())
+            .setModLoaderId(modLoader.getId());
     }
 
     private ExcludeIncludeIds resolveExcludeIncludes(SharedFetch preparedFetch, UriBuilder uriBuilder,

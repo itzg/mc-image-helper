@@ -9,7 +9,7 @@ import lombok.extern.jackson.Jacksonized;
 @Data
 @Builder
 @Jacksonized
-public class Manifest {
+public class LegacyManifest {
 
     public static final String FILENAME = ".forge.manifest";
 
