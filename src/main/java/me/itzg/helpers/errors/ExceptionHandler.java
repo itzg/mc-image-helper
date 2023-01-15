@@ -21,7 +21,10 @@ public class ExceptionHandler implements IExecutionExceptionHandler {
       ParseResult parseResult) {
 
     if (!mcImageHelper.isSilent()) {
-      log.error("'{}' command failed", commandLine.getCommandName(), e);
+      log.error("'{}' command failed. Version is {}",
+          commandLine.getCommandName(),
+          McImageHelper.getVersion(),
+          e);
     }
 
     final IExitCodeExceptionMapper mapper = commandLine.getExitCodeExceptionMapper();

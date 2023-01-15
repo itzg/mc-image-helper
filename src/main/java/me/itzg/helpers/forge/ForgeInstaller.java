@@ -195,8 +195,11 @@ public class ForgeInstaller {
      */
     private InstallResults install(Path installerJar, Path outputDir, String minecraftVersion, String forgeVersion) {
         log.info("Running Forge installer. This might take a while...");
+
         try {
-            final Process process = new ProcessBuilder("java", "-jar", installerJar.toString(), "--installServer")
+            final Process process = new ProcessBuilder(
+                "java", "-jar", installerJar.toAbsolutePath().toString(), "--installServer"
+            )
                 .directory(outputDir.toFile())
                 .redirectError(Redirect.INHERIT)
                 .start();
@@ -223,23 +226,23 @@ public class ForgeInstaller {
                 }
             }
 
-            final Path installerLog = installerJar.getParent().resolve(
-                installerJar.getFileName().toString() + ".log"
-            );
+            final Path installerLog = resolveInstallerLog(outputDir, installerJar);
             try {
                 final int exitCode = process.waitFor();
                 if (exitCode != 0) {
                     if (Files.exists(installerLog)) {
                         Files.copy(installerLog, System.err);
                     }
-                    throw new RuntimeException("Forge installer failed with exit code " + exitCode);
+                    throw new GenericException("Forge installer failed with exit code " + exitCode);
                 }
             } catch (InterruptedException e) {
-                throw new RuntimeException("Interrupted waiting for forge installer", e);
+                throw new GenericException("Interrupted waiting for forge installer", e);
             }
 
-            log.debug("Deleting Forge installer log at {}", installerLog);
-            Files.delete(installerLog);
+            if (Files.exists(installerLog)) {
+                log.debug("Deleting Forge installer log at {}", installerLog);
+                Files.delete(installerLog);
+            }
 
             // A 1.12.2 style installer that says nothing useful?
             if (entryFile == null) {
@@ -248,7 +251,7 @@ public class ForgeInstaller {
                     entryFile = resolved.toAbsolutePath();
                 }
                 else {
-                    throw new RuntimeException("Unable to locate forge server jar");
+                    throw new GenericException("Unable to locate forge server jar");
                 }
                 log.debug("Discovered entry file: {}", entryFile);
             }
@@ -258,6 +261,10 @@ public class ForgeInstaller {
         } catch (IOException e) {
             throw new RuntimeException("Trying to run installer", e);
         }
+    }
+
+    private Path resolveInstallerLog(Path outputDir, Path installerJar) {
+        return outputDir.resolve(installerJar.getFileName() + ".log");
     }
 
     private Path downloadInstaller(Path outputDir, String minecraftVersion, String forgeVersion) {
