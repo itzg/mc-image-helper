@@ -113,13 +113,12 @@ public class SpecificFileFetchBuilder extends FetchBuilderBase<SpecificFileFetch
                     .responseSingle((resp, bodyMono) -> {
                         final HttpResponseStatus status = resp.status();
 
-                        if (HttpStatusClass.valueOf(status.code()) != HttpStatusClass.SUCCESS) {
-                            return Mono.error(new FailedRequestException(status, uri, "Trying to retrieve file"));
+                        if (useIfModifiedSince && status.equals(NOT_MODIFIED)) {
+                            return Mono.just(file);
                         }
 
-                        if (useIfModifiedSince
-                            && status.equals(NOT_MODIFIED)) {
-                            return Mono.just(file);
+                        if (HttpStatusClass.valueOf(status.code()) != HttpStatusClass.SUCCESS) {
+                            return Mono.error(new FailedRequestException(status, uri, "Trying to retrieve file"));
                         }
 
                         final List<String> contentTypes = getAcceptContentTypes();
