@@ -4,6 +4,8 @@ import static io.netty.handler.codec.http.HttpHeaderNames.*;
 import static io.netty.handler.codec.http.HttpResponseStatus.NOT_MODIFIED;
 import static java.util.Objects.requireNonNull;
 
+import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.HttpStatusClass;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
@@ -108,19 +110,28 @@ public class SpecificFileFetchBuilder extends FetchBuilderBase<SpecificFileFetch
                     .doOnRequest(debugLogRequest(log, "file fetch"))
                     .get()
                     .uri(uri)
-                    .responseSingle((httpClientResponse, bodyMono) -> {
+                    .responseSingle((resp, bodyMono) -> {
+                        final HttpResponseStatus status = resp.status();
+
+                        if (HttpStatusClass.valueOf(status.code()) != HttpStatusClass.SUCCESS) {
+                            return Mono.error(new FailedRequestException(status, uri, "Trying to retrieve file"));
+                        }
+
                         if (useIfModifiedSince
-                            && httpClientResponse.status().equals(NOT_MODIFIED)) {
+                            && status.equals(NOT_MODIFIED)) {
                             return Mono.just(file);
                         }
 
                         final List<String> contentTypes = getAcceptContentTypes();
                         if (contentTypes != null && !contentTypes.isEmpty()) {
-                            final List<String> respTypes = httpClientResponse.responseHeaders()
+                            final List<String> respTypes = resp.responseHeaders()
                                 .getAll(CONTENT_TYPE);
                             if (respTypes.stream()
                                 .noneMatch(contentTypes::contains)) {
-                                return Mono.error(new GenericException("Unexpected content type in response"));
+                                return Mono.error(new GenericException(
+                                    String.format("Unexpected content type in response. Expected '%s' but got '%s'",
+                                        contentTypes, respTypes
+                                        )));
                             }
                         }
 
