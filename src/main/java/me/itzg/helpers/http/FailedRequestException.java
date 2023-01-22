@@ -17,7 +17,7 @@ public class FailedRequestException extends RuntimeException {
      */
     public FailedRequestException(HttpResponseException e, URI uri) {
         super(
-            String.format("HTTP request failed uri: %s %s", uri, e.getMessage())
+            String.format("HTTP request of %s failed with %d: %s", uri, e.getStatusCode(), e.getMessage())
         );
         this.uri = uri;
         this.statusCode = e.getStatusCode();
@@ -28,7 +28,7 @@ public class FailedRequestException extends RuntimeException {
      */
     public FailedRequestException(HttpResponseStatus status, URI uri, String msg) {
         super(
-            String.format("HTTP request failed uri: %s %s", uri, msg)
+            String.format("HTTP request of %s failed with %s: %s", uri, status, msg)
         );
         this.uri = uri;
         this.statusCode = status.code();

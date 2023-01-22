@@ -1,11 +1,10 @@
 package me.itzg.helpers.http;
 
-import static io.netty.handler.codec.http.HttpHeaderNames.*;
+import static io.netty.handler.codec.http.HttpHeaderNames.IF_MODIFIED_SINCE;
 import static io.netty.handler.codec.http.HttpResponseStatus.NOT_MODIFIED;
 import static java.util.Objects.requireNonNull;
 
 import io.netty.handler.codec.http.HttpResponseStatus;
-import io.netty.handler.codec.http.HttpStatusClass;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
@@ -14,13 +13,15 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.FileTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
+import lombok.Setter;
+import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
 @Slf4j
+@Accessors(fluent = true)
 public class SpecificFileFetchBuilder extends FetchBuilderBase<SpecificFileFetchBuilder> {
 
     private final static DateTimeFormatter httpDateTimeFormatter =
@@ -32,22 +33,14 @@ public class SpecificFileFetchBuilder extends FetchBuilderBase<SpecificFileFetch
 
 
     private final Path file;
+    @Setter
     private boolean skipUpToDate;
+    @Setter
     private boolean skipExisting;
 
     public SpecificFileFetchBuilder(State state, Path file) {
         super(state);
         this.file = file;
-    }
-
-    public SpecificFileFetchBuilder skipUpToDate(boolean skipUpToDate) {
-        this.skipUpToDate = skipUpToDate;
-        return self();
-    }
-
-    public SpecificFileFetchBuilder skipExisting(boolean skipExisting) {
-        this.skipExisting = skipExisting;
-        return self();
     }
 
     public SpecificFileFetchBuilder handleStatus(FileDownloadStatusHandler handler) {
@@ -98,13 +91,8 @@ public class SpecificFileFetchBuilder extends FetchBuilderBase<SpecificFileFetch
                             }
 
                         }
-                        final List<String> contentTypes = getAcceptContentTypes();
-                        if (contentTypes != null && !contentTypes.isEmpty()) {
-                            headers.set(
-                                ACCEPT.toString(),
-                                contentTypes
-                            );
-                        }
+
+                        applyHeaders(headers);
                     })
                     .followRedirect(true)
                     .doOnRequest(debugLogRequest(log, "file fetch"))
@@ -113,25 +101,16 @@ public class SpecificFileFetchBuilder extends FetchBuilderBase<SpecificFileFetch
                     .responseSingle((resp, bodyMono) -> {
                         final HttpResponseStatus status = resp.status();
 
-                        if (useIfModifiedSince && status.equals(NOT_MODIFIED)) {
+                        if (useIfModifiedSince && status == NOT_MODIFIED) {
                             return Mono.just(file);
                         }
 
-                        if (HttpStatusClass.valueOf(status.code()) != HttpStatusClass.SUCCESS) {
-                            return Mono.error(new FailedRequestException(status, uri, "Trying to retrieve file"));
+                        if (notSuccess(resp)) {
+                            return failedRequestMono(resp, "Trying to retrieve file");
                         }
 
-                        final List<String> contentTypes = getAcceptContentTypes();
-                        if (contentTypes != null && !contentTypes.isEmpty()) {
-                            final List<String> respTypes = resp.responseHeaders()
-                                .getAll(CONTENT_TYPE);
-                            if (respTypes.stream()
-                                .noneMatch(contentTypes::contains)) {
-                                return Mono.error(new GenericException(
-                                    String.format("Unexpected content type in response. Expected '%s' but got '%s'",
-                                        contentTypes, respTypes
-                                        )));
-                            }
+                        if (notExpectedContentType(resp)) {
+                            return failedContentTypeMono(resp);
                         }
 
                         return bodyMono.asInputStream()

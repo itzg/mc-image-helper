@@ -1,24 +1,27 @@
 package me.itzg.helpers.http;
 
+import static io.netty.handler.codec.http.HttpHeaderNames.ACCEPT;
+import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.netty.handler.codec.http.HttpStatusClass;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.function.BiConsumer;
 import lombok.extern.slf4j.Slf4j;
+import me.itzg.helpers.errors.GenericException;
+import me.itzg.helpers.json.ObjectMappers;
 import org.apache.hc.client5.http.HttpResponseException;
-import org.apache.hc.client5.http.classic.HttpClient;
-import org.apache.hc.client5.http.classic.methods.HttpGet;
-import org.apache.hc.client5.http.classic.methods.HttpHead;
-import org.apache.hc.core5.http.HttpHeaders;
-import org.apache.hc.core5.http.message.BasicHttpRequest;
 import org.slf4j.Logger;
+import reactor.core.publisher.Mono;
 import reactor.netty.Connection;
 import reactor.netty.http.client.HttpClientRequest;
+import reactor.netty.http.client.HttpClientResponse;
 
 @Slf4j
 public class FetchBuilderBase<SELF extends FetchBuilderBase<SELF>> {
@@ -58,30 +61,24 @@ public class FetchBuilderBase<SELF extends FetchBuilderBase<SELF>> {
         return new OutputToDirectoryFetchBuilder(this.state, directory);
     }
 
+    /**
+     * NOTE: this will set expected content types to application/json
+     */
     public <T> ObjectFetchBuilder<T> toObject(Class<T> type) {
-        return new ObjectFetchBuilder<>(this.state, type);
+        acceptContentTypes(Collections.singletonList("application/json"));
+        return new ObjectFetchBuilder<>(this.state, type, false, ObjectMappers.defaultMapper());
     }
 
+    /**
+     * NOTE: this will set expected content types to application/json
+     */
     public <T> ObjectListFetchBuilder<T> toObjectList(Class<T> type) {
-        return new ObjectListFetchBuilder<>(this.state, type);
+        acceptContentTypes(Collections.singletonList("application/json"));
+        return new ObjectListFetchBuilder<>(this.state, type, ObjectMappers.defaultMapper());
     }
 
     public <T> ObjectFetchBuilder<T> toObject(Class<T> type, ObjectMapper objectMapper) {
-        return new ObjectFetchBuilder<>(this.state, type, objectMapper);
-    }
-
-    protected HttpGet get() throws IOException {
-        final HttpGet request = new HttpGet(state.uri);
-        configureRequest(request);
-        return request;
-    }
-
-    protected HttpHead head(boolean withConfigure) throws IOException {
-        final HttpHead request = new HttpHead(state.uri);
-        if (withConfigure) {
-            configureRequest(request);
-        }
-        return request;
+        return new ObjectFetchBuilder<>(this.state, type, false, objectMapper);
     }
 
     protected URI uri() {
@@ -117,14 +114,8 @@ public class FetchBuilderBase<SELF extends FetchBuilderBase<SELF>> {
         R use(SharedFetch sharedFetch) throws IOException;
     }
 
-    protected interface ClientUser<R> {
-        R use(HttpClient client) throws IOException;
-    }
-
     /**
      * Intended to be called by subclass specific <code>execute</code> methods.
-     * @param user provided either a multi-request {@link SharedFetch} or an instance scoped to this call.
-     *                Either way, {@link SharedFetch#getClient()} can be used to execute requests.
      */
     protected <R> R usePreparedFetch(PreparedFetchUser<R> user) throws IOException {
         if (state.sharedFetch != null) {
@@ -147,37 +138,6 @@ public class FetchBuilderBase<SELF extends FetchBuilderBase<SELF>> {
         }
     }
 
-    /**
-     * Intended to be called by subclass specific <code>execute</code> methods.
-     * This is a convenience version of {@link #usePreparedFetch(PreparedFetchUser)}
-     * that provides just the {@link HttpClient} to execute requests.
-     */
-    protected <R> R useClient(ClientUser<R> user) throws IOException {
-        return usePreparedFetch(sharedFetch ->
-            user.use(sharedFetch.getClient())
-        );
-    }
-
-    protected void configureRequest(BasicHttpRequest request) throws IOException {
-        if (state.acceptContentTypes != null) {
-            for (final String type : state.acceptContentTypes) {
-                request.addHeader(HttpHeaders.ACCEPT, type);
-            }
-        }
-
-        for (final Entry<String, String> entry : state.requestHeaders.entrySet()) {
-            request.addHeader(entry.getKey(), entry.getValue());
-        }
-        // and apply shared headers that weren't overridden by per-request
-        if (state.sharedFetch != null) {
-            for (final Entry<String, String> entry : state.sharedFetch.getHeaders().entrySet()) {
-                if (!state.requestHeaders.containsKey(entry.getKey())) {
-                    request.addHeader(entry.getKey(), entry.getValue());
-                }
-            }
-        }
-    }
-
     protected static BiConsumer<? super HttpClientRequest, ? super Connection> debugLogRequest(
         Logger log, String operation
     ) {
@@ -185,5 +145,48 @@ public class FetchBuilderBase<SELF extends FetchBuilderBase<SELF>> {
             log.debug("{}: uri={} headers={}",
                 operation.toUpperCase(), req.resourceUrl(), req.requestHeaders()
             );
+    }
+
+    protected  <R> Mono<R> failedRequestMono(HttpClientResponse resp, String description) {
+        return Mono.error(new FailedRequestException(resp.status(), uri(), description));
+    }
+
+    protected static boolean notSuccess(HttpClientResponse resp) {
+        return HttpStatusClass.valueOf(resp.status().code()) != HttpStatusClass.SUCCESS;
+    }
+
+    /**
+     * @return false if response content type is not one of the expected content types,
+     * but true if no expected content types
+     */
+    protected boolean notExpectedContentType(HttpClientResponse resp) {
+        final List<String> contentTypes = getAcceptContentTypes();
+        if (contentTypes != null && !contentTypes.isEmpty()) {
+            final List<String> respTypes = resp.responseHeaders()
+                .getAll(CONTENT_TYPE);
+
+            return respTypes.stream().noneMatch(contentTypes::contains);
+        }
+        return false;
+    }
+
+    protected <R> Mono<R> failedContentTypeMono(HttpClientResponse resp) {
+        return Mono.error(new GenericException(
+            String.format("Unexpected content type in response. Expected '%s' but got '%s'",
+                getAcceptContentTypes(), resp.responseHeaders()
+                    .getAll(CONTENT_TYPE)
+            )));
+    }
+
+    protected void applyHeaders(io.netty.handler.codec.http.HttpHeaders headers) {
+        final List<String> contentTypes = getAcceptContentTypes();
+        if (contentTypes != null && !contentTypes.isEmpty()) {
+            headers.set(
+                ACCEPT.toString(),
+                contentTypes
+            );
+        }
+
+        state.requestHeaders.forEach(headers::set);
     }
 }
