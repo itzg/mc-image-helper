@@ -4,11 +4,9 @@ import static java.util.Objects.requireNonNull;
 
 import io.netty.handler.codec.http.HttpHeaderNames;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.function.Function;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
@@ -62,8 +60,10 @@ public class OutputToDirectoryFetchBuilder extends FetchBuilderBase<OutputToDire
                 .head()
                 .uri(uri())
                 .response()
-                .map(OutputToDirectoryFetchBuilder::extractFilename)
-                .map(outputDirectory::resolve)
+                .flatMap(resp ->
+                    notSuccess(resp) ? failedRequestMono(resp, "Extracting filename")
+                        : Mono.just(outputDirectory.resolve(extractFilename(resp)))
+                    )
                 .flatMap(outputFile ->
                     assembleFileDownload(sharedFetch, outputFile)
                 )
@@ -83,23 +83,28 @@ public class OutputToDirectoryFetchBuilder extends FetchBuilderBase<OutputToDire
             .doOnRequest(debugLogRequest(log, "file fetch"))
             .get()
             .uri(uri())
-            .responseContent().aggregate()
-            .asInputStream()
-            .publishOn(Schedulers.boundedElastic())
-            .flatMap((Function<InputStream, Mono<Path>>) inputStream -> {
-                try {
-                    @SuppressWarnings("BlockingMethodInNonBlockingContext") // false warning, see above
-                    final long size = Files.copy(inputStream, outputFile, StandardCopyOption.REPLACE_EXISTING);
-                    statusHandler.call(FileDownloadStatus.DOWNLOADED, uri(), outputFile);
-                    downloadedHandler.call(uri(), outputFile, size);
-                    return Mono.just(outputFile);
-                } catch (IOException e) {
-                    return Mono.error(e);
+            .responseSingle((resp, byteBufMono) -> {
+                if (notSuccess(resp)) {
+                    return failedRequestMono(resp, "Downloading file");
                 }
+
+                return byteBufMono.asInputStream()
+                    .publishOn(Schedulers.boundedElastic())
+                    .flatMap(inputStream -> {
+                        try {
+                            @SuppressWarnings("BlockingMethodInNonBlockingContext") // false warning, see above
+                            final long size = Files.copy(inputStream, outputFile, StandardCopyOption.REPLACE_EXISTING);
+                            statusHandler.call(FileDownloadStatus.DOWNLOADED, uri(), outputFile);
+                            downloadedHandler.call(uri(), outputFile, size);
+                            return Mono.just(outputFile);
+                        } catch (IOException e) {
+                            return Mono.error(e);
+                        }
+                    });
             });
     }
 
-    private static String extractFilename(HttpClientResponse resp) {
+    private String extractFilename(HttpClientResponse resp) {
         final String contentDisposition = resp.responseHeaders().get(HttpHeaderNames.CONTENT_DISPOSITION);
         final String dispositionFilename = FilenameExtractor.filenameFromContentDisposition(contentDisposition);
         if (dispositionFilename != null) {
