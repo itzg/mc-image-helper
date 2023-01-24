@@ -5,13 +5,16 @@ import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.handler.codec.http.HttpStatusClass;
+import io.netty.handler.codec.http.HttpUtil;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
@@ -30,7 +33,7 @@ public class FetchBuilderBase<SELF extends FetchBuilderBase<SELF>> {
         private final SharedFetch sharedFetch;
         private final URI uri;
         public String userAgentCommand;
-        private List<String> acceptContentTypes;
+        private Set<String> acceptContentTypes;
         private final Map<String, String> requestHeaders = new HashMap<>();
 
         State(URI uri, SharedFetch sharedFetch) {
@@ -85,12 +88,12 @@ public class FetchBuilderBase<SELF extends FetchBuilderBase<SELF>> {
         return state.uri;
     }
 
-    public List<String> getAcceptContentTypes() {
+    public Set<String> getAcceptContentTypes() {
         return state.acceptContentTypes;
     }
 
     public SELF acceptContentTypes(List<String> types) {
-        state.acceptContentTypes = types;
+        state.acceptContentTypes = types != null ? new HashSet<>(types) : Collections.emptySet();
         return self();
     }
 
@@ -160,12 +163,12 @@ public class FetchBuilderBase<SELF extends FetchBuilderBase<SELF>> {
      * but true if no expected content types
      */
     protected boolean notExpectedContentType(HttpClientResponse resp) {
-        final List<String> contentTypes = getAcceptContentTypes();
+        final Set<String> contentTypes = getAcceptContentTypes();
         if (contentTypes != null && !contentTypes.isEmpty()) {
             final List<String> respTypes = resp.responseHeaders()
                 .getAll(CONTENT_TYPE);
 
-            return respTypes.stream().noneMatch(contentTypes::contains);
+            return respTypes.stream().noneMatch(s -> contentTypes.contains((String)HttpUtil.getMimeType(s)));
         }
         return false;
     }
@@ -179,7 +182,7 @@ public class FetchBuilderBase<SELF extends FetchBuilderBase<SELF>> {
     }
 
     protected void applyHeaders(io.netty.handler.codec.http.HttpHeaders headers) {
-        final List<String> contentTypes = getAcceptContentTypes();
+        final Set<String> contentTypes = getAcceptContentTypes();
         if (contentTypes != null && !contentTypes.isEmpty()) {
             headers.set(
                 ACCEPT.toString(),
