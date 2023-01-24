@@ -93,7 +93,7 @@ public class FetchBuilderBase<SELF extends FetchBuilderBase<SELF>> {
     }
 
     public SELF acceptContentTypes(List<String> types) {
-        state.acceptContentTypes = new HashSet<>(types);
+        state.acceptContentTypes = types != null ? new HashSet<>(types) : Collections.emptySet();
         return self();
     }
 
