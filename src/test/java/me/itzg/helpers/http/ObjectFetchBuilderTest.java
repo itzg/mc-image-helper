@@ -48,6 +48,25 @@ class ObjectFetchBuilderTest {
     }
 
     @Test
+    void responseHasContentTypeWithCharset(WireMockRuntimeInfo wm) throws IOException {
+        stubFor(
+            get("/content")
+                .withHeader("accept", WireMock.equalTo("application/json"))
+                .willReturn(
+                    okForContentType("application/json; charset=utf-8", "{}")
+                )
+        );
+
+        final Content result = fetch(URI.create(wm.getHttpBaseUrl() + "/content"))
+            .toObject(Content.class)
+            .assemble()
+            .block();
+
+        assertThat(result)
+            .isNotNull();
+    }
+
+    @Test
     void handlesNotFound(WireMockRuntimeInfo wm) {
         stubFor(get(anyUrl())
             .willReturn(notFound())
