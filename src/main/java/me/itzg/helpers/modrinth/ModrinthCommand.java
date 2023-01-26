@@ -203,17 +203,13 @@ public class ModrinthCommand implements Callable<Integer> {
     }
 
     private Project getProject(String projectIdOrSlug) {
-        try {
-            return fetch(Uris.populateToUri(
-                baseUrl + "/project/{id|slug}",
-                projectIdOrSlug
-            ))
-                .userAgentCommand("modrinth")
-                .toObject(Project.class)
-                .execute();
-        } catch (IOException e) {
-            throw new RuntimeException("Getting project " + projectIdOrSlug, e);
-        }
+        return fetch(Uris.populateToUri(
+            baseUrl + "/project/{id|slug}",
+            projectIdOrSlug
+        ))
+            .userAgentCommand("modrinth")
+            .toObject(Project.class)
+            .execute();
     }
 
     private List<Version> getVersionsForProject(String project) {

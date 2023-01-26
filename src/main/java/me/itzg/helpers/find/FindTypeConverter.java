@@ -2,6 +2,9 @@ package me.itzg.helpers.find;
 
 import picocli.CommandLine.ITypeConverter;
 
+/**
+ * Allows command-line arg to be spelled out enum name or any prefer thereof such as "f" for file
+ */
 public class FindTypeConverter implements ITypeConverter<FindType> {
 
     @Override

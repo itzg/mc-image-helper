@@ -101,6 +101,7 @@ public class McImageHelper {
         new CommandLine(rootCommand)
             .setExitCodeExceptionMapper(new ExitCodeMapper())
             .setExecutionExceptionHandler(new ExceptionHandler(rootCommand))
+            .setCaseInsensitiveEnumValuesAllowed(true)
             .execute(args)
     );
   }

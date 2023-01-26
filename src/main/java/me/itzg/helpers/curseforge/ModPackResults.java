@@ -9,4 +9,5 @@ public class ModPackResults {
     private List<Path> files;
     private String minecraftVersion;
     private String modLoaderId;
+    private String levelName;
 }

@@ -6,7 +6,6 @@ import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.handler.codec.http.HttpStatusClass;
 import io.netty.handler.codec.http.HttpUtil;
-import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
 import java.util.Collections;
@@ -19,10 +18,10 @@ import java.util.function.BiConsumer;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.json.ObjectMappers;
-import org.apache.hc.client5.http.HttpResponseException;
 import org.slf4j.Logger;
 import reactor.core.publisher.Mono;
 import reactor.netty.Connection;
+import reactor.netty.http.client.HttpClient;
 import reactor.netty.http.client.HttpClientRequest;
 import reactor.netty.http.client.HttpClientResponse;
 
@@ -108,35 +107,27 @@ public class FetchBuilderBase<SELF extends FetchBuilderBase<SELF>> {
         return self();
     }
 
+    /**
+     * Helps with fluent sub-type builder pattern
+     */
     @SuppressWarnings("unchecked")
     protected SELF self() {
         return (SELF) this;
     }
 
-    protected interface PreparedFetchUser<R> {
-        R use(SharedFetch sharedFetch) throws IOException;
+    @FunctionalInterface
+    protected interface ReactiveClientUser<R> {
+
+        R use(HttpClient client);
     }
 
-    /**
-     * Intended to be called by subclass specific <code>execute</code> methods.
-     */
-    protected <R> R usePreparedFetch(PreparedFetchUser<R> user) throws IOException {
+    protected <R> R useReactiveClient(ReactiveClientUser<R> user) {
         if (state.sharedFetch != null) {
-            try {
-                return user.use(state.sharedFetch);
-            } catch (HttpResponseException e) {
-                throw new FailedRequestException(e, state.uri);
-            } finally {
-                state.sharedFetch.getLatchingUrisInterceptor().reset();
-            }
+            return user.use(state.sharedFetch.getReactiveClient());
         }
         else {
             try (SharedFetch sharedFetch = new SharedFetch(state.userAgentCommand)) {
-                try {
-                    return user.use(sharedFetch);
-                } catch (HttpResponseException e) {
-                    throw new FailedRequestException(e, state.uri);
-                }
+                return user.use(sharedFetch.getReactiveClient());
             }
         }
     }
