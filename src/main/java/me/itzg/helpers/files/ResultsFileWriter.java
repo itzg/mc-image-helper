@@ -33,6 +33,7 @@ public class ResultsFileWriter implements AutoCloseable {
     }
 
     public ResultsFileWriter write(String field, String value) throws IOException {
+        log.debug("Writing {}={} to results file", field, value);
         writer.write(String.format("%s=\"%s\"", field, value));
         writer.newLine();
         return this;

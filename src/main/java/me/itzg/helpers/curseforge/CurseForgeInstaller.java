@@ -164,6 +164,13 @@ public class CurseForgeInstaller {
                     prepareModLoader(manifest.getModLoaderId(), manifest.getMinecraftVersion());
                 }
 
+                // ...and write out level name from previous run
+                if (resultsFile != null && manifest.getLevelName() != null) {
+                    try (ResultsFileWriter resultsFileWriter = new ResultsFileWriter(resultsFile, true)) {
+                        resultsFileWriter.write("LEVEL", manifest.getLevelName());
+                    }
+                }
+
                 return;
             }
             else {
@@ -187,6 +194,7 @@ public class CurseForgeInstaller {
             .files(Manifests.relativizeAll(outputDir, results.getFiles()))
             .minecraftVersion(results.getMinecraftVersion())
             .modLoaderId(results.getModLoaderId())
+            .levelName(results.getLevelName())
             .build();
 
         Manifests.cleanup(outputDir, manifest, newManifest, f -> log.info("Removing old file {}", f));

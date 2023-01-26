@@ -15,4 +15,5 @@ public class CurseForgeManifest extends BaseManifest {
 
     private String minecraftVersion;
     private String modLoaderId;
+    private String levelName;
 }
