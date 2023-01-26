@@ -12,6 +12,7 @@ import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
+import reactor.netty.http.client.HttpClient;
 import reactor.netty.http.client.HttpClientResponse;
 
 @Slf4j
@@ -52,9 +53,9 @@ public class OutputToDirectoryFetchBuilder extends FetchBuilderBase<OutputToDire
             .block();
     }
 
-    public Mono<Path> assemble() throws IOException {
-        return usePreparedFetch(sharedFetch ->
-            sharedFetch.getReactiveClient()
+    public Mono<Path> assemble() {
+        return useReactiveClient(client ->
+            client
                 .followRedirect(true)
                 .doOnRequest(debugLogRequest(log, "file head fetch"))
                 .head()
@@ -65,19 +66,19 @@ public class OutputToDirectoryFetchBuilder extends FetchBuilderBase<OutputToDire
                         : Mono.just(outputDirectory.resolve(extractFilename(resp)))
                     )
                 .flatMap(outputFile ->
-                    assembleFileDownload(sharedFetch, outputFile)
+                    assembleFileDownload(client, outputFile)
                 )
         );
     }
 
-    private Mono<Path> assembleFileDownload(SharedFetch sharedFetch, Path outputFile) {
+    private Mono<Path> assembleFileDownload(HttpClient client, Path outputFile) {
         if (skipExisting && Files.exists(outputFile)) {
             log.debug("File {} already exists", outputFile);
             statusHandler.call(FileDownloadStatus.SKIP_FILE_EXISTS, uri(), outputFile);
             return Mono.just(outputFile);
         }
 
-        return sharedFetch.getReactiveClient()
+        return client
             .doOnRequest((httpClientRequest, connection) -> statusHandler.call(FileDownloadStatus.DOWNLOADING, uri(), null))
             .followRedirect(true)
             .doOnRequest(debugLogRequest(log, "file fetch"))

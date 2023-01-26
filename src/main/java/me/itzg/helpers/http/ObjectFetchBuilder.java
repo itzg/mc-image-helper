@@ -30,21 +30,21 @@ public class ObjectFetchBuilder<T> extends FetchBuilderBase<ObjectFetchBuilder<T
         }
     }
 
-    public T execute() throws IOException {
+    public T execute() {
         return assemble().block();
     }
 
-    public Mono<T> assemble() throws IOException {
+    public Mono<T> assemble() {
         return assembleCommon();
     }
 
-    protected Mono<List<T>> assembleToList() throws IOException {
+    protected Mono<List<T>> assembleToList() {
         return assembleCommon();
     }
 
-    private <R> Mono<R> assembleCommon() throws IOException {
-        return usePreparedFetch(sharedFetch ->
-            sharedFetch.getReactiveClient()
+    private <R> Mono<R> assembleCommon() {
+        return useReactiveClient(client ->
+            client
                 .headers(this::applyHeaders)
                 .followRedirect(true)
                 .doOnRequest(debugLogRequest(log, "json fetch"))

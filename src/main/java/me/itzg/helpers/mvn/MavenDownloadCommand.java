@@ -119,13 +119,9 @@ public class MavenDownloadCommand implements Callable<Integer> {
             .build();
 
         log.debug("Fetching metadata from {}", metadataUri);
-        try {
-            return fetch(metadataUri)
-                .userAgentCommand("maven-download")
-                .toObject(MavenMetadata.class, new XmlMapper())
-                .execute();
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to retrieve maven metadata", e);
-        }
+        return fetch(metadataUri)
+            .userAgentCommand("maven-download")
+            .toObject(MavenMetadata.class, new XmlMapper())
+            .execute();
     }
 }

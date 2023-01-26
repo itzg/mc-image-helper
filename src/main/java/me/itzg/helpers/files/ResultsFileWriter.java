@@ -3,12 +3,16 @@ package me.itzg.helpers.files;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.OpenOption;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Writes a key=value file suitable for sourcing as environment variables
  * (such as {@code set -a }) in a shell context
  */
+@Slf4j
 public class ResultsFileWriter implements AutoCloseable {
 
     public static final String OPTION_DESCRIPTION =
@@ -17,13 +21,19 @@ public class ResultsFileWriter implements AutoCloseable {
     private final BufferedWriter writer;
 
     public ResultsFileWriter(Path resultsFile) throws IOException {
-        writer = Files.newBufferedWriter(resultsFile);
+        this(resultsFile, false);
+    }
+
+    public ResultsFileWriter(Path resultsFile, boolean append) throws IOException {
+        final OpenOption[] options = append ?
+            new OpenOption[]{StandardOpenOption.CREATE, StandardOpenOption.APPEND}
+            : new OpenOption[]{StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING};
+
+        writer = Files.newBufferedWriter(resultsFile, options);
     }
 
     public ResultsFileWriter write(String field, String value) throws IOException {
-        writer.write(field);
-        writer.write("=");
-        writer.write(value);
+        writer.write(String.format("%s=\"%s\"", field, value));
         writer.newLine();
         return this;
     }

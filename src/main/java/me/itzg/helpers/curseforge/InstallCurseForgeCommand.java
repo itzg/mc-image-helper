@@ -85,6 +85,19 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
     )
     int parallelDownloads;
 
+    @Option(names = "--set-level-from",
+        description = "When WORLD_FILE, a world file included the modpack will be unzipped into a folder under 'saves' and referenced as 'LEVEL' in the results file."
+            + "\nWhen OVERRIDES and the overrides contains a world save directory (contains level.dat), then that directory will be referenced as 'LEVEL' in the results file."
+            + "\nIn either case, existing world data will be preserved and skipped if it already exists."
+            + "\nValid values: ${COMPLETION-CANDIDATES}"
+    )
+    LevelFrom levelFrom;
+
+    @Option(names = "--overrides-skip-existing",
+        description = "When enabled, existing files will not be replaced by overrides content from the modpack"
+    )
+    boolean overridesSkipExisting;
+
     private static final Pattern PAGE_URL_PATTERN = Pattern.compile(
         "https://www.curseforge.com/minecraft/modpacks/(?<slug>.+?)(/files(/(?<fileId>\\d+)?)?)?");
 
@@ -118,7 +131,9 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
         final CurseForgeInstaller installer = new CurseForgeInstaller(outputDirectory, resultsFile)
             .setExcludeIncludes(excludeIncludes)
             .setForceSynchronize(forceSynchronize)
-            .setParallelism(parallelDownloads);
+            .setParallelism(parallelDownloads)
+            .setLevelFrom(levelFrom)
+            .setOverridesSkipExisting(overridesSkipExisting);
         installer.install(slug, filenameMatcher, fileId);
 
         return ExitCode.OK;

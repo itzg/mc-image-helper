@@ -8,23 +8,34 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.curseforge.ExcludeIncludesContent.ExcludeIncludes;
+import me.itzg.helpers.curseforge.model.Category;
 import me.itzg.helpers.curseforge.model.CurseForgeFile;
 import me.itzg.helpers.curseforge.model.CurseForgeMod;
+import me.itzg.helpers.curseforge.model.GetCategoriesResponse;
 import me.itzg.helpers.curseforge.model.GetModFileResponse;
 import me.itzg.helpers.curseforge.model.GetModFilesResponse;
+import me.itzg.helpers.curseforge.model.GetModResponse;
 import me.itzg.helpers.curseforge.model.ManifestFileRef;
 import me.itzg.helpers.curseforge.model.MinecraftModpackManifest;
 import me.itzg.helpers.curseforge.model.ModLoader;
@@ -32,6 +43,7 @@ import me.itzg.helpers.curseforge.model.ModsSearchResponse;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.fabric.FabricLauncherInstaller;
 import me.itzg.helpers.files.Manifests;
+import me.itzg.helpers.files.ResultsFileWriter;
 import me.itzg.helpers.forge.ForgeInstaller;
 import me.itzg.helpers.http.Fetch;
 import me.itzg.helpers.http.SharedFetch;
@@ -47,6 +59,8 @@ public class CurseForgeInstaller {
 
     private static final String MINECRAFT_GAME_ID = "432";
     public static final String CURSEFORGE_ID = "curseforge";
+    public static final String LEVEL_DAT_SUFFIX = "/level.dat";
+    public static final int LEVEL_DAT_SUFFIX_LEN = LEVEL_DAT_SUFFIX.length();
 
     private final Path outputDir;
     private final Path resultsFile;
@@ -73,6 +87,18 @@ public class CurseForgeInstaller {
     @Getter @Setter
     private ExcludeIncludesContent excludeIncludes;
 
+    @Getter @Setter
+    private LevelFrom levelFrom;
+
+    @Getter @Setter
+    private boolean overridesSkipExisting;
+
+    private final Set<String> applicableClassIdSlugs = new HashSet<>(Arrays.asList(
+        "mc-mods",
+        "bukkit-plugins",
+        "worlds"
+    ));
+
     public void install(String slug, String fileMatcher, Integer fileId) throws IOException {
         requireNonNull(outputDir, "outputDir is required");
         requireNonNull(slug, "slug is required");
@@ -95,12 +121,12 @@ public class CurseForgeInstaller {
                 throw new GenericException("More than one mod found with slug={}" + slug);
             }
             else {
-                processMod(preparedFetch, uriBuilder, searchResponse.getData().get(0), fileId, fileMatcher);
+                processModPack(preparedFetch, uriBuilder, searchResponse.getData().get(0), fileId, fileMatcher);
             }
         }
     }
 
-    private void processMod(SharedFetch preparedFetch, UriBuilder uriBuilder, CurseForgeMod mod, Integer fileId,
+    private void processModPack(SharedFetch preparedFetch, UriBuilder uriBuilder, CurseForgeMod mod, Integer fileId,
         String fileMatcher
     )
         throws IOException {
@@ -117,6 +143,8 @@ public class CurseForgeInstaller {
         }
 
         final CurseForgeManifest manifest = Manifests.load(outputDir, CURSEFORGE_ID, CurseForgeManifest.class);
+        // to adapt to previous copies of manifest
+        trimLevelsContent(manifest);
 
         //noinspection DataFlowIssue handled by switchIfEmpty
         if (manifest != null
@@ -147,7 +175,7 @@ public class CurseForgeInstaller {
         log.info("Processing modpack '{}' ({}) @ {}:{}", modFile.getDisplayName(),
             mod.getSlug(), modFile.getModId(), modFile.getId());
         final ModPackResults results =
-            downloadAndProcessModpack(
+            downloadAndProcessModpackZip(
                 preparedFetch, uriBuilder,
                 normalizeDownloadUrl(modFile.getDownloadUrl()),
                 mod.getSlug()
@@ -164,12 +192,39 @@ public class CurseForgeInstaller {
         Manifests.cleanup(outputDir, manifest, newManifest, f -> log.info("Removing old file {}", f));
 
         Manifests.save(outputDir, CURSEFORGE_ID, newManifest);
+
+        if (resultsFile != null && results.getLevelName() != null) {
+            try (ResultsFileWriter resultsFileWriter = new ResultsFileWriter(resultsFile, true)) {
+                resultsFileWriter.write("LEVEL", results.getLevelName());
+            }
+        }
+    }
+
+    private void trimLevelsContent(CurseForgeManifest manifest) {
+        if (manifest == null) {
+            return;
+        }
+
+        final Optional<String> levelDirPrefix = manifest.getFiles().stream()
+            .map(Paths::get)
+            .filter(p -> p.getFileName().toString().equals("level.dat"))
+            .findFirst()
+            .map(p -> p.getParent().toString());
+
+        levelDirPrefix.ifPresent(prefix -> {
+            log.debug("Found old manifest files with a world prefix={}", prefix);
+            manifest.setFiles(
+                manifest.getFiles().stream()
+                    .filter(oldEntry -> !oldEntry.startsWith(prefix))
+                    .collect(Collectors.toList())
+            );
+        });
     }
 
     private static CurseForgeFile resolveModpackFile(SharedFetch preparedFetch, UriBuilder uriBuilder,
         CurseForgeMod mod,
         String fileMatcher
-    ) throws IOException {
+    ) {
         // NOTE latestFiles in mod is only one or two files, so retrieve the full list instead
         final GetModFilesResponse resp = preparedFetch.fetch(
                 uriBuilder.resolve("/mods/{modId}/files", mod.getId())
@@ -191,7 +246,7 @@ public class CurseForgeInstaller {
             });
     }
 
-    private ModPackResults downloadAndProcessModpack(
+    private ModPackResults downloadAndProcessModpackZip(
         SharedFetch preparedFetch, UriBuilder uriBuilder, URI downloadUrl, String modpackSlug
     )
         throws IOException {
@@ -226,36 +281,65 @@ public class CurseForgeInstaller {
             .findFirst()
             .orElseThrow(() -> new GenericException("Unable to find primary mod loader in modpack"));
 
-        final Path modsDir = Files.createDirectories(outputDir.resolve("mods"));
+        final OutputPaths outputPaths = new OutputPaths(
+            Files.createDirectories(outputDir.resolve("mods")),
+            Files.createDirectories(outputDir.resolve("plugins")),
+            Files.createDirectories(outputDir.resolve("saves"))
+        );
 
-        final List<Path> modFiles = Flux.fromIterable(modpackManifest.getFiles())
+        final Map<Integer /*classId*/, Category> categoryClasses = loadCategoryClasses(preparedFetch, uriBuilder);
+
+        // Go through all the files listed in modpack (given project ID + file ID)
+        final List<PathWithInfo> modFiles = Flux.fromIterable(modpackManifest.getFiles())
+            // ...do parallel downloads to let small ones make progress during big ones
             .parallel(parallelism)
             .runOn(Schedulers.newParallel("downloader"))
+            // ...does the modpack even say it's required?
             .filter(ManifestFileRef::isRequired)
+            // ...is this mod file excluded because it is a client mod that didn't declare as such
             .filter(manifestFileRef -> !excludeIncludeIds.getExcludeIds().contains(manifestFileRef.getProjectID()))
+            // ...download and possibly unzip world file
             .flatMap(fileRef ->
-                downloadModFile(preparedFetch, uriBuilder, modsDir,
+                downloadModFile(preparedFetch, uriBuilder, outputPaths,
                     fileRef.getProjectID(), fileRef.getFileID(),
-                    excludeIncludeIds.getForceIncludeIds()
+                    excludeIncludeIds.getForceIncludeIds(),
+                    categoryClasses
                 )
             )
             .sequential()
             .collectList()
             .block();
 
-        final List<Path> overrides = applyOverrides(modpackZip, modpackManifest.getOverrides());
+        final OverridesResult overridesResult = applyOverrides(modpackZip, modpackManifest.getOverrides());
 
         prepareModLoader(modLoader.getId(), modpackManifest.getMinecraft().getVersion());
 
         return new ModPackResults()
             .setFiles(Stream.concat(
-                        modFiles != null ? modFiles.stream() : Stream.empty(),
-                        overrides.stream()
+                        modFiles != null ? modFiles.stream().map(PathWithInfo::getPath) : Stream.empty(),
+                        overridesResult.paths.stream()
                     )
                     .collect(Collectors.toList())
             )
+            .setLevelName(resolveLevelName(modFiles, overridesResult))
             .setMinecraftVersion(modpackManifest.getMinecraft().getVersion())
             .setModLoaderId(modLoader.getId());
+    }
+
+    private String resolveLevelName(List<PathWithInfo> modFiles, OverridesResult overridesResult) {
+        if (levelFrom == LevelFrom.OVERRIDES && overridesResult.levelName != null) {
+            return overridesResult.levelName;
+        }
+        else if (levelFrom == LevelFrom.WORLD_FILE && modFiles != null) {
+            return modFiles.stream()
+                .filter(pathWithInfo -> pathWithInfo.getLevelName() != null)
+                .findFirst()
+                .map(PathWithInfo::getLevelName)
+                .orElse(null);
+        }
+        else {
+            return null;
+        }
     }
 
     private ExcludeIncludeIds resolveExcludeIncludes(SharedFetch preparedFetch, UriBuilder uriBuilder,
@@ -312,84 +396,224 @@ public class CurseForgeInstaller {
     }
 
     private Mono<Integer> slugToId(SharedFetch preparedFetch, UriBuilder uriBuilder, String slug) {
-        try {
-            return preparedFetch
-                .fetch(
-                    uriBuilder.resolve("/mods/search?gameId={gameId}&slug={slug}", MINECRAFT_GAME_ID, slug)
-                )
-                .toObject(ModsSearchResponse.class)
-                .assemble()
-                .flatMap(resp ->
-                    resp.getData() == null || resp.getData().isEmpty() ?
-                        Mono.error(new GenericException("Unable to resolve slug into ID (no matches): "+slug))
-                        : resp.getData().size() > 1 ?
-                            Mono.error(new GenericException("Unable to resolve slug into ID (multiple): "+slug))
-                            : Mono.just(resp.getData().get(0).getId())
-                    );
-        } catch (IOException e) {
-            return Mono.error(e);
-        }
+        return preparedFetch
+            .fetch(
+                uriBuilder.resolve("/mods/search?gameId={gameId}&slug={slug}", MINECRAFT_GAME_ID, slug)
+            )
+            .toObject(ModsSearchResponse.class)
+            .assemble()
+            .flatMap(resp ->
+                resp.getData() == null || resp.getData().isEmpty() ?
+                    Mono.error(new GenericException("Unable to resolve slug into ID (no matches): "+slug))
+                    : resp.getData().size() > 1 ?
+                        Mono.error(new GenericException("Unable to resolve slug into ID (multiple): "+slug))
+                        : Mono.just(resp.getData().get(0).getId())
+                );
     }
 
-    private List<Path> applyOverrides(Path modpackZip, String overridesDir) throws IOException {
-        final ArrayList<Path> overrides = new ArrayList<>();
+    @AllArgsConstructor
+    static class OverridesResult {
+        List<Path> paths;
+        String levelName;
+    }
+
+    private OverridesResult applyOverrides(Path modpackZip, String overridesDir) throws IOException {
+        final String levelEntryName = findLevelEntryInOverrides(modpackZip, overridesDir);
+        final String levelEntryNamePrefix = levelEntryName != null ? levelEntryName+"/" : null;
+
+        final boolean worldOutputDirExists = levelEntryName != null &&
+            Files.exists(outputDir.resolve(levelEntryName));
+
+        log.debug("Found level entry='{}' in modpack overrides and worldOutputDirExists={}",
+            levelEntryName, worldOutputDirExists);
+
+        final String overridesDirPrefix = overridesDir + "/";
+        final int overridesPrefixLen = overridesDirPrefix.length();
+
+        final List<Path> overrides = new ArrayList<>();
         try (ZipInputStream zip = new ZipInputStream(Files.newInputStream(modpackZip))) {
             ZipEntry entry;
             while ((entry = zip.getNextEntry()) != null) {
-                if (!entry.isDirectory()) {
-                    if (entry.getName().startsWith(overridesDir + "/")) {
-                        final String subpath = entry.getName().substring(overridesDir.length() + 1/*for slash*/);
-                        final Path outPath = outputDir.resolve(subpath);
-                        log.debug("Applying override {}", subpath);
+                if (entry.getName().startsWith(overridesDirPrefix)) {
+                    final String subpath = entry.getName().substring(overridesPrefixLen);
+                    final Path outPath = outputDir.resolve(subpath);
+                    if (entry.isDirectory()) {
+                        Files.createDirectories(outPath);
+                    }
+                    else {
+                        // Rules
+                        // - don't ever overwrite world data
+                        // - user has option to not overwrite any existing file from overrides
+                        // - otherwise user will want latest modpack's overrides content
 
-                        if (!Files.exists(outPath)) {
-                            Files.createDirectories(outPath.getParent());
-                            Files.copy(zip, outPath);
+                        final boolean isInWorldDirectory = levelEntryNamePrefix != null &&
+                            subpath.startsWith(levelEntryNamePrefix);
+
+                        if (worldOutputDirExists && isInWorldDirectory) {
+                            continue;
                         }
-                        overrides.add(outPath);
+
+                        if ( !(overridesSkipExisting && Files.exists(outPath)) ) {
+                            log.debug("Applying override {}", subpath);
+                            Files.copy(zip, outPath, StandardCopyOption.REPLACE_EXISTING);
+                        }
+                        else {
+                            log.debug("Skipping override={} since the file already existed", subpath);
+                        }
+
+                        // Track this path for later cleanup
+                        // UNLESS it is within a world/level directory
+                        if (levelEntryName == null || !isInWorldDirectory) {
+                            overrides.add(outPath);
+                        }
                     }
                 }
             }
         }
-        return overrides;
+
+        return new OverridesResult(overrides,
+            levelFrom == LevelFrom.OVERRIDES ? levelEntryName : null
+        );
     }
 
-    private Mono<Path> downloadModFile(SharedFetch preparedFetch, UriBuilder uriBuilder, Path modsDir, int projectID, int fileID,
-        Set<Integer> forceIncludeIds
-    ) {
-        try {
-            return getModFileInfo(preparedFetch, uriBuilder, projectID, fileID)
-                .flatMap(file -> {
-                    log.debug("Download/confirm mod {} @ {}:{}",
-                        // several mods have non-descriptive display names, like "v1.0.0", so filename tends to be better
-                        file.getFileName(),
-                        projectID, fileID
-                    );
-                    if (!forceIncludeIds.contains(projectID) && !isServerMod(file)) {
-                        log.debug("Skipping {} since it is a client mod", file.getFileName());
-                        return Mono.empty();
-                    }
-
-                    return preparedFetch.fetch(
-                            normalizeDownloadUrl(file.getDownloadUrl())
-                        )
-                        .toFile(modsDir.resolve(file.getFileName()))
-                        .skipExisting(true)
-                        .handleStatus((status, uri, f) -> {
-                            switch (status) {
-                                case SKIP_FILE_EXISTS:
-                                    log.info("Mod file {} already exists", outputDir.relativize(f));
-                                    break;
-                                case DOWNLOADED:
-                                    log.info("Downloaded mod file {}", outputDir.relativize(f));
-                                    break;
-                            }
-                        })
-                        .assemble();
-                });
-        } catch (IOException e) {
-            throw new GenericException(String.format("Failed to locate mod file modId=%s fileId=%d", projectID, fileID), e);
+    /**
+     * @return if present, the subpath to a world/level directory with the overrides prefix removed otherwise null
+     */
+    private String findLevelEntryInOverrides(Path modpackZip, String overridesDir) throws IOException {
+        try (ZipInputStream zip = new ZipInputStream(Files.newInputStream(modpackZip))) {
+            ZipEntry entry;
+            while ((entry = zip.getNextEntry()) != null) {
+                final String name = entry.getName();
+                if (!entry.isDirectory() && name.startsWith(overridesDir + "/") && name.endsWith(LEVEL_DAT_SUFFIX)) {
+                    return name.substring(overridesDir.length()+1, name.length() - LEVEL_DAT_SUFFIX_LEN);
+                }
+            }
         }
+        return null;
+    }
+
+    private Mono<PathWithInfo> downloadModFile(SharedFetch preparedFetch, UriBuilder uriBuilder, OutputPaths outputPaths, int projectID, int fileID,
+        Set<Integer> forceIncludeIds,
+        Map<Integer, Category> categoryClasses
+    ) {
+        return getModInfo(preparedFetch, uriBuilder, projectID)
+            .flatMap(modInfo -> {
+                final Category category = categoryClasses.get(modInfo.getClassId());
+                // applicable category?
+                if (category == null) {
+                    log.debug("Skipping project={} slug={} file={} since it is not an applicable classId={}",
+                        projectID, modInfo.getSlug(), fileID, modInfo.getClassId()
+                    );
+                    return Mono.empty();
+                }
+
+                final Path baseDir;
+                final boolean isWorld;
+                if (category.getSlug().endsWith("-mods")) {
+                    baseDir = outputPaths.getModsDir();
+                    isWorld = false;
+                }
+                else if (category.getSlug().endsWith("-plugins")) {
+                    baseDir = outputPaths.getPluginsDir();
+                    isWorld = false;
+                }
+                else if (category.getSlug().equals("worlds")) {
+                    baseDir = outputPaths.getWorldsDir();
+                    isWorld = true;
+                }
+                else {
+                    return Mono.error(
+                        new GenericException(
+                            String.format("Unsupported category type=%s from mod=%s", category.getSlug(), modInfo.getSlug()))
+                    );
+                }
+
+                return getModFileInfo(preparedFetch, uriBuilder, projectID, fileID)
+                    .flatMap(cfFile -> {
+                        if (!forceIncludeIds.contains(projectID) && !isServerMod(cfFile)) {
+                            log.debug("Skipping {} since it is a client mod", cfFile.getFileName());
+                            return Mono.empty();
+                        }
+                        log.debug("Download/confirm mod {} @ {}:{}",
+                            // several mods have non-descriptive display names, like "v1.0.0", so filename tends to be better
+                            cfFile.getFileName(),
+                            projectID, fileID
+                        );
+
+                        final Mono<Path> assembledDownload = preparedFetch.fetch(
+                                normalizeDownloadUrl(cfFile.getDownloadUrl())
+                            )
+                            .toFile(baseDir.resolve(cfFile.getFileName()))
+                            .skipExisting(true)
+                            .handleStatus((status, uri, f) -> {
+                                switch (status) {
+                                    case SKIP_FILE_EXISTS:
+                                        log.info("Mod file {} already exists", outputDir.relativize(f));
+                                        break;
+                                    case DOWNLOADED:
+                                        log.info("Downloaded mod file {}", outputDir.relativize(f));
+                                        break;
+                                }
+                            })
+                            .assemble();
+
+                        return isWorld ?
+                            assembledDownload
+                                .map(path -> extractWorldZip(modInfo, path, outputPaths.getWorldsDir()))
+                            : assembledDownload
+                                .map(PathWithInfo::new);
+                    });
+            });
+    }
+
+    private PathWithInfo extractWorldZip(CurseForgeMod modInfo, Path zipPath, Path worldsDir) {
+        if (levelFrom != LevelFrom.WORLD_FILE) {
+            return new PathWithInfo(zipPath);
+        }
+
+        // Minecraft server's level property is basically a relative file path
+        final String levelName = outputDir.relativize(worldsDir.resolve(modInfo.getSlug())).toString();
+        final Path worldDir = worldsDir.resolve(modInfo.getSlug());
+        if (!Files.exists(worldDir)) {
+            try {
+                Files.createDirectories(worldDir);
+            } catch (IOException e) {
+                throw new GenericException("Unable to create world directory", e);
+            }
+
+            log.debug("Unzipping world from {} into {}", zipPath, worldDir);
+            try (ZipInputStream zipInputStream = new ZipInputStream(Files.newInputStream(zipPath))) {
+
+                ZipEntry nextEntry = zipInputStream.getNextEntry();
+
+                if (nextEntry == null || !nextEntry.isDirectory()) {
+                    throw new GenericException("Expected top-level directory in world zip "+zipPath);
+                }
+
+                // Will replace top diretory with slug name
+                final int prefixLength = nextEntry.getName().length();
+
+                while ((nextEntry = zipInputStream.getNextEntry()) != null) {
+                    final Path destPath = worldDir.resolve(nextEntry.getName().substring(prefixLength));
+                    if (nextEntry.isDirectory()) {
+                        Files.createDirectory(destPath);
+                    }
+                    else {
+                        Files.copy(zipInputStream, destPath);
+                    }
+                }
+
+            } catch (IOException e) {
+                throw new GenericException("Failed to open world zip included with modpack", e);
+            }
+        }
+        else {
+            log.debug("Extracted world directory '{}' already exists for {}", worldDir, modInfo.getSlug());
+        }
+
+        return new PathWithInfo(zipPath)
+            .setLevelName(levelName);
+
     }
 
     private boolean isServerMod(CurseForgeFile file) {
@@ -414,7 +638,7 @@ public class CurseForgeInstaller {
 
     private static Mono<CurseForgeFile> getModFileInfo(SharedFetch preparedFetch, UriBuilder uriBuilder,
         int projectID, int fileID
-    ) throws IOException {
+    ) {
         log.debug("Getting mod file metadata for {}:{}", projectID, fileID);
 
         return preparedFetch.fetch(
@@ -423,6 +647,20 @@ public class CurseForgeInstaller {
             .toObject(GetModFileResponse.class)
             .assemble()
             .map(GetModFileResponse::getData);
+    }
+
+    private static Mono<CurseForgeMod> getModInfo(
+        SharedFetch preparedFetch, UriBuilder uriBuilder,
+        int projectID
+    ) {
+        log.debug("Getting mod metadata for {}", projectID);
+
+        return preparedFetch.fetch(
+            uriBuilder.resolve("/mods/{modId}", projectID)
+        )
+            .toObject(GetModResponse.class)
+            .assemble()
+            .map(GetModResponse::getData);
     }
 
     private void prepareModLoader(String id, String minecraftVersion) throws IOException {
@@ -464,6 +702,28 @@ public class CurseForgeInstaller {
 
             throw new GenericException("Modpack is missing manifest.json");
         }
+    }
+
+    /**
+     * @return mapping of classId to category instances that are classes and an acceptable server-side type
+     */
+    private Map<Integer, Category> loadCategoryClasses(SharedFetch preparedFetch, UriBuilder uriBuilder) {
+        return preparedFetch
+            // get only categories that are classes, like mc-mods
+            .fetch(uriBuilder.resolve("/categories?gameId={gameId}&classesOnly=true", MINECRAFT_GAME_ID))
+            .toObject(GetCategoriesResponse.class)
+            .assemble()
+            .map(resp ->
+                resp.getData().stream()
+                    // only keep the specific classes we want: mods, plugins, worlds
+                    .filter(category -> applicableClassIdSlugs.contains(category.getSlug()))
+                    .collect(Collectors.toMap(
+                        // ...and enable quick lookup from "classId" in mod file metadata
+                        Category::getId,
+                        Function.identity()
+                    ))
+                )
+            .block();
     }
 
     private static URI normalizeDownloadUrl(String downloadUrl) {
