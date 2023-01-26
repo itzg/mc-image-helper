@@ -156,6 +156,7 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
             else {
                 return fetch(excludeIncludeArgs.exludeIncludeFile.getUri())
                     .toObject(ExcludeIncludesContent.class)
+                    .acceptContentTypes(null)
                     .execute();
             }
         }
