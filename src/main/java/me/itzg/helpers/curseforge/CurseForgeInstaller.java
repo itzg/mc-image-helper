@@ -426,13 +426,15 @@ public class CurseForgeInstaller {
     }
 
     private OverridesResult applyOverrides(Path modpackZip, String overridesDir) throws IOException {
+        log.debug("Applying overrides from '{}' in zip file", overridesDir);
+
         final String levelEntryName = findLevelEntryInOverrides(modpackZip, overridesDir);
         final String levelEntryNamePrefix = levelEntryName != null ? levelEntryName+"/" : null;
 
         final boolean worldOutputDirExists = levelEntryName != null &&
             Files.exists(outputDir.resolve(levelEntryName));
 
-        log.debug("Found level entry='{}' in modpack overrides and worldOutputDirExists={}",
+        log.debug("While applying overrides, found level entry='{}' in modpack overrides and worldOutputDirExists={}",
             levelEntryName, worldOutputDirExists);
 
         final String overridesDirPrefix = overridesDir + "/";
@@ -443,12 +445,13 @@ public class CurseForgeInstaller {
             ZipEntry entry;
             while ((entry = zip.getNextEntry()) != null) {
                 if (entry.getName().startsWith(overridesDirPrefix)) {
-                    final String subpath = entry.getName().substring(overridesPrefixLen);
-                    final Path outPath = outputDir.resolve(subpath);
-                    if (entry.isDirectory()) {
-                        Files.createDirectories(outPath);
-                    }
-                    else {
+                    if (!entry.isDirectory()) {
+                        if (log.isDebugEnabled()) {
+                            log.debug("Processing override entry={}:{}", entry.isDirectory() ? "D":"F", entry.getName());
+                        }
+                        final String subpath = entry.getName().substring(overridesPrefixLen);
+                        final Path outPath = outputDir.resolve(subpath);
+
                         // Rules
                         // - don't ever overwrite world data
                         // - user has option to not overwrite any existing file from overrides
@@ -463,6 +466,8 @@ public class CurseForgeInstaller {
 
                         if ( !(overridesSkipExisting && Files.exists(outPath)) ) {
                             log.debug("Applying override {}", subpath);
+                            // zip files don't always list the directories before the files, so just create-as-needed
+                            Files.createDirectories(outPath.getParent());
                             Files.copy(zip, outPath, StandardCopyOption.REPLACE_EXISTING);
                         }
                         else {
