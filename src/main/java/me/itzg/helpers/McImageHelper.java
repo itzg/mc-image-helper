@@ -33,6 +33,7 @@ import me.itzg.helpers.versions.CompareVersionsCommand;
 import me.itzg.helpers.versions.JavaReleaseCommand;
 import org.slf4j.LoggerFactory;
 import picocli.CommandLine;
+import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.IVersionProvider;
 import picocli.CommandLine.Option;
@@ -73,14 +74,29 @@ public class McImageHelper {
   @Option(names = {"-V", "--version"}, versionHelp = true)
   boolean showVersion;
 
-  @SuppressWarnings("unused")
-  @Option(names = "--debug", description = "Enable debug output."
-      + " Can also set environment variables DEBUG_HELPER or DEBUG",
-      defaultValue = "${env:DEBUG_HELPER:-${env:DEBUG}}")
-  void setDebug(boolean value) {
-    ((Logger) LoggerFactory.getLogger("me.itzg.helpers")).setLevel(
-        value ? Level.DEBUG : Level.INFO);
+  @ArgGroup
+  LoggingOptions loggingOptions = new LoggingOptions();
+
+  static class LoggingOptions {
+    @Option(names = "--debug", description = "Enable debug output."
+        + " Can also set environment variables DEBUG_HELPER or DEBUG",
+        defaultValue = "${env:DEBUG_HELPER:-${env:DEBUG}}")
+    void setDebug(boolean enabled) {
+      setLevel(enabled, Level.DEBUG);
+    }
+
+    @Option(names = "--logging", description = "Set logging to specific level.\nValid values: ${COMPLETION-CANDIDATES}")
+    void setLoggingLevel(Level level) {
+      setLevel(true, level);
+    }
+
+    private static void setLevel(boolean enabled, Level level) {
+      ((Logger) LoggerFactory.getLogger("me.itzg.helpers")).setLevel(
+          enabled ? level : Level.INFO);
+    }
+
   }
+
 
   @Option(names = {"-s", "--silent"}, description = "Don't output logs even if there's an error")
   @Getter

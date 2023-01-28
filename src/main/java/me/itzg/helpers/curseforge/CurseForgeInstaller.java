@@ -446,8 +446,8 @@ public class CurseForgeInstaller {
             while ((entry = zip.getNextEntry()) != null) {
                 if (entry.getName().startsWith(overridesDirPrefix)) {
                     if (!entry.isDirectory()) {
-                        if (log.isDebugEnabled()) {
-                            log.debug("Processing override entry={}:{}", entry.isDirectory() ? "D":"F", entry.getName());
+                        if (log.isTraceEnabled()) {
+                            log.trace("Processing override entry={}:{}", entry.isDirectory() ? "D":"F", entry.getName());
                         }
                         final String subpath = entry.getName().substring(overridesPrefixLen);
                         final Path outPath = outputDir.resolve(subpath);
