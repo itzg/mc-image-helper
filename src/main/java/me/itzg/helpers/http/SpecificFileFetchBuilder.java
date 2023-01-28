@@ -2,6 +2,7 @@ package me.itzg.helpers.http;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.IF_MODIFIED_SINCE;
 import static io.netty.handler.codec.http.HttpResponseStatus.NOT_MODIFIED;
+import static java.lang.System.currentTimeMillis;
 import static java.util.Objects.requireNonNull;
 
 import io.netty.handler.codec.http.HttpResponseStatus;
@@ -115,9 +116,10 @@ public class SpecificFileFetchBuilder extends FetchBuilderBase<SpecificFileFetch
                     return bodyMono.asInputStream()
                         .publishOn(Schedulers.boundedElastic())
                         .flatMap(inputStream -> {
+                            final long size;
                             try {
-                                @SuppressWarnings("BlockingMethodInNonBlockingContext") // see publishOn above
-                                final long size = Files.copy(inputStream, file, StandardCopyOption.REPLACE_EXISTING);
+                                //noinspection BlockingMethodInNonBlockingContext
+                                size = Files.copy(inputStream, file, StandardCopyOption.REPLACE_EXISTING);
                                 statusHandler.call(FileDownloadStatus.DOWNLOADED, uri, file);
                                 downloadedHandler.call(uri, file, size);
                             } catch (IOException e) {
@@ -130,9 +132,18 @@ public class SpecificFileFetchBuilder extends FetchBuilderBase<SpecificFileFetch
                                     log.warn("Unable to close body input stream", e);
                                 }
                             }
-                            return Mono.just(file);
+                            return Mono
+                                .deferContextual(contextView -> {
+                                    if (log.isDebugEnabled()) {
+                                        final long durationMillis = currentTimeMillis() - contextView.<Long>get("downloadStart");
+                                        log.debug("Download of {} took {} at {}",
+                                            uri, formatDuration(durationMillis), transferRate(durationMillis, size));
+                                    }
+                                    return Mono.just(file);
+                                });
                         });
                 })
+                .contextWrite(context -> context.put("downloadStart", currentTimeMillis()))
         );
     }
 

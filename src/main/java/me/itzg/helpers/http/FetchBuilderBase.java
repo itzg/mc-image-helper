@@ -183,4 +183,25 @@ public class FetchBuilderBase<SELF extends FetchBuilderBase<SELF>> {
 
         state.requestHeaders.forEach(headers::set);
     }
+
+    static String formatDuration(long millis) {
+        final StringBuilder sb = new StringBuilder();
+        final long minutes = millis / 60000;
+        if (minutes > 0) {
+            sb.append(minutes);
+            sb.append("m ");
+        }
+        final long seconds = (millis % 60000) / 1000;
+        if (seconds > 0) {
+            sb.append(seconds);
+            sb.append("s ");
+        }
+        sb.append(millis % 1000);
+        sb.append("ms");
+        return sb.toString();
+    }
+
+    static String transferRate(long millis, long bytes) {
+        return String.format("%d KB/s", bytes / millis);
+    }
 }
