@@ -205,7 +205,9 @@ public class ModrinthCommand implements Callable<Integer> {
     private Project getProject(String projectIdOrSlug) {
         return fetch(Uris.populateToUri(
             baseUrl + "/project/{id|slug}",
-            projectIdOrSlug
+            projectIdOrSlug.contains(":") ?
+                    projectIdOrSlug.split(":")[0] :
+                    projectIdOrSlug
         ))
             .userAgentCommand("modrinth")
             .toObject(Project.class)
@@ -226,6 +228,15 @@ public class ModrinthCommand implements Callable<Integer> {
         }
     }
 
+    private Version getVersionFromId(String versionId) {
+        return fetch(Uris.populateToUri(
+                baseUrl + "/version/{id}",
+                versionId
+        ))
+                .userAgentCommand("modrinth")
+                .toObject(Version.class)
+                .execute();
+    }
 
     private String arrayOfQuoted(String value) {
         return "[\"" + value + "\"]";
@@ -236,8 +247,14 @@ public class ModrinthCommand implements Callable<Integer> {
 
         final Project project = getProject(projectRef);
         if (projectsProcessed.add(project.getId())) {
-            final List<Version> versions = getVersionsForProject(project.getId());
-            final Version version = pickVersion(versions);
+            final Version version;
+            if (projectRef.contains(":")) {
+                final String versionId = projectRef.split(":")[1];
+                version = getVersionFromId(versionId);
+            } else {
+                final List<Version> versions = getVersionsForProject(project.getId());
+                version = pickVersion(versions);
+            }
 
             if (version != null) {
                 return Stream.concat(
