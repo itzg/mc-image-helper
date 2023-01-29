@@ -205,9 +205,7 @@ public class ModrinthCommand implements Callable<Integer> {
     private Project getProject(String projectIdOrSlug) {
         return fetch(Uris.populateToUri(
             baseUrl + "/project/{id|slug}",
-            projectIdOrSlug.contains(":") ?
-                    projectIdOrSlug.split(":")[0] :
-                    projectIdOrSlug
+                projectIdOrSlug
         ))
             .userAgentCommand("modrinth")
             .toObject(Project.class)
@@ -245,11 +243,13 @@ public class ModrinthCommand implements Callable<Integer> {
     private Stream<? extends Path> processProject(String projectRef) {
         log.debug("Starting with projectRef={}", projectRef);
 
-        final Project project = getProject(projectRef);
+        final String[] projectRefParts = projectRef.split(":", 2);
+        final Project project = getProject(projectRefParts[0]);
         if (projectsProcessed.add(project.getId())) {
             final Version version;
-            if (projectRef.contains(":")) {
-                final String versionId = projectRef.split(":")[1];
+
+            if (projectRefParts.length == 2) {
+                final String versionId = projectRefParts[1];
                 version = getVersionFromId(versionId);
             } else {
                 final List<Version> versions = getVersionsForProject(project.getId());
