@@ -26,6 +26,7 @@ import me.itzg.helpers.modrinth.model.ProjectType;
 import me.itzg.helpers.modrinth.model.Version;
 import me.itzg.helpers.modrinth.model.VersionFile;
 import me.itzg.helpers.modrinth.model.VersionType;
+import org.apache.commons.lang3.EnumUtils;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.Option;
@@ -52,7 +53,7 @@ public class ModrinthCommand implements Callable<Integer> {
     boolean downloadOptionalDependencies;
 
     @Option(names = "--allowed-version-type", defaultValue = "release", description = "Valid values: ${COMPLETION-CANDIDATES}")
-    VersionType versionType;
+    VersionType defaultVersionType;
 
     final Set<String/*projectId*/> projectsProcessed = Collections.synchronizedSet(new HashSet<>());
 
@@ -154,6 +155,10 @@ public class ModrinthCommand implements Callable<Integer> {
     }
 
     private Version pickVersion(List<Version> versions) {
+        return this.pickVersion(versions, defaultVersionType);
+    }
+
+    private Version pickVersion(List<Version> versions, VersionType versionType) {
         for (final Version version : versions) {
             if (version.getVersionType().sufficientFor(versionType)) {
                 return version;
@@ -247,10 +252,14 @@ public class ModrinthCommand implements Callable<Integer> {
         final Project project = getProject(projectRefParts[0]);
         if (projectsProcessed.add(project.getId())) {
             final Version version;
+            final String versionIdOrType = projectRefParts[1];
 
             if (projectRefParts.length == 2) {
-                final String versionId = projectRefParts[1];
-                version = getVersionFromId(versionId);
+                if (EnumUtils.isValidEnum(VersionType.class, versionIdOrType)) {
+                    version = pickVersion(getVersionsForProject(project.getId()), VersionType.valueOf(versionIdOrType));
+                } else {
+                    version = getVersionFromId(versionIdOrType);
+                }
             } else {
                 final List<Version> versions = getVersionsForProject(project.getId());
                 version = pickVersion(versions);
