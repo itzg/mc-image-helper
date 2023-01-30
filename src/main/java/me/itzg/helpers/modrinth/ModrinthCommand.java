@@ -252,9 +252,10 @@ public class ModrinthCommand implements Callable<Integer> {
         final Project project = getProject(projectRefParts[0]);
         if (projectsProcessed.add(project.getId())) {
             final Version version;
-            final String versionIdOrType = projectRefParts[1];
 
             if (projectRefParts.length == 2) {
+                final String versionIdOrType = projectRefParts[1];
+
                 if (EnumUtils.isValidEnum(VersionType.class, versionIdOrType)) {
                     version = pickVersion(getVersionsForProject(project.getId()), VersionType.valueOf(versionIdOrType));
                 } else {
