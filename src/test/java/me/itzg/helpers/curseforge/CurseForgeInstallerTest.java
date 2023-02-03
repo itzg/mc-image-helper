@@ -13,7 +13,14 @@ class CurseForgeInstallerTest {
     Path tempDir;
 
     /*
-    Scenarios to test
+Scenarios to test
+
+###
+Duplicated slug for modpack and mod (hyperion)
+
+###
+Exclude/include by "gameVersions"
+
     "gameVersions": [
       "Client",
       "1.16.5",
