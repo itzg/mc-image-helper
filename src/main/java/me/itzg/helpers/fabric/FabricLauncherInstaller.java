@@ -5,11 +5,13 @@ import static me.itzg.helpers.http.Fetch.sharedFetch;
 
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -18,10 +20,14 @@ import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.fabric.LoaderResponseEntry.Loader;
 import me.itzg.helpers.files.Checksums;
+import me.itzg.helpers.files.IoStreams;
 import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.files.ResultsFileWriter;
+import me.itzg.helpers.http.FailedRequestException;
 import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.http.UriBuilder;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 @RequiredArgsConstructor
 @Slf4j
@@ -29,16 +35,18 @@ public class FabricLauncherInstaller {
 
     private static final String RESULT_LAUNCHER = "SERVER";
     public static final String MANIFEST_ID = "fabric";
+    private static final long FABRIC_INSTALLER_TIMEOUT_SEC = 60;
 
     private final Path outputDir;
     private final Path resultsFile;
 
-    @Getter @Setter
+    @Getter
+    @Setter
     private String fabricMetaBaseUrl = "https://meta.fabricmc.net";
 
     /**
      * @param minecraftVersion required
-     * @param loaderVersion optional
+     * @param loaderVersion    optional
      * @param installerVersion optional
      * @return the launcher's path
      */
@@ -65,7 +73,9 @@ public class FabricLauncherInstaller {
                 !manifest.getOrigin().equals(versions);
 
             if (needsInstall) {
-                return processInstallUsingVersions(minecraftVersion, loaderVersion, installerVersion, uriBuilder, sharedFetch, manifest, versions);
+                return processInstallUsingVersions(minecraftVersion, loaderVersion, installerVersion, uriBuilder, sharedFetch,
+                    manifest, versions
+                );
             }
             else {
                 return Paths.get(manifest.getLauncherPath());
@@ -75,7 +85,8 @@ public class FabricLauncherInstaller {
 
     }
 
-    private Path processInstallUsingVersions(String minecraftVersion, String loaderVersion, String installerVersion, UriBuilder uriBuilder,
+    private Path processInstallUsingVersions(String minecraftVersion, String loaderVersion, String installerVersion,
+        UriBuilder uriBuilder,
         SharedFetch sharedFetch, FabricManifest manifest, Versions versions
     ) throws IOException {
         if (manifest != null && manifest.getOrigin() != null) {
@@ -86,13 +97,28 @@ public class FabricLauncherInstaller {
         }
 
         final Path launcherPath = sharedFetch.fetch(
-            uriBuilder.resolve(
-                "/v2/versions/loader/{game_version}/{loader_version}/{installer_version}/server/jar",
-                minecraftVersion, loaderVersion, installerVersion
+                uriBuilder.resolve(
+                    "/v2/versions/loader/{game_version}/{loader_version}/{installer_version}/server/jar",
+                    minecraftVersion, loaderVersion, installerVersion
+                )
             )
-        )
             .toDirectory(outputDir)
-            .execute();
+            .assemble()
+            .onErrorResume(FailedRequestException::isBadRequest,
+                throwable -> {
+                log.debug("Loader could not be downloaded for minecraft={} loader={} installer={}. Getting and using installer instead.",
+                    minecraftVersion, loaderVersion, installerVersion);
+                    // retrieve and run the installer to obtain the launcher
+                    return installLauncherUsingInstaller(sharedFetch, minecraftVersion, loaderVersion,
+                        installerVersion
+                    );
+                }
+            )
+            .block();
+
+        if (launcherPath == null) {
+            throw new GenericException("Unable to resolve launcher path");
+        }
 
         if (resultsFile != null) {
             try (ResultsFileWriter results = new ResultsFileWriter(resultsFile)) {
@@ -114,6 +140,72 @@ public class FabricLauncherInstaller {
         Manifests.save(outputDir, MANIFEST_ID, newManifest);
 
         return launcherPath;
+    }
+
+    private Mono<Path> installLauncherUsingInstaller(SharedFetch sharedFetch,
+        String minecraftVersion, String loaderVersion, String installerVersion
+    ) {
+        final Path installerFile = outputDir.resolve(String.format("fabric-installer-%s.jar", installerVersion));
+
+        final URI installerUri = UriBuilder.withNoBaseUrl()
+            .resolve("https://maven.fabricmc.net/net/fabricmc/fabric-installer/{version}/fabric-installer-{version}.jar",
+                installerVersion, installerVersion
+            );
+
+        if (log.isDebugEnabled()) {
+            log.debug("Downloading Fabric installer from {}", installerUri);
+        }
+        else {
+            log.info("Downloading Fabric installer");
+        }
+
+        return sharedFetch.fetch(
+                installerUri
+            )
+            .toFile(installerFile)
+            .skipExisting(true)
+            .assemble()
+            .publishOn(Schedulers.boundedElastic())
+            .map(path -> {
+                log.info("Running Fabric installer for Minecraft {} and loader version {}",
+                    minecraftVersion, loaderVersion
+                );
+
+                try {
+                    final Process proc = new ProcessBuilder(
+                        "java", "-jar", path.toString(),
+                        "server",
+                        "-mcversion", minecraftVersion,
+                        "-loader", loaderVersion
+                    )
+                        .directory(outputDir.toFile())
+                        .redirectErrorStream(true)
+                        .start();
+
+                    final boolean success = proc.waitFor(FABRIC_INSTALLER_TIMEOUT_SEC, TimeUnit.SECONDS);
+                    if (!success) {
+                        IoStreams.transfer(proc.getInputStream(), System.err);
+                        throw new GenericException("Fabric installer took too long to run");
+                    }
+
+                    if (proc.exitValue() != 0) {
+                        IoStreams.transfer(proc.getInputStream(), System.err);
+                        throw new GenericException("Fabric installer failed to run");
+                    }
+                } catch (IOException e) {
+                    throw new GenericException("Failed to run fabric installer", e);
+                } catch (InterruptedException e) {
+                    throw new GenericException("While running fabric installer", e);
+                } finally {
+                    try {
+                        Files.delete(path);
+                    } catch (IOException e) {
+                        log.warn("Failed to delete fabric installer at {}", path, e);
+                    }
+                }
+
+                return outputDir.resolve("fabric-server-launch.jar");
+            });
     }
 
     public void installGivenLauncherFile(Path launcher) throws IOException {
@@ -186,7 +278,7 @@ public class FabricLauncherInstaller {
             if (!Objects.equals(oldManifest.getOrigin(), newOrigin)) {
                 log.info("Switching from {} to {} downloaded from {}",
                     oldManifest.getOrigin(), launcher, loaderUri
-                    );
+                );
             }
         }
         else {
@@ -230,11 +322,13 @@ public class FabricLauncherInstaller {
                 .orElseThrow(() -> new GenericException("Failed to find stable installer from " + fabricMetaBaseUrl))
                 .getVersion();
         } catch (IOException e) {
-            throw new GenericException("Failed to retrieve installer metadata from "+fabricMetaBaseUrl, e);
+            throw new GenericException("Failed to retrieve installer metadata from " + fabricMetaBaseUrl, e);
         }
     }
 
-    private String resolveLoaderVersion(UriBuilder uriBuilder, SharedFetch sharedFetch, String minecraftVersion, String loaderVersion) {
+    private String resolveLoaderVersion(UriBuilder uriBuilder, SharedFetch sharedFetch, String minecraftVersion,
+        String loaderVersion
+    ) {
         if (nonEmptyString(loaderVersion)) {
             return loaderVersion;
         }
@@ -242,11 +336,11 @@ public class FabricLauncherInstaller {
         final List<LoaderResponseEntry> loaderResponse;
         try {
             loaderResponse = sharedFetch.fetch(
-                uriBuilder.resolve("/v2/versions/loader/{game_version}", minecraftVersion))
+                    uriBuilder.resolve("/v2/versions/loader/{game_version}", minecraftVersion))
                 .toObjectList(LoaderResponseEntry.class)
                 .execute();
         } catch (IOException e) {
-            throw new GenericException("Failed to retrieve loader metadata from "+fabricMetaBaseUrl, e);
+            throw new GenericException("Failed to retrieve loader metadata from " + fabricMetaBaseUrl, e);
         }
 
         if (loaderResponse.isEmpty()) {
