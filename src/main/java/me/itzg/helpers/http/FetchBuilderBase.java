@@ -36,7 +36,9 @@ public class FetchBuilderBase<SELF extends FetchBuilderBase<SELF>> {
         private final Map<String, String> requestHeaders = new HashMap<>();
 
         State(URI uri, SharedFetch sharedFetch) {
-            this.uri = uri;
+            // Netty seems to half-way URL encode paths that have unicode,
+            // so instead we'll pre-"encode" the URI
+            this.uri = URI.create(uri.toASCIIString());
             this.sharedFetch = sharedFetch;
         }
     }
