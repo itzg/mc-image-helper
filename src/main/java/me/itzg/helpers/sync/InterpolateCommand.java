@@ -9,6 +9,7 @@ import java.util.stream.Stream;
 import lombok.SneakyThrows;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
+import me.itzg.helpers.env.InterpolationException;
 import me.itzg.helpers.env.Interpolator;
 import me.itzg.helpers.env.StandardEnvironmentVariablesProvider;
 import me.itzg.helpers.errors.GenericException;
@@ -61,7 +62,12 @@ public class InterpolateCommand implements Callable<Integer> {
         log.debug("Interpolating file={}", path);
         final byte[] original = Files.readAllBytes(path);
 
-        final Interpolator.Result<byte[]> result = interpolator.interpolate(original);
+        final Interpolator.Result<byte[]> result;
+        try {
+            result = interpolator.interpolate(original);
+        } catch (InterpolationException e) {
+            throw new GenericException("Failed to interpolate the file "+path, e);
+        }
         if (result.getReplacementCount() > 0) {
             Files.write(path, result.getContent());
             log.info("Replaced {} variable(s) in {}", result.getReplacementCount(), path);

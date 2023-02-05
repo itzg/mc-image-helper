@@ -1,12 +1,11 @@
 package me.itzg.helpers.sync;
 
-import lombok.extern.slf4j.Slf4j;
-import me.itzg.helpers.env.Interpolator;
-
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import lombok.extern.slf4j.Slf4j;
+import me.itzg.helpers.env.Interpolator;
 
 @Slf4j
 class InterpolatingFileProcessor implements FileProcessor {
@@ -30,7 +29,7 @@ class InterpolatingFileProcessor implements FileProcessor {
             final Interpolator.Result<byte[]> result;
             try {
                 result = interpolator.interpolate(content);
-            } catch (IOException e) {
+            } catch (Exception e) {
                 log.warn("Failed to interpolate {}, using copy instead: {}", srcFile, e.getMessage());
                 log.debug("Details", e);
                 fallbackProcessor.processFile(srcFile, destFile);
