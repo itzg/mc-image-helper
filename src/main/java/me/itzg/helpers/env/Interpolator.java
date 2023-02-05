@@ -1,10 +1,5 @@
 package me.itzg.helpers.env;
 
-import lombok.Data;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import me.itzg.helpers.CharsetDetector;
-
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -13,6 +8,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import lombok.Data;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import me.itzg.helpers.CharsetDetector;
 
 @Slf4j
 public class Interpolator {
@@ -59,7 +58,15 @@ public class Interpolator {
             else {
                 value = Matcher.quoteReplacement(matcher.group());
             }
-            matcher.appendReplacement(sb, value);
+
+            try {
+                matcher.appendReplacement(sb, value);
+            } catch (Exception e) {
+                throw new InterpolationException(
+                    "Failed to replace value of the variable '"+varName + "' with: "+value,
+                    e
+                );
+            }
         }
         matcher.appendTail(sb);
 
