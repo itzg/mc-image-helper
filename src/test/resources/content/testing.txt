@@ -2,4 +2,5 @@ test1=${CFG_TEST1}
 test2=${CFG_TEST2}
 ignored=${IGNORE_TEST1}
 test3=${CFG_TEST3}
+test4=${CFG_TEST4}
 one
