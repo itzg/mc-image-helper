@@ -24,6 +24,7 @@ import me.itzg.helpers.mvn.MavenDownloadCommand;
 import me.itzg.helpers.patch.PatchCommand;
 import me.itzg.helpers.singles.Asciify;
 import me.itzg.helpers.singles.HashCommand;
+import me.itzg.helpers.singles.NetworkInterfacesCommand;
 import me.itzg.helpers.singles.YamlPathCmd;
 import me.itzg.helpers.sync.InterpolateCommand;
 import me.itzg.helpers.sync.Sync;
@@ -54,6 +55,7 @@ import picocli.CommandLine.Option;
         JavaReleaseCommand.class,
         MavenDownloadCommand.class,
         ModrinthCommand.class,
+        NetworkInterfacesCommand.class,
         PatchCommand.class,
         Sync.class,
         SyncAndInterpolate.class,
