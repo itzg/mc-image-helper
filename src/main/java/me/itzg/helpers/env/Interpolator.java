@@ -56,11 +56,12 @@ public class Interpolator {
                 ++replacements;
             }
             else {
-                value = Matcher.quoteReplacement(matcher.group());
+                // just use the variable-looking text as-is
+                value = matcher.group();
             }
 
             try {
-                matcher.appendReplacement(sb, value);
+                matcher.appendReplacement(sb, Matcher.quoteReplacement(value));
             } catch (Exception e) {
                 throw new InterpolationException(
                     "Failed to replace value of the variable '"+varName + "' with: "+value,
