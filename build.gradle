@@ -100,7 +100,7 @@ dependencies {
     implementation 'com.jayway.jsonpath:json-path:2.7.0'
     implementation 'org.apache.httpcomponents.client5:httpclient5:5.2.1'
     implementation 'io.projectreactor.netty:reactor-netty-http:1.1.2'
-    implementation 'org.apache.maven:maven-artifact:3.8.7'
+    implementation 'org.apache.maven:maven-artifact:3.9.0'
     implementation 'commons-codec:commons-codec:1.15'
 
     testImplementation 'org.assertj:assertj-core:3.24.2'
