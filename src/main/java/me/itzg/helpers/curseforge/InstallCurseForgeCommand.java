@@ -11,6 +11,7 @@ import java.util.regex.Pattern;
 import me.itzg.helpers.files.ResultsFileWriter;
 import me.itzg.helpers.http.PathOrUri;
 import me.itzg.helpers.http.PathOrUriConverter;
+import me.itzg.helpers.http.SharedFetchArgs;
 import me.itzg.helpers.json.ObjectMappers;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
@@ -98,6 +99,9 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
     )
     boolean overridesSkipExisting;
 
+    @ArgGroup(exclusive = false)
+    SharedFetchArgs sharedFetchArgs = new SharedFetchArgs();
+
     private static final Pattern PAGE_URL_PATTERN = Pattern.compile(
         "https://www.curseforge.com/minecraft/modpacks/(?<slug>.+?)(/files(/(?<fileId>\\d+)?)?)?");
 
@@ -133,7 +137,9 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
             .setForceSynchronize(forceSynchronize)
             .setParallelism(parallelDownloads)
             .setLevelFrom(levelFrom)
-            .setOverridesSkipExisting(overridesSkipExisting);
+            .setOverridesSkipExisting(overridesSkipExisting)
+            .setSharedFetchOptions(sharedFetchArgs.options());
+
         installer.install(slug, filenameMatcher, fileId);
 
         return ExitCode.OK;

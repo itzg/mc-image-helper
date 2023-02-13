@@ -25,6 +25,7 @@ import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.files.ResultsFileWriter;
 import me.itzg.helpers.http.FailedRequestException;
 import me.itzg.helpers.http.SharedFetch;
+import me.itzg.helpers.http.SharedFetch.Options;
 import me.itzg.helpers.http.UriBuilder;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -56,7 +57,7 @@ public class FabricLauncherInstaller {
 
         final UriBuilder uriBuilder = UriBuilder.withBaseUrl(fabricMetaBaseUrl);
 
-        try (SharedFetch sharedFetch = sharedFetch("fabric")) {
+        try (SharedFetch sharedFetch = sharedFetch("fabric", Options.builder().build())) {
             loaderVersion = resolveLoaderVersion(uriBuilder, sharedFetch, minecraftVersion, loaderVersion);
 
             installerVersion = resolveInstallerVersion(uriBuilder, sharedFetch, installerVersion);

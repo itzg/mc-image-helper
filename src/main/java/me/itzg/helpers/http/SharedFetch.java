@@ -2,12 +2,16 @@ package me.itzg.helpers.http;
 
 import io.netty.handler.codec.http.HttpHeaderNames;
 import java.net.URI;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import lombok.Builder;
+import lombok.Builder.Default;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.McImageHelper;
+import reactor.netty.http.Http11SslContextSpec;
 import reactor.netty.http.client.HttpClient;
 
 /**
@@ -29,7 +33,7 @@ public class SharedFetch implements AutoCloseable {
     @Getter
     private final HttpClient reactiveClient;
 
-    public SharedFetch(String forCommand) {
+    public SharedFetch(String forCommand, Options options) {
         final String userAgent = String.format("%s/%s (cmd=%s)",
             "mc-image-helper",
             McImageHelper.getVersion(),
@@ -43,6 +47,13 @@ public class SharedFetch implements AutoCloseable {
                 headers
                     .set(HttpHeaderNames.USER_AGENT.toString(), userAgent)
                     .set("x-fetch-session", fetchSessionId)
+            )
+            // Reference https://projectreactor.io/docs/netty/release/reference/index.html#response-timeout
+            .responseTimeout(options.getResponseTimeout())
+            // Reference https://projectreactor.io/docs/netty/release/reference/index.html#ssl-tls-timeout
+            .secure(spec ->
+                spec.sslContext(Http11SslContextSpec.forClient())
+                .handshakeTimeout(options.getTlsHandshakeTimeout())
             );
 
         headers.put("x-fetch-session", fetchSessionId);
@@ -60,5 +71,20 @@ public class SharedFetch implements AutoCloseable {
 
     @Override
     public void close() {
+    }
+
+    @Builder
+    @Getter
+    public static class Options {
+
+        @Default
+        private final Duration responseTimeout
+            // not set by default
+            = Duration.ofSeconds(5);
+
+        @Default
+        private final Duration tlsHandshakeTimeout
+            // double the Netty default
+            = Duration.ofSeconds(20);
     }
 }

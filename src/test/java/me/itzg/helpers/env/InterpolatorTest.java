@@ -31,7 +31,7 @@ class InterpolatorTest {
     }
 
     @Test
-    void interpolateToValueWithDollarSignInValue() throws IOException {
+    void interpolateToValueWithDollarSign() throws IOException {
         when(varProvider.get("CFG_HAS_DOLLAR_VALUE_FILE"))
             .thenReturn(null);
         when(varProvider.get("CFG_HAS_DOLLAR_VALUE"))
