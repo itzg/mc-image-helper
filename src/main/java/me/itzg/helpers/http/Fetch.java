@@ -1,6 +1,7 @@
 package me.itzg.helpers.http;
 
 import java.net.URI;
+import me.itzg.helpers.http.SharedFetch.Options;
 
 public class Fetch {
 
@@ -15,8 +16,8 @@ public class Fetch {
      * Provides an efficient way to make multiple web requests since a single client
      * is shared.
      */
-    public static SharedFetch sharedFetch(String forCommand) {
-        return new SharedFetch(forCommand);
+    public static SharedFetch sharedFetch(String forCommand, Options options) {
+        return new SharedFetch(forCommand, options);
     }
 
     private Fetch() {

@@ -47,6 +47,7 @@ import me.itzg.helpers.files.ResultsFileWriter;
 import me.itzg.helpers.forge.ForgeInstaller;
 import me.itzg.helpers.http.Fetch;
 import me.itzg.helpers.http.SharedFetch;
+import me.itzg.helpers.http.SharedFetch.Options;
 import me.itzg.helpers.http.UriBuilder;
 import me.itzg.helpers.json.ObjectMappers;
 import reactor.core.publisher.Flux;
@@ -94,6 +95,9 @@ public class CurseForgeInstaller {
     @Getter @Setter
     private boolean overridesSkipExisting;
 
+    @Getter @Setter
+    private SharedFetch.Options sharedFetchOptions;
+
     private final Set<String> applicableClassIdSlugs = new HashSet<>(Arrays.asList(
         "mc-mods",
         "bukkit-plugins",
@@ -106,14 +110,17 @@ public class CurseForgeInstaller {
 
         final UriBuilder uriBuilder = UriBuilder.withBaseUrl(apiBaseUrl);
 
-        try (SharedFetch preparedFetch = Fetch.sharedFetch("install-curseforge")) {
+        try (SharedFetch preparedFetch = Fetch.sharedFetch("install-curseforge",
+            sharedFetchOptions != null ? sharedFetchOptions : Options.builder().build()
+        )) {
             // TODO encapsulate preparedFetch and uriBuilder to avoid passing deep into call tree
 
             final CategoryInfo categoryInfo = loadCategoryInfo(preparedFetch, uriBuilder);
 
             final ModsSearchResponse searchResponse = preparedFetch.fetch(
                     uriBuilder.resolve("/mods/search?gameId={gameId}&slug={slug}&classId={classId}",
-                        MINECRAFT_GAME_ID, slug, categoryInfo.modpackClassId)
+                        MINECRAFT_GAME_ID, slug, categoryInfo.modpackClassId
+                    )
                 )
                 .toObject(ModsSearchResponse.class)
                 .execute();
