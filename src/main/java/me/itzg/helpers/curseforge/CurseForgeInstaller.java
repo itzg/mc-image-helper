@@ -248,7 +248,7 @@ public class CurseForgeInstaller {
     ) {
         // NOTE latestFiles in mod is only one or two files, so retrieve the full list instead
         final GetModFilesResponse resp = preparedFetch.fetch(
-                // 'latest' parameters is not recognized by the API but rather used to force it not to return
+                // 'latest' parameter is not recognized by the API but rather used to force it not to return
                 // a cached listing
                 uriBuilder.resolve("/mods/{modId}/files?latest={ts}", mod.getId(), System.currentTimeMillis())
             )
