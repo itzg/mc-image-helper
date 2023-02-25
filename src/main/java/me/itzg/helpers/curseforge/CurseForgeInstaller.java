@@ -204,6 +204,7 @@ public class CurseForgeInstaller {
         final CurseForgeManifest newManifest = CurseForgeManifest.builder()
             .modId(modFile.getModId())
             .fileId(modFile.getId())
+            .fileName(modFile.getDisplayName())
             .files(Manifests.relativizeAll(outputDir, results.getFiles()))
             .minecraftVersion(results.getMinecraftVersion())
             .modLoaderId(results.getModLoaderId())

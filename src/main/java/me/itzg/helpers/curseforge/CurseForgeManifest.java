@@ -12,6 +12,7 @@ public class CurseForgeManifest extends BaseManifest {
 
     private int modId;
     private int fileId;
+    private String fileName;
 
     private String minecraftVersion;
     private String modLoaderId;
