@@ -221,7 +221,7 @@ public class ModrinthCommand implements Callable<Integer> {
         try {
             return fetch(Uris.populateToUri(
                 baseUrl + "/project/{id|slug}/version?loaders={loader}&game_versions={gameVersion}",
-                project, arrayOfQuoted(loader.toString()), arrayOfQuoted(gameVersion)
+                project, loader.toString(), gameVersion
             ))
                 .userAgentCommand("modrinth")
                 .toObjectList(Version.class)
@@ -239,10 +239,6 @@ public class ModrinthCommand implements Callable<Integer> {
                 .userAgentCommand("modrinth")
                 .toObject(Version.class)
                 .execute();
-    }
-
-    private String arrayOfQuoted(String value) {
-        return "[\"" + value + "\"]";
     }
 
     private Stream<? extends Path> processProject(String projectRef) {
