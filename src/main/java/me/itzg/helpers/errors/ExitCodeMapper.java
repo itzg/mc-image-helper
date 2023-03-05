@@ -10,7 +10,7 @@ public class ExitCodeMapper implements IExitCodeExceptionMapper {
       return ((ExitCodeProvider) exception).exitCode();
     }
 
-    final ExitCode annotation = exception.getClass().getAnnotation(ExitCode.class);
+    final EmitsExitCode annotation = exception.getClass().getAnnotation(EmitsExitCode.class);
     if (annotation != null) {
       return annotation.value();
     }

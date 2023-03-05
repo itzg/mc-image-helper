@@ -8,7 +8,8 @@ import java.util.regex.Pattern;
 
 public final class Uris {
 
-  final static Pattern PLACEHOLDERS = Pattern.compile("\\{.*?}");
+  private static final Pattern PLACEHOLDERS = Pattern.compile("\\{.*?}");
+  private static final Pattern URI_DETECT = Pattern.compile("^(http|https)://");
 
   public static String populate(String url, Object... values) {
     if (values.length == 0) {
@@ -36,6 +37,11 @@ public final class Uris {
    */
   public static URI populateToUri(String url, Object... values) {
     return URI.create(populate(url, values));
+  }
+
+  public static boolean isUri(String value) {
+    final Matcher m = URI_DETECT.matcher(value);
+    return m.lookingAt();
   }
 
   private Uris() {

@@ -11,7 +11,7 @@ import java.lang.annotation.Target;
 /**
  * Used to annotate an {@link Exception} class with a status code to produce.
  */
-public @interface ExitCode {
+public @interface EmitsExitCode {
 
   /**
    * @return typically a value of 200 or greater to indicate a custom, application exit code

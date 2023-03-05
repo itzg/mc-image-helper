@@ -3,9 +3,9 @@ package me.itzg.helpers.get;
 import java.util.List;
 import lombok.Getter;
 import lombok.ToString;
-import me.itzg.helpers.errors.ExitCode;
+import me.itzg.helpers.errors.EmitsExitCode;
 
-@ExitCode(300)
+@EmitsExitCode(300)
 @Getter @ToString
 public class UnexpectedContentTypeException extends RuntimeException {
 
