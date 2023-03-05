@@ -17,6 +17,7 @@ import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
+import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.http.Uris;
 import me.itzg.helpers.json.ObjectMappers;
@@ -203,7 +204,9 @@ public class ModrinthCommand implements Callable<Integer> {
             return version.getFiles().stream()
                 .filter(VersionFile::isPrimary)
                 .findFirst()
-                .orElse(null);
+                // fall back to first one for cases like
+                // https://modrinth.com/plugin/vane/version/v1.10.3
+                .orElse(version.getFiles().get(0));
         }
     }
 
@@ -267,6 +270,10 @@ public class ModrinthCommand implements Callable<Integer> {
             }
 
             if (version != null) {
+                if (version.getFiles().isEmpty()) {
+                    throw new GenericException(String.format("Project %s has no files declared", project.getSlug()));
+                }
+
                 return Stream.concat(
                         Stream.of(version),
                         expandDependencies(version)
