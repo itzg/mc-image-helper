@@ -65,7 +65,7 @@ public class SpecificFileFetchBuilder extends FetchBuilderBase<SpecificFileFetch
         final URI uri = uri();
 
         if (skipExisting && Files.exists(file)) {
-            log.debug("File already exists and skip requested");
+            log.debug("Skipping file={} that already exists due to request", file);
             statusHandler.call(FileDownloadStatus.SKIP_FILE_EXISTS, uri, file);
             return Mono.just(file);
         }

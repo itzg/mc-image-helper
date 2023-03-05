@@ -81,6 +81,7 @@ public class ModrinthCommand implements Callable<Integer> {
 
         final ModrinthManifest newManifest = ModrinthManifest.builder()
             .files(Manifests.relativizeAll(outputDirectory, outputFiles))
+            .projects(projects)
             .build();
 
         Manifests.cleanup(outputDirectory, prevManifest, newManifest, log);
