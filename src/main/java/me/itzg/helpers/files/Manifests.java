@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import me.itzg.helpers.json.ObjectMappers;
+import org.slf4j.Logger;
 
 public class Manifests {
 
@@ -35,6 +36,15 @@ public class Manifests {
             removeListener.accept(fileToRemove);
             Files.deleteIfExists(baseDir.resolve(fileToRemove));
         }
+    }
+
+    /**
+     * @param oldManifest can be null
+     */
+    public static void cleanup(Path baseDir, BaseManifest oldManifest,
+        BaseManifest newManifest, Logger log
+    ) throws IOException {
+        cleanup(baseDir, oldManifest, newManifest, s -> log.info("Removing old file {}", s));
     }
 
     /**

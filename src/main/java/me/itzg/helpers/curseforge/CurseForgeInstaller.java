@@ -211,7 +211,7 @@ public class CurseForgeInstaller {
             .levelName(results.getLevelName())
             .build();
 
-        Manifests.cleanup(outputDir, manifest, newManifest, f -> log.info("Removing old file {}", f));
+        Manifests.cleanup(outputDir, manifest, newManifest, log);
 
         Manifests.save(outputDir, CURSEFORGE_ID, newManifest);
 

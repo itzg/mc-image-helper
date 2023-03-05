@@ -8,7 +8,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -16,6 +16,8 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.files.Manifests;
@@ -69,44 +71,45 @@ public class ModrinthCommand implements Callable<Integer> {
 
     @Override
     public Integer call() throws Exception {
-        final ObjectMapper objectMapper = ObjectMappers.defaultMapper();
-
         Files.createDirectories(outputDirectory);
 
-        final Path manifestPath = outputDirectory.resolve(Manifest.FILENAME);
-
-        final Manifest oldManifest;
-        if (Files.exists(manifestPath)) {
-            oldManifest = objectMapper.readValue(manifestPath.toFile(), Manifest.class);
-            log.debug("Loaded existing manifest={}", oldManifest);
-        } else {
-            oldManifest = null;
-        }
+        final ModrinthManifest prevManifest = loadManifest();
 
         final List<Path> outputFiles = projects.stream()
             .flatMap(this::processProject)
             .collect(Collectors.toList());
 
-        final Manifest newManifest = Manifest.builder()
-            .timestamp(Instant.now())
-            .files(
-                outputFiles.stream()
-                    .map(path -> outputDirectory.relativize(path))
-                    .map(Path::toString)
-                    .collect(Collectors.toSet())
-            )
+        final ModrinthManifest newManifest = ModrinthManifest.builder()
+            .files(Manifests.relativizeAll(outputDirectory, outputFiles))
+            .projects(projects)
             .build();
 
-        if (oldManifest != null) {
-            Manifests.cleanup(outputDirectory, oldManifest.getFiles(), newManifest.getFiles(),
-                file -> log.debug("Deleting old file={}", file)
-            );
-        }
+        Manifests.cleanup(outputDirectory, prevManifest, newManifest, log);
 
-        objectMapper.writerWithDefaultPrettyPrinter()
-            .writeValue(manifestPath.toFile(), newManifest);
+        Manifests.save(outputDirectory, ModrinthManifest.ID, newManifest);
 
         return ExitCode.OK;
+    }
+
+    private ModrinthManifest loadManifest() throws IOException {
+        final Path legacyManifestPath = outputDirectory.resolve(LegacyModrinthManifest.FILENAME);
+
+        if (Files.exists(legacyManifestPath)) {
+            final ObjectMapper objectMapper = ObjectMappers.defaultMapper();
+
+            final LegacyModrinthManifest legacyManifest = objectMapper.readValue(legacyManifestPath.toFile(),
+                LegacyModrinthManifest.class
+            );
+
+            Files.delete(legacyManifestPath);
+
+            return ModrinthManifest.builder()
+                .timestamp(legacyManifest.getTimestamp())
+                .files(new ArrayList<>(legacyManifest.getFiles()))
+                .build();
+        }
+
+        return Manifests.load(outputDirectory, ModrinthManifest.ID, ModrinthManifest.class);
     }
 
     private Stream<Version> expandDependencies(Version version) {
@@ -279,9 +282,58 @@ public class ModrinthCommand implements Callable<Integer> {
                         expandDependencies(version)
                     )
                     .map(this::pickVersionFile)
-                    .map(versionFile -> download(project.getProjectType(), versionFile));
+                    .map(versionFile -> download(project.getProjectType(), versionFile))
+                    .flatMap(this::expandIfZip);
             }
         }
         return Stream.empty();
+    }
+
+    /**
+     * If downloadedFile ends in .zip, then expand it, return its files and given file.
+     * @return a stream of at least the given file along with unzipped contents
+     */
+    private Stream<Path> expandIfZip(Path downloadedFile) {
+        if (downloadedFile.getFileName().toString().endsWith(".zip")) {
+            return Stream.concat(
+                Stream.of(downloadedFile),
+                expandZip(downloadedFile)
+            );
+        }
+        else {
+            return Stream.of(downloadedFile);
+        }
+    }
+
+    private Stream<Path> expandZip(Path zipFile) {
+        log.debug("Unzipping downloaded file={}", zipFile);
+        final Path outDir = zipFile.getParent();
+
+        final ArrayList<Path> contents = new ArrayList<>();
+
+        try (ZipInputStream zipIn = new ZipInputStream(Files.newInputStream(zipFile))) {
+            ZipEntry entry;
+            while ((entry = zipIn.getNextEntry()) != null) {
+                if (!entry.isDirectory()) {
+                    final String name = entry.getName();
+                    final Path resolved = outDir.resolve(name);
+                    if (!Files.exists(resolved)) {
+                        log.debug("Expanding from zip to={}", resolved);
+                        if (name.contains("/")) {
+                            Files.createDirectories(resolved.getParent());
+                        }
+                        Files.copy(zipIn, resolved);
+                    }
+                    else {
+                        log.debug("File={} from zip already exists", resolved);
+                    }
+                    contents.add(resolved);
+                }
+            }
+        } catch (IOException e) {
+            throw new GenericException("Unable to unzip downloaded file", e);
+        }
+
+        return contents.stream();
     }
 }
