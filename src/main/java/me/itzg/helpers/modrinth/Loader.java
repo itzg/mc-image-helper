@@ -3,7 +3,10 @@ package me.itzg.helpers.modrinth;
 public enum Loader {
   fabric("mods"),
   forge("mods"),
-  spigot("plugins");
+  bukkit("plugins"),
+  spigot("plugins"),
+  paper("plugins"),
+  purpur("plugins");
 
   private final String type;
 
