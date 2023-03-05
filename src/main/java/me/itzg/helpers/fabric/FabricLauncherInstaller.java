@@ -136,7 +136,7 @@ public class FabricLauncherInstaller {
             .launcherPath(launcherPath.toString())
             .build();
 
-        Manifests.cleanup(outputDir, manifest, newManifest, f -> log.debug("Removing {}", f));
+        Manifests.cleanup(outputDir, manifest, newManifest, log);
 
         Manifests.save(outputDir, MANIFEST_ID, newManifest);
 
@@ -243,7 +243,7 @@ public class FabricLauncherInstaller {
                 }
             }
             else if (manifest != null) {
-                Manifests.cleanup(outputDir, manifest, newManifest, f -> log.debug("Removing {}", f));
+                Manifests.cleanup(outputDir, manifest, newManifest, log);
 
                 if (manifest.getOrigin() != null) {
                     log.info("Switching from {} to provided launcher", manifest.getOrigin());
@@ -293,7 +293,7 @@ public class FabricLauncherInstaller {
             .build();
         Manifests.save(outputDir, MANIFEST_ID, newManifest);
 
-        Manifests.cleanup(outputDir, oldManifest, newManifest, f -> log.debug("Removing {}", f));
+        Manifests.cleanup(outputDir, oldManifest, newManifest, log);
 
         if (resultsFile != null) {
             try (ResultsFileWriter results = new ResultsFileWriter(resultsFile)) {

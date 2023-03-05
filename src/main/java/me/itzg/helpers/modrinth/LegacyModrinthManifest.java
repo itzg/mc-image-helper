@@ -9,7 +9,7 @@ import lombok.extern.jackson.Jacksonized;
 @Data
 @Builder
 @Jacksonized
-public class Manifest {
+public class LegacyModrinthManifest {
 
     public static final String FILENAME = ".modrinth-files.manifest";
 
