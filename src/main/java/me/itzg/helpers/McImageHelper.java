@@ -36,6 +36,7 @@ import org.slf4j.LoggerFactory;
 import picocli.CommandLine;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
+import picocli.CommandLine.ITypeConverter;
 import picocli.CommandLine.IVersionProvider;
 import picocli.CommandLine.Option;
 
@@ -87,7 +88,10 @@ public class McImageHelper {
       setLevel(enabled, Level.DEBUG);
     }
 
-    @Option(names = "--logging", description = "Set logging to specific level.\nValid values: ${COMPLETION-CANDIDATES}")
+    @Option(names = "--logging", description = "Set logging to specific level.\nValid values: ${COMPLETION-CANDIDATES}",
+      defaultValue = "${env:HELPER_LOGGING_LEVEL}",
+        converter = LogbackLevelConverter.class
+    )
     void setLoggingLevel(Level level) {
       setLevel(true, level);
     }
@@ -95,6 +99,10 @@ public class McImageHelper {
     private static void setLevel(boolean enabled, Level level) {
       ((Logger) LoggerFactory.getLogger("me.itzg.helpers")).setLevel(
           enabled ? level : Level.INFO);
+      if (Level.TRACE.isGreaterOrEqual(level)) {
+        ((Logger) LoggerFactory.getLogger("org.apache.hc.client5.http")).setLevel(
+            enabled ? level : Level.INFO);
+      }
     }
 
   }
@@ -151,6 +159,13 @@ public class McImageHelper {
               "${COMMAND-FULL-NAME}",
               version
           };
+    }
+  }
+
+  private static class LogbackLevelConverter implements ITypeConverter<Level> {
+    @Override
+    public Level convert(String value) throws Exception {
+      return Level.toLevel(value);
     }
   }
 }
