@@ -12,6 +12,7 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
+import java.nio.file.Paths;
 import java.nio.file.attribute.FileTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -324,17 +325,7 @@ public class GetCommand implements Callable<Integer> {
     private NeedsDownloadResult needsDownload(CloseableHttpClient client, LatchingUrisInterceptor interceptor,
         URI uri, Set<Path> processed) throws URISyntaxException, IOException {
         if (skipExisting || skipUpToDate) {
-            final HttpHead headRequest = new HttpHead(uri.getPath().startsWith("//") ?
-                alterUriPath(uri, uri.getPath().substring(1)) : uri);
-
-            log.debug("Sending HEAD request to uri={}", uri);
-            final String filename;
-            try {
-                filename = client.execute(headRequest,
-                    new DeriveFilenameHandler(interceptor));
-            } catch (HttpResponseException e) {
-                throw new RequestFailedException(uri, e);
-            }
+            final String filename = resolveExpectedFilename(client, interceptor, uri);
             interceptor.reset();
 
             final Path resolvedFilename = outputFile.resolve(filename);
@@ -352,6 +343,25 @@ public class GetCommand implements Callable<Integer> {
             }
         }
         return new NeedsDownloadResult(true, null);
+    }
+
+    private static String resolveExpectedFilename(CloseableHttpClient client, LatchingUrisInterceptor interceptor, URI uri)
+        throws URISyntaxException, IOException {
+        final HttpHead headRequest = new HttpHead(uri.getPath().startsWith("//") ?
+            alterUriPath(uri, uri.getPath().substring(1)) : uri);
+
+        log.debug("Sending HEAD request to uri={}", uri);
+        try {
+            return client.execute(headRequest,
+                new DeriveFilenameHandler(interceptor)
+            );
+        } catch (HttpResponseException e) {
+            if (e.getStatusCode() == HttpStatus.SC_METHOD_NOT_ALLOWED) {
+                log.warn("Endpoint at {} does not allow HEAD request, so deriving from URI's path", uri);
+                return Paths.get(uri.getPath()).getFileName().toString();
+            }
+            throw new RequestFailedException(uri, e);
+        }
     }
 
     private boolean usingPrune() {
