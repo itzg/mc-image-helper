@@ -14,6 +14,7 @@ import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -22,6 +23,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
+import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.files.ResultsFileWriter;
 import me.itzg.helpers.forge.model.PromotionsSlim;
@@ -52,15 +54,23 @@ public class ForgeInstaller {
             throw new GenericException("Failed to load existing forge manifest", e);
         }
 
+        final PromotionsSlim promotionsSlim = loadPromotions();
+        if (promotionsSlim.getPromos().isEmpty()) {
+            throw new GenericException("No versions were available in Forge promotions");
+        }
+
+        final String resolvedMinecraftVersion;
         final String resolvedForgeVersion;
         if (forgeInstaller == null) {
+            resolvedMinecraftVersion = resolveMinecraftVersion(minecraftVersion, promotionsSlim);
             try {
-                resolvedForgeVersion = resolveForgeVersion(minecraftVersion, forgeVersion);
+                resolvedForgeVersion = resolveForgeVersion(resolvedMinecraftVersion, forgeVersion, promotionsSlim);
             } catch (IOException e) {
                 throw new RuntimeException("Failed to resolve forge version", e);
             }
         }
         else {
+            resolvedMinecraftVersion = minecraftVersion;
             resolvedForgeVersion = forgeInstaller.toString();
         }
 
@@ -76,17 +86,17 @@ public class ForgeInstaller {
                 needsInstall = true;
             }
             else if (
-                Objects.equals(prevManifest.getMinecraftVersion(), minecraftVersion) &&
+                Objects.equals(prevManifest.getMinecraftVersion(), resolvedMinecraftVersion) &&
                 Objects.equals(prevManifest.getForgeVersion(), resolvedForgeVersion)
             ) {
                 log.info("Forge version {} for minecraft version {} is already installed",
-                    resolvedForgeVersion, minecraftVersion
+                    resolvedForgeVersion, resolvedMinecraftVersion
                 );
                 needsInstall = false;
             } else {
                 log.info("Re-installing Forge due to version change from MC {}/Forge {} to MC {}/Forge {}",
                     prevManifest.getMinecraftVersion(), prevManifest.getForgeVersion(),
-                    minecraftVersion, resolvedForgeVersion);
+                    resolvedMinecraftVersion, resolvedForgeVersion);
                 needsInstall = true;
             }
         }
@@ -97,10 +107,10 @@ public class ForgeInstaller {
         final ForgeManifest newManifest;
         if (needsInstall) {
             if (forgeInstaller == null) {
-                newManifest = downloadAndInstall(minecraftVersion, resolvedForgeVersion, outputDir);
+                newManifest = downloadAndInstall(resolvedMinecraftVersion, resolvedForgeVersion, outputDir);
             }
             else {
-                newManifest = installUsingExisting(minecraftVersion, resolvedForgeVersion, outputDir, forgeInstaller);
+                newManifest = installUsingExisting(resolvedMinecraftVersion, resolvedForgeVersion, outputDir, forgeInstaller);
             }
 
             Manifests.save(outputDir, MANIFEST_ID, newManifest);
@@ -304,7 +314,7 @@ public class ForgeInstaller {
         }
 
         if (!success) {
-            throw new RuntimeException("Failed to locate forge installer");
+            throw new GenericException("Failed to locate forge installer");
         }
 
         return installerJar;
@@ -319,25 +329,14 @@ public class ForgeInstaller {
         String forgeVersion;
     }
 
-    private String resolveForgeVersion(String minecraftVersion, String forgeVersion) throws IOException {
+    private String resolveForgeVersion(String minecraftVersion, String forgeVersion, PromotionsSlim promotionsSlim) throws IOException {
         final String normalized = forgeVersion.toLowerCase();
         if (!normalized.equals(LATEST) && !normalized.equals(RECOMMENDED)) {
             return forgeVersion;
         }
 
-        final PromotionsSlim promotionsSlim =
-            fetch(URI.create("https://files.minecraftforge.net/maven/net/minecraftforge/forge/promotions_slim.json"))
-                .userAgentCommand("forge")
-                .toObject(PromotionsSlim.class)
-                .execute();
-
         final Map<String, String> options = promotionsSlim.getPromos().entrySet().stream()
-            // each entry is like
-            // "1.19-recommended": "41.1.0"
-            .map(entry -> {
-                final String[] keyParts = entry.getKey().split("-", 2);
-                return new PromoEntry(keyParts[0], keyParts[1].toLowerCase(), entry.getValue());
-            })
+            .map(ForgeInstaller::parsePromoEntry)
             // narrow to just applicable minecraft version
             .filter(entry -> entry.getMcVersion().equals(minecraftVersion))
             // ...and arrive at a map that has one or two entries for latest and/or recommended
@@ -348,12 +347,44 @@ public class ForgeInstaller {
 
         log.debug("Narrowed forge versions to {} and looking for {}", options, normalized);
 
-        final String result = options.get(normalized);
-        if (result != null) {
-            return result;
-        } else {
-            // ...otherwise need to fall back to what we have
-            return options.values().iterator().next();
+        if (!options.isEmpty()) {
+            final String result = options.get(normalized);
+            if (result != null) {
+                return result;
+            } else {
+                // ...otherwise need to fall back to what we have
+                return options.values().iterator().next();
+            }
         }
+        else {
+            throw new InvalidParameterException(String.format("Minecraft version %s not available from Forge", minecraftVersion));
+        }
+    }
+
+    private static PromotionsSlim loadPromotions() {
+        return fetch(URI.create("https://files.minecraftforge.net/maven/net/minecraftforge/forge/promotions_slim.json"))
+            .userAgentCommand("forge")
+            .toObject(PromotionsSlim.class)
+            .execute();
+    }
+
+    private String resolveMinecraftVersion(String minecraftVersion, PromotionsSlim promotionsSlim) {
+        if (minecraftVersion.equalsIgnoreCase(LATEST)) {
+            return promotionsSlim.getPromos().entrySet().stream()
+                .map(ForgeInstaller::parsePromoEntry)
+                // pick off the last entry, where order is significant since JSON parsing retains ordering
+                .reduce((lhs, rhs) -> rhs)
+                .map(promoEntry -> promoEntry.mcVersion)
+                .orElseThrow(() -> new GenericException("No versions were available in Forge promotions"));
+        } else {
+            return minecraftVersion;
+        }
+    }
+
+    private static PromoEntry parsePromoEntry(Entry<String, String> entry) {
+        // each entry is like
+        // "1.19-recommended": "41.1.0"
+        final String[] keyParts = entry.getKey().split("-", 2);
+        return new PromoEntry(keyParts[0], keyParts[1].toLowerCase(), entry.getValue());
     }
 }

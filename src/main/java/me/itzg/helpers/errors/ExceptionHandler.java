@@ -21,10 +21,15 @@ public class ExceptionHandler implements IExecutionExceptionHandler {
       ParseResult parseResult) {
 
     if (!mcImageHelper.isSilent()) {
-      log.error("'{}' command failed. Version is {}",
-          commandLine.getCommandName(),
-          McImageHelper.getVersion(),
-          e);
+      if (e instanceof InvalidParameterException) {
+        log.error("Invalid parameter provided for '{}' command: {}", commandLine.getCommandName(), e.getMessage());
+        log.debug("Invalid parameter details", e);
+      } else {
+        log.error("'{}' command failed. Version is {}",
+            commandLine.getCommandName(),
+            McImageHelper.getVersion(),
+            e);
+      }
     }
 
     final IExitCodeExceptionMapper mapper = commandLine.getExitCodeExceptionMapper();
