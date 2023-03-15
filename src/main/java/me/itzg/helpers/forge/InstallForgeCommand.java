@@ -1,5 +1,7 @@
 package me.itzg.helpers.forge;
 
+import static me.itzg.helpers.McImageHelper.VERSION_REGEX;
+
 import java.nio.file.Path;
 import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
@@ -13,15 +15,32 @@ import picocli.CommandLine.Spec;
 
 @Command(name = "install-forge", description = "Downloads and installs a requested version of Forge")
 public class InstallForgeCommand implements Callable<Integer> {
+    @Spec
+    CommandLine.Model.CommandSpec spec;
+
     @Option(names = {"--help","-h"}, usageHelp = true)
     boolean help;
 
-    public static final Pattern ALLOWED_FORGE_VERSION = Pattern.compile(
-        String.join("|", ForgeInstaller.LATEST, ForgeInstaller.RECOMMENDED, "\\d+(\\.\\d+)+"),
+    public static final Pattern ALLOWED_MINECRAFT_VERSION = Pattern.compile(
+        String.join("|", ForgeInstaller.LATEST, VERSION_REGEX),
         Pattern.CASE_INSENSITIVE
     );
 
-    @Option(names = "--minecraft-version", required = true)
+    public static final Pattern ALLOWED_FORGE_VERSION = Pattern.compile(
+        String.join("|", ForgeInstaller.LATEST, ForgeInstaller.RECOMMENDED, VERSION_REGEX),
+        Pattern.CASE_INSENSITIVE
+    );
+
+    @Option(names = "--minecraft-version", required = true, paramLabel = "VERSION",
+        defaultValue = "latest",
+        description = "'latest', which is the default, or a specific version"
+    )
+    public void setMinecraftVersion(String minecraftVersion) {
+        if (!ALLOWED_MINECRAFT_VERSION.matcher(minecraftVersion).matches()) {
+            throw new ParameterException(spec.commandLine(), "Invalid value for minecraft version: " + minecraftVersion);
+        }
+        this.minecraftVersion = minecraftVersion;
+    }
     String minecraftVersion;
 
     static class VersionOrInstaller {
