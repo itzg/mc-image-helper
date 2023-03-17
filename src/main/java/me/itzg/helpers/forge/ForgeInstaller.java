@@ -2,6 +2,7 @@ package me.itzg.helpers.forge;
 
 import static me.itzg.helpers.http.Fetch.fetch;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -24,6 +25,7 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidParameterException;
+import me.itzg.helpers.files.IoStreams;
 import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.files.ResultsFileWriter;
 import me.itzg.helpers.forge.model.PromotionsSlim;
@@ -41,6 +43,12 @@ public class ForgeInstaller {
         "Exec:\\s+(?<exec>.+)"
             + "|The server installed successfully, you should now be able to run the file (?<universalJar>.+)");
     public static final String MANIFEST_ID = "forge";
+
+    @AllArgsConstructor
+    private static class VersionPair {
+        String minecraft;
+        String forge;
+    }
 
     public void install(String minecraftVersion, String forgeVersion,
         Path outputDir, Path resultsFile,
@@ -70,8 +78,17 @@ public class ForgeInstaller {
             }
         }
         else {
-            resolvedMinecraftVersion = minecraftVersion;
-            resolvedForgeVersion = forgeInstaller.toString();
+            final VersionPair versions;
+            try {
+                versions = extractVersion(forgeInstaller);
+            } catch (IOException e) {
+                throw new GenericException("Failed to extract version from provided installer file", e);
+            }
+            if (versions == null) {
+                throw new GenericException("Failed to locate version from provided installer file");
+            }
+            resolvedMinecraftVersion = versions.minecraft;
+            resolvedForgeVersion = versions.forge;
         }
 
         final boolean needsInstall;
@@ -126,6 +143,26 @@ public class ForgeInstaller {
                 throw new RuntimeException("Failed to populate results file", e);
             }
         }
+    }
+
+    private VersionPair extractVersion(Path forgeInstaller) throws IOException {
+
+        // Extract version from installer jar's version.json file
+        // where top level "id" field looks like "1.12.2-forge-14.23.5.2859"
+
+        return IoStreams.readFileFromZip(forgeInstaller, "version.json", inputStream -> {
+            final ObjectNode parsed = ObjectMappers.defaultMapper()
+                .readValue(inputStream, ObjectNode.class);
+
+            final String id = parsed.get("id").asText("");
+
+            final String[] idParts = id.split("-");
+            if (idParts.length != 3 || !idParts[1].equals("forge")) {
+                throw new GenericException("Unexpected format of id from Forge installer's version.json: " + id);
+            }
+
+            return new VersionPair(idParts[0], idParts[2]);
+        });
     }
 
     private ForgeManifest loadManifest(Path outputDir) throws IOException {
