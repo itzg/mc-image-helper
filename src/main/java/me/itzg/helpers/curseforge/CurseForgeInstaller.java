@@ -733,7 +733,7 @@ public class CurseForgeInstaller {
                 }
             }
 
-            throw new GenericException("Modpack is missing manifest.json");
+            throw new GenericException("Modpack is missing manifest.json. Make sure to reference a non-server file.");
         }
     }
 
