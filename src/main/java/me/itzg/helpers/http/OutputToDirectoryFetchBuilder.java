@@ -60,11 +60,10 @@ public class OutputToDirectoryFetchBuilder extends FetchBuilderBase<OutputToDire
                 .doOnRequest(debugLogRequest(log, "file head fetch"))
                 .head()
                 .uri(uri())
-                .response()
-                .flatMap(resp ->
-                    notSuccess(resp) ? failedRequestMono(resp, "Extracting filename")
+                .responseSingle((resp, bodyMono) ->
+                    notSuccess(resp) ? failedRequestMono(resp, bodyMono, "Extracting filename")
                         : Mono.just(outputDirectory.resolve(extractFilename(resp)))
-                    )
+                )
                 .flatMap(outputFile ->
                     assembleFileDownload(client, outputFile)
                 )
@@ -84,12 +83,12 @@ public class OutputToDirectoryFetchBuilder extends FetchBuilderBase<OutputToDire
             .doOnRequest(debugLogRequest(log, "file fetch"))
             .get()
             .uri(uri())
-            .responseSingle((resp, byteBufMono) -> {
+            .responseSingle((resp, bodyMono) -> {
                 if (notSuccess(resp)) {
-                    return failedRequestMono(resp, "Downloading file");
+                    return failedRequestMono(resp, bodyMono, "Downloading file");
                 }
 
-                return byteBufMono.asInputStream()
+                return bodyMono.asInputStream()
                     .publishOn(Schedulers.boundedElastic())
                     .flatMap(inputStream -> {
                         try {

@@ -56,7 +56,7 @@ public class ObjectFetchBuilder<T> extends FetchBuilderBase<ObjectFetchBuilder<T
 
     private <R> Mono<R> handleResponse(HttpClientResponse resp, ByteBufMono bodyMono) {
         if (notSuccess(resp)) {
-            return failedRequestMono(resp, "Fetching object content");
+            return failedRequestMono(resp, bodyMono, "Fetching object content");
         }
         if (notExpectedContentType(resp)) {
             return failedContentTypeMono(resp);

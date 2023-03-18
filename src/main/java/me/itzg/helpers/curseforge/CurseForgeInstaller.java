@@ -4,6 +4,8 @@ import static java.util.Collections.emptySet;
 import static java.util.Objects.requireNonNull;
 import static me.itzg.helpers.curseforge.MoreCollections.safeStreamFrom;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
@@ -32,6 +34,7 @@ import me.itzg.helpers.curseforge.ExcludeIncludesContent.ExcludeIncludes;
 import me.itzg.helpers.curseforge.model.Category;
 import me.itzg.helpers.curseforge.model.CurseForgeFile;
 import me.itzg.helpers.curseforge.model.CurseForgeMod;
+import me.itzg.helpers.curseforge.model.CurseForgeResponse;
 import me.itzg.helpers.curseforge.model.GetCategoriesResponse;
 import me.itzg.helpers.curseforge.model.GetModFileResponse;
 import me.itzg.helpers.curseforge.model.GetModFilesResponse;
@@ -41,10 +44,12 @@ import me.itzg.helpers.curseforge.model.MinecraftModpackManifest;
 import me.itzg.helpers.curseforge.model.ModLoader;
 import me.itzg.helpers.curseforge.model.ModsSearchResponse;
 import me.itzg.helpers.errors.GenericException;
+import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.fabric.FabricLauncherInstaller;
 import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.files.ResultsFileWriter;
 import me.itzg.helpers.forge.ForgeInstaller;
+import me.itzg.helpers.http.FailedRequestException;
 import me.itzg.helpers.http.Fetch;
 import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.http.SharedFetch.Options;
@@ -369,11 +374,11 @@ public class CurseForgeInstaller {
         SharedFetch preparedFetch, UriBuilder uriBuilder, CategoryInfo categoryInfo,
         String modpackSlug
     ) {
-        log.debug("Reconciling exclude/includes from given {}", excludeIncludes);
-
         if (excludeIncludes == null) {
             return new ExcludeIncludeIds(emptySet(), emptySet());
         }
+
+        log.debug("Reconciling exclude/includes from given {}", excludeIncludes);
 
         final ExcludeIncludes specific =
             excludeIncludes.getModpacks() != null ? excludeIncludes.getModpacks().get(modpackSlug) : null;
@@ -679,7 +684,27 @@ public class CurseForgeInstaller {
             )
             .toObject(GetModFileResponse.class)
             .assemble()
+            .onErrorMap(FailedRequestException.class::isInstance, e -> {
+                final FailedRequestException fre = (FailedRequestException) e;
+                if (fre.getStatusCode() == 400) {
+                    if (isNotFoundResponse(fre.getBody())) {
+                        return new InvalidParameterException("Requested file not found for modpack", e);
+                    }
+                }
+                return e;
+            })
             .map(GetModFileResponse::getData);
+    }
+
+    private static boolean isNotFoundResponse(String body) {
+        try {
+            final CurseForgeResponse<Void> resp = ObjectMappers.defaultMapper().readValue(
+                body, new TypeReference<CurseForgeResponse<Void>>() {}
+            );
+            return resp.getError().startsWith("Error: 404");
+        } catch (JsonProcessingException e) {
+            throw new GenericException("Unable to parse error response", e);
+        }
     }
 
     private static Mono<CurseForgeMod> getModInfo(
@@ -733,7 +758,9 @@ public class CurseForgeInstaller {
                 }
             }
 
-            throw new GenericException("Modpack is missing manifest.json. Make sure to reference a non-server file.");
+            throw new InvalidParameterException(
+                "Modpack file is missing a manifest. Make sure to reference a non-server file."
+            );
         }
     }
 
