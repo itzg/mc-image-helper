@@ -21,6 +21,7 @@ import me.itzg.helpers.http.SharedFetch.Options;
 import me.itzg.helpers.json.ObjectMappers;
 import org.slf4j.Logger;
 import reactor.core.publisher.Mono;
+import reactor.netty.ByteBufMono;
 import reactor.netty.Connection;
 import reactor.netty.http.client.HttpClient;
 import reactor.netty.http.client.HttpClientRequest;
@@ -144,8 +145,10 @@ public class FetchBuilderBase<SELF extends FetchBuilderBase<SELF>> {
             );
     }
 
-    protected  <R> Mono<R> failedRequestMono(HttpClientResponse resp, String description) {
-        return Mono.error(new FailedRequestException(resp.status(), uri(), description));
+    protected  <R> Mono<R> failedRequestMono(HttpClientResponse resp, ByteBufMono bodyMono, String description) {
+        return (bodyMono != null ? bodyMono.asString() : Mono.just(""))
+            .defaultIfEmpty("")
+            .flatMap(body -> Mono.error(new FailedRequestException(resp.status(), uri(), body, description)));
     }
 
     protected static boolean notSuccess(HttpClientResponse resp) {

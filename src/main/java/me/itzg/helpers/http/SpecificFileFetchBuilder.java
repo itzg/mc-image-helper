@@ -106,7 +106,7 @@ public class SpecificFileFetchBuilder extends FetchBuilderBase<SpecificFileFetch
                     }
 
                     if (notSuccess(resp)) {
-                        return failedRequestMono(resp, "Trying to retrieve file");
+                        return failedRequestMono(resp, bodyMono, "Trying to retrieve file");
                     }
 
                     if (notExpectedContentType(resp)) {
