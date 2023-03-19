@@ -8,6 +8,8 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import me.itzg.helpers.files.ResultsFileWriter;
 import me.itzg.helpers.http.PathOrUri;
 import me.itzg.helpers.http.PathOrUriConverter;
@@ -43,7 +45,7 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
     @Option(names = "--file-id")
     Integer fileId;
 
-    @ArgGroup
+    @ArgGroup(exclusive = false)
     ExcludeIncludeArgs excludeIncludeArgs = new ExcludeIncludeArgs();
 
     static class ExcludeIncludeArgs {
@@ -146,29 +148,67 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
     }
 
     private ExcludeIncludesContent loadExcludeIncludes() throws IOException {
-        if (excludeIncludeArgs.listed != null) {
-            return new ExcludeIncludesContent()
-                .setGlobalExcludes(excludeIncludeArgs.listed.excludedMods)
-                .setGlobalForceIncludes(excludeIncludeArgs.listed.forceIncludeMods);
-        }
-        else if (excludeIncludeArgs.exludeIncludeFile != null) {
+        final ExcludeIncludesContent fromFile =
+            excludeIncludeArgs.exludeIncludeFile != null ? loadExcludeIncludesFile()
+                : null;
 
-            if (excludeIncludeArgs.exludeIncludeFile.getPath() != null) {
-                return ObjectMappers.defaultMapper()
-                    .readValue(excludeIncludeArgs.exludeIncludeFile.getPath().toFile(),
-                        ExcludeIncludesContent.class
-                    );
+        if (excludeIncludeArgs.listed != null) {
+            if (fromFile != null) {
+                // Merge listed global ones with content from file
+
+                return new ExcludeIncludesContent()
+                    .setGlobalExcludes(
+                        mergeSets(
+                            excludeIncludeArgs.listed.excludedMods,
+                            fromFile.getGlobalExcludes()
+                        ))
+                    .setGlobalForceIncludes(
+                        mergeSets(
+                            excludeIncludeArgs.listed.forceIncludeMods,
+                            fromFile.getGlobalForceIncludes()
+                        )
+                    )
+                    .setModpacks(fromFile.getModpacks());
             }
             else {
-                return fetch(excludeIncludeArgs.exludeIncludeFile.getUri())
-                    .toObject(ExcludeIncludesContent.class)
-                    .acceptContentTypes(null)
-                    .execute();
+                return new ExcludeIncludesContent()
+                    .setGlobalExcludes(excludeIncludeArgs.listed.excludedMods)
+                    .setGlobalForceIncludes(excludeIncludeArgs.listed.forceIncludeMods);
+
             }
         }
         else {
             return null;
         }
+    }
+
+    private Set<String> mergeSets(Set<String> s1, Set<String> s2) {
+        if (s1 == null) {
+            return s2;
+        }
+        if (s2 == null) {
+            return s1;
+        }
+        return Stream.concat(
+            s1.stream(),
+            s2.stream()
+        ).collect(Collectors.toSet());
+    }
+
+    private ExcludeIncludesContent loadExcludeIncludesFile() throws IOException {
+        if (excludeIncludeArgs.exludeIncludeFile.getPath() != null) {
+            return ObjectMappers.defaultMapper()
+                .readValue(excludeIncludeArgs.exludeIncludeFile.getPath().toFile(),
+                    ExcludeIncludesContent.class
+                );
+        }
+        else {
+            return fetch(excludeIncludeArgs.exludeIncludeFile.getUri())
+                .toObject(ExcludeIncludesContent.class)
+                .acceptContentTypes(null)
+                .execute();
+        }
+
     }
 
 }
