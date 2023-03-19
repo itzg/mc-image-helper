@@ -16,7 +16,7 @@ public class SharedFetchArgs {
         optionsBuilder.responseTimeout(timeout);
     }
 
-    @Option(names = "--tls-handshake-timeout", defaultValue = "${env:FETCH_TLS_HANDSHAKE_TIMEOUT:-PT20S}",
+    @Option(names = "--tls-handshake-timeout", defaultValue = "${env:FETCH_TLS_HANDSHAKE_TIMEOUT:-PT30S}",
         description = "Default: ${DEFAULT-VALUE}"
     )
     public void setTlsHandshakeTimeout(Duration timeout) {
