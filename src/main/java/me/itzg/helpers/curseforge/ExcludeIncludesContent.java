@@ -11,18 +11,18 @@ import lombok.Data;
 public class ExcludeIncludesContent {
 
     @JsonPropertyDescription("Mods by slug|id to exclude for all modpacks")
-    Set<String> globalExcludes;
+    private Set<String> globalExcludes;
     @JsonPropertyDescription("Mods by slug|id to force include for all modpacks")
-    Set<String> globalForceIncludes;
+    private Set<String> globalForceIncludes;
 
     @JsonPropertyDescription("Specific exclude/includes by modpack slug")
-    Map<String, ExcludeIncludes> modpacks;
+    private Map<String, ExcludeIncludes> modpacks;
 
     @Data
     public static class ExcludeIncludes {
         @JsonPropertyDescription("Mods by slug|id to exclude for this modpack")
-        Set<String> excludes;
+        private Set<String> excludes;
         @JsonPropertyDescription("Mods by slug|id to force include for this modpack")
-        Set<String> forceIncludes;
+        private Set<String> forceIncludes;
     }
 }
