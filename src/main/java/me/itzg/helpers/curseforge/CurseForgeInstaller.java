@@ -83,14 +83,6 @@ public class CurseForgeInstaller {
     @Setter
     private boolean forceSynchronize;
 
-    @Getter
-    @Setter
-    private Set<String> forceIncludeMods = emptySet();
-
-    @Getter
-    @Setter
-    private Set<String> excludedModIds = emptySet();
-
     @Getter @Setter
     private ExcludeIncludesContent excludeIncludes;
 

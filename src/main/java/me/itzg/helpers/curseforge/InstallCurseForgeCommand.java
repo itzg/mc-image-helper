@@ -178,7 +178,7 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
             }
         }
         else {
-            return null;
+            return fromFile;
         }
     }
 
