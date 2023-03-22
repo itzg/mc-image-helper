@@ -8,7 +8,7 @@ public class SharedFetchArgs {
 
     private final Options.OptionsBuilder optionsBuilder = Options.builder();
 
-    @Option(names = "--http-response-timeout", defaultValue = "${env:FETCH_RESPONSE_TIMEOUT:-PT20S}",
+    @Option(names = "--http-response-timeout", defaultValue = "${env:FETCH_RESPONSE_TIMEOUT:-PT30S}",
         description = "The response timeout to apply to HTTP operations. Parsed from ISO-8601 format. "
             + "Default: ${DEFAULT-VALUE}"
     )
