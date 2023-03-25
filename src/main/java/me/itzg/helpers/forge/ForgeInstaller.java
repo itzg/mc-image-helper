@@ -13,7 +13,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -165,14 +164,22 @@ public class ForgeInstaller {
             return new VersionPair(idParts[0], idParts[2]);
         });
 
-        if (vp == null) {
-            log.debug("version.json was not found inside the installer, falling back to assuming the version in the filename");
-            final String[] idParts = forgeInstaller.getFileName().toString().split("-");
-            log.debug("here are the parts in the filename: {}", Arrays.toString(idParts));
-            return new VersionPair(idParts[1], idParts[2]);
-        }
+        if (vp != null) { return vp; }
 
-        return vp;
+        log.debug("version.json was not found inside the installer, falling back to install_profile.json");
+        return IoStreams.readFileFromZip(forgeInstaller, "install_profile.json", inputStream -> {
+            final ObjectNode parsed = ObjectMappers.defaultMapper()
+                .readValue(inputStream, ObjectNode.class);
+
+            final String id = parsed.get("versionInfo").get("id").asText("");
+
+            final String[] idParts = id.replace("Forge", "").split("-");
+            if (idParts.length != 2 && idParts.length != 3) {
+                throw new GenericException("Unexpected format of id from Forge installer's install_profile.json: " + id);
+            }
+
+            return new VersionPair(idParts[0], idParts[1]);
+        });
     }
 
     private ForgeManifest loadManifest(Path outputDir) throws IOException {
