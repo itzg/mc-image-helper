@@ -2,6 +2,7 @@ package me.itzg.helpers.forge;
 
 import static me.itzg.helpers.http.Fetch.fetch;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -43,6 +44,8 @@ public class ForgeInstaller {
         "Exec:\\s+(?<exec>.+)"
             + "|The server installed successfully, you should now be able to run the file (?<universalJar>.+)");
     public static final String MANIFEST_ID = "forge";
+
+    private static final Pattern OLD_FORGE_ID_VERSION = Pattern.compile("Forge(.+)");
 
     @AllArgsConstructor
     private static class VersionPair {
@@ -148,9 +151,9 @@ public class ForgeInstaller {
     private VersionPair extractVersion(Path forgeInstaller) throws IOException {
 
         // Extract version from installer jar's version.json file
-        // where top level "id" field looks like "1.12.2-forge-14.23.5.2859"
+        // where top level "id" field is used
 
-        return IoStreams.readFileFromZip(forgeInstaller, "version.json", inputStream -> {
+        final VersionPair fromVersionJson = IoStreams.readFileFromZip(forgeInstaller, "version.json", inputStream -> {
             final ObjectNode parsed = ObjectMappers.defaultMapper()
                 .readValue(inputStream, ObjectNode.class);
 
@@ -162,6 +165,37 @@ public class ForgeInstaller {
             }
 
             return new VersionPair(idParts[0], idParts[2]);
+        });
+        if (fromVersionJson != null) {
+            return fromVersionJson;
+        }
+
+        return IoStreams.readFileFromZip(forgeInstaller, "install_profile.json", inputStream -> {
+            final ObjectNode parsed = ObjectMappers.defaultMapper()
+                .readValue(inputStream, ObjectNode.class);
+
+            final JsonNode idNode = parsed.path("versionInfo").path("id");
+            if (idNode.isTextual()) {
+                // such as "1.7.10-Forge10.13.4.1614-1.7.10"
+                final String[] idParts = idNode.asText().split("-");
+
+                if (idParts.length == 3) {
+                    final Matcher m = OLD_FORGE_ID_VERSION.matcher(idParts[1]);
+                    if (m.matches()) {
+                        return new VersionPair(idParts[0], m.group(1));
+                    }
+                    else {
+                        throw new GenericException("Unexpected format of id from Forge installer's install_profile.json: " + idNode.asText());
+                    }
+                }
+                else {
+                    throw new GenericException("Unexpected format of id from Forge installer's install_profile.json: " + idNode.asText());
+                }
+            }
+            else {
+                throw new GenericException("install_profile.json seems to be missing versionInfo.id");
+
+            }
         });
     }
 
