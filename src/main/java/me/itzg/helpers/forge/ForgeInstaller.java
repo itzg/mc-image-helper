@@ -179,7 +179,7 @@ public class ForgeInstaller {
                 // such as "1.7.10-Forge10.13.4.1614-1.7.10"
                 final String[] idParts = idNode.asText().split("-");
 
-                if (idParts.length == 3) {
+                if (idParts.length >= 2) {
                     final Matcher m = OLD_FORGE_ID_VERSION.matcher(idParts[1]);
                     if (m.matches()) {
                         return new VersionPair(idParts[0], m.group(1));
