@@ -13,6 +13,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -150,7 +151,7 @@ public class ForgeInstaller {
         // Extract version from installer jar's version.json file
         // where top level "id" field looks like "1.12.2-forge-14.23.5.2859"
 
-        return IoStreams.readFileFromZip(forgeInstaller, "version.json", inputStream -> {
+        final VersionPair vp = IoStreams.readFileFromZip(forgeInstaller, "version.json", inputStream -> {
             final ObjectNode parsed = ObjectMappers.defaultMapper()
                 .readValue(inputStream, ObjectNode.class);
 
@@ -163,6 +164,15 @@ public class ForgeInstaller {
 
             return new VersionPair(idParts[0], idParts[2]);
         });
+
+        if (vp == null) {
+            log.debug("version.json was not found inside the installer, falling back to assuming the version in the filename");
+            final String[] idParts = forgeInstaller.getFileName().toString().split("-");
+            log.debug("here are the parts in the filename: {}", Arrays.toString(idParts));
+            return new VersionPair(idParts[1], idParts[2]);
+        }
+
+        return vp;
     }
 
     private ForgeManifest loadManifest(Path outputDir) throws IOException {
