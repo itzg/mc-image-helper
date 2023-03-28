@@ -12,6 +12,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -69,6 +70,8 @@ public class CurseForgeInstaller {
     public static final int LEVEL_DAT_SUFFIX_LEN = LEVEL_DAT_SUFFIX.length();
     public static final String CATEGORY_SLUG_MODPACKS = "modpacks";
 
+    private static final Duration QUERY_CACHE_RESOLUTION = Duration.ofMinutes(5);
+
     private final Path outputDir;
     private final Path resultsFile;
 
@@ -115,8 +118,10 @@ public class CurseForgeInstaller {
             final CategoryInfo categoryInfo = loadCategoryInfo(preparedFetch, uriBuilder);
 
             final ModsSearchResponse searchResponse = preparedFetch.fetch(
-                    uriBuilder.resolve("/mods/search?gameId={gameId}&slug={slug}&classId={classId}",
-                        MINECRAFT_GAME_ID, slug, categoryInfo.modpackClassId
+                    uriBuilder.resolve("/mods/search?gameId={gameId}&slug={slug}&classId={classId}&latest={ts}",
+                        MINECRAFT_GAME_ID, slug, categoryInfo.modpackClassId,
+                        // to ensure search results for new modpacks aren't cached
+                        System.currentTimeMillis() / QUERY_CACHE_RESOLUTION.toMillis()
                     )
                 )
                 .toObject(ModsSearchResponse.class)
@@ -246,9 +251,10 @@ public class CurseForgeInstaller {
     ) {
         // NOTE latestFiles in mod is only one or two files, so retrieve the full list instead
         final GetModFilesResponse resp = preparedFetch.fetch(
-                // 'latest' parameter is not recognized by the API but rather used to force it not to return
-                // a cached listing
-                uriBuilder.resolve("/mods/{modId}/files?latest={ts}", mod.getId(), System.currentTimeMillis())
+                uriBuilder.resolve("/mods/{modId}/files?latest={ts}", mod.getId(),
+                    // Force query to not return a cached listing
+                    System.currentTimeMillis()/ QUERY_CACHE_RESOLUTION.toMillis()
+                )
             )
             .toObject(GetModFilesResponse.class)
             .execute();
