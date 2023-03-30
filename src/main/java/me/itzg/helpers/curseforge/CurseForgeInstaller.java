@@ -594,9 +594,11 @@ public class CurseForgeInstaller {
                             projectID, fileID
                         );
 
-                        if (!cfFile.isAvailable()) {
-                            log.warn("The file {} from {} is not available for download, so it will be skipped",
-                                cfFile.getDisplayName(), modInfo.getName());
+                        if (cfFile.getDownloadUrl() == null) {
+                            log.warn("The file {} from {} did not provide a download URL, so it will be skipped. Metadata retrieved from {}",
+                                cfFile.getDisplayName(), modInfo.getName(),
+                                uriBuilder.resolve("/mods/{modId}/files/{fileId}", projectID, fileID)
+                                );
                             return Mono.empty();
                         }
 
