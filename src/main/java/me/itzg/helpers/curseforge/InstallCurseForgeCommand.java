@@ -24,6 +24,7 @@ import picocli.CommandLine.Option;
     SchemasCommand.class
 })
 public class InstallCurseForgeCommand implements Callable<Integer> {
+
     @Option(names = {"--help","-h"}, usageHelp = true)
     boolean help;
 
@@ -44,6 +45,16 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
 
     @Option(names = "--file-id")
     Integer fileId;
+
+    @Option(names = "--api-base-url", defaultValue = "${env:CF_API_BASE_URL}",
+        description = "Allows for overriding the CurseForge Eternal API used")
+    String apiBaseUrl;
+
+    @Option(names = "--api-key", defaultValue = "${env:" + CurseForgeInstaller.CF_API_KEY_VAR + "}",
+        description = "An API key allocated from the Eternal developer console at "
+            + CurseForgeInstaller.ETERNAL_DEVELOPER_CONSOLE_URL
+    )
+    String apiKey;
 
     @ArgGroup(exclusive = false)
     ExcludeIncludeArgs excludeIncludeArgs = new ExcludeIncludeArgs();
@@ -140,7 +151,12 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
             .setParallelism(parallelDownloads)
             .setLevelFrom(levelFrom)
             .setOverridesSkipExisting(overridesSkipExisting)
-            .setSharedFetchOptions(sharedFetchArgs.options());
+            .setSharedFetchOptions(sharedFetchArgs.options())
+            .setApiKey(apiKey);
+
+        if (apiBaseUrl != null) {
+            installer.setApiBaseUrl(apiBaseUrl);
+        }
 
         installer.install(slug, filenameMatcher, fileId);
 

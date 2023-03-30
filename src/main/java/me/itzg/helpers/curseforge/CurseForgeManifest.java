@@ -10,6 +10,7 @@ import me.itzg.helpers.files.BaseManifest;
 @Jacksonized
 public class CurseForgeManifest extends BaseManifest {
 
+    private String slug;
     private int modId;
     private int fileId;
     private String fileName;

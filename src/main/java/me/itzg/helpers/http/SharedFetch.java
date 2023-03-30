@@ -43,10 +43,14 @@ public class SharedFetch implements AutoCloseable {
         final String fetchSessionId = UUID.randomUUID().toString();
 
         reactiveClient = HttpClient.create()
-            .headers(headers ->
-                headers
-                    .set(HttpHeaderNames.USER_AGENT.toString(), userAgent)
-                    .set("x-fetch-session", fetchSessionId)
+            .headers(headers -> {
+                    headers
+                        .set(HttpHeaderNames.USER_AGENT.toString(), userAgent)
+                        .set("x-fetch-session", fetchSessionId);
+                    if (options.getExtraHeaders() != null) {
+                        options.getExtraHeaders().forEach(headers::set);
+                    }
+                }
             )
             // Reference https://projectreactor.io/docs/netty/release/reference/index.html#response-timeout
             .responseTimeout(options.getResponseTimeout())
@@ -86,5 +90,18 @@ public class SharedFetch implements AutoCloseable {
         private final Duration tlsHandshakeTimeout
             // double the Netty default
             = Duration.ofSeconds(20);
+
+        private final Map<String,String> extraHeaders;
+
+        public Options withHeader(String key, String value) {
+            final Map<String, String> newHeaders = extraHeaders != null ?
+                new HashMap<>(extraHeaders) : new HashMap<>();
+            newHeaders.put(key, value);
+
+            return new Options(
+                responseTimeout, tlsHandshakeTimeout,
+                newHeaders
+            );
+        }
     }
 }
