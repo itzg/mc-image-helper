@@ -12,7 +12,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -20,6 +19,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -64,20 +64,25 @@ import reactor.core.scheduler.Schedulers;
 @Slf4j
 public class CurseForgeInstaller {
 
+    public static final String CF_API_KEY_VAR = "CF_API_KEY";
+    public static final String ETERNAL_DEVELOPER_CONSOLE_URL = "https://console.curseforge.com/";
     private static final String MINECRAFT_GAME_ID = "432";
     public static final String CURSEFORGE_ID = "curseforge";
     public static final String LEVEL_DAT_SUFFIX = "/level.dat";
     public static final int LEVEL_DAT_SUFFIX_LEN = LEVEL_DAT_SUFFIX.length();
     public static final String CATEGORY_SLUG_MODPACKS = "modpacks";
 
-    private static final Duration QUERY_CACHE_RESOLUTION = Duration.ofMinutes(5);
+    private static final String API_KEY_HEADER = "x-api-key";
 
     private final Path outputDir;
     private final Path resultsFile;
 
-    @Getter
-    @Setter
-    private String apiBaseUrl = "https://api.curse.tools/v1/cf";
+    @Getter @Setter
+    private String apiBaseUrl = "https://api.curseforge.com/v1";
+
+    @Getter @Setter
+    private String apiKey;
+
     @Getter
     @Setter
     private int parallelism = 4;
@@ -108,20 +113,37 @@ public class CurseForgeInstaller {
         requireNonNull(outputDir, "outputDir is required");
         requireNonNull(slug, "slug is required");
 
+        final CurseForgeManifest manifest = Manifests.load(outputDir, CURSEFORGE_ID, CurseForgeManifest.class);
+        // to adapt to previous copies of manifest
+        trimLevelsContent(manifest);
+
+        if (apiKey == null) {
+            if (manifest != null) {
+                log.warn("API key is not set, so will re-use previous modpack installation of {}",
+                    manifest.getSlug() != null ? manifest.getSlug() : "Project ID "+manifest.getModId());
+                log.warn("Obtain an API key from " + ETERNAL_DEVELOPER_CONSOLE_URL
+                    + " and set the environment variable "+CF_API_KEY_VAR+" in order to restore full functionality.");
+                return;
+            }
+            else {
+                throw new InvalidParameterException("API key is not set. Obtain an API key from " + ETERNAL_DEVELOPER_CONSOLE_URL
+                    + " and set the environment variable "+CF_API_KEY_VAR);
+            }
+        }
+
         final UriBuilder uriBuilder = UriBuilder.withBaseUrl(apiBaseUrl);
 
         try (SharedFetch preparedFetch = Fetch.sharedFetch("install-curseforge",
-            sharedFetchOptions != null ? sharedFetchOptions : Options.builder().build()
+            (sharedFetchOptions != null ? sharedFetchOptions : Options.builder().build())
+                .withHeader(API_KEY_HEADER, apiKey)
         )) {
             // TODO encapsulate preparedFetch and uriBuilder to avoid passing deep into call tree
 
             final CategoryInfo categoryInfo = loadCategoryInfo(preparedFetch, uriBuilder);
 
             final ModsSearchResponse searchResponse = preparedFetch.fetch(
-                    uriBuilder.resolve("/mods/search?gameId={gameId}&slug={slug}&classId={classId}&latest={ts}",
-                        MINECRAFT_GAME_ID, slug, categoryInfo.modpackClassId,
-                        // to ensure search results for new modpacks aren't cached
-                        System.currentTimeMillis() / QUERY_CACHE_RESOLUTION.toMillis()
+                    uriBuilder.resolve("/mods/search?gameId={gameId}&slug={slug}&classId={classId}",
+                        MINECRAFT_GAME_ID, slug, categoryInfo.modpackClassId
                     )
                 )
                 .toObject(ModsSearchResponse.class)
@@ -134,13 +156,13 @@ public class CurseForgeInstaller {
                 throw new GenericException("More than one mod found with slug=" + slug);
             }
             else {
-                processModPack(preparedFetch, uriBuilder, categoryInfo, searchResponse.getData().get(0), fileId, fileMatcher);
+                processModPack(preparedFetch, uriBuilder, manifest, categoryInfo, searchResponse.getData().get(0), fileId, fileMatcher);
             }
         }
     }
 
     private void processModPack(
-        SharedFetch preparedFetch, UriBuilder uriBuilder, CategoryInfo categoryInfo,
+        SharedFetch preparedFetch, UriBuilder uriBuilder, CurseForgeManifest prevManifest, CategoryInfo categoryInfo,
         CurseForgeMod mod, Integer fileId,
         String fileMatcher
     )
@@ -157,32 +179,29 @@ public class CurseForgeInstaller {
                 .block();
         }
 
-        final CurseForgeManifest manifest = Manifests.load(outputDir, CURSEFORGE_ID, CurseForgeManifest.class);
-        // to adapt to previous copies of manifest
-        trimLevelsContent(manifest);
-
         //noinspection DataFlowIssue handled by switchIfEmpty
-        if (manifest != null
-            && manifest.getFileId() == modFile.getId()
-            && manifest.getModId() == modFile.getModId()
+        if (prevManifest != null
+            && prevManifest.getFileId() == modFile.getId()
+            && (prevManifest.getModId() == modFile.getModId()
+            || Objects.equals(prevManifest.getSlug(), mod.getSlug()))
         ) {
             if (forceSynchronize) {
                 log.info("Requested force synchronize of {}", modFile.getDisplayName());
             }
-            else if (Manifests.allFilesPresent(outputDir, manifest)) {
+            else if (Manifests.allFilesPresent(outputDir, prevManifest)) {
                 log.info("Requested CurseForge modpack {} is already installed for {}",
                     modFile.getDisplayName(), mod.getName()
                 );
 
                 // Double-check the mod loader is still present and ready
-                if (manifest.getMinecraftVersion() != null && manifest.getModLoaderId() != null) {
-                    prepareModLoader(manifest.getModLoaderId(), manifest.getMinecraftVersion());
+                if (prevManifest.getMinecraftVersion() != null && prevManifest.getModLoaderId() != null) {
+                    prepareModLoader(prevManifest.getModLoaderId(), prevManifest.getMinecraftVersion());
                 }
 
                 // ...and write out level name from previous run
-                if (resultsFile != null && manifest.getLevelName() != null) {
+                if (resultsFile != null && prevManifest.getLevelName() != null) {
                     try (ResultsFileWriter resultsFileWriter = new ResultsFileWriter(resultsFile, true)) {
-                        resultsFileWriter.write("LEVEL", manifest.getLevelName());
+                        resultsFileWriter.write("LEVEL", prevManifest.getLevelName());
                     }
                 }
 
@@ -204,6 +223,7 @@ public class CurseForgeInstaller {
             );
 
         final CurseForgeManifest newManifest = CurseForgeManifest.builder()
+            .slug(mod.getSlug())
             .modId(modFile.getModId())
             .fileId(modFile.getId())
             .fileName(modFile.getDisplayName())
@@ -213,7 +233,7 @@ public class CurseForgeInstaller {
             .levelName(results.getLevelName())
             .build();
 
-        Manifests.cleanup(outputDir, manifest, newManifest, log);
+        Manifests.cleanup(outputDir, prevManifest, newManifest, log);
 
         Manifests.save(outputDir, CURSEFORGE_ID, newManifest);
 
@@ -251,9 +271,7 @@ public class CurseForgeInstaller {
     ) {
         // NOTE latestFiles in mod is only one or two files, so retrieve the full list instead
         final GetModFilesResponse resp = preparedFetch.fetch(
-                uriBuilder.resolve("/mods/{modId}/files?latest={ts}", mod.getId(),
-                    // Force query to not return a cached listing
-                    System.currentTimeMillis()/ QUERY_CACHE_RESOLUTION.toMillis()
+                uriBuilder.resolve("/mods/{modId}/files", mod.getId()
                 )
             )
             .toObject(GetModFilesResponse.class)
@@ -575,6 +593,12 @@ public class CurseForgeInstaller {
                             cfFile.getFileName(),
                             projectID, fileID
                         );
+
+                        if (!cfFile.isAvailable()) {
+                            log.warn("The file {} from {} is not available for download, so it will be skipped",
+                                cfFile.getDisplayName(), modInfo.getName());
+                            return Mono.empty();
+                        }
 
                         final Mono<Path> assembledDownload = preparedFetch.fetch(
                                 normalizeDownloadUrl(cfFile.getDownloadUrl())
