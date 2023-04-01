@@ -1,22 +1,18 @@
 package me.itzg.helpers.http;
 
+import lombok.extern.slf4j.Slf4j;
+import org.apache.hc.client5.http.HttpResponseException;
+import org.apache.hc.core5.http.*;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
+
 import java.io.IOException;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.hc.client5.http.HttpResponseException;
-import org.apache.hc.core5.http.ClassicHttpResponse;
-import org.apache.hc.core5.http.ContentType;
-import org.apache.hc.core5.http.Header;
-import org.apache.hc.core5.http.HttpStatus;
-import org.apache.hc.core5.http.ProtocolException;
-import org.apache.hc.core5.http.io.entity.EntityUtils;
 
 @Slf4j
 public class FilenameExtractor {
-  private static final Pattern HTTP_CONTENT_DISPOSITION =
-      Pattern.compile("(?<type>inline|attachment)(\\s*;\\s+filename=\"(?<filename>.+?)\")?");
+    private static final Pattern RFC_2047_ENCODED = Pattern.compile("=\\?UTF-8\\?Q\\?(.+)\\?=");
 
   private final LatchingUrisInterceptor interceptor;
 
@@ -29,13 +25,14 @@ public class FilenameExtractor {
           return null;
       }
 
-      final Matcher m = HTTP_CONTENT_DISPOSITION.matcher(headerValue);
+      final ContentType parsed = ContentType.parse(headerValue);
+      log.debug("Response has contentDisposition={}", headerValue);
+      final String filename = parsed.getParameter("filename");
+      final Matcher m = RFC_2047_ENCODED.matcher(filename);
       if (m.matches()) {
-          if (m.group("type").equals("attachment")) {
-              return m.group("filename");
-          }
+          return m.group(1);
       }
-      return null;
+      return filename;
   }
 
   public String extract(ClassicHttpResponse response) throws IOException, ProtocolException {
@@ -50,9 +47,7 @@ public class FilenameExtractor {
 
     String filename = null;
     if (contentDisposition != null) {
-      final ContentType parsed = ContentType.parse(contentDisposition.getValue());
-      log.debug("Response has contentDisposition={}", contentDisposition);
-      filename = parsed.getParameter("filename");
+      filename = filenameFromContentDisposition(contentDisposition.getValue());
     }
     if (filename == null) {
       final String path = interceptor.getLastRequestedUri().getPath();
