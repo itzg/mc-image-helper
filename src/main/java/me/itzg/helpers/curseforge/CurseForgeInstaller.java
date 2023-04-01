@@ -1,49 +1,14 @@
 package me.itzg.helpers.curseforge;
 
-import static java.util.Collections.emptySet;
-import static java.util.Objects.requireNonNull;
-import static me.itzg.helpers.curseforge.MoreCollections.safeStreamFrom;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import java.io.IOException;
-import java.net.URI;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.curseforge.ExcludeIncludesContent.ExcludeIncludes;
-import me.itzg.helpers.curseforge.model.Category;
-import me.itzg.helpers.curseforge.model.CurseForgeFile;
-import me.itzg.helpers.curseforge.model.CurseForgeMod;
-import me.itzg.helpers.curseforge.model.CurseForgeResponse;
-import me.itzg.helpers.curseforge.model.GetCategoriesResponse;
-import me.itzg.helpers.curseforge.model.GetModFileResponse;
-import me.itzg.helpers.curseforge.model.GetModFilesResponse;
-import me.itzg.helpers.curseforge.model.GetModResponse;
-import me.itzg.helpers.curseforge.model.ManifestFileRef;
-import me.itzg.helpers.curseforge.model.MinecraftModpackManifest;
-import me.itzg.helpers.curseforge.model.ModLoader;
-import me.itzg.helpers.curseforge.model.ModsSearchResponse;
+import me.itzg.helpers.curseforge.model.*;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.fabric.FabricLauncherInstaller;
@@ -59,6 +24,22 @@ import me.itzg.helpers.json.ObjectMappers;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
+
+import java.io.IOException;
+import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+
+import static java.util.Collections.emptySet;
+import static java.util.Objects.requireNonNull;
+import static me.itzg.helpers.curseforge.MoreCollections.safeStreamFrom;
 
 @RequiredArgsConstructor
 @Slf4j
@@ -117,7 +98,7 @@ public class CurseForgeInstaller {
         // to adapt to previous copies of manifest
         trimLevelsContent(manifest);
 
-        if (apiKey == null) {
+        if (apiKey == null || apiKey.isEmpty()) {
             if (manifest != null) {
                 log.warn("API key is not set, so will re-use previous modpack installation of {}",
                     manifest.getSlug() != null ? manifest.getSlug() : "Project ID "+manifest.getModId());
@@ -134,29 +115,35 @@ public class CurseForgeInstaller {
         final UriBuilder uriBuilder = UriBuilder.withBaseUrl(apiBaseUrl);
 
         try (SharedFetch preparedFetch = Fetch.sharedFetch("install-curseforge",
-            (sharedFetchOptions != null ? sharedFetchOptions : Options.builder().build())
-                .withHeader(API_KEY_HEADER, apiKey)
+                (sharedFetchOptions != null ? sharedFetchOptions : Options.builder().build())
+                        .withHeader(API_KEY_HEADER, apiKey)
         )) {
             // TODO encapsulate preparedFetch and uriBuilder to avoid passing deep into call tree
 
             final CategoryInfo categoryInfo = loadCategoryInfo(preparedFetch, uriBuilder);
 
             final ModsSearchResponse searchResponse = preparedFetch.fetch(
-                    uriBuilder.resolve("/mods/search?gameId={gameId}&slug={slug}&classId={classId}",
-                        MINECRAFT_GAME_ID, slug, categoryInfo.modpackClassId
+                            uriBuilder.resolve("/mods/search?gameId={gameId}&slug={slug}&classId={classId}",
+                                    MINECRAFT_GAME_ID, slug, categoryInfo.modpackClassId
+                            )
                     )
-                )
-                .toObject(ModsSearchResponse.class)
-                .execute();
+                    .toObject(ModsSearchResponse.class)
+                    .execute();
 
             if (searchResponse.getData() == null || searchResponse.getData().isEmpty()) {
                 throw new GenericException("No mods found with slug={}" + slug);
-            }
-            else if (searchResponse.getData().size() > 1) {
+            } else if (searchResponse.getData().size() > 1) {
                 throw new GenericException("More than one mod found with slug=" + slug);
-            }
-            else {
+            } else {
                 processModPack(preparedFetch, uriBuilder, manifest, categoryInfo, searchResponse.getData().get(0), fileId, fileMatcher);
+            }
+        } catch (FailedRequestException e) {
+            if (e.getStatusCode() == 403) {
+                throw new InvalidParameterException(String.format("Access to %s is forbidden. Make sure to set %s to a valid API key from %s",
+                        apiBaseUrl, CF_API_KEY_VAR, ETERNAL_DEVELOPER_CONSOLE_URL
+                ), e);
+            } else {
+                throw e;
             }
         }
     }
