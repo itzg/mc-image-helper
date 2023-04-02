@@ -1,20 +1,9 @@
 package me.itzg.helpers.http;
 
-import static io.netty.handler.codec.http.HttpHeaderNames.ACCEPT;
-import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpStatusClass;
 import io.netty.handler.codec.http.HttpUtil;
-import java.net.URI;
-import java.nio.file.Path;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.BiConsumer;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.http.SharedFetch.Options;
@@ -27,8 +16,21 @@ import reactor.netty.http.client.HttpClient;
 import reactor.netty.http.client.HttpClientRequest;
 import reactor.netty.http.client.HttpClientResponse;
 
+import java.net.URI;
+import java.nio.file.Path;
+import java.util.*;
+import java.util.function.BiConsumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import static io.netty.handler.codec.http.HttpHeaderNames.ACCEPT;
+import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
+
 @Slf4j
 public class FetchBuilderBase<SELF extends FetchBuilderBase<SELF>> {
+
+    private static final Pattern HEADER_KEYS_TO_REDACT = Pattern.compile("authorization|api-key", Pattern.CASE_INSENSITIVE);
 
     static class State {
         private final SharedFetch sharedFetch;
@@ -139,10 +141,28 @@ public class FetchBuilderBase<SELF extends FetchBuilderBase<SELF>> {
     protected static BiConsumer<? super HttpClientRequest, ? super Connection> debugLogRequest(
         Logger log, String operation
     ) {
-        return (req, connection) ->
-            log.debug("{}: uri={} headers={}",
-                operation.toUpperCase(), req.resourceUrl(), req.requestHeaders()
-            );
+        return (req, connection) -> {
+            if (log.isDebugEnabled()) {
+                log.debug("{}: uri={} headers={}",
+                        operation.toUpperCase(), req.resourceUrl(), applyHeaderRedactions(req.requestHeaders()
+                ));
+            }
+        };
+    }
+
+    private static List<String> applyHeaderRedactions(HttpHeaders headers) {
+        return headers.entries().stream()
+                .map(entry -> {
+                    final String key = entry.getKey();
+                    final Matcher m = HEADER_KEYS_TO_REDACT.matcher(key);
+                    if (m.find()) {
+                        return key + ": [redacted]";
+                    }
+                    else {
+                        return key + ": " + entry.getValue();
+                    }
+                })
+                .collect(Collectors.toList());
     }
 
     protected  <R> Mono<R> failedRequestMono(HttpClientResponse resp, ByteBufMono bodyMono, String description) {
