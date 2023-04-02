@@ -123,7 +123,7 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
     SharedFetchArgs sharedFetchArgs = new SharedFetchArgs();
 
     private static final Pattern PAGE_URL_PATTERN = Pattern.compile(
-        "https://www.curseforge.com/minecraft/modpacks/(?<slug>.+?)(/files(/(?<fileId>\\d+)?)?)?");
+        "https://(www|beta).curseforge.com/minecraft/modpacks/(?<slug>.+?)(/files(/(?<fileId>\\d+)?)?)?");
 
     @Override
     public Integer call() throws Exception {
