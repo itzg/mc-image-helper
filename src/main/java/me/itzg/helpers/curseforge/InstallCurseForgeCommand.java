@@ -1,15 +1,5 @@
 package me.itzg.helpers.curseforge;
 
-import static me.itzg.helpers.http.Fetch.fetch;
-
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import me.itzg.helpers.files.ResultsFileWriter;
 import me.itzg.helpers.http.PathOrUri;
 import me.itzg.helpers.http.PathOrUriConverter;
@@ -19,6 +9,17 @@ import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.Option;
+
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static me.itzg.helpers.http.Fetch.fetch;
 
 @Command(name = "install-curseforge", subcommands = {
     SchemasCommand.class
@@ -45,6 +46,12 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
 
     @Option(names = "--file-id")
     Integer fileId;
+
+    @Option(names = "--modpack-zip", paramLabel = "PATH",
+        description = "Path to a pre-downloaded modpack client zip file that can be used when modpack author disallows automation.",
+        defaultValue = "${env:CF_MODPACK_ZIP}"
+    )
+    Path modpackZip;
 
     @Option(names = "--api-base-url", defaultValue = "${env:CF_API_BASE_URL}",
         description = "Allows for overriding the CurseForge Eternal API used")
@@ -139,7 +146,12 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
         }
 
         if (slug == null) {
-            System.err.println("A modpack page URL or slug identifier is required");
+            if (modpackZip != null) {
+                System.err.println("A modpack page URL or slug identifier is required even with a provided modpack zip");
+            }
+            else {
+                System.err.println("A modpack page URL or slug identifier is required");
+            }
             return ExitCode.USAGE;
         }
 
@@ -158,7 +170,12 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
             installer.setApiBaseUrl(apiBaseUrl);
         }
 
-        installer.install(slug, filenameMatcher, fileId);
+        if (modpackZip != null) {
+            installer.install(modpackZip, slug);
+        }
+        else {
+            installer.install(slug, filenameMatcher, fileId);
+        }
 
         return ExitCode.OK;
     }
