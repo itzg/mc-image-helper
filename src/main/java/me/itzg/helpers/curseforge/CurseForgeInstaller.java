@@ -200,6 +200,12 @@ public class CurseForgeInstaller {
         }
 
         //noinspection DataFlowIssue handled by switchIfEmpty
+        if (modFile.getDownloadUrl() == null) {
+            throw new GenericException(String.format("The modpack metadata provided by CurseForge API has a null/missing download URL. Please report this issue to https://support.curseforge.com/support/home with Game ID: %d Project ID: %d, File ID: %d",
+                    modFile.getGameId(), modFile.getModId(), modFile.getId()
+                    ));
+        }
+
         log.info("Processing modpack '{}' ({}) @ {}:{}", modFile.getDisplayName(),
             mod.getSlug(), modFile.getModId(), modFile.getId());
         final ModPackResults results =
