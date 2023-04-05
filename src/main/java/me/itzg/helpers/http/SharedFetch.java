@@ -1,18 +1,21 @@
 package me.itzg.helpers.http;
 
 import io.netty.handler.codec.http.HttpHeaderNames;
-import java.net.URI;
-import java.time.Duration;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
 import lombok.Builder;
 import lombok.Builder.Default;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.McImageHelper;
+import me.itzg.helpers.errors.GenericException;
 import reactor.netty.http.Http11SslContextSpec;
 import reactor.netty.http.client.HttpClient;
+import reactor.netty.resources.ConnectionProvider;
+
+import java.net.URI;
+import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 /**
  * Provides an efficient way to make multiple web requests since a single client
@@ -42,7 +45,17 @@ public class SharedFetch implements AutoCloseable {
 
         final String fetchSessionId = UUID.randomUUID().toString();
 
-        reactiveClient = HttpClient.create()
+        final ConnectionProvider.Builder connectionProviderBuilder = ConnectionProvider.create("custom")
+            .mutate();
+        if (connectionProviderBuilder == null) {
+            throw new GenericException("Unable to mutate default connection provider");
+        }
+
+        final ConnectionProvider connectionProvider = connectionProviderBuilder
+            .maxIdleTime(options.getMaxIdleTimeout())
+            .build();
+
+        reactiveClient = HttpClient.create(connectionProvider)
             .headers(headers -> {
                     headers
                         .set(HttpHeaderNames.USER_AGENT.toString(), userAgent)
@@ -81,6 +94,8 @@ public class SharedFetch implements AutoCloseable {
     @Getter
     public static class Options {
 
+        public static final Duration DEFAULT_MAX_IDLE_TIMEOUT = Duration.ofSeconds(30);
+
         @Default
         private final Duration responseTimeout
             // not set by default
@@ -91,6 +106,10 @@ public class SharedFetch implements AutoCloseable {
             // double the Netty default
             = Duration.ofSeconds(20);
 
+        @Default
+        private final Duration maxIdleTimeout
+            = DEFAULT_MAX_IDLE_TIMEOUT;
+
         private final Map<String,String> extraHeaders;
 
         public Options withHeader(String key, String value) {
@@ -99,7 +118,7 @@ public class SharedFetch implements AutoCloseable {
             newHeaders.put(key, value);
 
             return new Options(
-                responseTimeout, tlsHandshakeTimeout,
+                responseTimeout, tlsHandshakeTimeout, maxIdleTimeout,
                 newHeaders
             );
         }
