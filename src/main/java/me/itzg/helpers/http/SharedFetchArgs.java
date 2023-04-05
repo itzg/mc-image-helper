@@ -1,8 +1,9 @@
 package me.itzg.helpers.http;
 
-import java.time.Duration;
 import me.itzg.helpers.http.SharedFetch.Options;
 import picocli.CommandLine.Option;
+
+import java.time.Duration;
 
 public class SharedFetchArgs {
 
@@ -21,6 +22,11 @@ public class SharedFetchArgs {
     )
     public void setTlsHandshakeTimeout(Duration timeout) {
         optionsBuilder.tlsHandshakeTimeout(timeout);
+    }
+
+    @Option(names = "--connection-pool-max-idle-timeout", defaultValue = "${env:FETCH_CONNECTION_POOL_MAX_IDLE_TIMEOUT}")
+    public void setConnectionPoolMaxIdleTimeout(Duration timeout) {
+        optionsBuilder.maxIdleTimeout(timeout);
     }
 
     public Options options() {
