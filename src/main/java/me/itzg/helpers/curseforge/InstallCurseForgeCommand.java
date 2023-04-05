@@ -37,8 +37,9 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
 
     @Option(names = "--modpack-page-url", paramLabel = "URL",
         description = "URL of a modpack page such as "
-        + "https://www.curseforge.com/minecraft/modpacks/all-the-mods-8"
-        + "or a file page https://www.curseforge.com/minecraft/modpacks/all-the-mods-8/files/4248390")
+            + "%nhttps://www.curseforge.com/minecraft/modpacks/all-the-mods-8"
+            + "or a file's page " +
+            "%nhttps://www.curseforge.com/minecraft/modpacks/all-the-mods-8/files/4248390")
     String pageUrl;
 
     @Option(names = "--slug", description = "The short-URL identifier")
@@ -48,8 +49,9 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
     Integer fileId;
 
     @Option(names = "--modpack-zip", paramLabel = "PATH",
-        description = "Path to a pre-downloaded modpack client zip file that can be used when modpack author disallows automation.",
-        defaultValue = "${env:CF_MODPACK_ZIP}"
+        description = "Path to a pre-downloaded modpack client zip file that can be used when modpack author disallows automation." +
+            "%nCan also be passed via " + CurseForgeInstaller.MODPACK_ZIP_VAR,
+        defaultValue = "${env:" + CurseForgeInstaller.MODPACK_ZIP_VAR + "}"
     )
     Path modpackZip;
 
@@ -57,9 +59,10 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
         description = "Allows for overriding the CurseForge Eternal API used")
     String apiBaseUrl;
 
-    @Option(names = "--api-key", defaultValue = "${env:" + CurseForgeInstaller.CF_API_KEY_VAR + "}",
+    @Option(names = "--api-key", defaultValue = "${env:" + CurseForgeInstaller.API_KEY_VAR + "}",
         description = "An API key allocated from the Eternal developer console at "
-            + CurseForgeInstaller.ETERNAL_DEVELOPER_CONSOLE_URL
+            + CurseForgeInstaller.ETERNAL_DEVELOPER_CONSOLE_URL +
+            "%nCan also be passed via " + CurseForgeInstaller.API_KEY_VAR
     )
     String apiKey;
 
@@ -123,7 +126,7 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
     SharedFetchArgs sharedFetchArgs = new SharedFetchArgs();
 
     private static final Pattern PAGE_URL_PATTERN = Pattern.compile(
-        "https://(www|beta).curseforge.com/minecraft/modpacks/(?<slug>.+?)(/files(/(?<fileId>\\d+)?)?)?");
+        "https://(www|beta)\\.curseforge\\.com/minecraft/modpacks/(?<slug>.+?)(/files(/(?<fileId>\\d+)?)?)?");
 
     @Override
     public Integer call() throws Exception {
