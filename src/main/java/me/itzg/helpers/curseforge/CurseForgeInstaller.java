@@ -46,7 +46,9 @@ import static me.itzg.helpers.curseforge.MoreCollections.safeStreamFrom;
 @Slf4j
 public class CurseForgeInstaller {
 
-    public static final String CF_API_KEY_VAR = "CF_API_KEY";
+    public static final String API_KEY_VAR = "CF_API_KEY";
+    public static final String MODPACK_ZIP_VAR = "CF_MODPACK_ZIP";
+
     public static final String ETERNAL_DEVELOPER_CONSOLE_URL = "https://console.curseforge.com/";
     private static final String MINECRAFT_GAME_ID = "432";
     public static final String CURSEFORGE_ID = "curseforge";
@@ -113,12 +115,12 @@ public class CurseForgeInstaller {
                 log.warn("API key is not set, so will re-use previous modpack installation of {}",
                     manifest.getSlug() != null ? manifest.getSlug() : "Project ID "+manifest.getModId());
                 log.warn("Obtain an API key from " + ETERNAL_DEVELOPER_CONSOLE_URL
-                    + " and set the environment variable "+CF_API_KEY_VAR+" in order to restore full functionality.");
+                    + " and set the environment variable "+ API_KEY_VAR +" in order to restore full functionality.");
                 return;
             }
             else {
                 throw new InvalidParameterException("API key is not set. Obtain an API key from " + ETERNAL_DEVELOPER_CONSOLE_URL
-                    + " and set the environment variable "+CF_API_KEY_VAR);
+                    + " and set the environment variable "+ API_KEY_VAR);
             }
         }
 
@@ -142,7 +144,7 @@ public class CurseForgeInstaller {
         } catch (FailedRequestException e) {
             if (e.getStatusCode() == 403) {
                 throw new InvalidParameterException(String.format("Access to %s is forbidden. Make sure to set %s to a valid API key from %s",
-                        apiBaseUrl, CF_API_KEY_VAR, ETERNAL_DEVELOPER_CONSOLE_URL
+                        apiBaseUrl, API_KEY_VAR, ETERNAL_DEVELOPER_CONSOLE_URL
                 ), e);
             } else {
                 throw e;
@@ -261,9 +263,10 @@ public class CurseForgeInstaller {
         //noinspection DataFlowIssue handled by switchIfEmpty
         if (modFile.getDownloadUrl() == null) {
             throw new GenericException(String.format("The modpack authors have indicated this file is not allowed for project distribution." +
-                            " Please download the client zip file from %s",
-                    ofNullable(mod.getLinks().getWebsiteUrl()).orElse(" their CurseForge page")
-                    ));
+                    " Please download the client zip file from %s and pass via %s environment variable.",
+                ofNullable(mod.getLinks().getWebsiteUrl()).orElse(" their CurseForge page"),
+                MODPACK_ZIP_VAR
+            ));
         }
 
         log.info("Processing modpack '{}' ({}) @ {}:{}", modFile.getDisplayName(),
@@ -674,7 +677,7 @@ public class CurseForgeInstaller {
 
                         if (cfFile.getDownloadUrl() == null) {
                             log.warn("The authors of the mod '{}' have disallowed project distribution. " +
-                                    "Manually download the file {} from {} and supply the mod file.",
+                                    "Manually download the file '{}' from {} and supply the mod file separately.",
                                 modInfo.getName(), cfFile.getDisplayName(), modInfo.getLinks().getWebsiteUrl()
                                 );
                             return Mono.empty();
