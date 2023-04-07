@@ -1,6 +1,6 @@
 package me.itzg.helpers.errors;
 
-@ExitCode(200)
+@EmitsExitCode(200)
 public class InvalidParameterException extends RuntimeException {
 
   public InvalidParameterException(String message) {
