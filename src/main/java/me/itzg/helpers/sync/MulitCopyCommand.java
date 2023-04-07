@@ -40,6 +40,11 @@ public class MulitCopyCommand implements Callable<Integer> {
     )
     String fileGlob;
 
+    @Option(names = "--file-is-listing",
+        description = "Files included as sources include a line delimited list of file sources"
+    )
+    boolean fileIsListingOption;
+
     @Parameters(split = ",", arity = "1..*")
     List<String> sources;
 
@@ -49,7 +54,7 @@ public class MulitCopyCommand implements Callable<Integer> {
         Files.createDirectories(dest);
 
         Flux.fromIterable(sources)
-            .flatMap(this::processSource)
+            .flatMap(source -> processSource(source, fileIsListingOption))
             .collectList()
             .flatMap(this::cleanupAndSaveManifest)
             .block();
@@ -77,7 +82,7 @@ public class MulitCopyCommand implements Callable<Integer> {
             });
     }
 
-    private Publisher<Path> processSource(String source) {
+    private Publisher<Path> processSource(String source, boolean fileIsListing) {
         if (Uris.isUri(source)) {
             return processRemoteSource(source);
         }
@@ -91,9 +96,26 @@ public class MulitCopyCommand implements Callable<Integer> {
                 return processDirectory(path);
             }
             else {
-                return processFile(path);
+                return fileIsListing ? processListingFile(path) : processFile(path);
             }
         }
+    }
+
+    private Flux<Path> processListingFile(Path listingFile) {
+        return Mono.just(listingFile)
+            .publishOn(Schedulers.boundedElastic())
+            .flatMapMany(path -> {
+                try {
+                    @SuppressWarnings("BlockingMethodInNonBlockingContext") // false warning from IntelliJ
+                    final List<String> lines = Files.readAllLines(path);
+                    return Flux.fromIterable(lines)
+                        .flatMap(src -> processSource(src,
+                            // avoid recursive file-listing processing
+                            false));
+                } catch (IOException e) {
+                    return Mono.error(new GenericException("Failed to read file listing from " + path));
+                }
+            });
     }
 
     private Mono<Path> processFile(Path source) {

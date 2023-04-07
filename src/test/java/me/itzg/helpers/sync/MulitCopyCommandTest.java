@@ -13,6 +13,7 @@ import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Collections;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
@@ -44,6 +45,35 @@ class MulitCopyCommandTest {
             assertThat(destDir.resolve("source.txt"))
                 .exists()
                 .hasSameTextualContentAs(srcFile);
+        }
+    }
+
+    @Nested
+    class FileListingSrc {
+        @Test
+        void justFiles() throws IOException {
+            final Path srcDir = Files.createDirectories(tempDir.resolve("srcDir"));
+            final Path srcTxt = writeLine(srcDir, "one.txt", "one");
+            final Path srcJar = writeLine(srcDir, "two.jar", "two");
+            final Path listing = Files.write(tempDir.resolve("listing.txt"), Arrays.asList(
+                srcTxt.toString(),
+                srcJar.toString()
+            ));
+
+            final Path destDir = tempDir.resolve("dest");
+
+            final int exitCode = new CommandLine(new MulitCopyCommand())
+                .execute(
+                    "--to", destDir.toString(),
+                    "--file-is-listing",
+                    listing.toString()
+                );
+            assertThat(exitCode).isEqualTo(CommandLine.ExitCode.OK);
+
+            assertThat(destDir.resolve("one.txt"))
+                .hasSameTextualContentAs(srcTxt);
+            assertThat(destDir.resolve("two.jar"))
+                .hasSameTextualContentAs(srcJar);
         }
     }
 
@@ -169,17 +199,7 @@ class MulitCopyCommandTest {
     class RemoteSrc {
         @Test
         void remoteFile(WireMockRuntimeInfo wmInfo) {
-            stubFor(head(urlPathEqualTo("/file.jar"))
-                .willReturn(
-                    noContent()
-                        .withHeader("Content-Disposition", "attachment; filename=\"file.jar\"")
-                )
-            );
-            stubFor(get("/file.jar")
-                .willReturn(
-                    ok("remote")
-                )
-            );
+            stubRemoteSrc("file.jar", "remote");
 
             final Path destDir = tempDir.resolve("dest");
 
@@ -192,6 +212,46 @@ class MulitCopyCommandTest {
 
             assertThat(destDir.resolve("file.jar"))
                 .hasContent("remote");
+        }
+
+        @Test
+        void listingOfRemoteFiles(WireMockRuntimeInfo wmInfo) throws IOException {
+            stubRemoteSrc("file1.jar", "one");
+            stubRemoteSrc("file2.jar", "two");
+
+            final Path destDir = tempDir.resolve("dest");
+
+            final Path listing = Files.write(tempDir.resolve("listing.txt"), Arrays.asList(
+                wmInfo.getHttpBaseUrl() + "/file1.jar",
+                wmInfo.getHttpBaseUrl() + "/file2.jar"
+            ));
+
+            final int exitCode = new CommandLine(new MulitCopyCommand())
+                .execute(
+                    "--to", destDir.toString(),
+                    "--file-is-listing",
+                    listing.toString()
+                );
+            assertThat(exitCode).isEqualTo(CommandLine.ExitCode.OK);
+
+            assertThat(destDir.resolve("file1.jar"))
+                .hasContent("one");
+            assertThat(destDir.resolve("file2.jar"))
+                .hasContent("two");
+        }
+
+        private void stubRemoteSrc(String filename, String content) {
+            stubFor(head(urlPathEqualTo("/" + filename))
+                .willReturn(
+                    noContent()
+                        .withHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"")
+                )
+            );
+            stubFor(get("/" + filename)
+                .willReturn(
+                    ok(content)
+                )
+            );
         }
     }
 }
