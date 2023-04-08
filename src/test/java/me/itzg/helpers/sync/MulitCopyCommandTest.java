@@ -46,6 +46,27 @@ class MulitCopyCommandTest {
                 .exists()
                 .hasSameTextualContentAs(srcFile);
         }
+
+        @Test
+        void commaDelimited() throws IOException {
+            final Path srcDir = Files.createDirectories(tempDir.resolve("srcDir"));
+            final Path srcTxt = writeLine(srcDir, "one.txt", "one");
+            final Path srcJar = writeLine(srcDir, "two.jar", "two");
+
+            final Path destDir = tempDir.resolve("dest");
+
+            final int exitCode = new CommandLine(new MulitCopyCommand())
+                .execute(
+                    "--to", destDir.toString(),
+                    String.join(",", srcTxt.toString(), srcJar.toString())
+                );
+            assertThat(exitCode).isEqualTo(CommandLine.ExitCode.OK);
+
+            assertThat(destDir.resolve("one.txt"))
+                .hasSameTextualContentAs(srcTxt);
+            assertThat(destDir.resolve("two.jar"))
+                .hasSameTextualContentAs(srcJar);
+        }
     }
 
     @Nested
@@ -75,6 +96,7 @@ class MulitCopyCommandTest {
             assertThat(destDir.resolve("two.jar"))
                 .hasSameTextualContentAs(srcJar);
         }
+
     }
 
     @Nested
@@ -231,6 +253,31 @@ class MulitCopyCommandTest {
                     "--to", destDir.toString(),
                     "--file-is-listing",
                     listing.toString()
+                );
+            assertThat(exitCode).isEqualTo(CommandLine.ExitCode.OK);
+
+            assertThat(destDir.resolve("file1.jar"))
+                .hasContent("one");
+            assertThat(destDir.resolve("file2.jar"))
+                .hasContent("two");
+        }
+
+        @Test
+        void remoteListingOfRemoteFiles(WireMockRuntimeInfo wmInfo) {
+            stubRemoteSrc("listing.txt",
+                wmInfo.getHttpBaseUrl() + "/file1.jar\n" +
+                    wmInfo.getHttpBaseUrl() + "/file2.jar\n"
+            );
+            stubRemoteSrc("file1.jar", "one");
+            stubRemoteSrc("file2.jar", "two");
+
+            final Path destDir = tempDir.resolve("dest");
+
+            final int exitCode = new CommandLine(new MulitCopyCommand())
+                .execute(
+                    "--to", destDir.toString(),
+                    "--file-is-listing",
+                    wmInfo.getHttpBaseUrl() + "/listing.txt"
                 );
             assertThat(exitCode).isEqualTo(CommandLine.ExitCode.OK);
 

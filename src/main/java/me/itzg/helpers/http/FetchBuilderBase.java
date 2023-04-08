@@ -69,6 +69,10 @@ public class FetchBuilderBase<SELF extends FetchBuilderBase<SELF>> {
         return new OutputToDirectoryFetchBuilder(this.state, directory);
     }
 
+    public StringFetchBuilder asString() {
+        return new StringFetchBuilder(this.state);
+    }
+
     /**
      * NOTE: this will set expected content types to application/json
      */
