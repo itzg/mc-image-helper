@@ -55,6 +55,11 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
     )
     Path modpackZip;
 
+    @Option(names = "--modpack-manifest", paramLabel = "PATH",
+        description = "Similar to --modpack-zip but provide the manifest.json from the modpack"
+    )
+    Path modpackManifest;
+
     @Option(names = "--api-base-url", defaultValue = "${env:CF_API_BASE_URL}",
         description = "Allows for overriding the CurseForge Eternal API used")
     String apiBaseUrl;
@@ -151,8 +156,9 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
         if (slug == null) {
             if (modpackZip != null) {
                 System.err.println("A modpack page URL or slug identifier is required even with a provided modpack zip");
-            }
-            else {
+            } else if (modpackManifest != null) {
+                System.err.println("A modpack page URL or slug identifier is required even with a provided modpack manifest");
+            } else {
                 System.err.println("A modpack page URL or slug identifier is required");
             }
             return ExitCode.USAGE;
@@ -174,9 +180,10 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
         }
 
         if (modpackZip != null) {
-            installer.install(modpackZip, slug);
-        }
-        else {
+            installer.installFromModpackZip(modpackZip, slug);
+        } else if (modpackManifest != null) {
+            installer.installFromModpackManifest(modpackManifest, slug);
+        } else {
             installer.install(slug, filenameMatcher, fileId);
         }
 
