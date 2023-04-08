@@ -5,6 +5,7 @@ import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.http.Fetch;
+import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.http.Uris;
 import org.reactivestreams.Publisher;
 import picocli.CommandLine.Command;
@@ -41,7 +42,8 @@ public class MulitCopyCommand implements Callable<Integer> {
     String fileGlob;
 
     @Option(names = "--file-is-listing",
-        description = "Files included as sources include a line delimited list of file sources"
+        description = "Source files or URLs are processed as a line delimited list of sources.\n" +
+            "For remote listing files, the contents must all be file URLs."
     )
     boolean fileIsListingOption;
 
@@ -58,7 +60,7 @@ public class MulitCopyCommand implements Callable<Integer> {
             .collectList()
             .flatMap(this::cleanupAndSaveManifest)
             .block();
-        
+
         return ExitCode.OK;
     }
 
@@ -84,9 +86,8 @@ public class MulitCopyCommand implements Callable<Integer> {
 
     private Publisher<Path> processSource(String source, boolean fileIsListing) {
         if (Uris.isUri(source)) {
-            return processRemoteSource(source);
-        }
-        else {
+            return fileIsListing ? processRemoteListingFile(source) : processRemoteSource(source);
+        } else {
             final Path path = Paths.get(source);
             if (!Files.exists(path)) {
                 throw new GenericException(String.format("Source file '%s' does not exist", source));
@@ -94,8 +95,7 @@ public class MulitCopyCommand implements Callable<Integer> {
 
             if (Files.isDirectory(path)) {
                 return processDirectory(path);
-            }
-            else {
+            } else {
                 return fileIsListing ? processListingFile(path) : processFile(path);
             }
         }
@@ -109,6 +109,7 @@ public class MulitCopyCommand implements Callable<Integer> {
                     @SuppressWarnings("BlockingMethodInNonBlockingContext") // false warning from IntelliJ
                     final List<String> lines = Files.readAllLines(path);
                     return Flux.fromIterable(lines)
+                        .filter(this::isListingLine)
                         .flatMap(src -> processSource(src,
                             // avoid recursive file-listing processing
                             false));
@@ -127,6 +128,7 @@ public class MulitCopyCommand implements Callable<Integer> {
 
     /**
      * Non-mono version of {@link #processFile(Path)}
+     *
      * @param scopedDest allows for sub-directory destinations
      */
     private Path processFileImmediate(Path source, Path scopedDest) {
@@ -145,14 +147,12 @@ public class MulitCopyCommand implements Callable<Integer> {
                         );
 
                         Files.copy(source, destFile, StandardCopyOption.REPLACE_EXISTING);
-                    }
-                    else {
+                    } else {
                         log.debug("Skipping existing={} since it is newer than source={}",
                             destFile, source
                         );
                     }
-                }
-                else {
+                } else {
                     log.debug("Skipping existing={} since it has same size as source={}",
                         destFile, source
                     );
@@ -160,8 +160,7 @@ public class MulitCopyCommand implements Callable<Integer> {
             } catch (IOException e) {
                 throw new GenericException("Failed to evaluate/copy existing file", e);
             }
-        }
-        else {
+        } else {
             try {
                 log.debug("Copying new file from={} to={}", source, destFile);
 
@@ -215,7 +214,28 @@ public class MulitCopyCommand implements Callable<Integer> {
                         break;
                 }
             })
-            .assemble();
+            .assemble()
+            .checkpoint("Retrieving " + source, true);
+    }
+
+    private Flux<Path> processRemoteListingFile(String source) {
+        @SuppressWarnings("resource") // closed on terminate
+        SharedFetch sharedFetch = Fetch.sharedFetch("mcopy", SharedFetch.Options.builder().build());
+        return Mono.just(source)
+            .flatMapMany(s ->
+                sharedFetch.fetch(URI.create(source))
+                    .asString().assemble()
+                    .flatMapMany(content -> Flux.just(content.split("\\r?\\n")))
+                    .filter(this::isListingLine)
+            )
+            .flatMap(this::processRemoteSource)
+            .doOnTerminate(sharedFetch::close)
+            .checkpoint("Processing remote listing at " + source, true);
+    }
+
+    private boolean isListingLine(String s) {
+        return !s.startsWith("#")
+            && !s.isEmpty();
     }
 
 }
