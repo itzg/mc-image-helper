@@ -313,9 +313,12 @@ public class CurseForgeInstaller {
 
         Manifests.save(outputDir, CURSEFORGE_ID, newManifest);
 
-        if (resultsFile != null && results.getLevelName() != null) {
+        if (resultsFile != null) {
             try (ResultsFileWriter resultsFileWriter = new ResultsFileWriter(resultsFile, true)) {
-                resultsFileWriter.write("LEVEL", results.getLevelName());
+                if (results.getLevelName() != null) {
+                    resultsFileWriter.write("LEVEL", results.getLevelName());
+                }
+                resultsFileWriter.write("VERSION", results.getMinecraftVersion());
             }
         }
     }
