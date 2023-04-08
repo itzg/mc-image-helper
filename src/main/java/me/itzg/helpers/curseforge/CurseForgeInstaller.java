@@ -288,9 +288,12 @@ public class CurseForgeInstaller {
         }
 
         // ...and write out level name from previous run
-        if (resultsFile != null && prevManifest.getLevelName() != null) {
+        if (resultsFile != null) {
             try (ResultsFileWriter resultsFileWriter = new ResultsFileWriter(resultsFile, true)) {
-                resultsFileWriter.write("LEVEL", prevManifest.getLevelName());
+                if (prevManifest.getLevelName() != null) {
+                    resultsFileWriter.write("LEVEL", prevManifest.getLevelName());
+                }
+                resultsFileWriter.write("VERSION", prevManifest.getMinecraftVersion());
             }
         }
     }
