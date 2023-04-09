@@ -1,7 +1,5 @@
 package me.itzg.helpers.curseforge;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -16,17 +14,13 @@ import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.files.ResultsFileWriter;
 import me.itzg.helpers.forge.ForgeInstaller;
 import me.itzg.helpers.http.FailedRequestException;
-import me.itzg.helpers.http.Fetch;
 import me.itzg.helpers.http.SharedFetch;
-import me.itzg.helpers.http.SharedFetch.Options;
-import me.itzg.helpers.http.UriBuilder;
 import me.itzg.helpers.json.ObjectMappers;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
 import java.io.IOException;
-import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -56,8 +50,6 @@ public class CurseForgeInstaller {
     public static final int LEVEL_DAT_SUFFIX_LEN = LEVEL_DAT_SUFFIX.length();
     public static final String CATEGORY_SLUG_MODPACKS = "modpacks";
 
-    private static final String API_KEY_HEADER = "x-api-key";
-
     private final Path outputDir;
     private final Path resultsFile;
 
@@ -78,6 +70,9 @@ public class CurseForgeInstaller {
     @Getter @Setter
     private ExcludeIncludesContent excludeIncludes;
 
+    /**
+     * @see InstallCurseForgeCommand#levelFrom
+     */
     @Getter @Setter
     private LevelFrom levelFrom;
 
@@ -93,18 +88,42 @@ public class CurseForgeInstaller {
         "worlds"
     ));
 
-    public void install(Path modpackZip, String slug) throws IOException {
+    public void installFromModpackZip(Path modpackZip, String slug) throws IOException {
         requireNonNull(modpackZip, "modpackZip is required");
-        install(slug, null, 0, modpackZip);
+
+        install(slug, context -> {
+            final MinecraftModpackManifest modpackManifest = extractModpackManifest(modpackZip);
+
+            processModpackManifest(context, modpackManifest,
+                () -> applyOverrides(modpackZip, modpackManifest.getOverrides())
+                );
+        });
+    }
+
+    public void installFromModpackManifest(Path modpackManifestPath, String slug) throws IOException {
+        requireNonNull(modpackManifestPath, "modpackManifest is required");
+
+        install(slug, context -> {
+            final MinecraftModpackManifest modpackManifest = ObjectMappers.defaultMapper()
+                .readValue(modpackManifestPath.toFile(), MinecraftModpackManifest.class);
+
+            processModpackManifest(context, modpackManifest,
+                () -> new OverridesResult(Collections.emptyList(), null)
+                );
+        });
     }
 
     public void install(String slug, String fileMatcher, Integer fileId) throws IOException {
-        install(slug, fileMatcher, fileId, null);
+
+        install(slug, context ->
+            installByRetrievingModpackZip(context, fileMatcher, fileId)
+        );
     }
 
-    protected void install(String slug, String fileMatcher, Integer fileId, Path modpackZip) throws IOException {
+    protected void install(String slug, InstallationEntryPoint entryPoint) throws IOException {
         requireNonNull(outputDir, "outputDir is required");
-        requireNonNull(slug, "slug is required");
+        requireNonNull(slug);
+        requireNonNull(entryPoint);
 
         final CurseForgeManifest manifest = Manifests.load(outputDir, CURSEFORGE_ID, CurseForgeManifest.class);
         // to adapt to previous copies of manifest
@@ -124,22 +143,17 @@ public class CurseForgeInstaller {
             }
         }
 
-        final UriBuilder uriBuilder = UriBuilder.withBaseUrl(apiBaseUrl);
+        try (
+            CurseForgeApiClient cfApi = new CurseForgeApiClient(
+                apiBaseUrl, apiKey, sharedFetchOptions,
+                MINECRAFT_GAME_ID
+            )
+        ) {
+            final CategoryInfo categoryInfo = cfApi.loadCategoryInfo(applicableClassIdSlugs, CATEGORY_SLUG_MODPACKS);
 
-        try (SharedFetch preparedFetch = Fetch.sharedFetch("install-curseforge",
-                (sharedFetchOptions != null ? sharedFetchOptions : Options.builder().build())
-                        .withHeader(API_KEY_HEADER, apiKey)
-        )) {
-            // TODO encapsulate preparedFetch, uriBuilder, categoryInfo to avoid passing deep into call tree
-
-            final CategoryInfo categoryInfo = loadCategoryInfo(preparedFetch, uriBuilder);
-
-            if (modpackZip == null) {
-                installByRetrievingModpackZip(preparedFetch, uriBuilder, categoryInfo, slug, manifest, fileMatcher, fileId);
-            }
-            else {
-                installGivenModpackZip(preparedFetch, uriBuilder, categoryInfo, slug, manifest, modpackZip);
-            }
+            entryPoint.install(
+                new InstallContext(slug, cfApi, categoryInfo, manifest)
+            );
 
         } catch (FailedRequestException e) {
             if (e.getStatusCode() == 403) {
@@ -152,27 +166,28 @@ public class CurseForgeInstaller {
         }
     }
 
-    private void installByRetrievingModpackZip(SharedFetch preparedFetch, UriBuilder uriBuilder, CategoryInfo categoryInfo, String slug, CurseForgeManifest manifest, String fileMatcher, Integer fileId) throws IOException {
-        final ModsSearchResponse searchResponse = preparedFetch.fetch(
-                        uriBuilder.resolve("/mods/search?gameId={gameId}&slug={slug}&classId={classId}",
-                                MINECRAFT_GAME_ID, slug, categoryInfo.modpackClassId
-                        )
-                )
-                .toObject(ModsSearchResponse.class)
-                .execute();
+    @AllArgsConstructor
+    static class InstallContext {
 
-        if (searchResponse.getData() == null || searchResponse.getData().isEmpty()) {
-            throw new GenericException("No mods found with slug={}" + slug);
-        } else if (searchResponse.getData().size() > 1) {
-            throw new GenericException("More than one mod found with slug=" + slug);
-        } else {
-            processModPack(preparedFetch, uriBuilder, manifest, categoryInfo, searchResponse.getData().get(0), fileId, fileMatcher);
-        }
+        private final String slug;
+        private final CurseForgeApiClient cfApi;
+        private final CategoryInfo categoryInfo;
+        private final CurseForgeManifest prevInstallManifest;
     }
 
-    private void installGivenModpackZip(SharedFetch preparedFetch, UriBuilder uriBuilder, CategoryInfo categoryInfo,
-                                        String slug, CurseForgeManifest prevInstallManifest, Path modpackZip) throws IOException {
-        final MinecraftModpackManifest modpackManifest = extractModpackManifest(modpackZip);
+    interface InstallationEntryPoint {
+        void install(InstallContext context) throws IOException;
+    }
+
+    private void installByRetrievingModpackZip(InstallContext context, String fileMatcher, Integer fileId) throws IOException {
+        final CurseForgeMod curseForgeMod = context.cfApi.searchMod(context.slug, context.categoryInfo);
+
+        resolveModpackFileAndProcess(context, curseForgeMod, fileId, fileMatcher);
+    }
+
+    private void processModpackManifest(InstallContext context,
+        MinecraftModpackManifest modpackManifest, OverridesApplier overridesApplier
+    ) throws IOException {
 
         final String modpackName = modpackManifest.getName();
         final String modpackVersion = modpackManifest.getVersion();
@@ -180,18 +195,15 @@ public class CurseForgeInstaller {
         final int pseudoModId = Math.abs(modpackName.hashCode());
         final int pseudoFileId = Math.abs(hashModpackFileReferences(modpackManifest.getFiles()));
 
-        if (prevInstallManifest != null
-            && (prevInstallManifest.getModId() == pseudoModId
-            || Objects.equals(prevInstallManifest.getSlug(), slug))
-            && prevInstallManifest.getFileId() == pseudoFileId
+        if (matchesPreviousInstall(context, pseudoModId, pseudoFileId)
         ) {
             if (forceSynchronize) {
                 log.info("Requested force synchronize of {}", modpackName);
             }
-            else if (Manifests.allFilesPresent(outputDir, prevInstallManifest)) {
+            else if (Manifests.allFilesPresent(outputDir, context.prevInstallManifest)) {
                 log.info("Requested CurseForge modpack {} is already installed", modpackName);
 
-                finalizeExistingInstallation(prevInstallManifest);
+                finalizeExistingInstallation(context.prevInstallManifest);
 
                 return;
             }
@@ -203,10 +215,17 @@ public class CurseForgeInstaller {
         log.info("Installing modpack '{}' version {} from provided modpack zip",
             modpackName, modpackVersion);
 
-        final ModPackResults results = processModpackZip(preparedFetch, uriBuilder, categoryInfo, modpackZip, slug);
+        final ModPackResults results = processModpack(context, modpackManifest, overridesApplier);
 
-        finalizeResults(prevInstallManifest, results, slug,
+        finalizeResults(context, results,
             pseudoModId, pseudoFileId, results.getName());
+    }
+
+    private static boolean matchesPreviousInstall(InstallContext context, int modId, int fileId) {
+        return context.prevInstallManifest != null
+            && (context.prevInstallManifest.getModId() == modId
+            || Objects.equals(context.prevInstallManifest.getSlug(), context.slug))
+            && context.prevInstallManifest.getFileId() == fileId;
     }
 
     private int hashModpackFileReferences(List<ManifestFileRef> files) {
@@ -219,8 +238,8 @@ public class CurseForgeInstaller {
         return hash;
     }
 
-    private void processModPack(
-        SharedFetch preparedFetch, UriBuilder uriBuilder, CurseForgeManifest prevManifest, CategoryInfo categoryInfo,
+    private void resolveModpackFileAndProcess(
+        InstallContext context,
         CurseForgeMod mod, Integer fileId,
         String fileMatcher
     )
@@ -229,29 +248,25 @@ public class CurseForgeInstaller {
         final CurseForgeFile modFile;
 
         if (fileId == null) {
-            modFile = resolveModpackFile(preparedFetch, uriBuilder, mod, fileMatcher);
+            modFile = context.cfApi.resolveModpackFile(mod, fileMatcher);
         }
         else {
-            modFile = getModFileInfo(preparedFetch, uriBuilder, mod.getId(), fileId)
+            modFile = context.cfApi.getModFileInfo(mod.getId(), fileId)
                 .switchIfEmpty(Mono.error(() -> new GenericException("Unable to resolve modpack's file")))
                 .block();
         }
 
         //noinspection DataFlowIssue handled by switchIfEmpty
-        if (prevManifest != null
-            && prevManifest.getFileId() == modFile.getId()
-            && (prevManifest.getModId() == modFile.getModId()
-            || Objects.equals(prevManifest.getSlug(), mod.getSlug()))
-        ) {
+        if (matchesPreviousInstall(context, modFile.getId(), modFile.getModId())) {
             if (forceSynchronize) {
                 log.info("Requested force synchronize of {}", modFile.getDisplayName());
             }
-            else if (Manifests.allFilesPresent(outputDir, prevManifest)) {
+            else if (Manifests.allFilesPresent(outputDir, context.prevInstallManifest)) {
                 log.info("Requested CurseForge modpack {} is already installed for {}",
                     modFile.getDisplayName(), mod.getName()
                 );
 
-                finalizeExistingInstallation(prevManifest);
+                finalizeExistingInstallation(context.prevInstallManifest);
 
                 return;
             }
@@ -260,7 +275,6 @@ public class CurseForgeInstaller {
             }
         }
 
-        //noinspection DataFlowIssue handled by switchIfEmpty
         if (modFile.getDownloadUrl() == null) {
             throw new GenericException(String.format("The modpack authors have indicated this file is not allowed for project distribution." +
                     " Please download the client zip file from %s and pass via %s environment variable.",
@@ -271,14 +285,29 @@ public class CurseForgeInstaller {
 
         log.info("Processing modpack '{}' ({}) @ {}:{}", modFile.getDisplayName(),
             mod.getSlug(), modFile.getModId(), modFile.getId());
-        final ModPackResults results =
-            downloadAndProcessModpackZip(
-                preparedFetch, uriBuilder, categoryInfo,
-                normalizeDownloadUrl(modFile.getDownloadUrl()),
-                mod.getSlug()
-            );
+        final Path modpackZip =
+            context.cfApi.downloadTemp(modFile, "zip",
+                    (status, uri, file) ->
+                        log.debug("Modpack file retrieval: status={} uri={} file={}", status, uri, file)
+                )
+                .block();
 
-        finalizeResults(prevManifest, results, mod.getSlug(), modFile.getModId(), modFile.getId(), modFile.getDisplayName());
+        if (modpackZip == null) {
+            throw new GenericException("Download of modpack zip was empty");
+        }
+
+        /*downloadModpackZip(context, modFile);*/
+        final ModPackResults results;
+        try {
+
+            final MinecraftModpackManifest modpackManifest = extractModpackManifest(modpackZip);
+            results = processModpack(context, modpackManifest, () -> applyOverrides(modpackZip,
+                modpackManifest.getOverrides()));
+        } finally {
+            Files.delete(modpackZip);
+        }
+
+        finalizeResults(context, results, modFile.getModId(), modFile.getId(), modFile.getDisplayName());
     }
 
     private void finalizeExistingInstallation(CurseForgeManifest prevManifest) throws IOException {
@@ -298,11 +327,11 @@ public class CurseForgeInstaller {
         }
     }
 
-    private void finalizeResults(CurseForgeManifest prevManifest, ModPackResults results, String slug, int modId, int fileId, String displayName) throws IOException {
+    private void finalizeResults(InstallContext context, ModPackResults results, int modId, int fileId, String displayName) throws IOException {
         final CurseForgeManifest newManifest = CurseForgeManifest.builder()
             .modpackName(results.getName())
             .modpackVersion(results.getVersion())
-            .slug(slug)
+            .slug(context.slug)
             .modId(modId)
             .fileId(fileId)
             .fileName(displayName)
@@ -312,7 +341,7 @@ public class CurseForgeInstaller {
             .levelName(results.getLevelName())
             .build();
 
-        Manifests.cleanup(outputDir, prevManifest, newManifest, log);
+        Manifests.cleanup(outputDir, context.prevInstallManifest, newManifest, log);
 
         Manifests.save(outputDir, CURSEFORGE_ID, newManifest);
 
@@ -347,62 +376,12 @@ public class CurseForgeInstaller {
         });
     }
 
-    private static CurseForgeFile resolveModpackFile(SharedFetch preparedFetch, UriBuilder uriBuilder,
-        CurseForgeMod mod,
-        String fileMatcher
-    ) {
-        // NOTE latestFiles in mod is only one or two files, so retrieve the full list instead
-        final GetModFilesResponse resp = preparedFetch.fetch(
-                uriBuilder.resolve("/mods/{modId}/files", mod.getId()
-                )
-            )
-            .toObject(GetModFilesResponse.class)
-            .execute();
-
-        return resp.getData().stream()
-            .filter(file ->
-                // even though we're preparing a server, we need client modpack to get deterministic manifest layout
-                !file.isServerPack() &&
-                    (fileMatcher == null || file.getFileName().contains(fileMatcher)))
-            .findFirst()
-            .orElseThrow(() -> {
-                log.debug("No matching files trying fileMatcher={} against {}", fileMatcher,
-                    mod.getLatestFiles()
-                );
-                return new GenericException("No matching files found for mod");
-            });
-    }
-
-    private ModPackResults downloadAndProcessModpackZip(
-        SharedFetch preparedFetch, UriBuilder uriBuilder, CategoryInfo categoryInfo,
-        URI downloadUrl, String modpackSlug
-    )
-        throws IOException {
-        final Path modpackZip = Files.createTempFile("curseforge-modpack", "zip");
-
-        try {
-            preparedFetch.fetch(downloadUrl)
-                .toFile(modpackZip)
-                .handleStatus((status, uri, file) ->
-                    log.debug("Modpack file retrieval: status={} uri={} file={}", status, uri, file)
-                )
-                .execute();
-
-            return processModpackZip(preparedFetch, uriBuilder, categoryInfo, modpackZip, modpackSlug);
-        } finally {
-            Files.delete(modpackZip);
-        }
-    }
-
-    private ModPackResults processModpackZip(
-        SharedFetch preparedFetch, UriBuilder uriBuilder, CategoryInfo categoryInfo, Path modpackZip, String modpackSlug
-    )
-        throws IOException {
-
-        final ExcludeIncludeIds excludeIncludeIds = resolveExcludeIncludes(preparedFetch, uriBuilder, categoryInfo, modpackSlug);
-        log.debug("Using {}", excludeIncludeIds);
-
-        final MinecraftModpackManifest modpackManifest = extractModpackManifest(modpackZip);
+    /**
+     * @param overridesApplier typically calls {@link #applyOverrides(Path, String)}
+     */
+    private ModPackResults processModpack(InstallContext context,
+        MinecraftModpackManifest modpackManifest, OverridesApplier overridesApplier
+    ) throws IOException {
         if (modpackManifest.getManifestType() != ManifestType.minecraftModpack) {
             throw new InvalidParameterException("The zip file provided does not seem to be a Minecraft modpack");
         }
@@ -418,6 +397,9 @@ public class CurseForgeInstaller {
             Files.createDirectories(outputDir.resolve("saves"))
         );
 
+        final ExcludeIncludeIds excludeIncludeIds = resolveExcludeIncludes(context);
+        log.debug("Using {}", excludeIncludeIds);
+
         // Go through all the files listed in modpack (given project ID + file ID)
         final List<PathWithInfo> modFiles = Flux.fromIterable(modpackManifest.getFiles())
             // ...do parallel downloads to let small ones make progress during big ones
@@ -429,20 +411,24 @@ public class CurseForgeInstaller {
             .filter(manifestFileRef -> !excludeIncludeIds.getExcludeIds().contains(manifestFileRef.getProjectID()))
             // ...download and possibly unzip world file
             .flatMap(fileRef ->
-                downloadModFile(preparedFetch, uriBuilder, outputPaths,
+                downloadFileFromModpack(context, outputPaths,
                     fileRef.getProjectID(), fileRef.getFileID(),
                     excludeIncludeIds.getForceIncludeIds(),
-                    categoryInfo.contentClassIds
+                    context.categoryInfo
                 )
             )
             .sequential()
             .collectList()
             .block();
 
-        final OverridesResult overridesResult = applyOverrides(modpackZip, modpackManifest.getOverrides());
+        final OverridesResult overridesResult = overridesApplier.apply();
 
         prepareModLoader(modLoader.getId(), modpackManifest.getMinecraft().getVersion());
 
+        return buildResults(modpackManifest, modLoader, modFiles, overridesResult);
+    }
+
+    private ModPackResults buildResults(MinecraftModpackManifest modpackManifest, ModLoader modLoader, List<PathWithInfo> modFiles, OverridesResult overridesResult) {
         return new ModPackResults()
             .setName(modpackManifest.getName())
             .setVersion(modpackManifest.getVersion())
@@ -473,10 +459,7 @@ public class CurseForgeInstaller {
         }
     }
 
-    private ExcludeIncludeIds resolveExcludeIncludes(
-        SharedFetch preparedFetch, UriBuilder uriBuilder, CategoryInfo categoryInfo,
-        String modpackSlug
-    ) {
+    private ExcludeIncludeIds resolveExcludeIncludes(InstallContext context) {
         if (excludeIncludes == null) {
             return new ExcludeIncludeIds(emptySet(), emptySet());
         }
@@ -484,16 +467,16 @@ public class CurseForgeInstaller {
         log.debug("Reconciling exclude/includes from given {}", excludeIncludes);
 
         final ExcludeIncludes specific =
-            excludeIncludes.getModpacks() != null ? excludeIncludes.getModpacks().get(modpackSlug) : null;
+            excludeIncludes.getModpacks() != null ? excludeIncludes.getModpacks().get(context.slug) : null;
 
         return Mono.zip(
                 resolveFromSlugOrIds(
-                    preparedFetch, uriBuilder, categoryInfo,
+                    context, context.categoryInfo,
                     excludeIncludes.getGlobalExcludes(),
                     specific != null ? specific.getExcludes() : null
                 ),
                 resolveFromSlugOrIds(
-                    preparedFetch, uriBuilder, categoryInfo,
+                    context, context.categoryInfo,
                     excludeIncludes.getGlobalForceIncludes(),
                     specific != null ? specific.getForceIncludes() : null
                 )
@@ -505,7 +488,7 @@ public class CurseForgeInstaller {
     }
 
     private Mono<Set<Integer>> resolveFromSlugOrIds(
-        SharedFetch preparedFetch, UriBuilder uriBuilder, CategoryInfo categoryInfo,
+        InstallContext context, CategoryInfo categoryInfo,
         Collection<String> global, Collection<String> specific
     ) {
         log.trace("Resolving slug|id into IDs global={} specific={}", global, specific);
@@ -521,34 +504,21 @@ public class CurseForgeInstaller {
                     final int id = Integer.parseInt(s);
                     return Mono.just(id);
                 } catch (NumberFormatException e) {
-                    return slugToId(preparedFetch, uriBuilder, categoryInfo, s);
+                    return context.cfApi.slugToId(categoryInfo, s);
                 }
             })
             .sequential()
             .collect(Collectors.toSet());
     }
 
-    private Mono<Integer> slugToId(SharedFetch preparedFetch, UriBuilder uriBuilder, CategoryInfo categoryInfo,
-        String slug) {
-        return preparedFetch
-            .fetch(
-                uriBuilder.resolve("/mods/search?gameId={gameId}&slug={slug}", MINECRAFT_GAME_ID, slug)
-            )
-            .toObject(ModsSearchResponse.class)
-            .assemble()
-            .map(resp ->
-                resp.getData().stream()
-                    .filter(curseForgeMod -> categoryInfo.contentClassIds.containsKey(curseForgeMod.getClassId()))
-                    .findFirst()
-                    .map(CurseForgeMod::getId)
-                    .orElseThrow(() -> new GenericException("Unable to resolve slug into ID (no matches): " + slug))
-            );
-    }
-
     @AllArgsConstructor
     static class OverridesResult {
         List<Path> paths;
         String levelName;
+    }
+
+    interface OverridesApplier {
+        OverridesResult apply() throws IOException;
     }
 
     private OverridesResult applyOverrides(Path modpackZip, String overridesDir) throws IOException {
@@ -631,15 +601,18 @@ public class CurseForgeInstaller {
         return null;
     }
 
-    private Mono<PathWithInfo> downloadModFile(
-        SharedFetch preparedFetch, UriBuilder uriBuilder, OutputPaths outputPaths,
+    /**
+     * Downloads the referenced project-file into the appropriate subdirectory from outputPaths
+     */
+    private Mono<PathWithInfo> downloadFileFromModpack(
+        InstallContext context, OutputPaths outputPaths,
         int projectID, int fileID,
         Set<Integer> forceIncludeIds,
-        Map<Integer, Category> categoryClasses
+        CategoryInfo categoryInfo
     ) {
-        return getModInfo(preparedFetch, uriBuilder, projectID)
+        return context.cfApi.getModInfo(projectID)
             .flatMap(modInfo -> {
-                final Category category = categoryClasses.get(modInfo.getClassId());
+                final Category category = categoryInfo.contentClassIds.get(modInfo.getClassId());
                 // applicable category?
                 if (category == null) {
                     log.debug("Skipping project={} slug={} file={} since it is not an applicable classId={}",
@@ -669,7 +642,7 @@ public class CurseForgeInstaller {
                     );
                 }
 
-                return getModFileInfo(preparedFetch, uriBuilder, projectID, fileID)
+                return context.cfApi.getModFileInfo(projectID, fileID)
                     .flatMap(cfFile -> {
                         if (!forceIncludeIds.contains(projectID) && !isServerMod(cfFile)) {
                             log.debug("Skipping {} since it is a client mod", cfFile.getFileName());
@@ -689,12 +662,8 @@ public class CurseForgeInstaller {
                             return Mono.empty();
                         }
 
-                        final Mono<Path> assembledDownload = preparedFetch.fetch(
-                                normalizeDownloadUrl(cfFile.getDownloadUrl())
-                            )
-                            .toFile(baseDir.resolve(cfFile.getFileName()))
-                            .skipExisting(true)
-                            .handleStatus((status, uri, f) -> {
+                        final Mono<Path> assembledDownload =
+                            context.cfApi.download(cfFile, baseDir, (status, uri, f) -> {
                                 switch (status) {
                                     case SKIP_FILE_EXISTS:
                                         log.info("Mod file {} already exists", outputDir.relativize(f));
@@ -703,8 +672,7 @@ public class CurseForgeInstaller {
                                         log.info("Downloaded mod file {}", outputDir.relativize(f));
                                         break;
                                 }
-                            })
-                            .assemble();
+                            });
 
                         return isWorld ?
                             assembledDownload
@@ -785,53 +753,6 @@ public class CurseForgeInstaller {
         return !client;
     }
 
-    private static Mono<CurseForgeFile> getModFileInfo(SharedFetch preparedFetch, UriBuilder uriBuilder,
-        int projectID, int fileID
-    ) {
-        log.debug("Getting mod file metadata for {}:{}", projectID, fileID);
-
-        return preparedFetch.fetch(
-                uriBuilder.resolve("/mods/{modId}/files/{fileId}", projectID, fileID)
-            )
-            .toObject(GetModFileResponse.class)
-            .assemble()
-            .onErrorMap(FailedRequestException.class::isInstance, e -> {
-                final FailedRequestException fre = (FailedRequestException) e;
-                if (fre.getStatusCode() == 400) {
-                    if (isNotFoundResponse(fre.getBody())) {
-                        return new InvalidParameterException("Requested file not found for modpack", e);
-                    }
-                }
-                return e;
-            })
-            .map(GetModFileResponse::getData);
-    }
-
-    private static boolean isNotFoundResponse(String body) {
-        try {
-            final CurseForgeResponse<Void> resp = ObjectMappers.defaultMapper().readValue(
-                body, new TypeReference<CurseForgeResponse<Void>>() {}
-            );
-            return resp.getError().startsWith("Error: 404");
-        } catch (JsonProcessingException e) {
-            throw new GenericException("Unable to parse error response", e);
-        }
-    }
-
-    private static Mono<CurseForgeMod> getModInfo(
-        SharedFetch preparedFetch, UriBuilder uriBuilder,
-        int projectID
-    ) {
-        log.debug("Getting mod metadata for {}", projectID);
-
-        return preparedFetch.fetch(
-            uriBuilder.resolve("/mods/{modId}", projectID)
-        )
-            .toObject(GetModResponse.class)
-            .assemble()
-            .map(GetModResponse::getData);
-    }
-
     private void prepareModLoader(String id, String minecraftVersion) throws IOException {
         final String[] parts = id.split("-", 2);
         if (parts.length != 2) {
@@ -875,54 +796,4 @@ public class CurseForgeInstaller {
         }
     }
 
-    @AllArgsConstructor
-    static class CategoryInfo {
-        Map<Integer, Category> contentClassIds;
-        int modpackClassId;
-    }
-
-    /**
-     * @return mapping of classId to category instances that are classes and an acceptable server-side type
-     */
-    private CategoryInfo loadCategoryInfo(SharedFetch preparedFetch, UriBuilder uriBuilder) {
-        return preparedFetch
-            // get only categories that are classes, like mc-mods
-            .fetch(uriBuilder.resolve("/categories?gameId={gameId}&classesOnly=true", MINECRAFT_GAME_ID))
-            .toObject(GetCategoriesResponse.class)
-            .assemble()
-            .map(resp -> {
-                    final Map<Integer, Category> contentClassIds = new HashMap<>();
-                    Integer modpackClassId = null;
-
-                    for (final Category category : resp.getData()) {
-                        if (applicableClassIdSlugs.contains(category.getSlug())) {
-                            contentClassIds.put(category.getId(), category);
-                        }
-                        if (category.getSlug().equals(CATEGORY_SLUG_MODPACKS)) {
-                            modpackClassId = category.getId();
-                        }
-                    }
-
-                    if (modpackClassId == null) {
-                        throw new GenericException("Unable to lookup classId for modpacks");
-                    }
-
-                    return new CategoryInfo(contentClassIds, modpackClassId);
-                }
-                )
-            .block();
-    }
-
-    private static URI normalizeDownloadUrl(String downloadUrl) {
-        final int nameStart = downloadUrl.lastIndexOf('/');
-
-        final String filename = downloadUrl.substring(nameStart + 1);
-        return URI.create(
-            downloadUrl.substring(0, nameStart + 1) +
-                filename
-                    .replace(" ", "%20")
-                    .replace("[", "%5B")
-                    .replace("]", "%5D")
-        );
-    }
 }
