@@ -1,9 +1,20 @@
 package me.itzg.helpers.forge;
 
-import static me.itzg.helpers.http.Fetch.fetch;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
+import me.itzg.helpers.errors.GenericException;
+import me.itzg.helpers.errors.InvalidParameterException;
+import me.itzg.helpers.files.IoStreams;
+import me.itzg.helpers.files.Manifests;
+import me.itzg.helpers.files.ResultsFileWriter;
+import me.itzg.helpers.forge.model.PromotionsSlim;
+import me.itzg.helpers.http.FailedRequestException;
+import me.itzg.helpers.http.Uris;
+import me.itzg.helpers.json.ObjectMappers;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -21,18 +32,8 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.extern.slf4j.Slf4j;
-import me.itzg.helpers.errors.GenericException;
-import me.itzg.helpers.errors.InvalidParameterException;
-import me.itzg.helpers.files.IoStreams;
-import me.itzg.helpers.files.Manifests;
-import me.itzg.helpers.files.ResultsFileWriter;
-import me.itzg.helpers.forge.model.PromotionsSlim;
-import me.itzg.helpers.http.FailedRequestException;
-import me.itzg.helpers.http.Uris;
-import me.itzg.helpers.json.ObjectMappers;
+
+import static me.itzg.helpers.http.Fetch.fetch;
 
 @Slf4j
 public class ForgeInstaller {
@@ -45,7 +46,7 @@ public class ForgeInstaller {
             + "|The server installed successfully, you should now be able to run the file (?<universalJar>.+)");
     public static final String MANIFEST_ID = "forge";
 
-    private static final Pattern OLD_FORGE_ID_VERSION = Pattern.compile("Forge(.+)");
+    private static final Pattern OLD_FORGE_ID_VERSION = Pattern.compile("forge(.+)", Pattern.CASE_INSENSITIVE);
 
     @AllArgsConstructor
     private static class VersionPair {
@@ -176,13 +177,19 @@ public class ForgeInstaller {
 
             final JsonNode idNode = parsed.path("versionInfo").path("id");
             if (idNode.isTextual()) {
-                // such as "1.7.10-Forge10.13.4.1614-1.7.10"
                 final String[] idParts = idNode.asText().split("-");
 
                 if (idParts.length >= 2) {
                     final Matcher m = OLD_FORGE_ID_VERSION.matcher(idParts[1]);
                     if (m.matches()) {
-                        return new VersionPair(idParts[0], m.group(1));
+                        if (m.group(1).equals(idParts[0])) {
+                            // such as 1.11.2-forge1.11.2-13.20.1.2588
+                            return new VersionPair(idParts[0], idParts[2]);
+                        }
+                        else {
+                            // such as 1.7.10-Forge10.13.4.1614-1.7.10
+                            return new VersionPair(idParts[0], m.group(1));
+                        }
                     }
                     else {
                         throw new GenericException("Unexpected format of id from Forge installer's install_profile.json: " + idNode.asText());
