@@ -73,10 +73,6 @@ public class CurseForgeInstaller {
 
     @Getter
     @Setter
-    private int parallelism = 4;
-
-    @Getter
-    @Setter
     private boolean forceSynchronize;
 
     @Getter @Setter
@@ -506,7 +502,6 @@ public class CurseForgeInstaller {
                     safeStreamFrom(global), safeStreamFrom(specific)
                 )
             )
-            .parallel(parallelism)
             .flatMap(s -> {
                 try {
                     final int id = Integer.parseInt(s);
@@ -515,7 +510,6 @@ public class CurseForgeInstaller {
                     return context.cfApi.slugToId(categoryInfo, s);
                 }
             })
-            .sequential()
             .collect(Collectors.toSet());
     }
 
