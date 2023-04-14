@@ -1,12 +1,41 @@
 package me.itzg.helpers.curseforge;
 
+import static java.util.Collections.emptySet;
+import static java.util.Objects.requireNonNull;
+import static java.util.Optional.ofNullable;
+import static me.itzg.helpers.curseforge.MoreCollections.safeStreamFrom;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.curseforge.ExcludeIncludesContent.ExcludeIncludes;
-import me.itzg.helpers.curseforge.model.*;
+import me.itzg.helpers.curseforge.model.Category;
+import me.itzg.helpers.curseforge.model.CurseForgeFile;
+import me.itzg.helpers.curseforge.model.CurseForgeMod;
+import me.itzg.helpers.curseforge.model.ManifestFileRef;
+import me.itzg.helpers.curseforge.model.ManifestType;
+import me.itzg.helpers.curseforge.model.MinecraftModpackManifest;
+import me.itzg.helpers.curseforge.model.ModLoader;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.fabric.FabricLauncherInstaller;
@@ -18,23 +47,6 @@ import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.json.ObjectMappers;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
-
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-
-import static java.util.Collections.emptySet;
-import static java.util.Objects.requireNonNull;
-import static java.util.Optional.ofNullable;
-import static me.itzg.helpers.curseforge.MoreCollections.safeStreamFrom;
 
 @RequiredArgsConstructor
 @Slf4j
@@ -402,9 +414,6 @@ public class CurseForgeInstaller {
 
         // Go through all the files listed in modpack (given project ID + file ID)
         final List<PathWithInfo> modFiles = Flux.fromIterable(modpackManifest.getFiles())
-            // ...do parallel downloads to let small ones make progress during big ones
-            .parallel(parallelism)
-            .runOn(Schedulers.newParallel("downloader"))
             // ...does the modpack even say it's required?
             .filter(ManifestFileRef::isRequired)
             // ...is this mod file excluded because it is a client mod that didn't declare as such
@@ -417,7 +426,6 @@ public class CurseForgeInstaller {
                     context.categoryInfo
                 )
             )
-            .sequential()
             .collectList()
             .block();
 
