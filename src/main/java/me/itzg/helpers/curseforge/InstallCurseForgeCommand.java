@@ -1,14 +1,6 @@
 package me.itzg.helpers.curseforge;
 
-import me.itzg.helpers.files.ResultsFileWriter;
-import me.itzg.helpers.http.PathOrUri;
-import me.itzg.helpers.http.PathOrUriConverter;
-import me.itzg.helpers.http.SharedFetchArgs;
-import me.itzg.helpers.json.ObjectMappers;
-import picocli.CommandLine.ArgGroup;
-import picocli.CommandLine.Command;
-import picocli.CommandLine.ExitCode;
-import picocli.CommandLine.Option;
+import static me.itzg.helpers.http.Fetch.fetch;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -18,8 +10,15 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static me.itzg.helpers.http.Fetch.fetch;
+import me.itzg.helpers.files.ResultsFileWriter;
+import me.itzg.helpers.http.PathOrUri;
+import me.itzg.helpers.http.PathOrUriConverter;
+import me.itzg.helpers.http.SharedFetchArgs;
+import me.itzg.helpers.json.ObjectMappers;
+import picocli.CommandLine.ArgGroup;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.ExitCode;
+import picocli.CommandLine.Option;
 
 @Command(name = "install-curseforge", subcommands = {
     SchemasCommand.class
@@ -109,11 +108,6 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
     @Option(names = "--force-synchronize")
     boolean forceSynchronize;
 
-    @Option(names = "--parallel-downloads", defaultValue = "4",
-        description = "Default: ${DEFAULT-VALUE}"
-    )
-    int parallelDownloads;
-
     @Option(names = "--set-level-from",
         description = "When WORLD_FILE, a world file included the modpack will be unzipped into a folder under 'saves' and referenced as 'LEVEL' in the results file."
             + "\nWhen OVERRIDES and the overrides contains a world save directory (contains level.dat), then that directory will be referenced as 'LEVEL' in the results file."
@@ -169,7 +163,6 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
         final CurseForgeInstaller installer = new CurseForgeInstaller(outputDirectory, resultsFile)
             .setExcludeIncludes(excludeIncludes)
             .setForceSynchronize(forceSynchronize)
-            .setParallelism(parallelDownloads)
             .setLevelFrom(levelFrom)
             .setOverridesSkipExisting(overridesSkipExisting)
             .setSharedFetchOptions(sharedFetchArgs.options())
