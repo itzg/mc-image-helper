@@ -1,0 +1,22 @@
+{
+  "id" : "d6ff5215-fe9c-446c-b8dc-0f01a3b8226f",
+  "name" : "download_vanillatweaks_d952917_unzip_mezip",
+  "request" : {
+    "url" : "/download/VanillaTweaks_d952917_UNZIP_ME.zip",
+    "method" : "GET"
+  },
+  "response" : {
+    "status" : 200,
+    "base64Body" : "UEsDBBQAAAAAAEB8llbjzDGkBgAAAAYAAAAMAAAAZGF0YXBhY2sudHh0ckc0SlJtUEsBAhQAFAAAAAAAQHyWVuPMMaQGAAAABgAAAAwAAAAAAAAAAQAgAAAAAAAAAGRhdGFwYWNrLnR4dFBLBQYAAAAAAQABADoAAAAwAAAAAAA=",
+    "headers" : {
+      "Date" : "Thu, 20 Apr 2023 00:58:40 GMT",
+      "Content-Type" : "application/zip",
+      "Last-Modified" : "Thu, 20 Apr 2023 00:58:39 GMT",
+      "ETag" : "W/\"b9ad-5f9ba0a8e72b1\"",
+      "Cache-Control" : "max-age=1800"
+    }
+  },
+  "uuid" : "d6ff5215-fe9c-446c-b8dc-0f01a3b8226f",
+  "persistent" : false,
+  "insertionIndex" : 26
+}

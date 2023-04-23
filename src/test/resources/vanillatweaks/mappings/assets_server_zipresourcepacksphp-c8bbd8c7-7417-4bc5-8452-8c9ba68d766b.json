@@ -1,0 +1,23 @@
+{
+  "id" : "c8bbd8c7-7417-4bc5-8452-8c9ba68d766b",
+  "name" : "assets_server_zipresourcepacksphp",
+  "request" : {
+    "url" : "/assets/server/zipresourcepacks.php",
+    "method" : "POST",
+    "bodyPatterns" : [ {
+      "equalTo" : "packs=%7B%22aesthetic%22%3A%5B%22AlternateBlockDestruction%22%5D%7D&version=1.19",
+      "caseInsensitive" : false
+    } ]
+  },
+  "response" : {
+    "status" : 200,
+    "body" : "{\"status\":\"success\",\"link\":\"\\/download\\/VanillaTweaks_r201938.zip\"}",
+    "headers" : {
+      "Date" : "Thu, 20 Apr 2023 00:58:39 GMT",
+      "Content-Type" : "text/html; charset=UTF-8"
+    }
+  },
+  "uuid" : "c8bbd8c7-7417-4bc5-8452-8c9ba68d766b",
+  "persistent" : false,
+  "insertionIndex" : 25
+}

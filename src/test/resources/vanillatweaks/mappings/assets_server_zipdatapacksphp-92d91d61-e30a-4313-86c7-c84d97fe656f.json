@@ -1,0 +1,23 @@
+{
+  "id" : "92d91d61-e30a-4313-86c7-c84d97fe656f",
+  "name" : "assets_server_zipdatapacksphp",
+  "request" : {
+    "url" : "/assets/server/zipdatapacks.php",
+    "method" : "POST",
+    "bodyPatterns" : [ {
+      "equalTo" : "packs=%7B%22survival%22%3A%5B%22armor+statues%22%5D%7D&version=1.19",
+      "caseInsensitive" : false
+    } ]
+  },
+  "response" : {
+    "status" : 200,
+    "body" : "{\"status\":\"success\",\"link\":\"\\/download\\/VanillaTweaks_d952917_UNZIP_ME.zip\"}",
+    "headers" : {
+      "Date" : "Thu, 20 Apr 2023 00:58:39 GMT",
+      "Content-Type" : "text/html; charset=UTF-8"
+    }
+  },
+  "uuid" : "92d91d61-e30a-4313-86c7-c84d97fe656f",
+  "persistent" : false,
+  "insertionIndex" : 24
+}

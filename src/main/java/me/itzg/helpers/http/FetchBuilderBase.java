@@ -13,6 +13,7 @@ import reactor.core.publisher.Mono;
 import reactor.netty.ByteBufMono;
 import reactor.netty.Connection;
 import reactor.netty.http.client.HttpClient;
+import reactor.netty.http.client.HttpClientForm;
 import reactor.netty.http.client.HttpClientRequest;
 import reactor.netty.http.client.HttpClientResponse;
 
@@ -20,6 +21,7 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -81,6 +83,11 @@ public class FetchBuilderBase<SELF extends FetchBuilderBase<SELF>> {
         return new ObjectFetchBuilder<>(this.state, type, false, ObjectMappers.defaultMapper());
     }
 
+    protected  <T> ObjectFetchBuilder<T> toObject(Class<T> type, RequestAssembler requestAssembler) {
+        acceptContentTypes(Collections.singletonList("application/json"));
+        return new ObjectFetchBuilder<>(this.state, type, false, ObjectMappers.defaultMapper(), requestAssembler);
+    }
+
     /**
      * NOTE: this will set expected content types to application/json
      */
@@ -91,6 +98,10 @@ public class FetchBuilderBase<SELF extends FetchBuilderBase<SELF>> {
 
     public <T> ObjectFetchBuilder<T> toObject(Class<T> type, ObjectMapper objectMapper) {
         return new ObjectFetchBuilder<>(this.state, type, false, objectMapper);
+    }
+
+    public FormFetchBuilder sendForm(Consumer<HttpClientForm> prepareForm) {
+        return new FormFetchBuilder(state, prepareForm);
     }
 
     protected URI uri() {

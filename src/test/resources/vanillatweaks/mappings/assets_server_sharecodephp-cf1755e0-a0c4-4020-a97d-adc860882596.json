@@ -1,0 +1,20 @@
+{
+  "id" : "cf1755e0-a0c4-4020-a97d-adc860882596",
+  "name" : "assets_server_sharecodephp",
+  "request" : {
+    "url" : "/assets/server/sharecode.php?code=4mwbtQ",
+    "method" : "GET"
+  },
+  "response" : {
+    "status" : 200,
+    "body" : "{\"type\":\"resourcepacks\",\"version\":\"1.19\",\"packs\":{\"aesthetic\":[\"AlternateBlockDestruction\"]},\"result\":\"ok\"}",
+    "headers" : {
+      "Date" : "Thu, 20 Apr 2023 00:58:39 GMT",
+      "Content-Type" : "text/html; charset=UTF-8",
+      "Vary" : "Accept-Encoding"
+    }
+  },
+  "uuid" : "cf1755e0-a0c4-4020-a97d-adc860882596",
+  "persistent" : false,
+  "insertionIndex" : 21
+}

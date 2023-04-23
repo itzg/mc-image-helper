@@ -1,4 +1,4 @@
-package me.itzg.helpers.curseforge;
+package me.itzg.helpers.singles;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -33,5 +33,16 @@ public class MoreCollections {
     }
     public static <T> Stream<T> safeStreamFrom(Set<T> set) {
         return set != null ? set.stream() : Stream.empty();
+    }
+
+    public static <T> boolean equalsIgnoreOrder(Collection<T> lhs, Collection<T> rhs) {
+        if (lhs == null && rhs == null) {
+            return true;
+        }
+        if (lhs == null || rhs == null) {
+            return false;
+        }
+        return lhs.size() == rhs.size()
+            && lhs.containsAll(rhs);
     }
 }

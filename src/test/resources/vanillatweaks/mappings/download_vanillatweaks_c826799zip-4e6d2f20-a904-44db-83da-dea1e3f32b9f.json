@@ -1,0 +1,22 @@
+{
+  "id" : "4e6d2f20-a904-44db-83da-dea1e3f32b9f",
+  "name" : "download_vanillatweaks_c826799zip",
+  "request" : {
+    "url" : "/download/VanillaTweaks_c826799.zip",
+    "method" : "GET"
+  },
+  "response" : {
+    "status" : 200,
+    "body" : "sgMq8u",
+    "headers" : {
+      "Date" : "Thu, 20 Apr 2023 00:58:40 GMT",
+      "Content-Type" : "application/zip",
+      "Last-Modified" : "Thu, 20 Apr 2023 00:58:40 GMT",
+      "ETag" : "W/\"162dd-5f9ba0a934514\"",
+      "Cache-Control" : "max-age=1800"
+    }
+  },
+  "uuid" : "4e6d2f20-a904-44db-83da-dea1e3f32b9f",
+  "persistent" : false,
+  "insertionIndex" : 29
+}

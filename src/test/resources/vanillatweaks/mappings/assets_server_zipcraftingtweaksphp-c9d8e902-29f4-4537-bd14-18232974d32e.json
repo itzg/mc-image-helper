@@ -1,0 +1,23 @@
+{
+  "id" : "c9d8e902-29f4-4537-bd14-18232974d32e",
+  "name" : "assets_server_zipcraftingtweaksphp",
+  "request" : {
+    "url" : "/assets/server/zipcraftingtweaks.php",
+    "method" : "POST",
+    "bodyPatterns" : [ {
+      "equalTo" : "packs=%7B%22quality-of-life%22%3A%5B%22back+to+blocks%22%5D%7D&version=1.19",
+      "caseInsensitive" : false
+    } ]
+  },
+  "response" : {
+    "status" : 200,
+    "body" : "{\"status\":\"success\",\"link\":\"\\/download\\/VanillaTweaks_c826799.zip\"}",
+    "headers" : {
+      "Date" : "Thu, 20 Apr 2023 00:58:40 GMT",
+      "Content-Type" : "text/html; charset=UTF-8"
+    }
+  },
+  "uuid" : "c9d8e902-29f4-4537-bd14-18232974d32e",
+  "persistent" : false,
+  "insertionIndex" : 28
+}

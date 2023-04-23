@@ -1,0 +1,20 @@
+{
+  "id" : "d520ebaa-7346-4228-af50-bee647057b5b",
+  "name" : "assets_server_sharecodephp",
+  "request" : {
+    "url" : "/assets/server/sharecode.php?code=sgMq8u",
+    "method" : "GET"
+  },
+  "response" : {
+    "status" : 200,
+    "body" : "{\"type\":\"craftingtweaks\",\"version\":\"1.19\",\"packs\":{\"quality-of-life\":[\"back to blocks\"]},\"result\":\"ok\"}",
+    "headers" : {
+      "Date" : "Thu, 20 Apr 2023 00:58:39 GMT",
+      "Content-Type" : "text/html; charset=UTF-8",
+      "Vary" : "Accept-Encoding"
+    }
+  },
+  "uuid" : "d520ebaa-7346-4228-af50-bee647057b5b",
+  "persistent" : false,
+  "insertionIndex" : 22
+}

@@ -2,23 +2,32 @@ package me.itzg.helpers.http;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
-import java.io.IOException;
-import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import reactor.netty.ByteBufMono;
+import reactor.netty.http.client.HttpClient;
 import reactor.netty.http.client.HttpClientResponse;
 
+import java.io.IOException;
+import java.util.List;
+
 @Slf4j
-public class ObjectFetchBuilder<T> extends FetchBuilderBase<ObjectFetchBuilder<T>> {
+public class ObjectFetchBuilder<T> extends FetchBuilderBase<ObjectFetchBuilder<T>>
+    implements RequestResponseAssembler<T>
+{
 
     private final Class<T> type;
     private final boolean listOf;
     private final ObjectReader reader;
+    private final RequestAssembler requestAssembler;
 
     protected ObjectFetchBuilder(State state, Class<T> type, boolean listOf, ObjectMapper objectMapper) {
+        this(state, type, listOf, objectMapper, null);
+    }
+
+    protected ObjectFetchBuilder(State state, Class<T> type, boolean listOf, ObjectMapper objectMapper, RequestAssembler requestAssembler) {
         super(state);
         this.type = type;
         this.listOf = listOf;
@@ -28,12 +37,14 @@ public class ObjectFetchBuilder<T> extends FetchBuilderBase<ObjectFetchBuilder<T
         else {
             reader = objectMapper.readerFor(type);
         }
+        this.requestAssembler = requestAssembler != null ? requestAssembler : this::assembleRequest;
     }
 
     public T execute() {
         return assemble().block();
     }
 
+    @Override
     public Mono<T> assemble() {
         return assembleCommon();
     }
@@ -44,14 +55,18 @@ public class ObjectFetchBuilder<T> extends FetchBuilderBase<ObjectFetchBuilder<T
 
     private <R> Mono<R> assembleCommon() {
         return useReactiveClient(client ->
-            client
+            requestAssembler.assembleRequest(client)
+                .responseSingle(this::handleResponse)
+        );
+    }
+
+    private HttpClient.ResponseReceiver<?> assembleRequest(HttpClient client) {
+        return client
                 .headers(this::applyHeaders)
                 .followRedirect(true)
                 .doOnRequest(debugLogRequest(log, "json fetch"))
                 .get()
-                .uri(uri())
-                .responseSingle(this::handleResponse)
-        );
+                .uri(uri());
     }
 
     private <R> Mono<R> handleResponse(HttpClientResponse resp, ByteBufMono bodyMono) {

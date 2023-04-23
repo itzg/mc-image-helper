@@ -1,0 +1,20 @@
+{
+  "id" : "af3b07fa-cb39-44f3-b8cb-871076311d74",
+  "name" : "assets_server_sharecodephp",
+  "request" : {
+    "url" : "/assets/server/sharecode.php?code=rG4JRm",
+    "method" : "GET"
+  },
+  "response" : {
+    "status" : 200,
+    "body" : "{\"type\":\"datapacks\",\"version\":\"1.19\",\"packs\":{\"survival\":[\"armor statues\"]},\"result\":\"ok\"}",
+    "headers" : {
+      "Date" : "Thu, 20 Apr 2023 00:58:39 GMT",
+      "Content-Type" : "text/html; charset=UTF-8",
+      "Vary" : "Accept-Encoding"
+    }
+  },
+  "uuid" : "af3b07fa-cb39-44f3-b8cb-871076311d74",
+  "persistent" : false,
+  "insertionIndex" : 23
+}
