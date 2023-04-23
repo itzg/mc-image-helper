@@ -14,16 +14,10 @@
     "body" : "{\"status\":\"success\",\"link\":\"\\/download\\/VanillaTweaks_c826799.zip\"}",
     "headers" : {
       "Date" : "Thu, 20 Apr 2023 00:58:40 GMT",
-      "Content-Type" : "text/html; charset=UTF-8",
-      "CF-Cache-Status" : "DYNAMIC",
-      "Report-To" : "{\"endpoints\":[{\"url\":\"https:\\/\\/a.nel.cloudflare.com\\/report\\/v3?s=I6zc%2B3siWKtKozY1hC4H0%2FGYHC7uwU1vjcTVuT26cWlOozmS5q5hdN3z3mwuoQkgBVHUc%2BIa6HIvtF4R8jpm6BgSCLyDjYT%2FNze5BiCmJirOoeF09UD5SFMzsyWx%2BM0n8lQ%2B7Q%3D%3D\"}],\"group\":\"cf-nel\",\"max_age\":604800}",
-      "NEL" : "{\"success_fraction\":0,\"report_to\":\"cf-nel\",\"max_age\":604800}",
-      "Server" : "cloudflare",
-      "CF-RAY" : "7ba970af2afe2d33-DFW",
-      "alt-svc" : "h3=\":443\"; ma=86400, h3-29=\":443\"; ma=86400"
+      "Content-Type" : "text/html; charset=UTF-8"
     }
   },
   "uuid" : "c9d8e902-29f4-4537-bd14-18232974d32e",
-  "persistent" : true,
+  "persistent" : false,
   "insertionIndex" : 28
 }

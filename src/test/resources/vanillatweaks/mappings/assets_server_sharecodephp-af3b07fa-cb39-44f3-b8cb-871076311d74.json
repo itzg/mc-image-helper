@@ -11,16 +11,10 @@
     "headers" : {
       "Date" : "Thu, 20 Apr 2023 00:58:39 GMT",
       "Content-Type" : "text/html; charset=UTF-8",
-      "Vary" : "Accept-Encoding",
-      "CF-Cache-Status" : "DYNAMIC",
-      "Report-To" : "{\"endpoints\":[{\"url\":\"https:\\/\\/a.nel.cloudflare.com\\/report\\/v3?s=%2BeLPKoqvcP3A5cbBO%2FQVdVrmZDX4umru2pkpBudU19dWK0CNeGVVdewQHPmloyjDmC%2FP1lq%2BhKgufRWbZXV5veS%2BeW1ue0WWWm8gI8F5SxM%2Fxuu8yF0ujux7tDs1XWNDMluwOg%3D%3D\"}],\"group\":\"cf-nel\",\"max_age\":604800}",
-      "NEL" : "{\"success_fraction\":0,\"report_to\":\"cf-nel\",\"max_age\":604800}",
-      "Server" : "cloudflare",
-      "CF-RAY" : "7ba970addf5e2ccc-DFW",
-      "alt-svc" : "h3=\":443\"; ma=86400, h3-29=\":443\"; ma=86400"
+      "Vary" : "Accept-Encoding"
     }
   },
   "uuid" : "af3b07fa-cb39-44f3-b8cb-871076311d74",
-  "persistent" : true,
+  "persistent" : false,
   "insertionIndex" : 23
 }
