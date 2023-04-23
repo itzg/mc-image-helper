@@ -1,0 +1,29 @@
+{
+  "id" : "c8bbd8c7-7417-4bc5-8452-8c9ba68d766b",
+  "name" : "assets_server_zipresourcepacksphp",
+  "request" : {
+    "url" : "/assets/server/zipresourcepacks.php",
+    "method" : "POST",
+    "bodyPatterns" : [ {
+      "equalTo" : "packs=%7B%22aesthetic%22%3A%5B%22AlternateBlockDestruction%22%5D%7D&version=1.19",
+      "caseInsensitive" : false
+    } ]
+  },
+  "response" : {
+    "status" : 200,
+    "body" : "{\"status\":\"success\",\"link\":\"\\/download\\/VanillaTweaks_r201938.zip\"}",
+    "headers" : {
+      "Date" : "Thu, 20 Apr 2023 00:58:39 GMT",
+      "Content-Type" : "text/html; charset=UTF-8",
+      "CF-Cache-Status" : "DYNAMIC",
+      "Report-To" : "{\"endpoints\":[{\"url\":\"https:\\/\\/a.nel.cloudflare.com\\/report\\/v3?s=1kYIFw8JpGMo0g2tkbjpfoV0JZ9FXZ%2BbqMAW4GhQSS%2Fo4LBVc64Kvt%2F7aggIASeMgaMlA0STnvpX0w9S2oOa4hL7piHTqdvWhtZxE05uvBL%2BBRqNGFy48qaJtpMo5KKOcMaR4A%3D%3D\"}],\"group\":\"cf-nel\",\"max_age\":604800}",
+      "NEL" : "{\"success_fraction\":0,\"report_to\":\"cf-nel\",\"max_age\":604800}",
+      "Server" : "cloudflare",
+      "CF-RAY" : "7ba970af2cdfaa81-DFW",
+      "alt-svc" : "h3=\":443\"; ma=86400, h3-29=\":443\"; ma=86400"
+    }
+  },
+  "uuid" : "c8bbd8c7-7417-4bc5-8452-8c9ba68d766b",
+  "persistent" : true,
+  "insertionIndex" : 25
+}

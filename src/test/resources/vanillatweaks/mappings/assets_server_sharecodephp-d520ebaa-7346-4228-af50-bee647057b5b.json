@@ -1,0 +1,26 @@
+{
+  "id" : "d520ebaa-7346-4228-af50-bee647057b5b",
+  "name" : "assets_server_sharecodephp",
+  "request" : {
+    "url" : "/assets/server/sharecode.php?code=sgMq8u",
+    "method" : "GET"
+  },
+  "response" : {
+    "status" : 200,
+    "body" : "{\"type\":\"craftingtweaks\",\"version\":\"1.19\",\"packs\":{\"quality-of-life\":[\"back to blocks\"]},\"result\":\"ok\"}",
+    "headers" : {
+      "Date" : "Thu, 20 Apr 2023 00:58:39 GMT",
+      "Content-Type" : "text/html; charset=UTF-8",
+      "Vary" : "Accept-Encoding",
+      "CF-Cache-Status" : "DYNAMIC",
+      "Report-To" : "{\"endpoints\":[{\"url\":\"https:\\/\\/a.nel.cloudflare.com\\/report\\/v3?s=goBtv3GRmxADVuXr0apeI6lBOcXrz4cKHxan18b3MlGahs8CC7zShy7dvA130Mxic5xGjHzFfop3p7LTNiqJswb4%2F2lFF%2FVR4HGXz5yjYdMzEOBGWAM85vtSWvmBcdC9yg3HEA%3D%3D\"}],\"group\":\"cf-nel\",\"max_age\":604800}",
+      "NEL" : "{\"success_fraction\":0,\"report_to\":\"cf-nel\",\"max_age\":604800}",
+      "Server" : "cloudflare",
+      "CF-RAY" : "7ba970adde8ee867-DFW",
+      "alt-svc" : "h3=\":443\"; ma=86400, h3-29=\":443\"; ma=86400"
+    }
+  },
+  "uuid" : "d520ebaa-7346-4228-af50-bee647057b5b",
+  "persistent" : true,
+  "insertionIndex" : 22
+}

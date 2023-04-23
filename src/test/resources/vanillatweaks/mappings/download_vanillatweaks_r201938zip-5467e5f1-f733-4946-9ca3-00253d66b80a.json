@@ -1,0 +1,29 @@
+{
+  "id" : "5467e5f1-f733-4946-9ca3-00253d66b80a",
+  "name" : "download_vanillatweaks_r201938zip",
+  "request" : {
+    "url" : "/download/VanillaTweaks_r201938.zip",
+    "method" : "GET"
+  },
+  "response" : {
+    "status" : 200,
+    "body" : "4mwbtQ",
+    "headers" : {
+      "Date" : "Thu, 20 Apr 2023 00:58:40 GMT",
+      "Content-Type" : "application/zip",
+      "Last-Modified" : "Thu, 20 Apr 2023 00:58:39 GMT",
+      "ETag" : "W/\"2377-5f9ba0a8eefb1\"",
+      "Cache-Control" : "max-age=1800",
+      "CF-Cache-Status" : "MISS",
+      "Accept-Ranges" : "bytes",
+      "Report-To" : "{\"endpoints\":[{\"url\":\"https:\\/\\/a.nel.cloudflare.com\\/report\\/v3?s=c3QFNcRl0YFAMypfjGQuh655eBVhm7fHaMUGA3a1wAZIOCT46DEdW%2Fl1nIM9jnxNqDZeEY3%2Fl0mPYKG0z9QUJSS%2FcAquEpdzQd0sItsGkVuXJhJQdPgIIaaLuYiaaUxvD5Nnvw%3D%3D\"}],\"group\":\"cf-nel\",\"max_age\":604800}",
+      "NEL" : "{\"success_fraction\":0,\"report_to\":\"cf-nel\",\"max_age\":604800}",
+      "Server" : "cloudflare",
+      "CF-RAY" : "7ba970b05c120bef-DFW",
+      "alt-svc" : "h3=\":443\"; ma=86400, h3-29=\":443\"; ma=86400"
+    }
+  },
+  "uuid" : "5467e5f1-f733-4946-9ca3-00253d66b80a",
+  "persistent" : true,
+  "insertionIndex" : 27
+}

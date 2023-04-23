@@ -5,6 +5,15 @@ import picocli.CommandLine.Option;
 
 import java.time.Duration;
 
+/**
+ * Usage:
+ * <pre>
+ * {@code
+ *     @ArgGroup(exclusive = false)
+ *     SharedFetchArgs sharedFetchArgs = new SharedFetchArgs();
+ * }
+ * </pre>
+ */
 public class SharedFetchArgs {
 
     private final Options.OptionsBuilder optionsBuilder = Options.builder();

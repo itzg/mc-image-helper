@@ -1,15 +1,16 @@
 package me.itzg.helpers.vanillatweaks;
 
-import java.time.Instant;
-import java.util.List;
-import java.util.Set;
 import lombok.Builder;
 import lombok.Data;
 import lombok.extern.jackson.Jacksonized;
 
+import java.time.Instant;
+import java.util.List;
+import java.util.Set;
+
 @Data
 @Builder @Jacksonized
-public class Manifest {
+public class LegacyManifest {
     Instant timestamp;
 
     List<String> shareCodes;

@@ -1,40 +1,20 @@
 package me.itzg.helpers.vanillatweaks;
 
-import static me.itzg.helpers.McImageHelper.OPTION_SPLIT_COMMAS;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.netty.handler.codec.http.HttpHeaderNames;
-import java.io.IOException;
-import java.io.InputStream;
-import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.time.Instant;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.stream.Collectors;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.files.Manifests;
-import me.itzg.helpers.http.HttpClientException;
-import me.itzg.helpers.http.ReactorNettyBits;
-import me.itzg.helpers.http.Uris;
+import me.itzg.helpers.http.*;
 import me.itzg.helpers.json.ObjectMappers;
+import me.itzg.helpers.singles.MoreCollections;
 import me.itzg.helpers.vanillatweaks.model.PackDefinition;
 import me.itzg.helpers.vanillatweaks.model.Type;
 import me.itzg.helpers.vanillatweaks.model.ZipLinkResponse;
+import org.reactivestreams.Publisher;
+import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.Option;
@@ -42,22 +22,32 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.math.BigInteger;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+
+import static me.itzg.helpers.McImageHelper.OPTION_SPLIT_COMMAS;
+
 @Command(name = "vanillatweaks", description = "Downloads Vanilla Tweaks resource packs, data packs, or crafting tweaks"
     + " given a share code or pack file")
 @Slf4j
 public class VanillaTweaksCommand implements Callable<Integer> {
 
-    public static final String MANIFEST_FILENAME = ".vanillatweaks.manifest";
+    public static final String LEGACY_MANIFEST_FILENAME = ".vanillatweaks.manifest";
+    public static final String MANIFEST_ID = "vanillatweaks";
     private static final int FINGERPRINT_LENGTH = 7;
-
-    @SuppressWarnings("unused") // used by picocli
-    public VanillaTweaksCommand() {
-        this("https://vanillatweaks.net");
-    }
-
-    public VanillaTweaksCommand(String baseUrl) {
-        this.baseUrl = baseUrl;
-    }
 
     @Option(names = "--share-codes", required = true, split = OPTION_SPLIT_COMMAS, paramLabel = "CODE")
     List<String> shareCodes;
@@ -71,12 +61,18 @@ public class VanillaTweaksCommand implements Callable<Integer> {
     @Option(names = "--world-subdir", defaultValue = "world")
     String worldSubdir;
 
-    private static final ReactorNettyBits bits = new ReactorNettyBits();
+    @Option(names = "--base-url", defaultValue = "${env:VT_BASE_URL:-https://vanillatweaks.net}")
+    String baseUrl;
+
+    @Option(names = "--force-synchronize", defaultValue = "${env:VT_FORCE_SYNCHRONIZE:-false}")
+    boolean forceSynchronize;
+
+    @ArgGroup(exclusive = false)
+    SharedFetchArgs sharedFetchArgs = new SharedFetchArgs();
 
     private static final ObjectMapper objectMapper = ObjectMappers.defaultMapper();
 
     private final Set<Path> writtenFiles = Collections.synchronizedSet(new HashSet<>());
-    private final String baseUrl;
     private Path worldPath;
 
     @AllArgsConstructor
@@ -93,58 +89,89 @@ public class VanillaTweaksCommand implements Callable<Integer> {
             return ExitCode.USAGE;
         }
 
-        final Path manifestPath = outputDirectory.resolve(MANIFEST_FILENAME);
+        final VanillaTweaksManifest oldManifest = loadManifest();
+
+        if (oldManifest != null &&
+            sameInputs(oldManifest) &&
+            Manifests.allFilesPresent(outputDirectory, oldManifest)
+        ) {
+            if (!forceSynchronize) {
+                log.info("Requested VanillaTweaks content is already present");
+                return ExitCode.OK;
+            }
+        }
 
         worldPath = outputDirectory.resolve(worldSubdir);
         Files.createDirectories(worldPath);
 
-        final Manifest oldManifest;
-        if (Files.exists(manifestPath)) {
-            oldManifest = objectMapper.readValue(manifestPath.toFile(), Manifest.class);
-            log.debug("Loaded existing manifest={}", oldManifest);
-        } else {
-            oldManifest = null;
+        try (SharedFetch sharedFetch = Fetch.sharedFetch("vanillatweaks", sharedFetchArgs.options())) {
+            loadPackDefinitions()
+                .concatWith(resolveShareCodes(sharedFetch))
+                .flatMap(packDefinition -> processPackDefinition(sharedFetch, packDefinition.source,
+                    packDefinition.packDefinition
+                ))
+                .then()
+                .block();
+
         }
 
-        loadPackDefinitions()
-            .concatWith(resolveShareCodes())
-            .parallel()
-            .runOn(Schedulers.parallel())
-            .flatMap(packDefinition -> processPackDefinition(packDefinition.source, packDefinition.packDefinition))
-            .then()
-            .block();
 
-        final Manifest newManifest = Manifest.builder()
-            .timestamp(Instant.now())
+        final VanillaTweaksManifest newManifest = VanillaTweaksManifest.builder()
             .shareCodes(shareCodes)
-            .files(
-                writtenFiles.stream()
-                    .map(path -> outputDirectory.relativize(path).toString())
-                    .collect(Collectors.toSet())
+            .packFiles(packFiles != null ?
+                packFiles.stream()
+                    .map(Path::toString)
+                    .collect(Collectors.toList())
+                : null
             )
+            .files(Manifests.relativizeAll(outputDirectory, writtenFiles))
             .build();
 
-        if (oldManifest != null) {
-            Manifests.cleanup(outputDirectory, oldManifest.getFiles(), newManifest.getFiles(),
-                file -> log.debug("Deleting old file={}", file)
-            );
-        }
-
-        objectMapper.writerWithDefaultPrettyPrinter()
-            .writeValue(manifestPath.toFile(), newManifest);
+        Manifests.cleanup(outputDirectory, oldManifest, newManifest, log);
+        Manifests.save(outputDirectory, MANIFEST_ID, newManifest);
 
         return ExitCode.OK;
     }
 
-    private Flux<SourcedPackDefinition> resolveShareCodes() {
+    private boolean sameInputs(VanillaTweaksManifest oldManifest) {
+        if (packFiles != null && !packFiles.isEmpty()) {
+            // for now, presence of pack files, rather than share codes defeats same-ness
+            return false;
+        }
+        return MoreCollections.equalsIgnoreOrder(
+            oldManifest.getShareCodes(),
+            shareCodes
+        );
+    }
+
+    private VanillaTweaksManifest loadManifest() throws IOException {
+        final Path legacyManifestPath = outputDirectory.resolve(LEGACY_MANIFEST_FILENAME);
+
+        if (Files.exists(legacyManifestPath)) {
+            final LegacyManifest oldManifest;
+            oldManifest = objectMapper.readValue(legacyManifestPath.toFile(), LegacyManifest.class);
+            Files.delete(legacyManifestPath);
+            log.debug("Loaded legacy manifest={}", oldManifest);
+            return VanillaTweaksManifest.builder()
+                .shareCodes(oldManifest.getShareCodes())
+                .files(oldManifest.getFiles())
+                .build();
+        } else {
+            return Manifests.load(outputDirectory, MANIFEST_ID, VanillaTweaksManifest.class);
+        }
+    }
+
+    private Flux<SourcedPackDefinition> resolveShareCodes(SharedFetch sharedFetch) {
         if (shareCodes == null) {
             return Flux.empty();
         }
 
-        return Flux.fromIterable(shareCodes)
-            // handle --arg= case
-            .filter(shareCode -> !shareCode.isEmpty())
-            .flatMap(this::resolveShareCode);
+        return Flux.fromStream(
+                shareCodes.stream()
+                    // handle --arg= case
+                    .filter(s -> !s.isEmpty())
+            )
+            .flatMap(shareCode -> resolveShareCode(sharedFetch, shareCode));
     }
 
 
@@ -153,34 +180,35 @@ public class VanillaTweaksCommand implements Callable<Integer> {
             return Flux.empty();
         }
 
-        return Flux.fromIterable(packFiles)
-            // handle --arg= case
-            .filter(path -> !path.toString().isEmpty())
-            .map(path -> {
+        return Flux.fromStream(
+                packFiles.stream()
+                    // handle --arg= case
+                    .filter(path -> !path.toString().isEmpty())
+            )
+            .handle((path, sink) -> {
                 try {
-                    return new SourcedPackDefinition(
+                    sink.next(new SourcedPackDefinition(
                         "definition file " + path,
                         objectMapper.readValue(path.toFile(), PackDefinition.class)
-                    );
+                    ));
                 } catch (IOException e) {
-                    throw new GenericException("Failed to load pack definition file", e);
+                    sink.error(new GenericException("Failed to load pack definition file", e));
                 }
             });
     }
 
-    private Mono<Void> processPackDefinition(String source, PackDefinition packDefinition) {
-        final String fingerprint = calculateFingerprint(packDefinition);
-        return resolveDownloadLink(packDefinition)
-            .flatMap(url -> downloadVanillaTweaksZip(source, packDefinition.getType(), url))
-            .publishOn(Schedulers.boundedElastic())
-            .flatMap(zipPath -> {
+    private Mono<Void> processPackDefinition(SharedFetch sharedFetch, String source, PackDefinition packDefinition) {
+        return resolveDownloadLink(sharedFetch, packDefinition)
+            .flatMapMany(url -> {
                 try {
-                    unpack(packDefinition.getType(), zipPath, fingerprint);
-                    return Mono.empty();
+                    return downloadVanillaTweaksZip(
+                        sharedFetch, source, packDefinition.getType(), url, calculateFingerprint(packDefinition));
                 } catch (IOException e) {
-                    return Mono.error(e);
+                    return Flux.error(e);
                 }
-            });
+            })
+            .doOnNext(writtenFiles::add)
+            .then();
     }
 
     private String calculateFingerprint(PackDefinition packDefinition) {
@@ -213,109 +241,125 @@ public class VanillaTweaksCommand implements Callable<Integer> {
         }
     }
 
-    private void unpack(Type type, Path srcZip, String fingerprint) throws IOException {
-        switch (type) {
-            case resourcepacks: {
-                final Path destZip = Files.createDirectories(outputDirectory.resolve("resourcepacks"))
-                    .resolve(String.format("VanillaTweaks_%s.zip", fingerprint));
-
-                log.debug("Moving crafting tweaks {}", destZip);
-                writtenFiles.add(
-                    Files.move(srcZip,
-                        destZip,
-                        StandardCopyOption.REPLACE_EXISTING
-                    )
-                );
-                break;
-            }
-
-            case datapacks: {
-                final Path datapacks = Files.createDirectories(worldPath.resolve("datapacks"));
-                log.debug("Unzipping datapack into {}", datapacks);
-                unzipInto(srcZip, datapacks);
-                Files.delete(srcZip);
-                break;
-            }
-
-            case craftingtweaks: {
-                final Path destZip = Files.createDirectories(worldPath.resolve("datapacks"))
-                    .resolve(String.format("VanillaTweaks_%s.zip", fingerprint));
-
-                log.debug("Moving resource pack file to {}", destZip);
-                writtenFiles.add(
-                    Files.move(srcZip,
-                        destZip,
-                        StandardCopyOption.REPLACE_EXISTING
-                    )
-                );
-                break;
-            }
-        }
+    private Path resourcePacksDir() throws IOException {
+        return Files.createDirectories(outputDirectory.resolve("resourcepacks"));
     }
 
-    private void unzipInto(Path zipPath, Path datapacks) throws IOException {
+    private Path dataPacksDir() throws IOException {
+        return Files.createDirectories(worldPath.resolve("datapacks"));
+    }
+
+    /**
+     * Must be within {@link Schedulers#boundedElastic()}
+     */
+    @SuppressWarnings("BlockingMethodInNonBlockingContext")
+    private Flux<Path> unzipInto(Path zipPath, Path outDir) throws IOException {
+        final List<Path> result = new ArrayList<>();
         try (InputStream in = Files.newInputStream(zipPath);
-            ZipInputStream zip = new ZipInputStream(in)) {
+             ZipInputStream zip = new ZipInputStream(in)) {
             ZipEntry entry;
             while ((entry = zip.getNextEntry()) != null) {
-                final Path target = datapacks.resolve(entry.getName());
+                final Path target = outDir.resolve(entry.getName());
                 Files.copy(zip, target, StandardCopyOption.REPLACE_EXISTING);
-                writtenFiles.add(target);
+                result.add(target);
             }
+        }
+        return Flux.fromIterable(result);
+    }
+
+    private Publisher<Path> downloadVanillaTweaksZip(SharedFetch sharedFetch, String source, Type type, String url, String packId) throws IOException {
+        log.info("Downloading Vanilla Tweaks {} for {}", type, source);
+
+        switch (type) {
+            case resourcepacks:
+                return sharedFetch
+                    .fetch(URI.create(url))
+                    .toFile(resourcePacksDir().resolve(String.format("VanillaTweaks_%s.zip", packId)))
+                    .skipExisting(true)
+                    .assemble()
+                    .checkpoint("Downloading resource pack zip");
+
+            case craftingtweaks:
+                return sharedFetch
+                    .fetch(URI.create(url))
+                    .toFile(dataPacksDir().resolve(String.format("VanillaTweaks_%s.zip", packId)))
+                    .skipExisting(true)
+                    .assemble()
+                    .checkpoint("Downloading crafting tweaks zip");
+
+            case datapacks:
+                return Mono.just("")
+                    .publishOn(Schedulers.boundedElastic())
+                    .flatMapMany(s -> {
+                        final Path tempZip;
+                        try {
+                            //noinspection BlockingMethodInNonBlockingContext
+                            tempZip = Files.createTempFile("VT", ".zip");
+                        } catch (IOException e) {
+                            return Flux.error(new GenericException("Failed to create temp zip for datapack", e));
+                        }
+                        return sharedFetch
+                            .fetch(URI.create(url))
+                            .toFile(tempZip)
+                            .assemble()
+                            .checkpoint("Downloading datapack zip")
+                            .publishOn(Schedulers.boundedElastic())
+                            .flatMapMany(downloaded -> {
+                                try {
+                                    return unzipInto(tempZip, dataPacksDir());
+                                } catch (IOException e) {
+                                    return Flux.error(e);
+                                }
+                            })
+                            .doOnTerminate(() -> {
+                                try {
+                                    Files.delete(tempZip);
+                                } catch (IOException e) {
+                                    throw new GenericException("Failed to delete temp datapack zip", e);
+                                }
+                            });
+                    });
+
+            default:
+                return Flux.error(new GenericException("Unexpected type: " + type));
         }
     }
 
-    private Mono<Path> downloadVanillaTweaksZip(String source, Type type, String url) {
-        log.info("Downloading Vanilla Tweaks {} for {}", type, source);
-        return bits.client()
-            .headers(entries -> entries.add(HttpHeaderNames.ACCEPT, "application/zip"))
-            .get()
-            .uri(url)
-            .responseContent().aggregate()
-            .asInputStream()
-            .publishOn(Schedulers.boundedElastic())
-            .map(inputStream -> {
-                try {
-                    final Path downloadedZip = Files.createTempFile("vanillatweaks", ".zip");
-                    Files.copy(inputStream, downloadedZip, StandardCopyOption.REPLACE_EXISTING);
-                    return downloadedZip;
-                } catch (IOException e) {
-                    throw new GenericException("Trying to write downloaded pack zip file", e);
-                }
-            });
-    }
-
-    private Mono<String> resolveDownloadLink(PackDefinition packDefinition) {
-        return bits.jsonClient()
-            .post()
-            .uri(
-                Uris.populate(
+    private Mono<String> resolveDownloadLink(SharedFetch sharedFetch, PackDefinition packDefinition) {
+        return sharedFetch
+            .fetch(
+                Uris.populateToUri(
                     baseUrl + "/assets/server/zip{type}.php",
                     packDefinition.getType().toString()
                 )
             )
-            .sendForm((httpClientRequest, httpClientForm) -> {
-                try {
-                    httpClientForm
-                        .attr("packs", objectMapper.writeValueAsString(packDefinition.getPacks()))
-                        .attr("version", packDefinition.getVersion());
-                } catch (JsonProcessingException e) {
-                    throw new GenericException("Failed to encode packs", e);
+            .sendForm(httpClientForm -> {
+                    try {
+                        httpClientForm
+                            .attr("packs", objectMapper.writeValueAsString(packDefinition.getPacks()))
+                            .attr("version", packDefinition.getVersion());
+                    } catch (JsonProcessingException e) {
+                        throw new GenericException("Failed to encode packs", e);
+                    }
                 }
-            })
-            .responseSingle(bits.readInto(ZipLinkResponse.class))
+            )
+            .toObject(ZipLinkResponse.class)
+            .acceptContentTypes(null)
+            .assemble()
+            .checkpoint("Resolving download link")
             .map(zipLinkResponse -> baseUrl + zipLinkResponse.getLink());
     }
 
-    private Mono<SourcedPackDefinition> resolveShareCode(String shareCode) {
-        return bits.jsonClient()
-            .get()
-            .uri(
-                Uris.populate(baseUrl + "/assets/server/sharecode.php?code={code}", shareCode)
-            )
-            .responseSingle(bits.readInto(PackDefinition.class))
-            .onErrorResume(HttpClientException::isNotFound,
-                throwable -> Mono.error(new InvalidParameterException("Unable to resolve share code " + shareCode, throwable))
+    private Mono<SourcedPackDefinition> resolveShareCode(SharedFetch sharedFetch, String shareCode) {
+        return sharedFetch
+            .fetch(Uris.populateToUri(baseUrl + "/assets/server/sharecode.php?code={code}", shareCode))
+            .toObject(PackDefinition.class)
+            .acceptContentTypes(null)
+            .assemble()
+            .checkpoint("Resolving share code")
+            .onErrorMap(
+                FailedRequestException::isNotFound,
+                throwable -> new InvalidParameterException("Unable to resolve share code " + shareCode, throwable)
             )
             .map(packDefinition -> new SourcedPackDefinition(
                     "share code " + shareCode, packDefinition
