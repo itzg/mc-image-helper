@@ -1,38 +1,30 @@
 package me.itzg.helpers.modrinth;
 
-import static me.itzg.helpers.McImageHelper.OPTION_SPLIT_COMMAS;
-import static me.itzg.helpers.http.Fetch.fetch;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.IOException;
-import java.net.URI;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.http.Uris;
 import me.itzg.helpers.json.ObjectMappers;
-import me.itzg.helpers.modrinth.model.DependencyType;
-import me.itzg.helpers.modrinth.model.Project;
-import me.itzg.helpers.modrinth.model.ProjectType;
-import me.itzg.helpers.modrinth.model.Version;
-import me.itzg.helpers.modrinth.model.VersionFile;
-import me.itzg.helpers.modrinth.model.VersionType;
+import me.itzg.helpers.modrinth.model.*;
 import org.apache.commons.lang3.EnumUtils;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.Option;
+
+import java.io.IOException;
+import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+
+import static me.itzg.helpers.McImageHelper.OPTION_SPLIT_COMMAS;
+import static me.itzg.helpers.http.Fetch.fetch;
 
 @Command(name = "modrinth", description = "Automates downloading of modrinth resources")
 @Slf4j
@@ -116,11 +108,12 @@ public class ModrinthCommand implements Callable<Integer> {
         log.debug("Expanding dependencies of version={}", version);
         return version.getDependencies().stream()
             .filter(dep ->
-                projectsProcessed.add(dep.getProjectId()) &&
                     (dep.getDependencyType() == DependencyType.required ||
                         downloadOptionalDependencies && dep.getDependencyType() == DependencyType.optional)
             )
+            .filter(dep -> projectsProcessed.add(dep.getProjectId()))
             .flatMap(dep -> {
+                projectsProcessed.add(dep.getProjectId());
                 try {
                     final Version depVersion;
                     if (dep.getVersionId() == null) {
