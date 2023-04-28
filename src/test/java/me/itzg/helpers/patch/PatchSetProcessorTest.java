@@ -55,6 +55,32 @@ class PatchSetProcessorTest {
     }
 
     @Test
+    void setInJson5(@TempDir Path tempDir) throws IOException {
+        final Path src = tempDir.resolve("testing.json5");
+        Files.copy(Paths.get("src/test/resources/patch/testing.json5"), src);
+
+        final PatchSetProcessor processor = new PatchSetProcessor(
+                new Interpolator(environmentVariablesProvider, "CFG_")
+        );
+
+        processor.process(new PatchSet()
+                .setPatches(Arrays.asList(
+                        new PatchDefinition()
+                                .setFile(src)
+                                .setOps(Arrays.asList(
+                                        new PatchSetOperation()
+                                                .setPath("$.outer.field1")
+                                                .setValue(new TextNode("new value"))
+                                ))
+                ))
+        );
+
+        assertThat(src).hasSameTextualContentAs(
+                Paths.get("src/test/resources/patch/expected-setInJson5.json5")
+        );
+    }
+
+    @Test
     void setInYaml(@TempDir Path tempDir) throws IOException {
         final Path src = tempDir.resolve("testing.yaml");
         Files.copy(Paths.get("src/test/resources/patch/testing.yaml"), src);

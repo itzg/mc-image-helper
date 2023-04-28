@@ -32,7 +32,8 @@ public class Json5FileFormat implements FileFormat {
                 JsonReadFeature.ALLOW_BACKSLASH_ESCAPING_ANY_CHARACTER,
                 JsonReadFeature.ALLOW_TRAILING_DECIMAL_POINT_FOR_NUMBERS,
                 JsonReadFeature.ALLOW_UNQUOTED_FIELD_NAMES,
-                JsonReadFeature.ALLOW_SINGLE_QUOTES
+                JsonReadFeature.ALLOW_SINGLE_QUOTES,
+                JsonReadFeature.ALLOW_UNESCAPED_CONTROL_CHARS
         ).build();
 
         objectWriter = objectMapper.writer(
