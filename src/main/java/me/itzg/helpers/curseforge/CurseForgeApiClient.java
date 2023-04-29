@@ -172,14 +172,11 @@ public class CurseForgeApiClient implements AutoCloseable {
             .map(GetModFileResponse::getData);
     }
 
-    /**
-     * @param outputDir where the downloaded file should be placed, such as mods, plugins
-     */
-    public Mono<Path> download(CurseForgeFile cfFile, Path outputDir, FileDownloadStatusHandler handler) {
+    public Mono<Path> download(CurseForgeFile cfFile, Path outputFile, FileDownloadStatusHandler handler) {
         return preparedFetch.fetch(
                 normalizeDownloadUrl(cfFile.getDownloadUrl())
             )
-            .toFile(outputDir.resolve(cfFile.getFileName()))
+            .toFile(outputFile)
             .skipExisting(true)
             .handleStatus(handler)
             .assemble();
