@@ -1,0 +1,14 @@
+{
+  "outer":{
+    "field1":"new value"
+  },
+  "unquoted":"and you can quote me on that",
+  "singleQuotes":"I can use \"double quotes\" here",
+  "lineBreaks":"Look, Mom! \nNo \\n's!",
+  "leadingDecimalPoint":0.8675309,
+  "andTrailing":8675309.0,
+  "positiveSign":1,
+  "trailingComma":"in objects",
+  "andIn":[ "arrays" ],
+  "backwardsCompatible":"with JSON"
+}

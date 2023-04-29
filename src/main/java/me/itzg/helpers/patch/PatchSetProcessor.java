@@ -29,6 +29,7 @@ public class PatchSetProcessor {
 
     private final FileFormat[] fileFormats = new FileFormat[]{
             new JsonFileFormat(),
+            new Json5FileFormat(),
             new YamlFileFormat()
     };
 
