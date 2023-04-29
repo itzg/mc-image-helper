@@ -1,15 +1,5 @@
 package me.itzg.helpers.curseforge;
 
-import static me.itzg.helpers.http.Fetch.fetch;
-
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import me.itzg.helpers.files.ResultsFileWriter;
 import me.itzg.helpers.http.PathOrUri;
 import me.itzg.helpers.http.PathOrUriConverter;
@@ -19,6 +9,17 @@ import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.Option;
+
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static me.itzg.helpers.http.Fetch.fetch;
 
 @Command(name = "install-curseforge", subcommands = {
     SchemasCommand.class
@@ -58,6 +59,13 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
         description = "Similar to --modpack-zip but provide the manifest.json from the modpack"
     )
     Path modpackManifest;
+
+    @Option(names = "--downloads-repo", paramLabel = "DIR",
+        description = "A local directory that will supply pre-downloaded mod and modpack files that " +
+            "are marked disallowed for automated download." +
+            " The subdirectories mods, modpacks, and worlds will also be consulted accordingly."
+    )
+    Path downloadsRepo;
 
     @Option(names = "--api-base-url", defaultValue = "${env:CF_API_BASE_URL}",
         description = "Allows for overriding the CurseForge Eternal API used")
@@ -166,7 +174,8 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
             .setLevelFrom(levelFrom)
             .setOverridesSkipExisting(overridesSkipExisting)
             .setSharedFetchOptions(sharedFetchArgs.options())
-            .setApiKey(apiKey);
+            .setApiKey(apiKey)
+            .setDownloadsRepo(downloadsRepo);
 
         if (apiBaseUrl != null) {
             installer.setApiBaseUrl(apiBaseUrl);

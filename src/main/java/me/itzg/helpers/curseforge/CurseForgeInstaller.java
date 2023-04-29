@@ -18,6 +18,7 @@ import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.json.ObjectMappers;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -48,6 +49,9 @@ public class CurseForgeInstaller {
     public static final String LEVEL_DAT_SUFFIX = "/level.dat";
     public static final int LEVEL_DAT_SUFFIX_LEN = LEVEL_DAT_SUFFIX.length();
     public static final String CATEGORY_SLUG_MODPACKS = "modpacks";
+    public static final String REPO_SUBDIR_MODPACKS = "modpacks";
+    public static final String REPO_SUBDIR_MODS = "mods";
+    public static final String REPO_SUBDIR_WORLDS = "worlds";
 
     private final Path outputDir;
     private final Path resultsFile;
@@ -76,6 +80,9 @@ public class CurseForgeInstaller {
 
     @Getter @Setter
     private SharedFetch.Options sharedFetchOptions;
+
+    @Getter @Setter
+    private Path downloadsRepo;
 
     private final Set<String> applicableClassIdSlugs = new HashSet<>(Arrays.asList(
         "mc-mods",
@@ -270,22 +277,29 @@ public class CurseForgeInstaller {
             }
         }
 
+        final Path modpackZip;
         if (modFile.getDownloadUrl() == null) {
-            throw new GenericException(String.format("The modpack authors have indicated this file is not allowed for project distribution." +
-                    " Please download the client zip file from %s and pass via %s environment variable.",
-                ofNullable(mod.getLinks().getWebsiteUrl()).orElse(" their CurseForge page"),
-                MODPACK_ZIP_VAR
-            ));
+            modpackZip = locateModpackInRepo(modFile.getFileName());
+            if (modpackZip == null) {
+                throw new GenericException(String.format(
+                    "The modpack authors have indicated this file is not allowed for project distribution." +
+                        " Please download the client zip file from %s and pass via %s environment variable" +
+                        " or place in downloads repo directory.",
+                    ofNullable(mod.getLinks().getWebsiteUrl()).orElse(" their CurseForge page"),
+                    MODPACK_ZIP_VAR
+                ));
+            }
         }
-
-        log.info("Processing modpack '{}' ({}) @ {}:{}", modFile.getDisplayName(),
-            mod.getSlug(), modFile.getModId(), modFile.getId());
-        final Path modpackZip =
-            context.cfApi.downloadTemp(modFile, "zip",
+        else {
+            modpackZip = context.cfApi.downloadTemp(modFile, "zip",
                     (status, uri, file) ->
                         log.debug("Modpack file retrieval: status={} uri={} file={}", status, uri, file)
                 )
                 .block();
+        }
+
+        log.info("Processing modpack '{}' ({}) @ {}:{}", modFile.getDisplayName(),
+            mod.getSlug(), modFile.getModId(), modFile.getId());
 
         if (modpackZip == null) {
             throw new GenericException("Download of modpack zip was empty");
@@ -303,6 +317,40 @@ public class CurseForgeInstaller {
         }
 
         finalizeResults(context, results, modFile.getModId(), modFile.getId(), modFile.getDisplayName());
+    }
+
+    private Path locateModpackInRepo(String fileName) {
+        if (downloadsRepo == null) {
+            return null;
+        }
+
+        return locateFileIn(fileName, downloadsRepo, downloadsRepo.resolve(REPO_SUBDIR_MODPACKS));
+    }
+
+    private Path locateModInRepo(String fileName) {
+        if (downloadsRepo == null) {
+            return null;
+        }
+
+        return locateFileIn(fileName, downloadsRepo, downloadsRepo.resolve(REPO_SUBDIR_MODS));
+    }
+
+    private Path locateWorldZipInRepo(String fileName) {
+        if (downloadsRepo == null) {
+            return null;
+        }
+
+        return locateFileIn(fileName, downloadsRepo, downloadsRepo.resolve(REPO_SUBDIR_WORLDS));
+    }
+
+    private static Path locateFileIn(String fileName, Path... dirs) {
+        for (Path dir : dirs) {
+            final Path resolved = dir.resolve(fileName);
+            if (Files.exists(resolved)) {
+                return resolved;
+            }
+        }
+        return null;
     }
 
     private void finalizeExistingInstallation(CurseForgeManifest prevManifest) throws IOException {
@@ -643,33 +691,64 @@ public class CurseForgeInstaller {
                             projectID, fileID
                         );
 
-                        if (cfFile.getDownloadUrl() == null) {
-                            log.warn("The authors of the mod '{}' have disallowed project distribution. " +
-                                    "Manually download the file '{}' from {} and supply the mod file separately.",
-                                modInfo.getName(), cfFile.getDisplayName(), modInfo.getLinks().getWebsiteUrl()
-                                );
-                            return Mono.empty();
-                        }
 
-                        final Mono<Path> assembledDownload =
-                            context.cfApi.download(cfFile, baseDir, (status, uri, f) -> {
-                                switch (status) {
-                                    case SKIP_FILE_EXISTS:
-                                        log.info("Mod file {} already exists", outputDir.relativize(f));
-                                        break;
-                                    case DOWNLOADED:
-                                        log.info("Downloaded mod file {}", outputDir.relativize(f));
-                                        break;
-                                }
-                            });
+                        final Mono<Path> resolvedFileMono =
+                            resolveToOutputFile(context, modInfo, isWorld, baseDir, cfFile);
 
                         return isWorld ?
-                            assembledDownload
+                            resolvedFileMono
                                 .map(path -> extractWorldZip(modInfo, path, outputPaths.getWorldsDir()))
-                            : assembledDownload
+                            : resolvedFileMono
                                 .map(PathWithInfo::new);
                     });
             });
+    }
+
+    private Mono<Path> resolveToOutputFile(InstallContext context, CurseForgeMod modInfo, boolean isWorld, Path baseDir, CurseForgeFile cfFile) {
+        final Path outputFile = baseDir.resolve(cfFile.getFileName());
+        if (!isWorld && Files.exists(outputFile)) {
+            log.info("Mod file {} already exists", outputDir.relativize(outputFile));
+            return Mono.just(outputFile);
+        }
+        else if (cfFile.getDownloadUrl() == null) {
+            final Path resolved =
+                isWorld ?
+                    locateWorldZipInRepo(cfFile.getFileName())
+                    : locateModInRepo(cfFile.getFileName());
+            if (resolved == null) {
+                log.warn("The authors of the mod '{}' have disallowed project distribution. " +
+                        "Manually download the file '{}' from {} and supply via downloads repo or separately.",
+                    modInfo.getName(), cfFile.getDisplayName(), modInfo.getLinks().getWebsiteUrl()
+                );
+                return Mono.empty();
+            }
+            else {
+                return Mono.just(resolved)
+                    .publishOn(Schedulers.boundedElastic())
+                    .handle((src, sink) -> {
+                        try {
+                            sink.next(Files.copy(resolved, outputFile));
+                            log.info("Mod file {} obtained from downloads repo", outputDir.relativize(outputFile));
+                        } catch (IOException e) {
+                            sink.error(
+                                new GenericException("Failed to copy file from downloads repo", e)
+                            );
+                        }
+                    });
+            }
+        }
+        else {
+            return context.cfApi.download(cfFile, outputFile, (status, uri, f) -> {
+                switch (status) {
+                    case SKIP_FILE_EXISTS:
+                        log.info("Mod file {} already exists", outputDir.relativize(f));
+                        break;
+                    case DOWNLOADED:
+                        log.info("Downloaded mod file {}", outputDir.relativize(f));
+                        break;
+                }
+            });
+        }
     }
 
     private PathWithInfo extractWorldZip(CurseForgeMod modInfo, Path zipPath, Path worldsDir) {
