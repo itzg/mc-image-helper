@@ -259,7 +259,7 @@ public class CurseForgeInstaller {
         }
 
         //noinspection DataFlowIssue handled by switchIfEmpty
-        if (matchesPreviousInstall(context, modFile.getId(), modFile.getModId())) {
+        if (matchesPreviousInstall(context, modFile.getModId(), modFile.getId())) {
             if (forceSynchronize) {
                 log.info("Requested force synchronize of {}", modFile.getDisplayName());
             }
