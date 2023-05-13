@@ -37,7 +37,8 @@ public class SharedFetch implements AutoCloseable {
     private final HttpClient reactiveClient;
 
     public SharedFetch(String forCommand, Options options) {
-        final String userAgent = String.format("%s/%s (cmd=%s)",
+        final String userAgent = String.format("%s/%s/%s (cmd=%s)",
+            "itzg",
             "mc-image-helper",
             McImageHelper.getVersion(),
             forCommand != null ? forCommand : "unspecified"

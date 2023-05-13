@@ -22,4 +22,9 @@ public class UriBuilder {
     public URI resolve(String path, Object... values) {
         return Uris.populateToUri(baseUrl + path, values);
     }
+
+    public URI resolve(String path, Uris.QueryParameters queryParameters, Object... values) {
+        return Uris.populateToUri(baseUrl + path, queryParameters, values);
+    }
+
 }

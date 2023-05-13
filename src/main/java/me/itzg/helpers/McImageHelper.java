@@ -12,6 +12,7 @@ import me.itzg.helpers.fabric.InstallFabricLoaderCommand;
 import me.itzg.helpers.find.FindCommand;
 import me.itzg.helpers.forge.InstallForgeCommand;
 import me.itzg.helpers.get.GetCommand;
+import me.itzg.helpers.modrinth.InstallModrinthModpackCommand;
 import me.itzg.helpers.modrinth.ModrinthCommand;
 import me.itzg.helpers.mvn.MavenDownloadCommand;
 import me.itzg.helpers.patch.PatchCommand;
@@ -28,7 +29,11 @@ import me.itzg.helpers.versions.CompareVersionsCommand;
 import me.itzg.helpers.versions.JavaReleaseCommand;
 import org.slf4j.LoggerFactory;
 import picocli.CommandLine;
-import picocli.CommandLine.*;
+import picocli.CommandLine.ArgGroup;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.ITypeConverter;
+import picocli.CommandLine.IVersionProvider;
+import picocli.CommandLine.Option;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -50,6 +55,7 @@ import java.util.jar.Manifest;
         InstallCurseForgeCommand.class,
         InstallFabricLoaderCommand.class,
         InstallForgeCommand.class,
+        InstallModrinthModpackCommand.class,
         InterpolateCommand.class,
         JavaReleaseCommand.class,
         MavenDownloadCommand.class,
