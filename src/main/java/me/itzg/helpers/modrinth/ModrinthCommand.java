@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.files.Manifests;
+import me.itzg.helpers.http.FailedRequestException;
 import me.itzg.helpers.http.Uris;
 import me.itzg.helpers.json.ObjectMappers;
 import me.itzg.helpers.modrinth.model.DependencyType;
@@ -220,7 +221,13 @@ public class ModrinthCommand implements Callable<Integer> {
         ))
             .userAgentCommand("modrinth")
             .toObject(Project.class)
-            .execute();
+            .assemble()
+            .onErrorMap(
+                FailedRequestException::isNotFound,
+                throwable ->
+                    new InvalidParameterException("Unable to locate requested project given " + projectIdOrSlug, throwable)
+            )
+            .block();
     }
 
     private List<Version> getVersionsForProject(String project) {
