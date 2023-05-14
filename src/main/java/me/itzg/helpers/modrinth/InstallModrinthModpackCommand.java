@@ -46,7 +46,8 @@ import java.util.zip.ZipInputStream;
 import static me.itzg.helpers.modrinth.ModrinthApiClient.pickVersionFile;
 
 @CommandLine.Command(name = "install-modrinth-modpack",
-    description = "Supports installation of Modrinth modpacks along with the associated mod loader"
+    description = "Supports installation of Modrinth modpacks along with the associated mod loader",
+    mixinStandardHelpOptions = true
 )
 @Slf4j
 public class InstallModrinthModpackCommand implements Callable<Integer> {
@@ -69,7 +70,7 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
     String gameVersion;
 
     @Option(names = "--loader", description = "Valid values: ${COMPLETION-CANDIDATES}")
-    Loader loader;
+    ModpackLoader loader;
 
     @Option(names = "--default-version-type", defaultValue = "release",
         description = "Valid values: ${COMPLETION-CANDIDATES}"
@@ -135,7 +136,7 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
                 )
                 .flatMap(project ->
                     apiClient.resolveProjectVersion(
-                            project, projectRef, loader, gameVersion, defaultVersionType
+                            project, projectRef, loader.asLoader(), gameVersion, defaultVersionType
                         )
                         .switchIfEmpty(Mono.defer(() -> Mono.error(new InvalidParameterException(
                             "Unable to find version given " + projectRef))))

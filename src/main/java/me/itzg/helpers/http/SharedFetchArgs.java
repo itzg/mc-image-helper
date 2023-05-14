@@ -19,6 +19,7 @@ public class SharedFetchArgs {
     private final Options.OptionsBuilder optionsBuilder = Options.builder();
 
     @Option(names = "--http-response-timeout", defaultValue = "${env:FETCH_RESPONSE_TIMEOUT:-PT30S}",
+        paramLabel = "DURATION",
         description = "The response timeout to apply to HTTP operations. Parsed from ISO-8601 format. "
             + "Default: ${DEFAULT-VALUE}"
     )
@@ -27,13 +28,16 @@ public class SharedFetchArgs {
     }
 
     @Option(names = "--tls-handshake-timeout", defaultValue = "${env:FETCH_TLS_HANDSHAKE_TIMEOUT:-PT30S}",
+        paramLabel = "DURATION",
         description = "Default: ${DEFAULT-VALUE}"
     )
     public void setTlsHandshakeTimeout(Duration timeout) {
         optionsBuilder.tlsHandshakeTimeout(timeout);
     }
 
-    @Option(names = "--connection-pool-max-idle-timeout", defaultValue = "${env:FETCH_CONNECTION_POOL_MAX_IDLE_TIMEOUT}")
+    @Option(names = "--connection-pool-max-idle-timeout", defaultValue = "${env:FETCH_CONNECTION_POOL_MAX_IDLE_TIMEOUT}",
+        paramLabel = "DURATION"
+    )
     public void setConnectionPoolMaxIdleTimeout(Duration timeout) {
         optionsBuilder.maxIdleTimeout(timeout);
     }

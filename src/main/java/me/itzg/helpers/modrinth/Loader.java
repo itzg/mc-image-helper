@@ -2,6 +2,7 @@ package me.itzg.helpers.modrinth;
 
 public enum Loader {
   fabric("mods"),
+  quilt("mods"),
   forge("mods"),
   bukkit("plugins"),
   spigot("plugins"),
