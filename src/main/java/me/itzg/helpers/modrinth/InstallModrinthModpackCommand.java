@@ -66,14 +66,14 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
     @Option(names = "--version-id", description = "Version ID (not name) from the file's metadata")
     String versionId;
 
-    @Option(names = "--game-version", description = "Applicable Minecraft version")
+    @Option(names = "--game-version", description = "Applicable Minecraft version where default is any version")
     String gameVersion;
 
-    @Option(names = "--loader", description = "Valid values: ${COMPLETION-CANDIDATES}")
+    @Option(names = "--loader", description = "Valid values: ${COMPLETION-CANDIDATES} where default is any loader")
     ModpackLoader loader;
 
-    @Option(names = "--default-version-type", defaultValue = "release",
-        description = "Valid values: ${COMPLETION-CANDIDATES}"
+    @Option(names = "--default-version-type", defaultValue = "release", paramLabel = "TYPE",
+        description = "Valid values: ${COMPLETION-CANDIDATES} where default is \"release\""
     )
     VersionType defaultVersionType;
 

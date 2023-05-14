@@ -15,7 +15,10 @@ public class ProjectRef {
     public static ProjectRef parse(String projectRef) {
         final String[] projectRefParts = projectRef.split(":", 2);
 
-        return new ProjectRef(projectRefParts[0], projectRefParts[1], null);
+        return new ProjectRef(projectRefParts[0],
+            projectRefParts.length > 1 ? projectRefParts[1] : null,
+            null
+        );
     }
 
     public ProjectRef(String projectSlug, String versionIdOrType, String versionName) {
