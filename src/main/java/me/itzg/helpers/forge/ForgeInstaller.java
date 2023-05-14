@@ -54,6 +54,9 @@ public class ForgeInstaller {
         String forge;
     }
 
+    /**
+     * @param forgeInstaller when non-null, specifies a provided installer to use
+     */
     public void install(String minecraftVersion, String forgeVersion,
         Path outputDir, Path resultsFile,
         boolean forceReinstall,

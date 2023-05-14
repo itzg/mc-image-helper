@@ -1,9 +1,16 @@
 package me.itzg.helpers.modrinth.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import lombok.Data;
 
+import java.util.List;
+
+/**
+ * <a href="https://docs.modrinth.com/api-spec/#tag/projects/operation/getProject">Spec</a>
+ */
 @Data
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class Project {
   String slug;
 
@@ -11,9 +18,9 @@ public class Project {
 
   String title;
 
-  @JsonProperty("project_type")
   ProjectType projectType;
 
-  @JsonProperty("server_side")
   ServerSide serverSide;
+
+  List<String> versions;
 }
