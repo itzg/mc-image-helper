@@ -66,14 +66,17 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
     @Option(names = "--version-id", description = "Version ID (not name) from the file's metadata")
     String versionId;
 
-    @Option(names = "--game-version", description = "Applicable Minecraft version where default is any version")
+    @Option(names = "--game-version", description = "Applicable Minecraft version" +
+        "%nDefault: (any)")
     String gameVersion;
 
-    @Option(names = "--loader", description = "Valid values: ${COMPLETION-CANDIDATES} where default is any loader")
+    @Option(names = "--loader", description = "Valid values: ${COMPLETION-CANDIDATES}" +
+        "%nDefault: (any)")
     ModpackLoader loader;
 
     @Option(names = "--default-version-type", defaultValue = "release", paramLabel = "TYPE",
-        description = "Valid values: ${COMPLETION-CANDIDATES} where default is \"release\""
+        description = "Valid values: ${COMPLETION-CANDIDATES}" +
+            "%nDefault: ${DEFAULT-VALUE}"
     )
     VersionType defaultVersionType;
 
@@ -89,7 +92,9 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
     @Option(names = "--force-modloader-reinstall", defaultValue = "${env:MODRINTH_FORCE_MODLOADER_REINSTALL:-false}")
     boolean forceModloaderReinstall;
 
-    @Option(names = "--api-base-url", defaultValue = "${env:MODRINTH_API_BASE_URL:-https://api.modrinth.com/v2}")
+    @Option(names = "--api-base-url", defaultValue = "${env:MODRINTH_API_BASE_URL:-https://api.modrinth.com/v2}",
+        description = "Default: ${DEFAULT-VALUE}"
+    )
     String baseUrl;
 
     @CommandLine.ArgGroup(exclusive = false)

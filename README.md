@@ -263,6 +263,54 @@ Usage: mc-image-helper install-forge [-hV] [--forge-version=<forgeVersion>]
                     SERVER: the entry point jar or script
 ```
 
+### install-modrinth-modpack
+
+```
+Usage: mc-image-helper install-modrinth-modpack [-hV]
+       [--force-modloader-reinstall] [--force-synchronize]
+       [--api-base-url=<baseUrl>] [--default-version-type=TYPE]
+       [--game-version=<gameVersion>] [--loader=<loader>]
+       [--output-directory=DIR] --project=<modpackProject>
+       [--results-file=FILE] [--version-id=<versionId>]
+       [[--tls-handshake-timeout=DURATION] [--http-response-timeout=DURATION]
+       [--connection-pool-max-idle-timeout=DURATION]]
+Supports installation of Modrinth modpacks along with the associated mod loader
+      --api-base-url=<baseUrl>
+                            Default: https://api.modrinth.com/v2
+      --connection-pool-max-idle-timeout=DURATION
+
+      --default-version-type=TYPE
+                            Valid values: release, beta, alpha
+                            Default: release
+      --force-modloader-reinstall
+
+      --force-synchronize
+      --game-version=<gameVersion>
+                            Applicable Minecraft version where default is any
+                              version
+  -h, --help                Show this help message and exit.
+      --http-response-timeout=DURATION
+                            The response timeout to apply to HTTP operations.
+                              Parsed from ISO-8601 format. Default: PT30S
+      --loader=<loader>     Valid values: fabric, forge where default is any
+                              loader
+      --output-directory=DIR
+
+      --project=<modpackProject>
+                            One of
+                            - Project ID or slug
+                            - Project page URL
+                            - Project file URL
+      --results-file=FILE   A key=value file suitable for scripted environment
+                              variables. Currently includes
+                              SERVER: the entry point jar or script
+      --tls-handshake-timeout=DURATION
+                            Default: PT30S
+  -V, --version             Print version information and exit.
+      --version-id=<versionId>
+                            Version ID (not name) from the file's metadata
+```
+
 ### interpolate
 
 ```
