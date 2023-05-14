@@ -141,7 +141,7 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
                 )
                 .flatMap(project ->
                     apiClient.resolveProjectVersion(
-                            project, projectRef, loader.asLoader(), gameVersion, defaultVersionType
+                            project, projectRef, loader != null ? loader.asLoader() : null, gameVersion, defaultVersionType
                         )
                         .switchIfEmpty(Mono.defer(() -> Mono.error(new InvalidParameterException(
                             "Unable to find version given " + projectRef))))
