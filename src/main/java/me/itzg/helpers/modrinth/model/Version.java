@@ -18,7 +18,7 @@ public class Version {
 
   Instant datePublished;
 
-  String version;
+  String versionNumber;
 
   VersionType versionType;
 
