@@ -63,8 +63,11 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
     )
     String modpackProject;
 
-    @Option(names = "--version-id", description = "Version ID (not name) from the file's metadata")
-    String versionId;
+    @Option(names = {"--version-id", "--version"},
+        description = "Version ID, name, or number from the file's metadata" +
+            "%nDefault chooses newest file based on game version, loader, and/or default version type"
+    )
+    String version;
 
     @Option(names = "--game-version", description = "Applicable Minecraft version" +
         "%nDefault: (any)")
@@ -109,12 +112,12 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
         final Matcher m = MODPACK_PAGE_URL.matcher(modpackProject);
         if (m.matches()) {
             final String versionName = m.group("versionName");
-            if (versionName != null && versionId != null) {
-                throw new InvalidParameterException("Cannot provide both project file URL and version ID");
+            if (versionName != null && version != null) {
+                throw new InvalidParameterException("Cannot provide both project file URL and version");
             }
-            projectRef = new ProjectRef(m.group("slug"), versionId, versionName);
+            projectRef = new ProjectRef(m.group("slug"), versionName != null ? versionName : version);
         } else {
-            projectRef = new ProjectRef(modpackProject, versionId, null);
+            projectRef = new ProjectRef(modpackProject, version);
         }
 
         final ModrinthModpackManifest newManifest =
@@ -150,7 +153,7 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
                         .filter(version -> needsInstall(prevManifest, project, version))
                         .flatMap(version -> {
                             final VersionFile versionFile = pickVersionFile(version);
-                            log.debug("Picked versionFile={} from version={}", versionFile, version);
+                            log.info("Installing version {} of {}", version.getVersionNumber(), project.getTitle());
                             return apiClient.downloadMrPack(versionFile)
                                 .publishOn(Schedulers.boundedElastic())
                                 .flatMap(zipPath ->
