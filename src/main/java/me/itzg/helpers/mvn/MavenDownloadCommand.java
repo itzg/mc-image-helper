@@ -1,18 +1,19 @@
 package me.itzg.helpers.mvn;
 
-import static me.itzg.helpers.http.Fetch.fetch;
-
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.file.Path;
-import java.util.concurrent.Callable;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.hc.core5.net.URIBuilder;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.Option;
+
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.file.Path;
+import java.util.concurrent.Callable;
+
+import static me.itzg.helpers.http.Fetch.fetch;
 
 @Command(name = "maven-download", description = "Downloads a maven artifact from a Maven repository")
 @Slf4j
@@ -33,7 +34,10 @@ public class MavenDownloadCommand implements Callable<Integer> {
     @Option(names = {"--artifact","--module","-a","-m"}, required = true)
     String artifact;
 
-    @Option(names = {"--version", "-v"}, defaultValue = "release", required = true)
+    @Option(names = {"--version", "-v"}, defaultValue = "release", required = true,
+        description = "A specific version, 'release', or 'latest'" +
+            "%nDefault: ${DEFAULT-VALUE}"
+    )
     String version;
 
     @Option(names = "--packaging", defaultValue = "jar")
