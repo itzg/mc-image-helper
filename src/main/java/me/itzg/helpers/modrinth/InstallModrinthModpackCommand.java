@@ -19,6 +19,7 @@ import me.itzg.helpers.modrinth.model.Project;
 import me.itzg.helpers.modrinth.model.Version;
 import me.itzg.helpers.modrinth.model.VersionFile;
 import me.itzg.helpers.modrinth.model.VersionType;
+import me.itzg.helpers.quilt.QuiltInstaller;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.Option;
@@ -216,12 +217,6 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
                 new InvalidParameterException("Requested modpack is not for minecraft: " + modpackIndex.getGame()));
         }
 
-        // Fail-fast for Quilt non-support
-        if (modpackIndex.getDependencies().get(DependencyId.quiltLoader) != null) {
-            throw new GenericException(
-                "Quilt mod loader is not yet supported. Please choose alternate file that uses Fabric, if possible");
-        }
-
         return processModpackFiles(apiClient, modpackIndex)
             .collectList()
             .map(modFiles ->
@@ -290,8 +285,16 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
             return minecraftVersion;
         }
 
-        if (dependencies.get(DependencyId.quiltLoader) != null) {
-            throw new GenericException("Quilt modloader is not yet supported");
+        final String quiltVersion = dependencies.get(DependencyId.quiltLoader);
+        if (quiltVersion != null) {
+            new QuiltInstaller(QuiltInstaller.DEFAULT_REPO_URL,
+                sharedFetchArgs.options(),
+                outputDirectory,
+                minecraftVersion
+            )
+                .setResultsFile(resultsFile)
+                .setLoaderVersion(quiltVersion)
+                .install();
         }
 
         return minecraftVersion;

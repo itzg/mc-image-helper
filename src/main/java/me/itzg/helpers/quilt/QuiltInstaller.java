@@ -26,6 +26,7 @@ public class QuiltInstaller {
     public static final String LOADER_ARTIFACT_ID = "quilt-loader";
     public static final String INSTALLER_ARTIFACT = "quilt-installer";
     public static final String QUILT_GROUP_ID = "org.quiltmc";
+    public static final String DEFAULT_REPO_URL = "https://maven.quiltmc.org/repository/release";
 
     private final MavenRepoApi mavenRepoApi;
     private final Path outputDir;
@@ -143,7 +144,6 @@ public class QuiltInstaller {
 
         if (resultsFile != null) {
             try (ResultsFileWriter resultsFileWriter = new ResultsFileWriter(resultsFile, false)) {
-                resultsFileWriter.write("VERSION", minecraftVersion);
                 resultsFileWriter.write("SERVER", resolvedLauncher.toString());
                 resultsFileWriter.write("FAMILY", "FABRIC");
             } catch (IOException e) {

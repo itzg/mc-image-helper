@@ -15,7 +15,7 @@ public class InstallQuiltCommand implements Callable<Integer> {
     @ArgGroup(exclusive = false)
     SharedFetchArgs sharedFetchArgs = new SharedFetchArgs();
 
-    @Option(names = "--repo-url", defaultValue = "https://maven.quiltmc.org/repository/release",
+    @Option(names = "--repo-url", defaultValue = QuiltInstaller.DEFAULT_REPO_URL,
         description = "Default: ${DEFAULT-VALUE}"
     )
     String repoUrl;
