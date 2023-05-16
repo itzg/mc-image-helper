@@ -16,6 +16,7 @@ import me.itzg.helpers.modrinth.InstallModrinthModpackCommand;
 import me.itzg.helpers.modrinth.ModrinthCommand;
 import me.itzg.helpers.mvn.MavenDownloadCommand;
 import me.itzg.helpers.patch.PatchCommand;
+import me.itzg.helpers.quilt.InstallQuiltCommand;
 import me.itzg.helpers.singles.Asciify;
 import me.itzg.helpers.singles.HashCommand;
 import me.itzg.helpers.singles.NetworkInterfacesCommand;
@@ -56,6 +57,7 @@ import java.util.jar.Manifest;
         InstallFabricLoaderCommand.class,
         InstallForgeCommand.class,
         InstallModrinthModpackCommand.class,
+        InstallQuiltCommand.class,
         InterpolateCommand.class,
         JavaReleaseCommand.class,
         MavenDownloadCommand.class,
