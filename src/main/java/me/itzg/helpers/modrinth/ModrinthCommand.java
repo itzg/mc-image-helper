@@ -7,6 +7,7 @@ import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.http.FailedRequestException;
 import me.itzg.helpers.http.Uris;
+import me.itzg.helpers.http.Uris.QueryParameters;
 import me.itzg.helpers.json.ObjectMappers;
 import me.itzg.helpers.modrinth.model.DependencyType;
 import me.itzg.helpers.modrinth.model.Project;
@@ -35,7 +36,6 @@ import java.util.zip.ZipInputStream;
 
 import static me.itzg.helpers.McImageHelper.OPTION_SPLIT_COMMAS;
 import static me.itzg.helpers.http.Fetch.fetch;
-import static me.itzg.helpers.modrinth.ModrinthApiClient.arrayOfQuoted;
 
 @Command(name = "modrinth", description = "Automates downloading of modrinth resources")
 @Slf4j
@@ -233,8 +233,11 @@ public class ModrinthCommand implements Callable<Integer> {
     private List<Version> getVersionsForProject(String project) {
         try {
             return fetch(Uris.populateToUri(
-                baseUrl + "/project/{id|slug}/version?loaders={loader}&game_versions={gameVersion}",
-                project, arrayOfQuoted(loader.toString()), arrayOfQuoted(gameVersion)
+                baseUrl + "/project/{id|slug}/version",
+                QueryParameters.queryParameters()
+                    .addStringArray("loaders", loader != null ? loader.toString() : null)
+                    .addStringArray("game_versions", gameVersion),
+                project
             ))
                 .userAgentCommand("modrinth")
                 .toObjectList(Version.class)

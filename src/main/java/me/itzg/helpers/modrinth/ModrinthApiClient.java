@@ -102,10 +102,6 @@ public class ModrinthApiClient implements AutoCloseable {
             );
     }
 
-    public static String arrayOfQuoted(String value) {
-        return "[\"" + value + "\"]";
-    }
-
     /**
      * @param loader can be null for any
      * @param gameVersion can be null for any
@@ -113,20 +109,16 @@ public class ModrinthApiClient implements AutoCloseable {
     public Mono<List<Version>> getVersionsForProject(String projectIdOrSlug,
                                                      Loader loader, String gameVersion
     ) {
-        try {
-            return sharedFetch.fetch(
-                    uriBuilder.resolve("/project/{id|slug}/version",
-                        queryParameters()
-                            .add("loader", loader != null ? arrayOfQuoted(loader.toString()) : null)
-                            .add("game_versions", gameVersion != null ? arrayOfQuoted(gameVersion) : null),
-                        projectIdOrSlug
-                    )
+        return sharedFetch.fetch(
+                uriBuilder.resolve("/project/{id|slug}/version",
+                    queryParameters()
+                        .addStringArray("loader", loader != null ? loader.toString() : null)
+                        .addStringArray("game_versions", gameVersion),
+                    projectIdOrSlug
                 )
-                .toObjectList(Version.class)
-                .assemble();
-        } catch (IOException e) {
-            throw new RuntimeException("Getting versions for project " + projectIdOrSlug, e);
-        }
+            )
+            .toObjectList(Version.class)
+            .assemble();
     }
 
     public Mono<Version> getVersionFromId(String versionId) {
