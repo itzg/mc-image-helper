@@ -6,7 +6,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.curseforge.ExcludeIncludesContent.ExcludeIncludes;
-import me.itzg.helpers.curseforge.model.*;
+import me.itzg.helpers.curseforge.model.Category;
+import me.itzg.helpers.curseforge.model.CurseForgeFile;
+import me.itzg.helpers.curseforge.model.CurseForgeMod;
+import me.itzg.helpers.curseforge.model.ManifestFileRef;
+import me.itzg.helpers.curseforge.model.ManifestType;
+import me.itzg.helpers.curseforge.model.MinecraftModpackManifest;
+import me.itzg.helpers.curseforge.model.ModLoader;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.fabric.FabricLauncherInstaller;
@@ -25,7 +31,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
@@ -349,6 +363,12 @@ public class CurseForgeInstaller {
             if (Files.exists(resolved)) {
                 return resolved;
             }
+
+            // When downloading, the browser may replace spaces with +'s
+            final Path altResolved = dir.resolve(fileName.replace(' ', '+'));
+            if (Files.exists(altResolved)) {
+                return altResolved;
+            }
         }
         return null;
     }
@@ -598,13 +618,13 @@ public class CurseForgeInstaller {
                         }
 
                         if ( !(overridesSkipExisting && Files.exists(outPath)) ) {
-                            log.debug("Applying override {}", subpath);
+                            log.trace("Applying override {}", subpath);
                             // zip files don't always list the directories before the files, so just create-as-needed
                             Files.createDirectories(outPath.getParent());
                             Files.copy(zip, outPath, StandardCopyOption.REPLACE_EXISTING);
                         }
                         else {
-                            log.debug("Skipping override={} since the file already existed", subpath);
+                            log.trace("Skipping override={} since the file already existed", subpath);
                         }
 
                         // Track this path for later cleanup
