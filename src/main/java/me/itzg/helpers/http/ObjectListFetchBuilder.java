@@ -1,9 +1,10 @@
 package me.itzg.helpers.http;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import reactor.core.publisher.Mono;
+
 import java.io.IOException;
 import java.util.List;
-import reactor.core.publisher.Mono;
 
 public class ObjectListFetchBuilder<T> extends FetchBuilderBase<ObjectListFetchBuilder<T>> {
 
@@ -20,7 +21,7 @@ public class ObjectListFetchBuilder<T> extends FetchBuilderBase<ObjectListFetchB
             .block();
     }
 
-    public Mono<List<T>> assemble() throws IOException {
+    public Mono<List<T>> assemble() {
         return delegate.assembleToList();
     }
 }

@@ -5,7 +5,9 @@ import me.itzg.helpers.errors.GenericException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLEncoder;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -77,11 +79,33 @@ public final class Uris {
         }
 
         /**
-         * @param value if null, the parameter will not be added otherwise it is URL encoded
+         * @param value add query parameter if not null
          */
         public QueryParameters add(String name, String value) {
             if (value != null) {
                 parameters.put(name, value);
+            }
+            return this;
+        }
+
+        /**
+         * Adds a query parameter formatted into {@code ["str","str"]}
+         * @param values adds the query parameter is not null and not empty
+         */
+        public QueryParameters addStringArray(String name, List<String> values) {
+            if (values != null && !values.isEmpty()) {
+                parameters.put(name,
+                    values.stream()
+                        .map(s -> "\"" + s + "\"")
+                        .collect(Collectors.joining(",", "[", "]"))
+                    );
+            }
+            return this;
+        }
+
+        public QueryParameters addStringArray(String name, String value) {
+            if (value != null) {
+                return addStringArray(name, Collections.singletonList(value));
             }
             return this;
         }
