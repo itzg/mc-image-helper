@@ -1,11 +1,13 @@
 package me.itzg.helpers.http;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
+import org.apache.cxf.attachment.Rfc5987Util;
 import org.apache.hc.client5.http.HttpResponseException;
 import org.apache.hc.core5.http.ClassicHttpResponse;
 import org.apache.hc.core5.http.ContentType;
@@ -16,8 +18,11 @@ import org.apache.hc.core5.http.io.entity.EntityUtils;
 
 @Slf4j
 public class FilenameExtractor {
+    // Examples:
+    // attachment; filename="=?UTF-8?Q?Geyser-Spigot.jar?="; filename*=UTF-8''Geyser-Spigot.jar
+
     private static final Pattern RFC_2047_ENCODED = Pattern.compile("=\\?UTF-8\\?Q\\?(.+)\\?=");
-    private static final Pattern RFC_5987_ENCODED = Pattern.compile("UTF-8''(.+)");
+    private static final Pattern RFC_5987_ENCODED = Pattern.compile("(UTF-8|ISO-8859-1)''(.+)");
 
   private final LatchingUrisInterceptor interceptor;
 
@@ -37,10 +42,14 @@ public class FilenameExtractor {
       if (filenameStar != null) {
           final Matcher m = RFC_5987_ENCODED.matcher(filenameStar);
           if (m.matches()) {
-              return m.group(1);
+              try {
+                  return Rfc5987Util.decode(m.group(2), m.group(1));
+              } catch (UnsupportedEncodingException e) {
+                  throw new GenericException("Failed to decode filename* from " + headerValue, e);
+              }
           }
           else {
-              throw new GenericException("Invalid RFC 5987 encoding of filename* from " + filenameStar);
+              return filenameStar;
           }
       }
       else if (filename != null) {
@@ -49,7 +58,7 @@ public class FilenameExtractor {
               return m.group(1);
           }
           else {
-              throw new GenericException("Invalid RFC 2047 encoding of filename from " + filename);
+              return filename;
           }
       }
       else {
