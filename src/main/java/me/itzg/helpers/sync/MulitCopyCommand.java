@@ -1,5 +1,15 @@
 package me.itzg.helpers.sync;
 
+import java.io.IOException;
+import java.net.URI;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Callable;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidParameterException;
@@ -16,27 +26,22 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
-import java.io.IOException;
-import java.net.URI;
-import java.nio.file.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.Callable;
-
 @Command(name = "mcopy", description = "Multi-source file copy operation with with managed cleanup. "
     + "Supports auto-detected sourcing from file list, directories, and URLs")
 @Slf4j
 public class MulitCopyCommand implements Callable<Integer> {
+    @Option(names = {"--help", "-h"}, usageHelp = true)
+    boolean showHelp;
 
     @Option(names = {"--manifest-id", "--scope"},
         description = "If managed cleanup is required, this is the identifier used for qualifying manifest filename in destination"
     )
     String manifestId;
 
-    @Option(names = {"--to"}, required = true)
+    @Option(names = {"--to", "--output-directory"}, required = true)
     Path dest;
 
-    @Option(names = "--glob", defaultValue = "*",
+    @Option(names = "--glob", defaultValue = "*", paramLabel = "GLOB",
         description = "When a source is a directory, this filename glob will be applied to select files."
     )
     String fileGlob;
@@ -47,7 +52,17 @@ public class MulitCopyCommand implements Callable<Integer> {
     )
     boolean fileIsListingOption;
 
-    @Parameters(split = ",", arity = "1..*")
+    @Option(names = {"--skip-up-to-date", "-z"}, defaultValue = "true")
+    boolean skipUpToDate;
+
+    @Option(names = "--skip-existing", defaultValue = "false")
+    boolean skipExisting;
+
+    @Parameters(split = ",|\\n", splitSynopsisLabel = ",|<nl>", arity = "1..*",
+        paramLabel = "SRC",
+        description = "Any mix of source file, directory, or URLs."
+            + "%nCan be optionally comma or newline separated."
+    )
     List<String> sources;
 
     @Override
@@ -56,6 +71,8 @@ public class MulitCopyCommand implements Callable<Integer> {
         Files.createDirectories(dest);
 
         Flux.fromIterable(sources)
+            .map(String::trim)
+            .filter(s -> !s.isEmpty())
             .flatMap(source -> processSource(source, fileIsListingOption))
             .collectList()
             .flatMap(this::cleanupAndSaveManifest)
@@ -203,11 +220,18 @@ public class MulitCopyCommand implements Callable<Integer> {
         return Fetch.fetch(URI.create(source))
             .userAgentCommand("mcopy")
             .toDirectory(dest)
-            .skipExisting(true)
+            .skipUpToDate(skipUpToDate)
+            .skipExisting(skipExisting)
             .handleStatus((status, uri, file) -> {
                 switch (status) {
                     case DOWNLOADING:
-                        log.info("Downloading uri={} to file={}", uri, file);
+                        log.info("Downloading {} from {}", file, uri);
+                        break;
+                    case SKIP_FILE_UP_TO_DATE:
+                        log.info("{} is already up to date from {}", file, uri);
+                        break;
+                    case SKIP_FILE_EXISTS:
+                        log.info("{} already exists from {}", file, uri);
                         break;
                     case DOWNLOADED:
                         log.debug("Finished downloading to file={}", file);

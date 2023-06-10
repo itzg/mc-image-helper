@@ -102,6 +102,8 @@ dependencies {
     implementation 'io.projectreactor.netty:reactor-netty-http:1.1.7'
     implementation 'org.apache.maven:maven-artifact:3.9.2'
     implementation 'commons-codec:commons-codec:1.15'
+    // for RFC5987 parsing of content-disposition filename*
+    implementation 'org.apache.cxf:cxf-core:3.5.5'
 
     testImplementation 'org.assertj:assertj-core:3.24.2'
     // https://github.com/webcompere/model-assert

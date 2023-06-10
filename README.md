@@ -366,6 +366,33 @@ Downloads a maven artifact from a Maven repository
   -v, --version=<version>
 ```
 
+### mcopy
+
+```
+Usage: mc-image-helper mcopy [-hz] [--file-is-listing] [--skip-existing]
+                             [--glob=GLOB] [--scope=<manifestId>] --to=<dest>
+                             SRC[,SRC...]...
+Multi-source file copy operation with with managed cleanup. Supports
+auto-detected sourcing from file list, directories, and URLs
+      SRC[,SRC...]...     Any mix of source file, directory, or URL that can be
+                            optionally comma-separated.
+      --file-is-listing   Source files or URLs are processed as a line
+                            delimited list of sources.
+                          For remote listing files, the contents must all be
+                            file URLs.
+      --glob=GLOB         When a source is a directory, this filename glob will
+                            be applied to select files.
+  -h, --help
+      --scope, --manifest-id=<manifestId>
+                          If managed cleanup is required, this is the
+                            identifier used for qualifying manifest filename in
+                            destination
+      --skip-existing
+      --to, --output-directory=<dest>
+
+  -z, --skip-up-to-date
+```
+
 ### patch
 
 ```

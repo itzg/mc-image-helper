@@ -12,8 +12,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.FileTime;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
@@ -25,13 +23,8 @@ import reactor.core.scheduler.Schedulers;
 @Accessors(fluent = true)
 public class SpecificFileFetchBuilder extends FetchBuilderBase<SpecificFileFetchBuilder> {
 
-    private final static DateTimeFormatter httpDateTimeFormatter =
-        DateTimeFormatter.RFC_1123_DATE_TIME.withZone(ZoneId.of("GMT"));
-    private FileDownloadStatusHandler statusHandler = (status, uri, p) -> {
-    };
-    private FileDownloadedHandler downloadedHandler = (uri, p, contentSizeBytes) -> {
-    };
-
+    private FileDownloadStatusHandler statusHandler = (status, uri, p) -> {};
+    private FileDownloadedHandler downloadedHandler = (uri, p, contentSizeBytes) -> {};
 
     private final Path file;
     @Setter
@@ -83,7 +76,7 @@ public class SpecificFileFetchBuilder extends FetchBuilderBase<SpecificFileFetch
                             final FileTime lastModifiedTime;
                             lastModifiedTime = Files.getLastModifiedTime(file);
                             headers.set(
-                                IF_MODIFIED_SINCE.toString(),
+                                IF_MODIFIED_SINCE,
                                 httpDateTimeFormatter.format(lastModifiedTime.toInstant())
                             );
                         } catch (IOException e) {
@@ -102,6 +95,8 @@ public class SpecificFileFetchBuilder extends FetchBuilderBase<SpecificFileFetch
                     final HttpResponseStatus status = resp.status();
 
                     if (useIfModifiedSince && status == NOT_MODIFIED) {
+                        log.debug("The file {} is already up to date", file);
+                        statusHandler.call(FileDownloadStatus.SKIP_FILE_UP_TO_DATE, uri, file);
                         return Mono.just(file);
                     }
 

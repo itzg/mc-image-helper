@@ -1,15 +1,21 @@
 package me.itzg.helpers.http;
 
+import static io.netty.handler.codec.http.HttpHeaderNames.IF_MODIFIED_SINCE;
+import static io.netty.handler.codec.http.HttpHeaderNames.LAST_MODIFIED;
 import static java.util.Objects.requireNonNull;
 
 import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.time.Instant;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
+import me.itzg.helpers.errors.GenericException;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import reactor.netty.http.client.HttpClient;
@@ -20,8 +26,13 @@ import reactor.netty.http.client.HttpClientResponse;
 public class OutputToDirectoryFetchBuilder extends FetchBuilderBase<OutputToDirectoryFetchBuilder> {
 
     private final Path outputDirectory;
+
     @Setter
     private boolean skipExisting;
+
+    @Setter
+    private boolean skipUpToDate;
+
     private FileDownloadStatusHandler statusHandler = (status, uri, file) -> {};
     private FileDownloadedHandler downloadedHandler = (uri, file, contentSizeBytes) -> {};
 
@@ -53,6 +64,12 @@ public class OutputToDirectoryFetchBuilder extends FetchBuilderBase<OutputToDire
             .block();
     }
 
+    @RequiredArgsConstructor
+    private static class FileToDownload {
+        final Path outputFile;
+        final Instant lastModified;
+    }
+
     public Mono<Path> assemble() {
         return useReactiveClient(client ->
             client
@@ -60,25 +77,73 @@ public class OutputToDirectoryFetchBuilder extends FetchBuilderBase<OutputToDire
                 .doOnRequest(debugLogRequest(log, "file head fetch"))
                 .head()
                 .uri(uri())
-                .responseSingle((resp, bodyMono) ->
-                    notSuccess(resp) ? failedRequestMono(resp, bodyMono, "Extracting filename")
-                        : Mono.just(outputDirectory.resolve(extractFilename(resp)))
-                )
-                .flatMap(outputFile ->
-                    assembleFileDownload(client, outputFile)
+                .responseSingle((resp, bodyMono) -> {
+                    if (notSuccess(resp)) {
+                        return failedRequestMono(resp, bodyMono, "Extracting filename");
+                    }
+
+                    final Path outputFile = outputDirectory.resolve(extractFilename(resp));
+                    final Long lastModified = resp.responseHeaders().getTimeMillis(LAST_MODIFIED);
+
+                    return Mono.just(new FileToDownload(outputFile,
+                        lastModified != null ? Instant.ofEpochMilli(lastModified) : null
+                    ));
+                })
+                .publishOn(Schedulers.boundedElastic())
+                .flatMap(fileToDownload ->
+                    assembleFileDownload(client, fileToDownload)
                 )
         );
     }
 
-    private Mono<Path> assembleFileDownload(HttpClient client, Path outputFile) {
-        if (skipExisting && Files.exists(outputFile)) {
-            log.debug("File {} already exists", outputFile);
+    /**
+     * NOTE: contains blocking call
+     */
+    private Mono<Path> assembleFileDownload(HttpClient client, FileToDownload fileToDownload) {
+        final Path outputFile = fileToDownload.outputFile;
+
+        if (skipExisting && !skipUpToDate && Files.exists(outputFile)) {
+            log.debug("The file {} already exists", outputFile);
             statusHandler.call(FileDownloadStatus.SKIP_FILE_EXISTS, uri(), outputFile);
             return Mono.just(outputFile);
         }
 
+        final boolean useIfModifiedSince = skipUpToDate && Files.exists(outputFile);
+        final Instant outputLastModified;
+        if (useIfModifiedSince) {
+            try {
+                //noinspection BlockingMethodInNonBlockingContext
+                outputLastModified = Files.getLastModifiedTime(outputFile).toInstant();
+
+                // Some endpoints don't support if-modified-since, but do provide the
+                // last-modified of the HEAD'ed file. Can skip the retrieval here, if so.
+                if (fileToDownload.lastModified != null
+                    && fileToDownload.lastModified.isBefore(outputLastModified)) {
+
+                    log.debug("The file={} lastModified={} is already up to date compared to response={}",
+                        outputFile, outputLastModified, fileToDownload.lastModified);
+                    statusHandler.call(FileDownloadStatus.SKIP_FILE_UP_TO_DATE, uri(), outputFile);
+                    return Mono.just(outputFile);
+                }
+            } catch (IOException e) {
+                return Mono.error(new GenericException("Unable to get last modified time of " + outputFile, e));
+            }
+        }
+        else {
+            outputLastModified = null;
+        }
+
+        statusHandler.call(FileDownloadStatus.DOWNLOADING, uri(), outputFile);
+
         return client
-            .doOnRequest((httpClientRequest, connection) -> statusHandler.call(FileDownloadStatus.DOWNLOADING, uri(), null))
+            .headers(headers -> {
+                if (useIfModifiedSince) {
+                    headers.set(
+                        IF_MODIFIED_SINCE,
+                        httpDateTimeFormatter.format(outputLastModified)
+                    );
+                }
+            })
             .followRedirect(true)
             .doOnRequest(debugLogRequest(log, "file fetch"))
             .get()
@@ -86,6 +151,12 @@ public class OutputToDirectoryFetchBuilder extends FetchBuilderBase<OutputToDire
             .responseSingle((resp, bodyMono) -> {
                 if (notSuccess(resp)) {
                     return failedRequestMono(resp, bodyMono, "Downloading file");
+                }
+
+                if (useIfModifiedSince && resp.status() == HttpResponseStatus.NOT_MODIFIED) {
+                    log.debug("The file {} is already up to date", outputFile);
+                    statusHandler.call(FileDownloadStatus.SKIP_FILE_UP_TO_DATE, uri(), outputFile);
+                    return Mono.just(outputFile);
                 }
 
                 return bodyMono.asInputStream()

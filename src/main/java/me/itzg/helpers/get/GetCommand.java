@@ -43,6 +43,7 @@ import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.HttpHeaders;
+import org.apache.hc.core5.http.HttpResponse;
 import org.apache.hc.core5.http.HttpStatus;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
@@ -244,7 +245,7 @@ public class GetCommand implements Callable<Integer> {
                     request.addHeader("x-api-key", apikeyHeader);
                 }
                 try {
-                    final int statusCode = client.execute(request).getCode();
+                    final int statusCode = client.execute(request, HttpResponse::getCode);
                     if (statusCode == HttpStatus.SC_OK) {
                         return true;
                     } else {
