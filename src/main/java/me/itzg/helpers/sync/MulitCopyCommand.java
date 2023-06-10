@@ -1,5 +1,8 @@
 package me.itzg.helpers.sync;
 
+import static me.itzg.helpers.McImageHelper.SPLIT_COMMA_NL;
+import static me.itzg.helpers.McImageHelper.SPLIT_SYNOPSIS_COMMA_NL;
+
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.DirectoryStream;
@@ -58,7 +61,7 @@ public class MulitCopyCommand implements Callable<Integer> {
     @Option(names = "--skip-existing", defaultValue = "false")
     boolean skipExisting;
 
-    @Parameters(split = ",|\\n", splitSynopsisLabel = ",|<nl>", arity = "1..*",
+    @Parameters(split = SPLIT_COMMA_NL, splitSynopsisLabel = SPLIT_SYNOPSIS_COMMA_NL, arity = "1..*",
         paramLabel = "SRC",
         description = "Any mix of source file, directory, or URLs."
             + "%nCan be optionally comma or newline separated."

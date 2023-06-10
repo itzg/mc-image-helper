@@ -2,6 +2,13 @@ package me.itzg.helpers;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.Enumeration;
+import java.util.jar.Attributes;
+import java.util.jar.Attributes.Name;
+import java.util.jar.Manifest;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.assertcmd.AssertCommand;
@@ -36,14 +43,6 @@ import picocli.CommandLine.ITypeConverter;
 import picocli.CommandLine.IVersionProvider;
 import picocli.CommandLine.Option;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.util.Enumeration;
-import java.util.jar.Attributes;
-import java.util.jar.Attributes.Name;
-import java.util.jar.Manifest;
-
 @Command(name = "mc-image-helper",
     versionProvider = McImageHelper.AppVersionProvider.class,
     subcommands = {
@@ -74,7 +73,12 @@ import java.util.jar.Manifest;
 @Slf4j
 public class McImageHelper {
 
+  //language=RegExp
   public static final String OPTION_SPLIT_COMMAS = "\\s*,\\s*";
+  //language=RegExp
+  public static final String SPLIT_COMMA_NL = "[,\\n]";
+  public static final String SPLIT_SYNOPSIS_COMMA_NL = ",|<nl>";
+  //language=RegExp
   public static final String VERSION_REGEX = "\\d+(\\.\\d+)+";
 
   @SuppressWarnings("unused")

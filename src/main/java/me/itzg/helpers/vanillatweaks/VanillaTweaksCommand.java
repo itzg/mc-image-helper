@@ -1,13 +1,39 @@
 package me.itzg.helpers.vanillatweaks;
 
+import static me.itzg.helpers.McImageHelper.SPLIT_COMMA_NL;
+import static me.itzg.helpers.McImageHelper.SPLIT_SYNOPSIS_COMMA_NL;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import java.io.InputStream;
+import java.math.BigInteger;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.files.Manifests;
-import me.itzg.helpers.http.*;
+import me.itzg.helpers.http.FailedRequestException;
+import me.itzg.helpers.http.Fetch;
+import me.itzg.helpers.http.SharedFetch;
+import me.itzg.helpers.http.SharedFetchArgs;
+import me.itzg.helpers.http.Uris;
 import me.itzg.helpers.json.ObjectMappers;
 import me.itzg.helpers.singles.MoreCollections;
 import me.itzg.helpers.vanillatweaks.model.PackDefinition;
@@ -22,24 +48,6 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.math.BigInteger;
-import java.net.URI;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.*;
-import java.util.concurrent.Callable;
-import java.util.stream.Collectors;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-
-import static me.itzg.helpers.McImageHelper.OPTION_SPLIT_COMMAS;
-
 @Command(name = "vanillatweaks", description = "Downloads Vanilla Tweaks resource packs, data packs, or crafting tweaks"
     + " given a share code or pack file")
 @Slf4j
@@ -49,10 +57,14 @@ public class VanillaTweaksCommand implements Callable<Integer> {
     public static final String MANIFEST_ID = "vanillatweaks";
     private static final int FINGERPRINT_LENGTH = 7;
 
-    @Option(names = "--share-codes", required = true, split = OPTION_SPLIT_COMMAS, paramLabel = "CODE")
+    @Option(names = "--share-codes", split = SPLIT_COMMA_NL, splitSynopsisLabel = SPLIT_SYNOPSIS_COMMA_NL,
+        paramLabel = "CODE"
+    )
     List<String> shareCodes;
 
-    @Option(names = "--pack-files", split = OPTION_SPLIT_COMMAS, paramLabel = "FILE")
+    @Option(names = "--pack-files", split = SPLIT_COMMA_NL, splitSynopsisLabel = SPLIT_SYNOPSIS_COMMA_NL,
+        paramLabel = "FILE"
+    )
     List<Path> packFiles;
 
     @Option(names = "--output-directory", defaultValue = ".", paramLabel = "DIR")
