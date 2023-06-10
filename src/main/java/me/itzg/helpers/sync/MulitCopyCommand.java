@@ -58,8 +58,10 @@ public class MulitCopyCommand implements Callable<Integer> {
     @Option(names = "--skip-existing", defaultValue = "false")
     boolean skipExisting;
 
-    @Parameters(split = ",", arity = "1..*", paramLabel = "SRC",
-        description = "Any mix of source file, directory, or URL that can be optionally comma-separated."
+    @Parameters(split = ",|\\n", splitSynopsisLabel = ",|<nl>", arity = "1..*",
+        paramLabel = "SRC",
+        description = "Any mix of source file, directory, or URLs."
+            + "%nCan be optionally comma or newline separated."
     )
     List<String> sources;
 
@@ -69,6 +71,8 @@ public class MulitCopyCommand implements Callable<Integer> {
         Files.createDirectories(dest);
 
         Flux.fromIterable(sources)
+            .map(String::trim)
+            .filter(s -> !s.isEmpty())
             .flatMap(source -> processSource(source, fileIsListingOption))
             .collectList()
             .flatMap(this::cleanupAndSaveManifest)
