@@ -22,6 +22,7 @@ import me.itzg.helpers.get.GetCommand;
 import me.itzg.helpers.modrinth.InstallModrinthModpackCommand;
 import me.itzg.helpers.modrinth.ModrinthCommand;
 import me.itzg.helpers.mvn.MavenDownloadCommand;
+import me.itzg.helpers.paper.InstallPaperCommand;
 import me.itzg.helpers.patch.PatchCommand;
 import me.itzg.helpers.quilt.InstallQuiltCommand;
 import me.itzg.helpers.singles.Asciify;
@@ -56,6 +57,7 @@ import picocli.CommandLine.Option;
         InstallFabricLoaderCommand.class,
         InstallForgeCommand.class,
         InstallModrinthModpackCommand.class,
+        InstallPaperCommand.class,
         InstallQuiltCommand.class,
         InterpolateCommand.class,
         JavaReleaseCommand.class,

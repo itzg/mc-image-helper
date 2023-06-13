@@ -43,4 +43,9 @@ public class ResultsFileWriter implements AutoCloseable {
     public void close() throws IOException {
         writer.close();
     }
+
+    @SuppressWarnings("UnusedReturnValue")
+    public ResultsFileWriter writeServer(Path serverJar) throws IOException {
+        return write("SERVER", serverJar.toString());
+    }
 }
