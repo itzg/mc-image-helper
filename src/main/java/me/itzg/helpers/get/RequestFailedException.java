@@ -15,6 +15,13 @@ public class RequestFailedException extends RuntimeException implements ExitCode
 
   @Override
   public int exitCode() {
-    return statusCode;
+    switch (statusCode) {
+      case 404:
+        return 44;
+      case 429:
+        return 42;
+      default:
+        return statusCode / 100;
+    }
   }
 }
