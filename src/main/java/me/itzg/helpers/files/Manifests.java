@@ -1,8 +1,5 @@
 package me.itzg.helpers.files;
 
-import me.itzg.helpers.json.ObjectMappers;
-import org.slf4j.Logger;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -11,6 +8,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import me.itzg.helpers.json.ObjectMappers;
+import org.slf4j.Logger;
 
 public class Manifests {
 
@@ -34,8 +33,9 @@ public class Manifests {
             filesToRemove.removeAll(currentFiles);
         }
         for (final String fileToRemove : filesToRemove) {
-            removeListener.accept(fileToRemove);
-            Files.deleteIfExists(baseDir.resolve(fileToRemove));
+            if (Files.deleteIfExists(baseDir.resolve(fileToRemove))) {
+                removeListener.accept(fileToRemove);
+            }
         }
     }
 

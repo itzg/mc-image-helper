@@ -1,15 +1,5 @@
 package me.itzg.helpers.quilt;
 
-import lombok.Setter;
-import lombok.extern.slf4j.Slf4j;
-import me.itzg.helpers.errors.GenericException;
-import me.itzg.helpers.files.Manifests;
-import me.itzg.helpers.files.ResultsFileWriter;
-import me.itzg.helpers.http.SharedFetch;
-import me.itzg.helpers.mvn.MavenRepoApi;
-import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -19,6 +9,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Collections;
+import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
+import me.itzg.helpers.errors.GenericException;
+import me.itzg.helpers.files.Manifests;
+import me.itzg.helpers.files.ResultsFileWriter;
+import me.itzg.helpers.http.SharedFetch;
+import me.itzg.helpers.mvn.MavenRepoApi;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 @Slf4j
 public class QuiltInstaller {
@@ -144,7 +143,7 @@ public class QuiltInstaller {
 
         if (resultsFile != null) {
             try (ResultsFileWriter resultsFileWriter = new ResultsFileWriter(resultsFile, false)) {
-                resultsFileWriter.write("SERVER", resolvedLauncher.toString());
+                resultsFileWriter.writeServer(resolvedLauncher);
                 resultsFileWriter.write("FAMILY", "FABRIC");
             } catch (IOException e) {
                 throw new GenericException("Failed to write results file", e);

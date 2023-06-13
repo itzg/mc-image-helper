@@ -2,15 +2,14 @@
 GET https://api.modrinth.com/v2/project/cobblemon-fabric
 
 ###
+GET https://api.modrinth.com/v2/projects?ids=["terra"]
+
+###
+GET https://api.modrinth.com/v2/projects?ids=["simple-voice-chat"]
+
+###
 GET https://api.modrinth.com/v2/project/cobblemon-fabric/version?loaders=fabric&game_versions=1.19.2
 
 ###
 GET https://api.modrinth.com/v2/project/cobblemon-fabric/version
 
-###
-GET https://api.modrinth.com/v2/project/ids=[
-    "qVAfruPH",
-    "3yD7gvyr",
-    "kQU5UkIm",
-    "nvrqJg44"
-    ]
