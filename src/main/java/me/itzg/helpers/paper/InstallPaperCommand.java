@@ -136,21 +136,24 @@ public class InstallPaperCommand implements Callable<Integer> {
     private Result useCoordinates(PaperDownloadsClient client, String project, String version, Integer build) {
         return resolveVersion(client, project, version)
             .flatMap(v -> resolveBuild(client, project, v, build)
-                .flatMap(b ->
-                    client.download(project, v, b, outputDirectory, InstallPaperCommand::logDownloadingStatus)
-                        .map(serverJar ->
-                            Result.builder()
-                                .newManifest(
-                                    PaperManifest.builder()
-                                        .project(project)
-                                        .minecraftVersion(v)
-                                        .build(b)
-                                        .files(Collections.singleton(Manifests.relativize(outputDirectory, serverJar)))
-                                        .build()
-                                )
-                                .serverJar(serverJar)
-                                .build()
-                        )
+                .flatMap(b -> {
+                        log.info("Resolved {} to version {} build {}", project, v, b);
+
+                        return client.download(project, v, b, outputDirectory, InstallPaperCommand::logDownloadingStatus)
+                            .map(serverJar ->
+                                Result.builder()
+                                    .newManifest(
+                                        PaperManifest.builder()
+                                            .project(project)
+                                            .minecraftVersion(v)
+                                            .build(b)
+                                            .files(Collections.singleton(Manifests.relativize(outputDirectory, serverJar)))
+                                            .build()
+                                    )
+                                    .serverJar(serverJar)
+                                    .build()
+                            );
+                    }
                 )
             )
             .block();
@@ -216,7 +219,7 @@ public class InstallPaperCommand implements Callable<Integer> {
         else {
             return client.hasBuild(project, version, build)
                 .flatMap(exists -> exists ? Mono.just(build) : Mono.error(() ->
-                    new GenericException(String.format("Build %d does not exist for project %s version %s",
+                    new InvalidParameterException(String.format("Build %d does not exist for project %s version %s",
                         build, project, version
                     )
                     )
