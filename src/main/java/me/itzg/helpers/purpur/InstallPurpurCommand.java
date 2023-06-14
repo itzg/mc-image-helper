@@ -64,6 +64,14 @@ public class InstallPurpurCommand implements Callable<Integer> {
             String version;
 
             @Option(names = "--build")
+            public void setBuild(String build) {
+                if (build != null && build.equalsIgnoreCase("latest")) {
+                    this.build = null;
+                }
+                else {
+                    this.build = build;
+                }
+            }
             String build;
         }
     }
