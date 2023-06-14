@@ -127,7 +127,7 @@ public class InstallPurpurCommand implements Callable<Integer> {
         return resolveVersion(client, version)
             .flatMap(v -> resolveBuild(client, v, build)
                 .flatMap(b -> {
-                        log.info("Resolved version {} build {}", v, b);
+                        log.info("Resolved Purpur version {} build {}", v, b);
 
                         return client.download(v, b, outputDirectory, Fetch.loggingDownloadStatusHandler(log))
                             .map(serverJar ->
