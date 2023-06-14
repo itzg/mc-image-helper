@@ -2,6 +2,7 @@ package me.itzg.helpers.http;
 
 import java.net.URI;
 import me.itzg.helpers.http.SharedFetch.Options;
+import org.slf4j.Logger;
 
 public class Fetch {
 
@@ -21,5 +22,21 @@ public class Fetch {
     }
 
     private Fetch() {
+    }
+
+    public static FileDownloadStatusHandler loggingDownloadStatusHandler(Logger log) {
+        return (status, uri, file) -> {
+            switch (status) {
+                case DOWNLOADING:
+                    log.debug("Downloading {}", file);
+                    break;
+                case DOWNLOADED:
+                    log.info("Downloaded {}", file);
+                    break;
+                case SKIP_FILE_UP_TO_DATE:
+                    log.info("The file {} is already up to date", file);
+                    break;
+            }
+        };
     }
 }

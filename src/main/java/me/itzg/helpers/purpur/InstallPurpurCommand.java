@@ -1,4 +1,4 @@
-package me.itzg.helpers.paper;
+package me.itzg.helpers.purpur;
 
 import com.fasterxml.jackson.databind.exc.InvalidTypeIdException;
 import java.net.URI;
@@ -27,9 +27,9 @@ import picocli.CommandLine.ParameterException;
 import picocli.CommandLine.Spec;
 import reactor.core.publisher.Mono;
 
-@Command(name = "install-paper", description = "Installs selected PaperMC")
+@Command(name = "install-purpur", description = "Downloads latest or selected version of Purpur")
 @Slf4j
-public class InstallPaperCommand implements Callable<Integer> {
+public class InstallPurpurCommand implements Callable<Integer> {
 
     @ArgGroup
     Inputs inputs = new Inputs();
@@ -46,9 +46,6 @@ public class InstallPaperCommand implements Callable<Integer> {
 
             @Spec
             CommandLine.Model.CommandSpec spec;
-
-            @Option(names = "--project", defaultValue = "paper")
-            String project;
 
             private static final Pattern ALLOWED_VERSIONS = Pattern.compile("latest|\\d+\\.\\d+(\\.\\d+)?",
                 Pattern.CASE_INSENSITIVE
@@ -67,14 +64,14 @@ public class InstallPaperCommand implements Callable<Integer> {
             String version;
 
             @Option(names = "--build")
-            Integer build;
+            String build;
         }
     }
 
     @Option(names = {"--output-directory", "-o"}, defaultValue = ".")
     Path outputDirectory;
 
-    @Option(names = "--base-url", defaultValue = "https://api.papermc.io")
+    @Option(names = "--base-url", defaultValue = "https://api.purpurmc.org")
     String baseUrl;
 
     @Option(names = "--results-file", description = ResultsFileWriter.OPTION_DESCRIPTION, paramLabel = "FILE")
@@ -86,21 +83,21 @@ public class InstallPaperCommand implements Callable<Integer> {
     @Builder
     private static class Result {
 
-        final PaperManifest newManifest;
+        final PurpurManifest newManifest;
         final Path serverJar;
     }
 
     @Override
     public Integer call() throws Exception {
-        final PaperManifest oldManifest = loadOldManifest();
+        final PurpurManifest oldManifest = loadOldManifest();
 
         final Result result;
-        try (PaperDownloadsClient client = new PaperDownloadsClient(baseUrl, sharedFetchArgs.options())) {
+        try (PurpurDownloadsClient client = new PurpurDownloadsClient(baseUrl, sharedFetchArgs.options())) {
             if (inputs.downloadUrl != null) {
                 result = downloadCustom(inputs.downloadUrl);
             }
             else {
-                result = useCoordinates(client, inputs.coordinates.project,
+                result = useCoordinates(client,
                     inputs.coordinates.version, inputs.coordinates.build
                 );
             }
@@ -113,23 +110,22 @@ public class InstallPaperCommand implements Callable<Integer> {
         }
 
         Manifests.cleanup(outputDirectory, oldManifest, result.newManifest, log);
-        Manifests.save(outputDirectory, PaperManifest.ID, result.newManifest);
+        Manifests.save(outputDirectory, PurpurManifest.ID, result.newManifest);
 
         return ExitCode.OK;
     }
 
-    private Result useCoordinates(PaperDownloadsClient client, String project, String version, Integer build) {
-        return resolveVersion(client, project, version)
-            .flatMap(v -> resolveBuild(client, project, v, build)
+    private Result useCoordinates(PurpurDownloadsClient client, String version, String build) {
+        return resolveVersion(client, version)
+            .flatMap(v -> resolveBuild(client, v, build)
                 .flatMap(b -> {
-                        log.info("Resolved {} to version {} build {}", project, v, b);
+                        log.info("Resolved version {} build {}", v, b);
 
-                        return client.download(project, v, b, outputDirectory, Fetch.loggingDownloadStatusHandler(log))
+                        return client.download(v, b, outputDirectory, Fetch.loggingDownloadStatusHandler(log))
                             .map(serverJar ->
                                 Result.builder()
                                     .newManifest(
-                                        PaperManifest.builder()
-                                            .project(project)
+                                        PurpurManifest.builder()
                                             .minecraftVersion(v)
                                             .build(b)
                                             .files(Collections.singleton(Manifests.relativize(outputDirectory, serverJar)))
@@ -156,7 +152,7 @@ public class InstallPaperCommand implements Callable<Integer> {
                     Result.builder()
                         .serverJar(serverJar)
                         .newManifest(
-                            PaperManifest.builder()
+                            PurpurManifest.builder()
                                 .customDownloadUrl(downloadUrl)
                                 .files(Collections.singleton(Manifests.relativize(outputDirectory, serverJar)))
                                 .build()
@@ -167,18 +163,18 @@ public class InstallPaperCommand implements Callable<Integer> {
         }
     }
 
-    private PaperManifest loadOldManifest() {
+    private PurpurManifest loadOldManifest() {
         try {
-            return Manifests.load(outputDirectory, PaperManifest.ID, PaperManifest.class);
+            return Manifests.load(outputDirectory, PurpurManifest.ID, PurpurManifest.class);
         } catch (ManifestException e) {
             if (e.getCause() instanceof InvalidTypeIdException) {
-                final MultiCopyManifest mcopyManifest = Manifests.load(outputDirectory, PaperManifest.ID,
+                final MultiCopyManifest mcopyManifest = Manifests.load(outputDirectory, PurpurManifest.ID,
                     MultiCopyManifest.class
                 );
                 if (mcopyManifest == null) {
                     throw new GenericException("Failed to load manifest as MultiCopyManifest");
                 }
-                return PaperManifest.builder()
+                return PurpurManifest.builder()
                     .files(mcopyManifest.getFiles())
                     .build();
             }
@@ -186,28 +182,24 @@ public class InstallPaperCommand implements Callable<Integer> {
         }
     }
 
-    private Mono<String> resolveVersion(PaperDownloadsClient client, String project, String version) {
+    private Mono<String> resolveVersion(PurpurDownloadsClient client, String version) {
         if (version.equals("latest")) {
-            return client.getLatestProjectVersion(project);
+            return client.getLatestVersion();
         }
-        return client.hasVersion(project, version)
+        return client.hasVersion(version)
             .flatMap(exists -> exists ? Mono.just(version) : Mono.error(() -> new InvalidParameterException(
-                String.format("Version %s does not exist for the project %s",
-                    version, project
-                ))));
+                String.format("Version %s does not exist", version)
+            )));
     }
 
-    private Mono<Integer> resolveBuild(PaperDownloadsClient client, String project, String version, Integer build) {
+    private Mono<String > resolveBuild(PurpurDownloadsClient client, String version, String build) {
         if (build == null) {
-            return client.getLatestBuild(project, version);
+            return client.getLatestBuild(version);
         }
         else {
-            return client.hasBuild(project, version, build)
+            return client.hasBuild(version, build)
                 .flatMap(exists -> exists ? Mono.just(build) : Mono.error(() ->
-                    new InvalidParameterException(String.format("Build %d does not exist for project %s version %s",
-                        build, project, version
-                    )
-                    )
+                    new InvalidParameterException(String.format("Build %s does not exist for version %s", build, version))
                 ));
         }
     }
