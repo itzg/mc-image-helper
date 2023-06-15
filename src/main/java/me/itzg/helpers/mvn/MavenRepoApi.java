@@ -1,22 +1,19 @@
 package me.itzg.helpers.mvn;
 
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
-import me.itzg.helpers.http.Fetch;
+import java.nio.file.Path;
 import me.itzg.helpers.http.SharedFetch;
-import me.itzg.helpers.http.SharedFetch.Options;
 import me.itzg.helpers.http.UriBuilder;
 import reactor.core.publisher.Mono;
-
-import java.nio.file.Path;
 
 public class MavenRepoApi {
     private final UriBuilder uriBuilder;
     private final SharedFetch sharedFetch;
     private final XmlMapper xmlMapper;
 
-    public MavenRepoApi(String repoUrl, String forCommand, Options options) {
+    public MavenRepoApi(String repoUrl, SharedFetch sharedFetch) {
         uriBuilder = UriBuilder.withBaseUrl(repoUrl);
-        sharedFetch = Fetch.sharedFetch(forCommand, options);
+        this.sharedFetch = sharedFetch;
         xmlMapper = new XmlMapper();
     }
 

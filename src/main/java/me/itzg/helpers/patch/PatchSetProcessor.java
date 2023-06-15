@@ -4,12 +4,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
-import lombok.extern.slf4j.Slf4j;
-import me.itzg.helpers.CharsetDetector;
-import me.itzg.helpers.env.Interpolator;
-import me.itzg.helpers.env.MissingVariablesException;
-import me.itzg.helpers.patch.model.*;
-
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
@@ -17,6 +11,15 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import lombok.extern.slf4j.Slf4j;
+import me.itzg.helpers.CharsetDetector;
+import me.itzg.helpers.env.Interpolator;
+import me.itzg.helpers.env.MissingVariablesException;
+import me.itzg.helpers.patch.model.PatchDefinition;
+import me.itzg.helpers.patch.model.PatchOperation;
+import me.itzg.helpers.patch.model.PatchPutOperation;
+import me.itzg.helpers.patch.model.PatchSet;
+import me.itzg.helpers.patch.model.PatchSetOperation;
 
 @Slf4j
 public class PatchSetProcessor {
@@ -160,7 +163,7 @@ public class PatchSetProcessor {
 
             consumer.accept(convertedValue);
         }
-        else if (!interpolateResult.getMissingVariables().isEmpty()) {
+        else {
             throw new MissingVariablesException(interpolateResult.getMissingVariables());
         }
     }

@@ -37,6 +37,7 @@ import me.itzg.helpers.sync.SyncAndInterpolate;
 import me.itzg.helpers.vanillatweaks.VanillaTweaksCommand;
 import me.itzg.helpers.versions.CompareVersionsCommand;
 import me.itzg.helpers.versions.JavaReleaseCommand;
+import me.itzg.helpers.versions.ResolveMinecraftVersionCommand;
 import org.slf4j.LoggerFactory;
 import picocli.CommandLine;
 import picocli.CommandLine.ArgGroup;
@@ -68,6 +69,7 @@ import picocli.CommandLine.Option;
         MulitCopyCommand.class,
         NetworkInterfacesCommand.class,
         PatchCommand.class,
+        ResolveMinecraftVersionCommand.class,
         Sync.class,
         SyncAndInterpolate.class,
         YamlPathCmd.class,
