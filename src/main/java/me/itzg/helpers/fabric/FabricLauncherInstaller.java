@@ -167,12 +167,13 @@ public class FabricLauncherInstaller {
             .skipExisting(true)
             .assemble()
             .publishOn(Schedulers.boundedElastic())
-            .map(path -> {
+            .flatMap(path -> {
                 log.info("Running Fabric installer for Minecraft {} and loader version {}",
                     minecraftVersion, loaderVersion
                 );
 
                 try {
+                    //noinspection BlockingMethodInNonBlockingContext because IntelliJ is confused
                     final Process proc = new ProcessBuilder(
                         "java", "-jar", path.toString(),
                         "server",
@@ -183,29 +184,31 @@ public class FabricLauncherInstaller {
                         .redirectErrorStream(true)
                         .start();
 
+                    //noinspection BlockingMethodInNonBlockingContext because IntelliJ is confused
                     final boolean success = proc.waitFor(FABRIC_INSTALLER_TIMEOUT_SEC, TimeUnit.SECONDS);
                     if (!success) {
                         IoStreams.transfer(proc.getInputStream(), System.err);
-                        throw new GenericException("Fabric installer took too long to run");
+                        return Mono.error(new GenericException("Fabric installer took too long to run"));
                     }
 
                     if (proc.exitValue() != 0) {
                         IoStreams.transfer(proc.getInputStream(), System.err);
-                        throw new GenericException("Fabric installer failed to run");
+                        return Mono.error(new GenericException("Fabric installer failed to run"));
                     }
                 } catch (IOException e) {
-                    throw new GenericException("Failed to run fabric installer", e);
+                    return Mono.error(new GenericException("Failed to run fabric installer", e));
                 } catch (InterruptedException e) {
-                    throw new GenericException("While running fabric installer", e);
+                    return Mono.error(new GenericException("While running fabric installer", e));
                 } finally {
                     try {
+                        //noinspection BlockingMethodInNonBlockingContext because IntelliJ is confused
                         Files.delete(path);
                     } catch (IOException e) {
                         log.warn("Failed to delete fabric installer at {}", path, e);
                     }
                 }
 
-                return outputDir.resolve("fabric-server-launch.jar");
+                return Mono.just(outputDir.resolve("fabric-server-launch.jar"));
             });
     }
 

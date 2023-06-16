@@ -39,6 +39,7 @@ import me.itzg.helpers.singles.MoreCollections;
 import me.itzg.helpers.vanillatweaks.model.PackDefinition;
 import me.itzg.helpers.vanillatweaks.model.Type;
 import me.itzg.helpers.vanillatweaks.model.ZipLinkResponse;
+import org.jetbrains.annotations.Blocking;
 import org.reactivestreams.Publisher;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
@@ -261,10 +262,8 @@ public class VanillaTweaksCommand implements Callable<Integer> {
         return Files.createDirectories(worldPath.resolve("datapacks"));
     }
 
-    /**
-     * Must be within {@link Schedulers#boundedElastic()}
-     */
     @SuppressWarnings("BlockingMethodInNonBlockingContext")
+    @Blocking
     private Flux<Path> unzipInto(Path zipPath, Path outDir) throws IOException {
         final List<Path> result = new ArrayList<>();
         try (InputStream in = Files.newInputStream(zipPath);
@@ -318,6 +317,7 @@ public class VanillaTweaksCommand implements Callable<Integer> {
                             .publishOn(Schedulers.boundedElastic())
                             .flatMapMany(downloaded -> {
                                 try {
+                                    //noinspection BlockingMethodInNonBlockingContext because IntelliJ is confused
                                     return unzipInto(tempZip, dataPacksDir());
                                 } catch (IOException e) {
                                     return Flux.error(e);

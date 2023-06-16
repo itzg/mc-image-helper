@@ -20,6 +20,7 @@ import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.http.Fetch;
 import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.http.Uris;
+import org.jetbrains.annotations.Blocking;
 import org.reactivestreams.Publisher;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.ExitCode;
@@ -151,6 +152,7 @@ public class MulitCopyCommand implements Callable<Integer> {
      *
      * @param scopedDest allows for sub-directory destinations
      */
+    @Blocking
     private Path processFileImmediate(Path source, Path scopedDest) {
         if (!Files.exists(source)) {
             throw new InvalidParameterException("Source file does not exist: " + source);
@@ -206,9 +208,10 @@ public class MulitCopyCommand implements Callable<Integer> {
 
                 try {
                     final ArrayList<Path> results = new ArrayList<>();
-                    //noinspection BlockingMethodInNonBlockingContext since IntelliJ flags incorrectly
+                    //noinspection BlockingMethodInNonBlockingContext because IntelliJ is confused
                     try (DirectoryStream<Path> files = Files.newDirectoryStream(srcDir, fileGlob)) {
                         for (final Path file : files) {
+                            //noinspection BlockingMethodInNonBlockingContext because IntelliJ is confused
                             results.add(processFileImmediate(file, dest));
                         }
                     }

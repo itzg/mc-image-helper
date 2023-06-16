@@ -16,6 +16,7 @@ import lombok.Setter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
+import org.jetbrains.annotations.Blocking;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import reactor.netty.http.client.HttpClient;
@@ -71,6 +72,7 @@ public class OutputToDirectoryFetchBuilder extends FetchBuilderBase<OutputToDire
     }
 
     public Mono<Path> assemble() {
+        //noinspection BlockingMethodInNonBlockingContext
         return useReactiveClient(client ->
             client
                 .followRedirect(true)
@@ -96,9 +98,7 @@ public class OutputToDirectoryFetchBuilder extends FetchBuilderBase<OutputToDire
         );
     }
 
-    /**
-     * NOTE: contains blocking call
-     */
+    @Blocking
     private Mono<Path> assembleFileDownload(HttpClient client, FileToDownload fileToDownload) {
         final Path outputFile = fileToDownload.outputFile;
 

@@ -1,16 +1,17 @@
 package me.itzg.helpers.purpur;
 
+import static me.itzg.helpers.errors.Validators.DESCRIPTION_MINECRAFT_VERSION;
+
 import com.fasterxml.jackson.databind.exc.InvalidTypeIdException;
 import java.net.URI;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.concurrent.Callable;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidParameterException;
+import me.itzg.helpers.errors.Validators;
 import me.itzg.helpers.files.ManifestException;
 import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.files.ResultsFileWriter;
@@ -23,7 +24,6 @@ import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.Option;
-import picocli.CommandLine.ParameterException;
 import picocli.CommandLine.Spec;
 import reactor.core.publisher.Mono;
 
@@ -47,20 +47,10 @@ public class InstallPurpurCommand implements Callable<Integer> {
             @Spec
             CommandLine.Model.CommandSpec spec;
 
-            private static final Pattern ALLOWED_VERSIONS = Pattern.compile("latest|\\d+\\.\\d+(\\.\\d+)?",
-                Pattern.CASE_INSENSITIVE
-            );
-
-            @Option(names = "--version", defaultValue = "latest", description = "May be 'latest' or specific version")
+            @Option(names = "--version", defaultValue = "latest", description = DESCRIPTION_MINECRAFT_VERSION)
             public void setVersion(String version) {
-                final Matcher m = ALLOWED_VERSIONS.matcher(version);
-                if (!m.matches()) {
-                    throw new ParameterException(spec.commandLine(), "Invalid value for minecraft version: " + version);
-                }
-                this.version = version.toLowerCase();
-
+                this.version = Validators.validateMinecraftVersion(spec, version);
             }
-
             String version;
 
             @Option(names = "--build")

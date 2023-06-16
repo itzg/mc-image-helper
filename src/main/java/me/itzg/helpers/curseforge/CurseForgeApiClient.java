@@ -2,15 +2,6 @@ package me.itzg.helpers.curseforge;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import lombok.extern.slf4j.Slf4j;
-import me.itzg.helpers.curseforge.model.*;
-import me.itzg.helpers.errors.GenericException;
-import me.itzg.helpers.errors.InvalidParameterException;
-import me.itzg.helpers.http.*;
-import me.itzg.helpers.json.ObjectMappers;
-import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
-
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
@@ -18,6 +9,26 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import lombok.extern.slf4j.Slf4j;
+import me.itzg.helpers.curseforge.model.Category;
+import me.itzg.helpers.curseforge.model.CurseForgeFile;
+import me.itzg.helpers.curseforge.model.CurseForgeMod;
+import me.itzg.helpers.curseforge.model.CurseForgeResponse;
+import me.itzg.helpers.curseforge.model.GetCategoriesResponse;
+import me.itzg.helpers.curseforge.model.GetModFileResponse;
+import me.itzg.helpers.curseforge.model.GetModFilesResponse;
+import me.itzg.helpers.curseforge.model.GetModResponse;
+import me.itzg.helpers.curseforge.model.ModsSearchResponse;
+import me.itzg.helpers.errors.GenericException;
+import me.itzg.helpers.errors.InvalidParameterException;
+import me.itzg.helpers.http.FailedRequestException;
+import me.itzg.helpers.http.Fetch;
+import me.itzg.helpers.http.FileDownloadStatusHandler;
+import me.itzg.helpers.http.SharedFetch;
+import me.itzg.helpers.http.UriBuilder;
+import me.itzg.helpers.json.ObjectMappers;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 @Slf4j
 public class CurseForgeApiClient implements AutoCloseable {
@@ -48,7 +59,7 @@ public class CurseForgeApiClient implements AutoCloseable {
             .fetch(uriBuilder.resolve("/categories?gameId={gameId}&classesOnly=true", gameId))
             .toObject(GetCategoriesResponse.class)
             .assemble()
-            .map(resp -> {
+            .flatMap(resp -> {
                     final Map<Integer, Category> contentClassIds = new HashMap<>();
                     Integer modpackClassId = null;
 
@@ -62,10 +73,10 @@ public class CurseForgeApiClient implements AutoCloseable {
                     }
 
                     if (modpackClassId == null) {
-                        throw new GenericException("Unable to lookup classId for modpacks");
+                        return Mono.error(new GenericException("Unable to lookup classId for modpacks"));
                     }
 
-                    return new CategoryInfo(contentClassIds, modpackClassId);
+                    return Mono.just(new CategoryInfo(contentClassIds, modpackClassId));
                 }
             )
             .block();

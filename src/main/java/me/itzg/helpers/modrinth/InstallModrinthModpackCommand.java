@@ -1,5 +1,23 @@
 package me.itzg.helpers.modrinth;
 
+import static me.itzg.helpers.modrinth.ModrinthApiClient.pickVersionFile;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.Callable;
+import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidParameterException;
@@ -20,31 +38,13 @@ import me.itzg.helpers.modrinth.model.Version;
 import me.itzg.helpers.modrinth.model.VersionFile;
 import me.itzg.helpers.modrinth.model.VersionType;
 import me.itzg.helpers.quilt.QuiltInstaller;
+import org.jetbrains.annotations.Blocking;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.Option;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
-
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.Callable;
-import java.util.function.Function;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-
-import static me.itzg.helpers.modrinth.ModrinthApiClient.pickVersionFile;
 
 @CommandLine.Command(name = "install-modrinth-modpack",
     description = "Supports installation of Modrinth modpacks along with the associated mod loader",
@@ -155,6 +155,7 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
                         .flatMap(version -> {
                             final VersionFile versionFile = pickVersionFile(version);
                             log.info("Installing version {} of {}", version.getVersionNumber(), project.getTitle());
+                            //noinspection BlockingMethodInNonBlockingContext because IntelliJ is confused
                             return apiClient.downloadMrPack(versionFile)
                                 .publishOn(Schedulers.boundedElastic())
                                 .flatMap(zipPath ->
@@ -175,6 +176,7 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
         }
     }
 
+    @Blocking
     private boolean needsInstall(ModrinthModpackManifest prevManifest, Project project, Version version) {
         if (prevManifest != null) {
             if (prevManifest.getProjectSlug().equals(project.getSlug())
@@ -194,6 +196,7 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
         return true;
     }
 
+    @Blocking
     private Mono<ModrinthModpackManifest> processModpackZip(ModrinthApiClient apiClient, Path zipFile, Project project,
         Version version
     ) {
@@ -287,14 +290,15 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
 
         final String quiltVersion = dependencies.get(DependencyId.quiltLoader);
         if (quiltVersion != null) {
-            new QuiltInstaller(QuiltInstaller.DEFAULT_REPO_URL,
+            try (QuiltInstaller installer = new QuiltInstaller(QuiltInstaller.DEFAULT_REPO_URL,
                 sharedFetchArgs.options(),
                 outputDirectory,
                 minecraftVersion
             )
-                .setResultsFile(resultsFile)
-                .setLoaderVersion(quiltVersion)
-                .install();
+                .setResultsFile(resultsFile)) {
+
+                installer.installWithVersion(null, quiltVersion);
+            }
         }
 
         return minecraftVersion;
