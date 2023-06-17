@@ -1,5 +1,28 @@
 package me.itzg.helpers.curseforge;
 
+import static java.util.Collections.emptySet;
+import static java.util.Objects.requireNonNull;
+import static java.util.Optional.ofNullable;
+import static me.itzg.helpers.singles.MoreCollections.safeStreamFrom;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -25,30 +48,6 @@ import me.itzg.helpers.json.ObjectMappers;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
-
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-
-import static java.util.Collections.emptySet;
-import static java.util.Objects.requireNonNull;
-import static java.util.Optional.ofNullable;
-import static me.itzg.helpers.singles.MoreCollections.safeStreamFrom;
 
 @RequiredArgsConstructor
 @Slf4j
@@ -385,7 +384,6 @@ public class CurseForgeInstaller {
                 if (prevManifest.getLevelName() != null) {
                     resultsFileWriter.write("LEVEL", prevManifest.getLevelName());
                 }
-                resultsFileWriter.write("VERSION", prevManifest.getMinecraftVersion());
             }
         }
     }
@@ -413,7 +411,6 @@ public class CurseForgeInstaller {
                 if (results.getLevelName() != null) {
                     resultsFileWriter.write("LEVEL", results.getLevelName());
                 }
-                resultsFileWriter.write("VERSION", results.getMinecraftVersion());
             }
         }
     }
@@ -841,7 +838,7 @@ public class CurseForgeInstaller {
         return !client;
     }
 
-    private void prepareModLoader(String id, String minecraftVersion) throws IOException {
+    private void prepareModLoader(String id, String minecraftVersion) {
         final String[] parts = id.split("-", 2);
         if (parts.length != 2) {
             throw new GenericException("Unknown modloader ID: " + id);
@@ -858,8 +855,9 @@ public class CurseForgeInstaller {
         }
     }
 
-    private void prepareFabric(String minecraftVersion, String loaderVersion) throws IOException {
-        final FabricLauncherInstaller installer = new FabricLauncherInstaller(outputDir, resultsFile);
+    private void prepareFabric(String minecraftVersion, String loaderVersion) {
+        final FabricLauncherInstaller installer = new FabricLauncherInstaller(outputDir)
+            .setResultsFile(resultsFile);
         installer.installUsingVersions(minecraftVersion, loaderVersion, null);
     }
 

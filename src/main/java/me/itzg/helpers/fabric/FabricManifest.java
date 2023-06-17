@@ -10,6 +10,7 @@ import me.itzg.helpers.files.BaseManifest;
 @Jacksonized
 public class FabricManifest extends BaseManifest {
 
+    public static final String MANIFEST_ID = "fabric";
     /**
      * The path to the launcher. This should also be in {@link #getFiles()}, but provides a specific reference.
      */

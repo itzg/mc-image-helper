@@ -12,6 +12,4 @@ import lombok.extern.jackson.Jacksonized;
 @EqualsAndHashCode(callSuper = false)
 @ToString
 public class LocalFile extends Origin {
-
-    String checksum;
 }

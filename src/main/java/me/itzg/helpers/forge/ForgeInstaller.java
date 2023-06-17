@@ -1,20 +1,9 @@
 package me.itzg.helpers.forge;
 
+import static me.itzg.helpers.http.Fetch.fetch;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.extern.slf4j.Slf4j;
-import me.itzg.helpers.errors.GenericException;
-import me.itzg.helpers.errors.InvalidParameterException;
-import me.itzg.helpers.files.IoStreams;
-import me.itzg.helpers.files.Manifests;
-import me.itzg.helpers.files.ResultsFileWriter;
-import me.itzg.helpers.forge.model.PromotionsSlim;
-import me.itzg.helpers.http.FailedRequestException;
-import me.itzg.helpers.http.Uris;
-import me.itzg.helpers.json.ObjectMappers;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -32,8 +21,20 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
-import static me.itzg.helpers.http.Fetch.fetch;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
+import me.itzg.helpers.errors.GenericException;
+import me.itzg.helpers.errors.InvalidParameterException;
+import me.itzg.helpers.files.IoStreams;
+import me.itzg.helpers.files.Manifests;
+import me.itzg.helpers.files.ResultsFileWriter;
+import me.itzg.helpers.forge.model.PromotionsSlim;
+import me.itzg.helpers.http.FailedRequestException;
+import me.itzg.helpers.http.Uris;
+import me.itzg.helpers.json.ObjectMappers;
+import org.jetbrains.annotations.Nullable;
 
 @Slf4j
 public class ForgeInstaller {
@@ -58,7 +59,8 @@ public class ForgeInstaller {
      * @param forgeInstaller when non-null, specifies a provided installer to use
      */
     public void install(String minecraftVersion, String forgeVersion,
-        Path outputDir, Path resultsFile,
+        @NonNull Path outputDir,
+        @Nullable Path resultsFile,
         boolean forceReinstall,
         Path forgeInstaller
     ) {
@@ -81,7 +83,7 @@ public class ForgeInstaller {
             try {
                 resolvedForgeVersion = resolveForgeVersion(resolvedMinecraftVersion, forgeVersion, promotionsSlim);
             } catch (IOException e) {
-                throw new RuntimeException("Failed to resolve forge version", e);
+                throw new GenericException("Failed to resolve forge version", e);
             }
         }
         else {
@@ -145,7 +147,10 @@ public class ForgeInstaller {
 
         if (resultsFile != null && (newManifest != null || prevManifest != null)) {
             try {
-                populateResultsFile(resultsFile, (newManifest != null ? newManifest : prevManifest).getServerEntry());
+                populateResultsFile(
+                    resultsFile, (newManifest != null ? newManifest : prevManifest).getServerEntry(),
+                    resolvedMinecraftVersion
+                );
             } catch (IOException e) {
                 throw new RuntimeException("Failed to populate results file", e);
             }
@@ -245,12 +250,14 @@ public class ForgeInstaller {
             .build();
     }
 
-    private void populateResultsFile(Path resultsFile, String serverEntry) throws IOException {
+    private void populateResultsFile(Path resultsFile, String serverEntry, String minecraftVersion) throws IOException {
         log.debug("Populating results file {}", resultsFile);
 
         try (ResultsFileWriter results = new ResultsFileWriter(resultsFile)) {
             results.write("SERVER", serverEntry);
             results.write("FAMILY", "FORGE");
+            results.writeVersion(minecraftVersion);
+            results.writeType("FORGE");
         }
     }
 
@@ -450,7 +457,7 @@ public class ForgeInstaller {
     }
 
     private String resolveMinecraftVersion(String minecraftVersion, PromotionsSlim promotionsSlim) {
-        if (minecraftVersion.equalsIgnoreCase(LATEST)) {
+        if (minecraftVersion == null || minecraftVersion.equalsIgnoreCase(LATEST)) {
             return promotionsSlim.getPromos().entrySet().stream()
                 .map(ForgeInstaller::parsePromoEntry)
                 // pick off the last entry, where order is significant since JSON parsing retains ordering

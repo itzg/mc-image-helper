@@ -3,7 +3,7 @@ package me.itzg.helpers.fabric;
 import lombok.Data;
 
 @Data
-public class InstallerResponseEntry {
-    boolean stable;
+public class VersionEntry {
     String version;
+    boolean stable;
 }

@@ -13,6 +13,9 @@ import picocli.CommandLine.Option;
 @Command(name = "install-quilt", description = "Installs Quilt mod loader")
 public class InstallQuiltCommand implements Callable<Integer> {
 
+    @Option(names = {"-h", "--help"}, usageHelp = true)
+    boolean showHelp;
+
     @Option(names = "--minecraft-version", defaultValue = "latest", required = true, paramLabel = "VERSION",
         description = "'latest', 'snapshot', or specific version"
     )
@@ -51,7 +54,7 @@ public class InstallQuiltCommand implements Callable<Integer> {
     @Option(names = "--output-directory", defaultValue = ".", paramLabel = "DIR")
     Path outputDirectory;
 
-    @Option(names = "--force-reinstall")
+    @Option(names = "--force-reinstall", defaultValue = "${env:QUILT_FORCE_REINSTALL:-false}")
     boolean forceReinstall;
 
     @Override

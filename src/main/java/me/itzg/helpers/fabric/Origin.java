@@ -8,7 +8,6 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 @JsonTypeInfo(use = Id.NAME)
 @JsonSubTypes({
     @Type(value = Versions.class, name = "versions"),
-    @Type(value = LocalFile.class, name = "file"),
     @Type(value = RemoteFile.class, name = "remote")
 })
 public abstract class Origin {

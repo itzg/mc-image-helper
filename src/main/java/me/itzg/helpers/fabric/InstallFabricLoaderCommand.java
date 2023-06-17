@@ -32,7 +32,7 @@ public class InstallFabricLoaderCommand implements Callable<Integer> {
 
     static class OriginOptions {
         @ArgGroup(exclusive = false)
-        VersionOptions versionOptions;
+        VersionOptions versionOptions = new VersionOptions();
 
         @Option(names = "--from-local-file", paramLabel = "FILE")
         Path launcherFile;
@@ -42,7 +42,7 @@ public class InstallFabricLoaderCommand implements Callable<Integer> {
     }
 
     static class VersionOptions {
-        @Option(names = "--minecraft-version", required = true, paramLabel = "VERSION")
+        @Option(names = "--minecraft-version", defaultValue = "latest", paramLabel = "VERSION")
         String minecraftVersion;
 
         @Option(names = "--installer-version", paramLabel = "VERSION",
@@ -62,7 +62,7 @@ public class InstallFabricLoaderCommand implements Callable<Integer> {
         private static class AllowedVersions implements ITypeConverter<String> {
 
             @Override
-            public String convert(String value) throws Exception {
+            public String convert(String value) {
 
                 if (value == null) {
                     return null;
@@ -80,24 +80,22 @@ public class InstallFabricLoaderCommand implements Callable<Integer> {
 
     @Override
     public Integer call() throws Exception {
-        final FabricLauncherInstaller installer = new FabricLauncherInstaller(outputDirectory, resultsFile);
-        final Path launcher;
-        if (originOptions.versionOptions != null) {
-            launcher = installer.installUsingVersions(
+        final FabricLauncherInstaller installer = new FabricLauncherInstaller(outputDirectory)
+            .setResultsFile(resultsFile);
+
+        if (originOptions.fromUri != null) {
+            installer.installUsingUri(originOptions.fromUri);
+        }
+        else if (originOptions.launcherFile != null) {
+            installer.installUsingLocalFile(originOptions.launcherFile);
+        }
+        else {
+            installer.installUsingVersions(
                 originOptions.versionOptions.minecraftVersion,
                 originOptions.versionOptions.loaderVersion,
                 originOptions.versionOptions.installerVersion
             );
         }
-        else if (originOptions.fromUri != null) {
-            launcher = installer.installUsingUri(originOptions.fromUri);
-        }
-        else {
-            installer.installGivenLauncherFile(originOptions.launcherFile);
-            launcher = originOptions.launcherFile;
-        }
-
-        log.debug("Fabric launcher installed/reused at {}", launcher);
 
         return ExitCode.OK;
     }

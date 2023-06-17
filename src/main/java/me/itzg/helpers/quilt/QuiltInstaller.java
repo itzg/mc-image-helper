@@ -11,7 +11,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.Collections;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
@@ -68,7 +67,8 @@ public class QuiltInstaller implements AutoCloseable {
                             )
                             .flatMap(resolvedLoaderVersion ->
                                 mavenRepoApi.download(outputDir, QUILT_GROUP_ID, INSTALLER_ARTIFACT,
-                                        installerVersion != null ? installerVersion : "release", "jar", null
+                                        installerVersion,
+                                        "jar", null
                                     )
                                     .switchIfEmpty(
                                         Mono.defer(() -> Mono.error(new GenericException("Unable to obtain Quilt installer"))))
@@ -195,9 +195,11 @@ public class QuiltInstaller implements AutoCloseable {
         }
 
         if (resultsFile != null) {
-            try (ResultsFileWriter resultsFileWriter = new ResultsFileWriter(resultsFile, false)) {
-                resultsFileWriter.writeServer(resolvedLauncher);
-                resultsFileWriter.write("FAMILY", "FABRIC");
+            try (ResultsFileWriter resultsWriter = new ResultsFileWriter(resultsFile, false)) {
+                resultsWriter.writeServer(resolvedLauncher);
+                resultsWriter.write("FAMILY", "FABRIC");
+                resultsWriter.writeType("QUILT");
+                resultsWriter.writeVersion(minecraftVersion);
             } catch (IOException e) {
                 throw new GenericException("Failed to write results file", e);
             }
@@ -206,12 +208,12 @@ public class QuiltInstaller implements AutoCloseable {
         return QuiltManifest.builder()
             .minecraftVersion(minecraftVersion)
             .loaderVersion(resolvedLoaderVersion)
-            .files(Manifests.relativizeAll(outputDir, Collections.singletonList(resolvedLauncher)))
+            .files(Manifests.relativizeAll(outputDir, resolvedLauncher))
             .build();
     }
 
     private Mono<String> resolveLoaderVersion(String loaderVersion) {
-        if (loaderVersion != null) {
+        if (loaderVersion != null && !loaderVersion.equalsIgnoreCase("latest")) {
             return Mono.just(loaderVersion);
         }
 

@@ -1,9 +1,11 @@
 package me.itzg.helpers.modrinth;
 
+import java.util.Map;
 import lombok.Getter;
 import lombok.experimental.SuperBuilder;
 import lombok.extern.jackson.Jacksonized;
 import me.itzg.helpers.files.BaseManifest;
+import me.itzg.helpers.modrinth.model.DependencyId;
 
 @SuperBuilder
 @Getter
@@ -14,5 +16,6 @@ public class ModrinthModpackManifest extends BaseManifest {
     private String projectSlug;
     private String versionId;
 
+    private Map<DependencyId, String> dependencies;
 
 }

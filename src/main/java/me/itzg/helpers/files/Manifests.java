@@ -6,8 +6,10 @@ import java.nio.file.Path;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import me.itzg.helpers.json.ObjectMappers;
 import org.slf4j.Logger;
 
@@ -64,8 +66,26 @@ public class Manifests {
         return basePath.relativize(path).toString();
     }
 
+    /**
+     * @param paths paths to process where nulls are skipped
+     */
     public static List<String> relativizeAll(Path basePath, Collection<Path> paths) {
-        return paths.stream()
+        return relativizeAll(basePath, paths.stream());
+    }
+
+    /**
+     * @param paths paths to process where nulls are skipped
+     */
+    public static List<String> relativizeAll(Path basePath, Path... paths) {
+        return relativizeAll(basePath, Stream.of(paths));
+    }
+
+    /**
+     * @param pathStream paths to process where nulls are skipped
+     */
+    public static List<String> relativizeAll(Path basePath, Stream<Path> pathStream) {
+        return pathStream
+            .filter(Objects::nonNull)
             .map(p ->
                 basePath.relativize(p)
                 .toString()
