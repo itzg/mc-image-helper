@@ -13,8 +13,9 @@ import lombok.extern.jackson.Jacksonized;
 @ToString
 public class Versions extends Origin {
 
-    String game;
-    String loader;
-    String installer;
+    private String game;
+    private String loader;
+    @EqualsAndHashCode.Exclude
+    private String installer;
 
 }

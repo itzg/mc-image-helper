@@ -31,7 +31,6 @@ class FabricLauncherInstallerTest {
                 Versions.builder()
                 .game("1.19.2")
                 .loader("0.14.11")
-                .installer("0.11.1")
                 .build()
             )
             .files(Collections.singletonList("fabric-server-mc.1.19.2-loader.0.14.11-launcher.0.11.1.jar"))
@@ -48,52 +47,30 @@ class FabricLauncherInstallerTest {
     }
 
     @Test
-    void testInstallUsingVersions_onlyGameVersion(WireMockRuntimeInfo wmRuntimeInfo) throws IOException {
+    void testInstallUsingVersions_onlyGameVersion(WireMockRuntimeInfo wmRuntimeInfo) {
         final WireMock wm = wmRuntimeInfo.getWireMock();
         wm.loadMappingsFrom("src/test/resources/fabric");
 
         final Path resultsFile = tempDir.resolve("results.env");
         final FabricLauncherInstaller installer = new FabricLauncherInstaller(
-            tempDir, resultsFile
-        );
+            tempDir
+        )
+            .setResultsFile(resultsFile);
         installer.setFabricMetaBaseUrl(wmRuntimeInfo.getHttpBaseUrl());
 
-        final Path launcherPath = installer.installUsingVersions("1.19.3", null, null);
+        installer.installUsingVersions("1.19.3", null, null);
 
-        assertThat(launcherPath)
-            .isEqualTo(tempDir.resolve("fabric-server-mc.1.19.3-loader.0.14.12-launcher.0.11.1.jar"))
+        final Path expectedLauncherPath = tempDir.resolve("fabric-server-mc.1.19.3-loader.0.14.12-launcher.0.11.1.jar");
+        assertThat(expectedLauncherPath)
             .isNotEmptyFile()
             .hasContent("fabric-server-mc.1.19.3-loader.0.14.12-launcher.0.11.1");
 
         assertThat(resultsFile)
             .exists()
-            .hasContent("SERVER=\"" + launcherPath + "\"" +
-                "\nFAMILY=\"FABRIC\"");
-
-        final Path expectedManifestFile = tempDir.resolve(".fabric-manifest.json");
-        assertThat(expectedManifestFile)
-            .exists();
-
-        assertJson(expectedManifestFile.toFile())
-            .at("/launcherPath").hasValue(launcherPath.toString())
-            .at("/origin/game").hasValue("1.19.3")
-            .at("/origin/loader").hasValue("0.14.12")
-            .at("/origin/installer").hasValue("0.11.1")
-            .at("/files").isArrayContaining("fabric-server-mc.1.19.3-loader.0.14.12-launcher.0.11.1.jar");
-    }
-
-    @Test
-    void testWithProvidedFile() throws IOException {
-        final Path resultsFile = tempDir.resolve("results.env");
-        final FabricLauncherInstaller installer = new FabricLauncherInstaller(tempDir, resultsFile);
-
-        final Path givenFile = Paths.get("src/test/resources/fabric/test-file.txt");
-        installer.installGivenLauncherFile(givenFile);
-
-        assertThat(resultsFile)
-            .exists()
-            .hasContent("SERVER=\"" + givenFile + "\""
-                +"\nFAMILY=\"FABRIC\""
+            .hasContent("SERVER=\"" + expectedLauncherPath + "\"" +
+                "\nFAMILY=\"FABRIC\"" +
+                "\nTYPE=\"FABRIC\"" +
+                "\nVERSION=\"1.19.3\""
             );
 
         final Path expectedManifestFile = tempDir.resolve(".fabric-manifest.json");
@@ -101,38 +78,45 @@ class FabricLauncherInstallerTest {
             .exists();
 
         assertJson(expectedManifestFile.toFile())
-            .at("/launcherPath").isText(givenFile.toString())
-            .at("/origin/@type").isText("file")
-            .at("/origin/checksum").isText("sha256:5c2d133f4e4263ee18630616a53579f561005bbe2777e59f298eaac05be0eaae")
-            .at("/files").isNull();
+            .at("/launcherPath").hasValue(expectedLauncherPath.toString())
+            .at("/origin/game").hasValue("1.19.3")
+            .at("/origin/loader").hasValue("0.14.12")
+            .at("/files").isArrayContaining("fabric-server-mc.1.19.3-loader.0.14.12-launcher.0.11.1.jar");
     }
 
     @Test
     void testWithProvidedUri(WireMockRuntimeInfo wmRuntimeInfo) throws IOException {
         stubFor(
-            head(urlEqualTo("/fabric.jar"))
+            head(urlEqualTo("/fabric-launcher.jar"))
                 .willReturn(aResponse().withStatus(200))
         );
         stubFor(
-            get(urlEqualTo("/fabric.jar"))
+            get(urlEqualTo("/fabric-launcher.jar"))
                 .willReturn(aResponse()
                     .withStatus(200)
-                    .withBody("Just a test")
+                    // can't use withBodyFile
+                    .withBodyFile("fabric-empty-launcher.jar")
                 )
         );
 
-        final FabricLauncherInstaller installer = new FabricLauncherInstaller(tempDir, null);
-        final URI loaderUri = URI.create(wmRuntimeInfo.getHttpBaseUrl() + "/fabric.jar");
+        final Path expectedResultsPath = tempDir.resolve("results.env");
+        final FabricLauncherInstaller installer = new FabricLauncherInstaller(tempDir)
+            .setResultsFile(expectedResultsPath);
+        final URI loaderUri = URI.create(wmRuntimeInfo.getHttpBaseUrl() + "/fabric-launcher.jar");
 
-        // twice to ensure idempotent
-        for (int i = 0; i < 2; i++) {
-            installer.installUsingUri(loaderUri);
+        installer.installUsingUri(loaderUri);
 
-            assertThat(tempDir.resolve("fabric.jar"))
-                .exists()
-                .hasContent("Just a test");
+        final Path expectedLauncherPath = tempDir.resolve("fabric-launcher.jar");
+        assertThat(expectedLauncherPath)
+            .exists();
 
-        }
+        assertThat(expectedResultsPath)
+            .exists()
+            .hasContent("SERVER=\"" + expectedLauncherPath + "\"" +
+                "\nFAMILY=\"FABRIC\"" +
+                "\nTYPE=\"FABRIC\"" +
+                "\nVERSION=\"1.19.4\"");
+
     }
 
     @Test
@@ -153,63 +137,78 @@ class FabricLauncherInstallerTest {
                 )
         );
 
-        final FabricLauncherInstaller installer = new FabricLauncherInstaller(tempDir, null);
-        final Path actualLauncherPath = installer.installUsingUri(
+        final FabricLauncherInstaller installer = new FabricLauncherInstaller(tempDir);
+        installer.installUsingUri(
             URI.create(wmRuntimeInfo.getHttpBaseUrl() + "/server")
         );
 
         final Path expectedLauncherPath = tempDir.resolve("fabric-server-mc.1.19.3-loader.0.14.12-launcher.0.11.1.jar");
         assertThat(expectedLauncherPath)
             .exists()
-            .isEqualTo(actualLauncherPath)
             .hasContent("testWithProvidedUri_contentDisposition");
     }
 
     @Test
-    void testUpgradeFromVersionToVersion(WireMockRuntimeInfo wmRuntimeInfo) throws IOException {
+    void testWithLocalLauncherFile() throws IOException {
+        final Path expectedResultsPath = tempDir.resolve("results.env");
+        final FabricLauncherInstaller installer = new FabricLauncherInstaller(tempDir)
+            .setResultsFile(expectedResultsPath);
+
+        final Path launcherFile = Paths.get("src/test/resources/__files/fabric-empty-launcher.jar");
+        installer.installUsingLocalFile(
+            launcherFile
+        );
+
+        assertThat(expectedResultsPath)
+            .exists()
+            .hasContent("SERVER=\"" + launcherFile + "\"" +
+                "\nFAMILY=\"FABRIC\"" +
+                "\nTYPE=\"FABRIC\"" +
+                "\nVERSION=\"1.19.4\"");
+    }
+
+    @Test
+    void testUpgradeFromVersionToVersion(WireMockRuntimeInfo wmRuntimeInfo) {
         final WireMock wm = wmRuntimeInfo.getWireMock();
         wm.loadMappingsFrom("src/test/resources/fabric");
 
         final FabricLauncherInstaller installer = new FabricLauncherInstaller(
-            tempDir, null
+            tempDir
         );
         installer.setFabricMetaBaseUrl(wmRuntimeInfo.getHttpBaseUrl());
 
-        final Path launcherPath1192 = installer.installUsingVersions(
+        installer.installUsingVersions(
             "1.19.2", null, null
         );
 
-        assertThat(launcherPath1192)
-            .isEqualTo(tempDir.resolve("fabric-server-mc.1.19.2-loader.0.14.12-launcher.0.11.1.jar"))
+        final Path expectedLauncher192 = tempDir.resolve("fabric-server-mc.1.19.2-loader.0.14.12-launcher.0.11.1.jar");
+        assertThat(expectedLauncher192)
             .isNotEmptyFile()
             .hasContent("fabric-server-mc.1.19.2-loader.0.14.12-launcher.0.11.1");
 
         // Now upgrade from 1.19.2 to 1.19.3
 
-        final Path launcherPath1193 = installer.installUsingVersions(
+        installer.installUsingVersions(
             "1.19.3", null, null
         );
 
-        assertThat(launcherPath1193)
-            .isEqualTo(tempDir.resolve("fabric-server-mc.1.19.3-loader.0.14.12-launcher.0.11.1.jar"))
+        final Path expectedLauncher193 = tempDir.resolve("fabric-server-mc.1.19.3-loader.0.14.12-launcher.0.11.1.jar");
+        assertThat(expectedLauncher193)
             .isNotEmptyFile()
             .hasContent("fabric-server-mc.1.19.3-loader.0.14.12-launcher.0.11.1");
 
-        assertThat(launcherPath1192)
+        assertThat(expectedLauncher192)
             .doesNotExist();
     }
 
     @Test
     @EnabledIfSystemProperty(named = "testEnableManualTests", matches = "true", disabledReason = "For manual recording")
-    void forRecordingVersionDiscovery() throws IOException {
+    void forRecordingVersionDiscovery() {
         final Path resultsFile = tempDir.resolve("results.env");
-        final FabricLauncherInstaller installer = new FabricLauncherInstaller(tempDir, resultsFile);
+        final FabricLauncherInstaller installer = new FabricLauncherInstaller(tempDir)
+            .setResultsFile(resultsFile);
         installer.setFabricMetaBaseUrl("http://localhost:8080");
 
-        final Path installerPath = installer.installUsingVersions("1.19.3", null, null);
-
-        assertThat(installerPath)
-            .exists()
-            .isNotEmptyFile();
+        installer.installUsingVersions("1.19.3", null, null);
     }
 }

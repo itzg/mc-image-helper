@@ -408,6 +408,44 @@ Usage: mc-image-helper patch [-h] [--patch-env-prefix=<envPrefix>] FILE_OR_DIR
 
 [See below](#patch-schemas) for a description of [PatchSet](#patchset) and [PatchDefinition](#patchdefinition) JSON schemas.
 
+### install-quilt
+
+```
+Usage: mc-image-helper install-quilt [-h] [--force-reinstall]
+                                     [--loader-version=VERSION]
+                                     [--minecraft-version=VERSION]
+                                     [--output-directory=DIR]
+                                     [--repo-url=<repoUrl>]
+                                     [--results-file=FILE] [--installer-url=URL
+                                     | --installer-version=VERSION]
+                                     [[--tls-handshake-timeout=DURATION]
+                                     [--connection-pool-max-idle-timeout=DURATIO
+                                     N] [--http-response-timeout=DURATION]]
+Installs Quilt mod loader
+      --connection-pool-max-idle-timeout=DURATION
+
+      --force-reinstall
+  -h, --help
+      --http-response-timeout=DURATION
+                             The response timeout to apply to HTTP operations.
+                               Parsed from ISO-8601 format. Default: PT30S
+      --installer-url=URL
+      --installer-version=VERSION
+                             Default uses latest
+      --loader-version=VERSION
+                             Default uses latest
+      --minecraft-version=VERSION
+                             'latest', 'snapshot', or specific version
+      --output-directory=DIR
+      --repo-url=<repoUrl>   Default: https://maven.quiltmc.
+                               org/repository/release
+      --results-file=FILE    A key=value file suitable for scripted environment
+                               variables. Currently includes
+                               SERVER: the entry point jar or script
+      --tls-handshake-timeout=DURATION
+                             Default: PT30S
+```
+
 ### sync-and-interpolate
 
 ```

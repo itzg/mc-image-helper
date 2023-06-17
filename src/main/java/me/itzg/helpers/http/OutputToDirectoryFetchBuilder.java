@@ -92,6 +92,7 @@ public class OutputToDirectoryFetchBuilder extends FetchBuilderBase<OutputToDire
                     ));
                 })
                 .publishOn(Schedulers.boundedElastic())
+                .checkpoint("Fetch HEAD of requested file")
                 .flatMap(fileToDownload ->
                     assembleFileDownload(client, fileToDownload)
                 )
@@ -172,7 +173,8 @@ public class OutputToDirectoryFetchBuilder extends FetchBuilderBase<OutputToDire
                             return Mono.error(e);
                         }
                     });
-            });
+            })
+            .checkpoint("Fetching file into directory");
     }
 
     private String extractFilename(HttpClientResponse resp) {

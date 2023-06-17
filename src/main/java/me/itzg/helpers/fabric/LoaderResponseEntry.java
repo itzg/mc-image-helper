@@ -5,11 +5,6 @@ import lombok.Data;
 @Data
 public class LoaderResponseEntry {
 
-    Loader loader;
+    private VersionEntry loader;
 
-    @Data
-    public static class Loader {
-        boolean stable;
-        String version;
-    }
 }

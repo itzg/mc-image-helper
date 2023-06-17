@@ -1,6 +1,23 @@
 package me.itzg.helpers.modrinth;
 
+import static me.itzg.helpers.McImageHelper.OPTION_SPLIT_COMMAS;
+import static me.itzg.helpers.http.Fetch.fetch;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidParameterException;
@@ -18,24 +35,6 @@ import me.itzg.helpers.modrinth.model.VersionType;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.Option;
-
-import java.io.IOException;
-import java.net.URI;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-
-import static me.itzg.helpers.McImageHelper.OPTION_SPLIT_COMMAS;
-import static me.itzg.helpers.http.Fetch.fetch;
 
 @Command(name = "modrinth", description = "Automates downloading of modrinth resources")
 @Slf4j
@@ -145,7 +144,7 @@ public class ModrinthCommand implements Callable<Integer> {
                         depVersion = getVersion(dep.getVersionId());
                     }
                     if (depVersion != null) {
-                        log.debug("Resolved version={} for dep={}", depVersion, dep);
+                        log.debug("Resolved version={} for dep={}", depVersion.getVersionNumber(), dep);
                         return Stream.concat(
                                 Stream.of(depVersion),
                                 expandDependencies(depVersion)

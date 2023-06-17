@@ -41,10 +41,10 @@ public class MavenRepoApi {
         final String groupPath = groupId.replace('.', '/');
 
         Mono<String> resolvedVersionMono;
-        if (version.equals("release")) {
+        if (version == null || version.equalsIgnoreCase("release")) {
             resolvedVersionMono = fetchMetadata(groupId, artifactId)
                 .map(mavenMetadata -> mavenMetadata.getVersioning().getRelease());
-        } else if (version.equals("latest")) {
+        } else if (version.equalsIgnoreCase("latest")) {
             resolvedVersionMono = fetchMetadata(groupId, artifactId)
                 .map(mavenMetadata -> mavenMetadata.getVersioning().getLatest());
         } else {

@@ -1,6 +1,7 @@
 package me.itzg.helpers.paper;
 
 import com.fasterxml.jackson.databind.exc.InvalidTypeIdException;
+import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
 import java.util.Collections;
@@ -11,12 +12,15 @@ import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidParameterException;
+import me.itzg.helpers.files.IoStreams;
 import me.itzg.helpers.files.ManifestException;
 import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.files.ResultsFileWriter;
 import me.itzg.helpers.http.Fetch;
 import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.http.SharedFetchArgs;
+import me.itzg.helpers.json.ObjectMappers;
+import me.itzg.helpers.paper.model.VersionMeta;
 import me.itzg.helpers.sync.MultiCopyManifest;
 import picocli.CommandLine;
 import picocli.CommandLine.ArgGroup;
@@ -26,6 +30,7 @@ import picocli.CommandLine.Option;
 import picocli.CommandLine.ParameterException;
 import picocli.CommandLine.Spec;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 @Command(name = "install-paper", description = "Installs selected PaperMC")
 @Slf4j
@@ -88,6 +93,7 @@ public class InstallPaperCommand implements Callable<Integer> {
 
         final PaperManifest newManifest;
         final Path serverJar;
+        final String version;
     }
 
     @Override
@@ -109,6 +115,8 @@ public class InstallPaperCommand implements Callable<Integer> {
         if (resultsFile != null) {
             try (ResultsFileWriter results = new ResultsFileWriter(resultsFile)) {
                 results.writeServer(result.serverJar);
+                results.writeType("PAPER");
+                results.writeVersion(result.version);
             }
         }
 
@@ -122,24 +130,24 @@ public class InstallPaperCommand implements Callable<Integer> {
         return resolveVersion(client, project, version)
             .flatMap(v -> resolveBuild(client, project, v, build)
                 .flatMap(b -> {
-                        log.info("Resolved {} to version {} build {}", project, v, b);
+                    log.info("Resolved {} to version {} build {}", project, v, b);
 
-                        return client.download(project, v, b, outputDirectory, Fetch.loggingDownloadStatusHandler(log))
-                            .map(serverJar ->
-                                Result.builder()
-                                    .newManifest(
-                                        PaperManifest.builder()
-                                            .project(project)
-                                            .minecraftVersion(v)
-                                            .build(b)
-                                            .files(Collections.singleton(Manifests.relativize(outputDirectory, serverJar)))
-                                            .build()
-                                    )
-                                    .serverJar(serverJar)
-                                    .build()
-                            );
-                    }
-                )
+                    return client.download(project, v, b, outputDirectory, Fetch.loggingDownloadStatusHandler(log))
+                        .map(serverJar ->
+                            Result.builder()
+                                .newManifest(
+                                    PaperManifest.builder()
+                                        .project(project)
+                                        .minecraftVersion(v)
+                                        .build(b)
+                                        .files(Collections.singleton(Manifests.relativize(outputDirectory, serverJar)))
+                                        .build()
+                                )
+                                .serverJar(serverJar)
+                                .version(v)
+                                .build()
+                        );
+                })
             )
             .block();
     }
@@ -152,8 +160,19 @@ public class InstallPaperCommand implements Callable<Integer> {
                 .skipUpToDate(true)
                 .handleStatus(Fetch.loggingDownloadStatusHandler(log))
                 .assemble()
-                .map(serverJar ->
-                    Result.builder()
+                .publishOn(Schedulers.boundedElastic())
+                .flatMap(serverJar -> {
+                    final String version;
+                    try {
+                        version = extractVersionFromJar(serverJar);
+
+                        if (version == null) {
+                            return Mono.error(new GenericException("Version metadata was not available from custom server jar"));
+                        }
+                    } catch (IOException e) {
+                        return Mono.error(new GenericException("Failed to extract version from custom server jar", e));
+                    }
+                    return Mono.just(Result.builder()
                         .serverJar(serverJar)
                         .newManifest(
                             PaperManifest.builder()
@@ -161,10 +180,22 @@ public class InstallPaperCommand implements Callable<Integer> {
                                 .files(Collections.singleton(Manifests.relativize(outputDirectory, serverJar)))
                                 .build()
                         )
-                        .build()
-                )
+                        .version(version)
+                        .build());
+                })
                 .block();
         }
+    }
+
+    private String extractVersionFromJar(Path serverJar) throws IOException {
+        final VersionMeta versionMeta = IoStreams.readFileFromZip(serverJar, "version.json", in ->
+            ObjectMappers.defaultMapper().readValue(in, VersionMeta.class)
+        );
+        if (versionMeta == null) {
+            return null;
+        }
+
+        return versionMeta.getId();
     }
 
     private PaperManifest loadOldManifest() {

@@ -48,4 +48,14 @@ public class ResultsFileWriter implements AutoCloseable {
     public ResultsFileWriter writeServer(Path serverJar) throws IOException {
         return write("SERVER", serverJar.toString());
     }
+
+    @SuppressWarnings("UnusedReturnValue")
+    public ResultsFileWriter writeVersion(String version) throws IOException {
+        return write("VERSION", version);
+    }
+
+    @SuppressWarnings("UnusedReturnValue")
+    public ResultsFileWriter writeType(String type) throws IOException {
+        return write("TYPE", type);
+    }
 }

@@ -1,9 +1,11 @@
 package me.itzg.helpers.http;
 
 import java.net.URI;
+import lombok.Getter;
 
 public class UriBuilder {
 
+    @Getter
     private final String baseUrl;
 
     protected UriBuilder(String baseUrl) {

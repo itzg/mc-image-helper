@@ -39,6 +39,7 @@ import me.itzg.helpers.modrinth.model.VersionFile;
 import me.itzg.helpers.modrinth.model.VersionType;
 import me.itzg.helpers.quilt.QuiltInstaller;
 import org.jetbrains.annotations.Blocking;
+import org.jetbrains.annotations.NotNull;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.Option;
@@ -148,32 +149,46 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
                             project, projectRef, loader != null ? loader.asLoader() : null, gameVersion, defaultVersionType
                         )
                         .switchIfEmpty(Mono.defer(() -> Mono.error(new InvalidParameterException(
-                            "Unable to find version given " + projectRef))))
-                        .doOnNext(version -> log.debug("Resolved version={} from projectRef={}", version, projectRef))
+                            "Unable to find version given " + projectRef)))
+                        )
+                        .doOnNext(version -> log.debug("Resolved version={} from projectRef={}", version.getVersionNumber(), projectRef))
                         .publishOn(Schedulers.boundedElastic()) // since next item does I/O
                         .filter(version -> needsInstall(prevManifest, project, version))
-                        .flatMap(version -> {
-                            final VersionFile versionFile = pickVersionFile(version);
-                            log.info("Installing version {} of {}", version.getVersionNumber(), project.getTitle());
-                            //noinspection BlockingMethodInNonBlockingContext because IntelliJ is confused
-                            return apiClient.downloadMrPack(versionFile)
-                                .publishOn(Schedulers.boundedElastic())
-                                .flatMap(zipPath ->
-                                    processModpackZip(apiClient, zipPath, project, version)
-                                        .publishOn(Schedulers.boundedElastic())
-                                        .doOnTerminate(() -> {
-                                            try {
-                                                Files.delete(zipPath);
-                                            } catch (IOException e) {
-                                                throw new RuntimeException(e);
-                                            }
-                                        })
-                                );
-                        })
+                        .flatMap(version -> processVersion(apiClient, project, version))
+                        .switchIfEmpty(Mono.defer(() -> {
+                            try {
+                                applyModLoader(prevManifest.getDependencies());
+                            } catch (IOException e) {
+                                return Mono.error(new GenericException("Failed to re-apply mod loader", e));
+                            }
+                            return Mono.just(prevManifest);
+                        }))
                 )
                 .block();
 
         }
+    }
+
+    @NotNull
+    private Mono<ModrinthModpackManifest> processVersion(ModrinthApiClient apiClient, Project project,
+        Version version
+    ) {
+        final VersionFile versionFile = pickVersionFile(version);
+        log.info("Installing version {} of {}", version.getVersionNumber(), project.getTitle());
+        //noinspection BlockingMethodInNonBlockingContext because IntelliJ is confused
+        return apiClient.downloadMrPack(versionFile)
+            .publishOn(Schedulers.boundedElastic())
+            .flatMap(zipPath ->
+                processModpackZip(apiClient, zipPath, project, version)
+                    .publishOn(Schedulers.boundedElastic())
+                    .doOnTerminate(() -> {
+                        try {
+                            Files.delete(zipPath);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    })
+            );
     }
 
     @Blocking
@@ -181,6 +196,7 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
         if (prevManifest != null) {
             if (prevManifest.getProjectSlug().equals(project.getSlug())
                 && prevManifest.getVersionId().equals(version.getId())
+                && prevManifest.getDependencies() != null
                 && Manifests.allFilesPresent(outputDirectory, prevManifest)
             ) {
                 if (forceSynchronize) {
@@ -230,33 +246,23 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
                     .flatMap(Function.identity())
                     .collect(Collectors.toList())
             )
-            .handle((paths, sink) -> {
-                final String minecraftVersion;
+            .flatMap(paths -> {
                 try {
-                    minecraftVersion = applyModloader(modpackIndex.getDependencies());
+                    applyModLoader(modpackIndex.getDependencies());
                 } catch (IOException e) {
-                    sink.error(new GenericException("Failed to apply mod loader", e));
-                    return;
+                    return Mono.error(new GenericException("Failed to apply mod loader", e));
                 }
 
-                if (resultsFile != null) {
-                    try (ResultsFileWriter resultsFileWriter = new ResultsFileWriter(resultsFile, true)) {
-                        resultsFileWriter.write("VERSION", minecraftVersion);
-                    } catch (IOException e) {
-                        sink.error(new GenericException("Failed to write results file", e));
-                        return;
-                    }
-                }
-
-                sink.next(ModrinthModpackManifest.builder()
+                return Mono.just(ModrinthModpackManifest.builder()
                     .files(Manifests.relativizeAll(outputDirectory, paths))
                     .projectSlug(project.getSlug())
                     .versionId(version.getId())
+                    .dependencies(modpackIndex.getDependencies())
                     .build());
             });
     }
 
-    private String applyModloader(Map<DependencyId, String> dependencies) throws IOException {
+    private void applyModLoader(Map<DependencyId, String> dependencies) throws IOException {
         log.debug("Applying mod loader from dependencies={}", dependencies);
 
         final String minecraftVersion = dependencies.get(DependencyId.minecraft);
@@ -274,18 +280,19 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
                 forceModloaderReinstall,
                 null
             );
-            return minecraftVersion;
+            return;
         }
 
         final String fabricVersion = dependencies.get(DependencyId.fabricLoader);
         if (fabricVersion != null) {
-            new FabricLauncherInstaller(outputDirectory, resultsFile)
+            new FabricLauncherInstaller(outputDirectory)
+                .setResultsFile(resultsFile)
                 .installUsingVersions(
                     minecraftVersion,
                     fabricVersion,
                     null
                 );
-            return minecraftVersion;
+            return;
         }
 
         final String quiltVersion = dependencies.get(DependencyId.quiltLoader);
@@ -301,7 +308,6 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
             }
         }
 
-        return minecraftVersion;
     }
 
     @SuppressWarnings("SameParameterValue")
