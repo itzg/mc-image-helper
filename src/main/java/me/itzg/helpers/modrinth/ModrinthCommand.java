@@ -292,6 +292,12 @@ public class ModrinthCommand implements Callable<Integer> {
         }
         else {
             final List<Version> versions = getVersionsForProject(project.getId());
+            if (versions.isEmpty()) {
+                throw new InvalidParameterException(
+                    String.format("No files are available for the project '%s' (%s) for %s loader and Minecraft version %s",
+                        project.getTitle(), project.getSlug(), loader, gameVersion
+                    ));
+            }
             return pickVersion(versions);
         }
     }
