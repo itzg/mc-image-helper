@@ -1,6 +1,15 @@
 package me.itzg.helpers.modrinth;
 
+import static me.itzg.helpers.http.Uris.QueryParameters.queryParameters;
+
+import java.io.IOException;
+import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Collections;
+import java.util.List;
 import me.itzg.helpers.errors.GenericException;
+import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.http.Fetch;
 import me.itzg.helpers.http.FileDownloadedHandler;
 import me.itzg.helpers.http.SharedFetch;
@@ -11,15 +20,6 @@ import me.itzg.helpers.modrinth.model.VersionFile;
 import me.itzg.helpers.modrinth.model.VersionType;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
-
-import java.io.IOException;
-import java.net.URI;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Collections;
-import java.util.List;
-
-import static me.itzg.helpers.http.Uris.QueryParameters.queryParameters;
 
 public class ModrinthApiClient implements AutoCloseable {
 
@@ -118,7 +118,14 @@ public class ModrinthApiClient implements AutoCloseable {
                 )
             )
             .toObjectList(Version.class)
-            .assemble();
+            .assemble()
+            .flatMap(versions ->
+                versions.isEmpty() ? Mono.error(new InvalidParameterException(
+                    String.format("No files are available for the project %s for loader %s and Minecraft version %s",
+                        projectIdOrSlug, loader, gameVersion
+                        )))
+                    : Mono.just(versions)
+                );
     }
 
     public Mono<Version> getVersionFromId(String versionId) {
