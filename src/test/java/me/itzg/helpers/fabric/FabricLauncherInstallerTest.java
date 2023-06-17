@@ -69,6 +69,7 @@ class FabricLauncherInstallerTest {
             .exists()
             .hasContent("SERVER=\"" + expectedLauncherPath + "\"" +
                 "\nFAMILY=\"FABRIC\"" +
+                "\nTYPE=\"FABRIC\"" +
                 "\nVERSION=\"1.19.3\""
             );
 
@@ -113,6 +114,7 @@ class FabricLauncherInstallerTest {
             .exists()
             .hasContent("SERVER=\"" + expectedLauncherPath + "\"" +
                 "\nFAMILY=\"FABRIC\"" +
+                "\nTYPE=\"FABRIC\"" +
                 "\nVERSION=\"1.19.4\"");
 
     }
@@ -161,6 +163,7 @@ class FabricLauncherInstallerTest {
             .exists()
             .hasContent("SERVER=\"" + launcherFile + "\"" +
                 "\nFAMILY=\"FABRIC\"" +
+                "\nTYPE=\"FABRIC\"" +
                 "\nVERSION=\"1.19.4\"");
     }
 
