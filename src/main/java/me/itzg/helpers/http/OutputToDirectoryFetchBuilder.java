@@ -150,14 +150,14 @@ public class OutputToDirectoryFetchBuilder extends FetchBuilderBase<OutputToDire
             .get()
             .uri(uri())
             .responseSingle((resp, bodyMono) -> {
-                if (notSuccess(resp)) {
-                    return failedRequestMono(resp, bodyMono, "Downloading file");
-                }
-
                 if (useIfModifiedSince && resp.status() == HttpResponseStatus.NOT_MODIFIED) {
                     log.debug("The file {} is already up to date", outputFile);
                     statusHandler.call(FileDownloadStatus.SKIP_FILE_UP_TO_DATE, uri(), outputFile);
                     return Mono.just(outputFile);
+                }
+
+                if (notSuccess(resp)) {
+                    return failedRequestMono(resp, bodyMono, "Downloading file");
                 }
 
                 return bodyMono.asInputStream()
