@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Properties;
 import lombok.Getter;
 import lombok.NonNull;
@@ -114,6 +115,14 @@ public class FabricLauncherInstaller {
                 );
         }
         else {
+            // For backward compatibility, need to re-write the results file
+            if (resultsFile != null) {
+                try {
+                    writeResultsFile(Paths.get(prevManifest.getLauncherPath()), minecraftVersion);
+                } catch (IOException e) {
+                    return Mono.error(new GenericException("Failed to re-write results file", e));
+                }
+            }
             log.info("Fabric launcher for minecraft {} loader {} is already available",
                 minecraftVersion, loaderVersion
             );

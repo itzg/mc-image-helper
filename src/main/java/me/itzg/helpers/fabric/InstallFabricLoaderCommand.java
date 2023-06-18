@@ -27,8 +27,8 @@ public class InstallFabricLoaderCommand implements Callable<Integer> {
     @Option(names = "--results-file", description = ResultsFileWriter.OPTION_DESCRIPTION, paramLabel = "FILE")
     Path resultsFile;
 
-    @ArgGroup(multiplicity = "1")
-    OriginOptions originOptions;
+    @ArgGroup
+    OriginOptions originOptions = new OriginOptions();
 
     static class OriginOptions {
         @ArgGroup(exclusive = false)
