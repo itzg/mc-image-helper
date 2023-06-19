@@ -465,7 +465,27 @@ public class CurseForgeInstaller {
             // ...does the modpack even say it's required?
             .filter(ManifestFileRef::isRequired)
             // ...is this mod file excluded because it is a client mod that didn't declare as such
-            .filter(manifestFileRef -> !excludeIncludeIds.getExcludeIds().contains(manifestFileRef.getProjectID()))
+            .filterWhen(manifestFileRef -> {
+                final int projectID = manifestFileRef.getProjectID();
+                final boolean exclude = excludeIncludeIds.getExcludeIds().contains(projectID);
+                final boolean forceInclude = excludeIncludeIds.getForceIncludeIds().contains(projectID);
+
+                log.debug("Evaluating projectId={} with exclude={} and forceInclude={}",
+                    projectID, exclude, forceInclude
+                    );
+
+                return Mono.just(forceInclude || !exclude)
+                    .flatMap(proceed -> proceed ? Mono.just(true)
+                        : context.cfApi.getModInfo(projectID)
+                            .map(mod -> {
+                                log.info("Excluding mod file '{}' ({}) due to configuration",
+                                    mod.getName(), mod.getSlug()
+                                    );
+                                // and filter away
+                                return false;
+                            })
+                        );
+            })
             // ...download and possibly unzip world file
             .flatMap(fileRef ->
                 downloadFileFromModpack(context, outputPaths,
