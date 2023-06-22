@@ -198,14 +198,21 @@ public class VanillaTweaksCommand implements Callable<Integer> {
                     // handle --arg= case
                     .filter(path -> !path.toString().isEmpty())
             )
-            .handle((path, sink) -> {
+            .flatMap(path -> {
                 try {
-                    sink.next(new SourcedPackDefinition(
-                        "definition file " + path,
-                        objectMapper.readValue(path.toFile(), PackDefinition.class)
-                    ));
+                    final PackDefinition packDefinition = objectMapper.readValue(path.toFile(), PackDefinition.class);
+                    if (packDefinition.getType() == null) {
+                        return Mono.error(
+                            new InvalidParameterException(String.format("Pack definition file %s is missing 'type'", path)));
+                    }
+                    else {
+                        return Mono.just(new SourcedPackDefinition(
+                            "definition file " + path,
+                            packDefinition
+                        ));
+                    }
                 } catch (IOException e) {
-                    sink.error(new GenericException("Failed to load pack definition file", e));
+                    return Mono.error(new GenericException("Failed to load pack definition file", e));
                 }
             });
     }
