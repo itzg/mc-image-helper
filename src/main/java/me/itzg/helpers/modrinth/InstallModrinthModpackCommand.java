@@ -97,7 +97,7 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
     @Option(names = "--force-modloader-reinstall", defaultValue = "${env:MODRINTH_FORCE_MODLOADER_REINSTALL:-false}")
     boolean forceModloaderReinstall;
 
-    @Option(names = "--api-base-url", defaultValue = "${env:MODRINTH_API_BASE_URL:-https://api.modrinth.com/v2}",
+    @Option(names = "--api-base-url", defaultValue = "${env:MODRINTH_API_BASE_URL:-https://api.modrinth.com}",
         description = "Default: ${DEFAULT-VALUE}"
     )
     String baseUrl;
@@ -138,7 +138,7 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
      */
     private ModrinthModpackManifest processModpack(ProjectRef projectRef, ModrinthModpackManifest prevManifest) {
 
-        try (ModrinthApiClient apiClient = new ModrinthApiClient(baseUrl, sharedFetchArgs.options())) {
+        try (ModrinthApiClient apiClient = new ModrinthApiClient(baseUrl, "install-modrinth-modpack", sharedFetchArgs.options())) {
             return apiClient.getProject(projectRef.getIdOrSlug())
                 .onErrorMap(FailedRequestException::isNotFound,
                     throwable ->

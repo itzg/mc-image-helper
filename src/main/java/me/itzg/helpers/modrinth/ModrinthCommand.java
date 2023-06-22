@@ -22,7 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.files.Manifests;
-import me.itzg.helpers.http.FailedRequestException;
+import me.itzg.helpers.http.SharedFetchArgs;
 import me.itzg.helpers.http.Uris;
 import me.itzg.helpers.http.Uris.QueryParameters;
 import me.itzg.helpers.json.ObjectMappers;
@@ -32,6 +32,7 @@ import me.itzg.helpers.modrinth.model.ProjectType;
 import me.itzg.helpers.modrinth.model.Version;
 import me.itzg.helpers.modrinth.model.VersionFile;
 import me.itzg.helpers.modrinth.model.VersionType;
+import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.Option;
@@ -39,8 +40,6 @@ import picocli.CommandLine.Option;
 @Command(name = "modrinth", description = "Automates downloading of modrinth resources")
 @Slf4j
 public class ModrinthCommand implements Callable<Integer> {
-
-    private final String baseUrl;
 
     @Option(names = "--projects", description = "Project ID or Slug", split = OPTION_SPLIT_COMMAS,
         paramLabel = "id|slug"
@@ -62,16 +61,15 @@ public class ModrinthCommand implements Callable<Integer> {
     @Option(names = "--allowed-version-type", defaultValue = "release", description = "Valid values: ${COMPLETION-CANDIDATES}")
     VersionType defaultVersionType;
 
+    @Option(names = "--api-base-url", defaultValue = "${env:MODRINTH_API_BASE_URL:-https://api.modrinth.com}",
+        description = "Default: ${DEFAULT-VALUE}"
+    )
+    String baseUrl;
+
+    @ArgGroup(exclusive = false)
+    SharedFetchArgs sharedFetchArgs = new SharedFetchArgs();
+
     final Set<String/*projectId*/> projectsProcessed = Collections.synchronizedSet(new HashSet<>());
-
-    @SuppressWarnings("unused")
-    public ModrinthCommand() {
-        this("https://api.modrinth.com/v2");
-    }
-
-    public ModrinthCommand(String baseUrl) {
-        this.baseUrl = baseUrl;
-    }
 
     @Override
     public Integer call() throws Exception {
@@ -94,9 +92,19 @@ public class ModrinthCommand implements Callable<Integer> {
     }
 
     private List<Path> processProjects(List<String> projects) {
-        return projects.stream()
-            .flatMap(this::processProject)
-            .collect(Collectors.toList());
+        try (ModrinthApiClient modrinthApiClient = new ModrinthApiClient(baseUrl, "modrinth", sharedFetchArgs.options())) {
+            //noinspection DataFlowIssue since it thinks block() may return null
+            return
+                modrinthApiClient.bulkGetProjects(
+                    projects.stream()
+                        .map(ProjectRef::parse)
+                )
+                .defaultIfEmpty(Collections.emptyList())
+                .block()
+                .stream()
+                .flatMap(resolvedProject -> processProject(resolvedProject.getProjectRef(), resolvedProject.getProject()))
+                .collect(Collectors.toList());
+        }
     }
 
     private ModrinthManifest loadManifest() throws IOException {
@@ -163,7 +171,7 @@ public class ModrinthCommand implements Callable<Integer> {
 
     private Version getVersion(String versionId) throws IOException {
         return fetch(Uris.populateToUri(
-            baseUrl + "/version/{id}", versionId
+            baseUrl + "/v2/version/{id}", versionId
         ))
             .userAgentCommand("modrinth")
             .toObject(Version.class)
@@ -213,26 +221,10 @@ public class ModrinthCommand implements Callable<Integer> {
         }
     }
 
-    private Project getProject(String projectIdOrSlug) {
-        return fetch(Uris.populateToUri(
-            baseUrl + "/project/{id|slug}",
-            projectIdOrSlug
-        ))
-            .userAgentCommand("modrinth")
-            .toObject(Project.class)
-            .assemble()
-            .onErrorMap(
-                FailedRequestException::isNotFound,
-                throwable ->
-                    new InvalidParameterException("Unable to locate requested project given " + projectIdOrSlug, throwable)
-            )
-            .block();
-    }
-
     private List<Version> getVersionsForProject(String project) {
         try {
             return fetch(Uris.populateToUri(
-                baseUrl + "/project/{id|slug}/version",
+                baseUrl + "/v2/project/{id|slug}/version",
                 QueryParameters.queryParameters()
                     .addStringArray("loaders", loader != null ? loader.toString() : null)
                     .addStringArray("game_versions", gameVersion),
@@ -248,7 +240,7 @@ public class ModrinthCommand implements Callable<Integer> {
 
     private Version getVersionFromId(String versionId) {
         return fetch(Uris.populateToUri(
-            baseUrl + "/version/{id}",
+            baseUrl + "/v2/version/{id}",
             versionId
         ))
             .userAgentCommand("modrinth")
@@ -257,11 +249,8 @@ public class ModrinthCommand implements Callable<Integer> {
     }
 
 
-    private Stream<? extends Path> processProject(String projectRefStr) {
-        log.debug("Starting with projectRef={}", projectRefStr);
-
-        final ProjectRef projectRef = ProjectRef.parse(projectRefStr);
-        final Project project = getProject(projectRef.getIdOrSlug());
+    private Stream<Path> processProject(ProjectRef projectRef, Project project) {
+        log.debug("Starting with projectRef={}", projectRef);
 
         if (projectsProcessed.add(project.getId())) {
             final Version version = resolveProjectVersion(project, projectRef);
