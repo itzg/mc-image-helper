@@ -1,17 +1,16 @@
 package me.itzg.helpers.http;
 
-import me.itzg.helpers.errors.GenericException;
-
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLEncoder;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import me.itzg.helpers.errors.GenericException;
 
 public final class Uris {
 
@@ -92,7 +91,7 @@ public final class Uris {
          * Adds a query parameter formatted into {@code ["str","str"]}
          * @param values adds the query parameter is not null and not empty
          */
-        public QueryParameters addStringArray(String name, List<String> values) {
+        public QueryParameters addStringArray(String name, Collection<String> values) {
             if (values != null && !values.isEmpty()) {
                 parameters.put(name,
                     values.stream()

@@ -7,13 +7,20 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.http.Fetch;
 import me.itzg.helpers.http.FileDownloadedHandler;
 import me.itzg.helpers.http.SharedFetch;
+import me.itzg.helpers.http.SharedFetch.Options;
 import me.itzg.helpers.http.UriBuilder;
+import me.itzg.helpers.http.Uris.QueryParameters;
 import me.itzg.helpers.modrinth.model.Project;
 import me.itzg.helpers.modrinth.model.Version;
 import me.itzg.helpers.modrinth.model.VersionFile;
@@ -26,9 +33,9 @@ public class ModrinthApiClient implements AutoCloseable {
     private final UriBuilder uriBuilder;
     private final SharedFetch sharedFetch;
 
-    public ModrinthApiClient(String baseUrl, SharedFetch.Options options) {
+    public ModrinthApiClient(String baseUrl, String command, Options options) {
         uriBuilder = UriBuilder.withBaseUrl(baseUrl);
-        sharedFetch = Fetch.sharedFetch("modrinth", options);
+        sharedFetch = Fetch.sharedFetch(command, options);
     }
 
     static VersionFile pickVersionFile(Version version) {
@@ -49,10 +56,57 @@ public class ModrinthApiClient implements AutoCloseable {
         return
             sharedFetch
                 .fetch(
-                    uriBuilder.resolve("/project/{id|slug}", projectIdOrSlug)
+                    uriBuilder.resolve("/v2/project/{id|slug}", projectIdOrSlug)
                 )
                 .toObject(Project.class)
                 .assemble();
+    }
+
+    public Mono<List<ResolvedProject>> bulkGetProjects(Stream<ProjectRef> projectRefs) {
+        final Map<String, ProjectRef> indexed = projectRefs
+            .collect(Collectors.toMap(
+                ProjectRef::getIdOrSlug,
+                Function.identity()
+            ));
+
+        return sharedFetch.fetch(
+                uriBuilder.resolve("/v2/projects", QueryParameters.queryParameters()
+                    .addStringArray("ids", indexed.keySet())
+                )
+            )
+            .toObjectList(Project.class)
+            .assemble()
+            .flatMap(projects -> {
+                // Unknown project ID/slug will simply be absent from response,
+                // detect and error on missing ones.
+                if (indexed.size() > projects.size()) {
+                    final HashSet<String> notFound = new HashSet<>(indexed.keySet());
+                    for (final Project project : projects) {
+                        // we knew it by either slug or ID
+                        if (!notFound.remove(project.getSlug())) {
+                            notFound.remove(project.getId());
+                        }
+                    }
+
+                    return Mono.error(new InvalidParameterException("Project(s) could not be located: " + notFound));
+                }
+
+                return Mono.just(
+                    projects.stream()
+                        .map(project -> {
+                            final ProjectRef bySlug = indexed.get(project.getSlug());
+                            if (bySlug != null) {
+                                return new ResolvedProject(bySlug, project);
+                            }
+                            final ProjectRef byId = indexed.get(project.getId());
+                            if (byId != null) {
+                                return new ResolvedProject(byId, project);
+                            }
+                            throw new GenericException("Project came back that wasn't expected: " + project.getSlug());
+                        })
+                        .collect(Collectors.toList())
+                );
+            });
     }
 
     /**
@@ -110,7 +164,7 @@ public class ModrinthApiClient implements AutoCloseable {
                                                      Loader loader, String gameVersion
     ) {
         return sharedFetch.fetch(
-                uriBuilder.resolve("/project/{id|slug}/version",
+                uriBuilder.resolve("/v2/project/{id|slug}/version",
                     queryParameters()
                         .addStringArray("loader", loader != null ? loader.toString() : null)
                         .addStringArray("game_versions", gameVersion),
@@ -130,7 +184,7 @@ public class ModrinthApiClient implements AutoCloseable {
 
     public Mono<Version> getVersionFromId(String versionId) {
         return sharedFetch.fetch(
-                uriBuilder.resolve("/version/{id}",
+                uriBuilder.resolve("/v2/version/{id}",
                     versionId
                 ))
             .toObject(Version.class)
