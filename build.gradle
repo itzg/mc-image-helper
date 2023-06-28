@@ -96,7 +96,7 @@ dependencies {
     implementation 'com.jayway.jsonpath:json-path:2.8.0'
     implementation 'org.apache.httpcomponents.client5:httpclient5:5.2.1'
     implementation 'io.projectreactor.netty:reactor-netty-http:1.1.8'
-    implementation 'org.apache.maven:maven-artifact:3.9.2'
+    implementation 'org.apache.maven:maven-artifact:3.9.3'
     implementation 'commons-codec:commons-codec:1.16.0'
     // for RFC5987 parsing of content-disposition filename*
     implementation 'org.apache.cxf:cxf-core:4.0.2'
