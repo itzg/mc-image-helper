@@ -1,41 +1,12 @@
 package me.itzg.helpers.curseforge;
 
-import static java.util.Collections.emptySet;
-import static java.util.Objects.requireNonNull;
-import static java.util.Optional.ofNullable;
-import static me.itzg.helpers.singles.MoreCollections.safeStreamFrom;
-
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.curseforge.ExcludeIncludesContent.ExcludeIncludes;
-import me.itzg.helpers.curseforge.model.Category;
-import me.itzg.helpers.curseforge.model.CurseForgeFile;
-import me.itzg.helpers.curseforge.model.CurseForgeMod;
-import me.itzg.helpers.curseforge.model.ManifestFileRef;
-import me.itzg.helpers.curseforge.model.ManifestType;
-import me.itzg.helpers.curseforge.model.MinecraftModpackManifest;
-import me.itzg.helpers.curseforge.model.ModLoader;
+import me.itzg.helpers.curseforge.model.*;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.fabric.FabricLauncherInstaller;
@@ -48,6 +19,23 @@ import me.itzg.helpers.json.ObjectMappers;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
+
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+
+import static java.util.Collections.emptySet;
+import static java.util.Objects.requireNonNull;
+import static java.util.Optional.ofNullable;
+import static me.itzg.helpers.singles.MoreCollections.safeStreamFrom;
 
 @RequiredArgsConstructor
 @Slf4j
@@ -406,6 +394,23 @@ public class CurseForgeInstaller {
 
         Manifests.save(outputDir, CURSEFORGE_ID, newManifest);
 
+        final Path needsDownloadFile = outputDir.resolve("MODS_NEED_DOWNLOAD.txt");
+        if (!results.getNeedsDownload().isEmpty()) {
+            try (BufferedWriter writer = Files.newBufferedWriter(needsDownloadFile)) {
+                for (PathWithInfo info : results.getNeedsDownload()) {
+                    writer.write(String.format("%s :: \"%s\" FROM %s",
+                        info.getModInfo().getName(),
+                        info.getCurseForgeFile().getDisplayName(),
+                        info.getModInfo().getLinks().getWebsiteUrl()
+                        ));
+                    writer.newLine();
+                }
+            }
+        }
+        else {
+            Files.deleteIfExists(needsDownloadFile);
+        }
+
         if (resultsFile != null) {
             try (ResultsFileWriter resultsFileWriter = new ResultsFileWriter(resultsFile, true)) {
                 if (results.getLevelName() != null) {
@@ -509,10 +514,20 @@ public class CurseForgeInstaller {
             .setName(modpackManifest.getName())
             .setVersion(modpackManifest.getVersion())
             .setFiles(Stream.concat(
-                        modFiles != null ? modFiles.stream().map(PathWithInfo::getPath) : Stream.empty(),
+                        modFiles != null ?
+                            // NOTE: this purposely includes files needing download to ensure
+                            // they are considered for re-processing since they'll be missing still
+                            modFiles.stream().map(PathWithInfo::getPath)
+                            : Stream.empty(),
                         overridesResult.paths.stream()
                     )
                     .collect(Collectors.toList())
+            )
+            .setNeedsDownload(modFiles != null ?
+                modFiles.stream()
+                    .filter(PathWithInfo::isDownloadNeeded)
+                    .collect(Collectors.toList())
+                : Collections.emptyList()
             )
             .setLevelName(resolveLevelName(modFiles, overridesResult))
             .setMinecraftVersion(modpackManifest.getMinecraft().getVersion())
@@ -728,24 +743,42 @@ public class CurseForgeInstaller {
                             projectID, fileID
                         );
 
-
-                        final Mono<Path> resolvedFileMono =
+                        final Mono<ResolveResult> resolvedFileMono =
                             resolveToOutputFile(context, modInfo, isWorld, baseDir, cfFile);
 
                         return isWorld ?
                             resolvedFileMono
-                                .map(path -> extractWorldZip(modInfo, path, outputPaths.getWorldsDir()))
+                                .map(resolveResult ->
+                                    resolveResult.downloadNeeded ?
+                                        new PathWithInfo(resolveResult.path)
+                                            .setDownloadNeeded(resolveResult.downloadNeeded)
+                                            .setModInfo(modInfo)
+                                            .setCurseForgeFile(cfFile)
+                                    : extractWorldZip(modInfo, resolveResult.path, outputPaths.getWorldsDir())
+                                )
                             : resolvedFileMono
-                                .map(PathWithInfo::new);
+                            .map(resolveResult ->
+                                new PathWithInfo(resolveResult.path)
+                                    .setDownloadNeeded(resolveResult.downloadNeeded)
+                                    .setModInfo(modInfo)
+                                    .setCurseForgeFile(cfFile)
+                            );
                     });
             });
     }
 
-    private Mono<Path> resolveToOutputFile(InstallContext context, CurseForgeMod modInfo, boolean isWorld, Path baseDir, CurseForgeFile cfFile) {
+    @RequiredArgsConstructor
+    static class ResolveResult {
+        final Path path;
+        @Setter
+        boolean downloadNeeded;
+    }
+
+    private Mono<ResolveResult> resolveToOutputFile(InstallContext context, CurseForgeMod modInfo, boolean isWorld, Path baseDir, CurseForgeFile cfFile) {
         final Path outputFile = baseDir.resolve(cfFile.getFileName());
         if (!isWorld && Files.exists(outputFile)) {
             log.info("Mod file {} already exists", outputDir.relativize(outputFile));
-            return Mono.just(outputFile);
+            return Mono.just(new ResolveResult(outputFile));
         }
         else if (cfFile.getDownloadUrl() == null) {
             final Path resolved =
@@ -757,21 +790,22 @@ public class CurseForgeInstaller {
                         "Manually download the file '{}' from {} and supply via downloads repo or separately.",
                     modInfo.getName(), cfFile.getDisplayName(), modInfo.getLinks().getWebsiteUrl()
                 );
-                return Mono.empty();
+                return Mono.just(new ResolveResult(outputFile).setDownloadNeeded(true));
             }
             else {
                 return Mono.just(resolved)
                     .publishOn(Schedulers.boundedElastic())
-                    .handle((src, sink) -> {
+                    .flatMap(path -> {
                         try {
-                            sink.next(Files.copy(resolved, outputFile));
                             log.info("Mod file {} obtained from downloads repo", outputDir.relativize(outputFile));
+                            //noinspection BlockingMethodInNonBlockingContext because IntelliJ is confused
+                            return Mono.just(Files.copy(resolved, outputFile));
                         } catch (IOException e) {
-                            sink.error(
-                                new GenericException("Failed to copy file from downloads repo", e)
-                            );
+                            return Mono.error(new GenericException("Failed to copy file from downloads repo", e));
                         }
-                    });
+
+                    })
+                    .map(ResolveResult::new);
             }
         }
         else {
@@ -784,7 +818,8 @@ public class CurseForgeInstaller {
                         log.info("Downloaded mod file {}", outputDir.relativize(f));
                         break;
                 }
-            });
+            })
+                .map(ResolveResult::new);
         }
     }
 
