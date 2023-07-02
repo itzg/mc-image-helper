@@ -13,4 +13,5 @@ public class ModPackResults {
     private String minecraftVersion;
     private String modLoaderId;
     private String levelName;
+    private List<PathWithInfo> needsDownload;
 }
