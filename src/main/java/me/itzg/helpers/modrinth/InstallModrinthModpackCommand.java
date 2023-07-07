@@ -1,6 +1,26 @@
 package me.itzg.helpers.modrinth;
 
-import static me.itzg.helpers.modrinth.ModrinthApiClient.pickVersionFile;
+import lombok.extern.slf4j.Slf4j;
+import me.itzg.helpers.errors.GenericException;
+import me.itzg.helpers.errors.InvalidParameterException;
+import me.itzg.helpers.fabric.FabricLauncherInstaller;
+import me.itzg.helpers.files.IoStreams;
+import me.itzg.helpers.files.Manifests;
+import me.itzg.helpers.files.ResultsFileWriter;
+import me.itzg.helpers.forge.ForgeInstaller;
+import me.itzg.helpers.http.FailedRequestException;
+import me.itzg.helpers.http.SharedFetchArgs;
+import me.itzg.helpers.json.ObjectMappers;
+import me.itzg.helpers.modrinth.model.*;
+import me.itzg.helpers.quilt.QuiltInstaller;
+import org.jetbrains.annotations.Blocking;
+import org.jetbrains.annotations.NotNull;
+import picocli.CommandLine;
+import picocli.CommandLine.ExitCode;
+import picocli.CommandLine.Option;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -18,34 +38,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
-import lombok.extern.slf4j.Slf4j;
-import me.itzg.helpers.errors.GenericException;
-import me.itzg.helpers.errors.InvalidParameterException;
-import me.itzg.helpers.fabric.FabricLauncherInstaller;
-import me.itzg.helpers.files.IoStreams;
-import me.itzg.helpers.files.Manifests;
-import me.itzg.helpers.files.ResultsFileWriter;
-import me.itzg.helpers.forge.ForgeInstaller;
-import me.itzg.helpers.http.FailedRequestException;
-import me.itzg.helpers.http.SharedFetchArgs;
-import me.itzg.helpers.json.ObjectMappers;
-import me.itzg.helpers.modrinth.model.DependencyId;
-import me.itzg.helpers.modrinth.model.Env;
-import me.itzg.helpers.modrinth.model.EnvType;
-import me.itzg.helpers.modrinth.model.ModpackIndex;
-import me.itzg.helpers.modrinth.model.Project;
-import me.itzg.helpers.modrinth.model.Version;
-import me.itzg.helpers.modrinth.model.VersionFile;
-import me.itzg.helpers.modrinth.model.VersionType;
-import me.itzg.helpers.quilt.QuiltInstaller;
-import org.jetbrains.annotations.Blocking;
-import org.jetbrains.annotations.NotNull;
-import picocli.CommandLine;
-import picocli.CommandLine.ExitCode;
-import picocli.CommandLine.Option;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
+
+import static me.itzg.helpers.modrinth.ModrinthApiClient.pickVersionFile;
 
 @CommandLine.Command(name = "install-modrinth-modpack",
     description = "Supports installation of Modrinth modpacks along with the associated mod loader",
@@ -348,7 +342,9 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
     private Flux<Path> processModpackFiles(ModrinthApiClient apiClient, ModpackIndex modpackIndex) {
         return Flux.fromStream(modpackIndex.getFiles().stream()
                 .filter(modpackFile ->
-                    modpackFile.getEnv().get(Env.server) == EnvType.required
+                    // env is optional
+                    modpackFile.getEnv() == null
+                        || modpackFile.getEnv().get(Env.server) != EnvType.unsupported
                 )
             )
             .publishOn(Schedulers.boundedElastic())
