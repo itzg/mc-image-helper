@@ -20,7 +20,6 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -91,6 +90,9 @@ public class CurseForgeInstaller {
         "worlds"
     ));
 
+    /**
+     * @throws MissingModsException if any mods need to be manually downloaded
+     */
     public void installFromModpackZip(Path modpackZip, String slug) throws IOException {
         requireNonNull(modpackZip, "modpackZip is required");
 
@@ -103,6 +105,9 @@ public class CurseForgeInstaller {
         });
     }
 
+    /**
+     * @throws MissingModsException if any mods need to be manually downloaded
+     */
     public void installFromModpackManifest(Path modpackManifestPath, String slug) throws IOException {
         requireNonNull(modpackManifestPath, "modpackManifest is required");
 
@@ -116,6 +121,9 @@ public class CurseForgeInstaller {
         });
     }
 
+    /**
+     * @throws MissingModsException if any mods need to be manually downloaded
+     */
     public void install(String slug, String fileMatcher, Integer fileId) throws IOException {
 
         install(slug, context ->
@@ -188,6 +196,9 @@ public class CurseForgeInstaller {
         resolveModpackFileAndProcess(context, curseForgeMod, fileId, fileMatcher);
     }
 
+    /**
+     * @throws MissingModsException if any mods need to be manually downloaded
+     */
     private void processModpackManifest(InstallContext context,
         MinecraftModpackManifest modpackManifest, OverridesApplier overridesApplier
     ) throws IOException {
@@ -241,6 +252,9 @@ public class CurseForgeInstaller {
         return hash;
     }
 
+    /**
+     * @throws MissingModsException if any mods need to be manually downloaded
+     */
     private void resolveModpackFileAndProcess(
         InstallContext context,
         CurseForgeMod mod, Integer fileId,
@@ -376,6 +390,9 @@ public class CurseForgeInstaller {
         }
     }
 
+    /**
+     * @throws MissingModsException if any mods need to be manually downloaded
+     */
     private void finalizeResults(InstallContext context, ModPackResults results, int modId, int fileId, String displayName) throws IOException {
         final CurseForgeManifest newManifest = CurseForgeManifest.builder()
             .modpackName(results.getName())
@@ -394,21 +411,8 @@ public class CurseForgeInstaller {
 
         Manifests.save(outputDir, CURSEFORGE_ID, newManifest);
 
-        final Path needsDownloadFile = outputDir.resolve("MODS_NEED_DOWNLOAD.txt");
         if (!results.getNeedsDownload().isEmpty()) {
-            try (BufferedWriter writer = Files.newBufferedWriter(needsDownloadFile)) {
-                for (PathWithInfo info : results.getNeedsDownload()) {
-                    writer.write(String.format("%s :: \"%s\" FROM %s",
-                        info.getModInfo().getName(),
-                        info.getCurseForgeFile().getDisplayName(),
-                        info.getModInfo().getLinks().getWebsiteUrl()
-                        ));
-                    writer.newLine();
-                }
-            }
-        }
-        else {
-            Files.deleteIfExists(needsDownloadFile);
+            throw new MissingModsException(results.getNeedsDownload());
         }
 
         if (resultsFile != null) {

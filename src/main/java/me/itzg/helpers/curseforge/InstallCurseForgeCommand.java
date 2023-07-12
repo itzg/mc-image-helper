@@ -1,16 +1,7 @@
 package me.itzg.helpers.curseforge;
 
-import static me.itzg.helpers.http.Fetch.fetch;
-
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import me.itzg.helpers.files.ResultsFileWriter;
+import me.itzg.helpers.files.TabularOutput;
 import me.itzg.helpers.http.PathOrUri;
 import me.itzg.helpers.http.PathOrUriConverter;
 import me.itzg.helpers.http.SharedFetchArgs;
@@ -19,6 +10,20 @@ import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.Option;
+
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static me.itzg.helpers.http.Fetch.fetch;
 
 @Command(name = "install-curseforge", subcommands = {
     SchemasCommand.class
@@ -132,6 +137,9 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
     @ArgGroup(exclusive = false)
     SharedFetchArgs sharedFetchArgs = new SharedFetchArgs();
 
+    @Option(names = "--missing-mods-filename", defaultValue = "MODS_NEED_DOWNLOAD.txt")
+    String missingModsFilename;
+
     private static final Pattern PAGE_URL_PATTERN = Pattern.compile(
         "https://(www|beta)\\.curseforge\\.com/minecraft/modpacks/(?<slug>.+?)(/files(/(?<fileId>\\d+)?)?)?");
 
@@ -181,15 +189,54 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
             installer.setApiBaseUrl(apiBaseUrl);
         }
 
-        if (modpackZip != null) {
-            installer.installFromModpackZip(modpackZip, slug);
-        } else if (modpackManifest != null) {
-            installer.installFromModpackManifest(modpackManifest, slug);
-        } else {
-            installer.install(slug, filenameMatcher, fileId);
+        final Path needsDownloadFile = missingModsFilename != null && !missingModsFilename.isEmpty() ?
+            outputDirectory.resolve(missingModsFilename)
+            : null;
+
+        try {
+            if (modpackZip != null) {
+                installer.installFromModpackZip(modpackZip, slug);
+            } else if (modpackManifest != null) {
+                installer.installFromModpackManifest(modpackManifest, slug);
+            } else {
+                installer.install(slug, filenameMatcher, fileId);
+            }
+            if (needsDownloadFile != null) {
+                Files.deleteIfExists(needsDownloadFile);
+            }
+
+            return ExitCode.OK;
+        } catch (MissingModsException e) {
+
+            final TabularOutput tabOut = new TabularOutput('=', "  ", "Mod", "Slug", "Filename", "Download page");
+            for (PathWithInfo info : e.getNeedsDownload()) {
+                tabOut.addRow(
+                    info.getModInfo().getName(),
+                    info.getModInfo().getSlug(),
+                    info.getCurseForgeFile().getDisplayName(),
+                    info.getModInfo().getLinks().getWebsiteUrl()
+                );
+            }
+
+            if (needsDownloadFile != null) {
+                try (BufferedWriter writer = Files.newBufferedWriter(needsDownloadFile)) {
+                    tabOut.output(new PrintWriter(writer));
+                }
+            }
+
+            System.err.println();
+            System.err.println("Missing mods need to be manually downloaded into repo or excluded:");
+            if (needsDownloadFile != null) {
+                System.err.printf("(Also written to %s%n", needsDownloadFile);
+            }
+            System.err.println();
+            final PrintWriter out = new PrintWriter(System.err);
+            tabOut.output(out);
+            out.close();
+
+            return ExitCode.USAGE;
         }
 
-        return ExitCode.OK;
     }
 
     private ExcludeIncludesContent loadExcludeIncludes() throws IOException {
