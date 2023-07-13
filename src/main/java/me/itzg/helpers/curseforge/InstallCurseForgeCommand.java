@@ -225,7 +225,8 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
             }
 
             System.err.println();
-            System.err.println("Missing mods need to be manually downloaded into repo or excluded:");
+            System.err.println("Some mod authors disallow automated downloads.");
+            System.err.println("The following need to be manually downloaded into the repo or excluded:");
             if (needsDownloadFile != null) {
                 System.err.printf("(Also written to %s%n", needsDownloadFile);
             }
