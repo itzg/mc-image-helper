@@ -37,15 +37,13 @@ public class ModrinthPackInstaller {
     private final boolean forceModloaderReinstall;
     private final SharedFetchArgs sharedFetchArgs;
 
-    public ModrinthPackInstaller(InstallModrinthModpackCommand config, Path zipFile) {
-        this.apiClient = new ModrinthApiClient(
-            config.baseUrl, "install-modrinth-modpack",
-            config.sharedFetchArgs.options());;
+    public ModrinthPackInstaller(ModrinthApiClient apiClient, SharedFetchArgs sharedFetchArgs, Path zipFile, Path outputDirectory, Path resultsFile, boolean forceModloaderReinstall) {
+        this.apiClient = apiClient;
+        this.sharedFetchArgs = sharedFetchArgs;
         this.zipFile = zipFile;
-        this.outputDirectory = config.outputDirectory;
-        this.resultsFile = config.resultsFile;
-        this.sharedFetchArgs = config.sharedFetchArgs;
-        this.forceModloaderReinstall = config.forceModloaderReinstall;
+        this.outputDirectory = outputDirectory;
+        this.resultsFile = resultsFile;
+        this.forceModloaderReinstall = forceModloaderReinstall;
     }
 
     public Mono<ModpackIndex> processModpack() {
@@ -79,8 +77,7 @@ public class ModrinthPackInstaller {
             .map(modFiles ->
                 Stream.of(
                         modFiles.stream(),
-                        extractOverrides(
-                            zipFile, "overrides", "server-overrides")
+                        extractOverrides("overrides", "server-overrides")
                     )
                     .flatMap(Function.identity())
                     .collect(Collectors.toList())
@@ -130,31 +127,29 @@ public class ModrinthPackInstaller {
     }
 
     @SuppressWarnings("SameParameterValue")
-    private Stream<Path> extractOverrides(Path zipFile, String... overridesDirs) {
+    private Stream<Path> extractOverrides(String... overridesDirs) {
         return Stream.of(overridesDirs)
             .flatMap(dir ->
             {
                 final String prefix = dir + "/";
                 final List<Path> extracted = new ArrayList<>();
                 try (ZipInputStream zipIn =
-                    new ZipInputStream(Files.newInputStream(zipFile))) {
+                    new ZipInputStream(Files.newInputStream(this.zipFile))) {
                     ZipEntry entry;
                     while ((entry = zipIn.getNextEntry()) != null) {
-                        if (!entry.isDirectory()) {
-                            if (entry.getName().startsWith(prefix)) {
-                                final Path outFile = this.outputDirectory.resolve(
-                                    entry.getName().substring(prefix.length())
-                                );
-                                Files.createDirectories(outFile.getParent());
+                        if (!entry.isDirectory() && entry.getName().startsWith(prefix)) {
+                            final Path outFile = this.outputDirectory.resolve(
+                                entry.getName().substring(prefix.length())
+                            );
+                            Files.createDirectories(outFile.getParent());
 
-                                try {
-                                    Files.copy(zipIn, outFile, StandardCopyOption.REPLACE_EXISTING);
-                                    extracted.add(outFile);
-                                } catch (IOException e) {
-                                    throw new GenericException(
-                                        String.format("Failed to extract %s from overrides", entry.getName()), e
-                                    );
-                                }
+                            try {
+                                Files.copy(zipIn, outFile, StandardCopyOption.REPLACE_EXISTING);
+                                extracted.add(outFile);
+                            } catch (IOException e) {
+                                throw new GenericException(
+                                    String.format("Failed to extract %s from overrides", entry.getName()), e
+                                );
                             }
                         }
                     }
@@ -164,7 +159,6 @@ public class ModrinthPackInstaller {
                 return extracted.stream();
             });
     }
-
 
     private void applyModLoader(
             Map<DependencyId, String> dependencies
