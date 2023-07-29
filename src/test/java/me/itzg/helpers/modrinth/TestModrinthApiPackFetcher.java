@@ -1,6 +1,7 @@
 package me.itzg.helpers.modrinth;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -76,7 +77,7 @@ public class TestModrinthApiPackFetcher {
 
     @Test
     void testApiFetcherFetchesModpackBySlugAndVersionId(
-            WireMockRuntimeInfo wm
+            WireMockRuntimeInfo wm, @TempDir Path tempDir
         ) throws JsonProcessingException, IOException
     {
         String projectName = "test_project1";
@@ -88,14 +89,14 @@ public class TestModrinthApiPackFetcher {
         stubModrinthModpack(
             wm, projectName, projectId, projectVersion, expectedModpackData);
 
-        InstallModrinthModpackCommand config = new InstallModrinthModpackCommand();
-        config.baseUrl = wm.getHttpBaseUrl();
-        config.sharedFetchArgs = new SharedFetchArgs();
-        config.modpackProject = projectName;
-        config.version = projectVersionId;
-        config.loader = ModpackLoader.forge;
+        ModrinthApiClient apiClient = new ModrinthApiClient(
+            wm.getHttpBaseUrl(), "install-modrinth-modpack",
+            new SharedFetchArgs().options());
+        ProjectRef testProjectRef = new ProjectRef(projectName, projectVersionId);
 
-        ModrinthApiPackFetcher fetcherUT = new ModrinthApiPackFetcher(config);
+        ModrinthApiPackFetcher fetcherUT = new ModrinthApiPackFetcher(
+            apiClient, testProjectRef, tempDir, "",
+            VersionType.release, ModpackLoader.forge.asLoader());
         Path mrpackFile = fetcherUT.fetchModpack(null).block();
         String actualModpackData = new String(Files.readAllBytes(mrpackFile));
 
@@ -104,7 +105,7 @@ public class TestModrinthApiPackFetcher {
 
     @Test
     void testApiFetcherFetchesLatestModpackWhenVersionTypeSpecified(
-            WireMockRuntimeInfo wm
+            WireMockRuntimeInfo wm,  @TempDir Path tempDir
         ) throws JsonProcessingException, IOException
     {
         String projectName = "test_project1";
@@ -124,7 +125,15 @@ public class TestModrinthApiPackFetcher {
         config.version = "release";
         config.loader = ModpackLoader.forge;
 
-        ModrinthApiPackFetcher fetcherUT = new ModrinthApiPackFetcher(config);
+        ModrinthApiClient apiClient = new ModrinthApiClient(
+            wm.getHttpBaseUrl(), "install-modrinth-modpack",
+            new SharedFetchArgs().options());
+        ProjectRef testProjectRef = new ProjectRef(projectName, "release");
+
+        ModrinthApiPackFetcher fetcherUT = new ModrinthApiPackFetcher(
+            apiClient, testProjectRef, tempDir, "",
+            VersionType.release, ModpackLoader.forge.asLoader());
+
         Path mrpackFile = fetcherUT.fetchModpack(null).block();
         String actualModpackData = new String(Files.readAllBytes(mrpackFile));
 
@@ -133,7 +142,7 @@ public class TestModrinthApiPackFetcher {
 
     @Test
     void testApiFetcherFetchesNumberedVersions(
-            WireMockRuntimeInfo wm
+            WireMockRuntimeInfo wm,  @TempDir Path tempDir
         ) throws JsonProcessingException, IOException
     {
         String projectName = "test_project1";
@@ -147,14 +156,14 @@ public class TestModrinthApiPackFetcher {
         stubModrinthModpack(
             wm, projectName, projectId, projectVersion, expectedModpackData);
 
-        InstallModrinthModpackCommand config = new InstallModrinthModpackCommand();
-        config.baseUrl = wm.getHttpBaseUrl();
-        config.sharedFetchArgs = new SharedFetchArgs();
-        config.modpackProject = projectName;
-        config.version = projectVersionNumber;
-        config.loader = ModpackLoader.forge;
+        ModrinthApiClient apiClient = new ModrinthApiClient(
+            wm.getHttpBaseUrl(), "install-modrinth-modpack",
+            new SharedFetchArgs().options());
+        ProjectRef testProjectRef = new ProjectRef(projectName, projectVersionNumber);
 
-        ModrinthApiPackFetcher fetcherUT = new ModrinthApiPackFetcher(config);
+        ModrinthApiPackFetcher fetcherUT = new ModrinthApiPackFetcher(
+            apiClient, testProjectRef, tempDir, "",
+            VersionType.release, ModpackLoader.forge.asLoader());
         Path mrpackFile = fetcherUT.fetchModpack(null).block();
         String actualModpackData = new String(Files.readAllBytes(mrpackFile));
 

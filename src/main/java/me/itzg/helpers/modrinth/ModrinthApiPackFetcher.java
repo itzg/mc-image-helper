@@ -14,50 +14,44 @@ public class ModrinthApiPackFetcher implements ModrinthPackFetcher {
     private ModrinthApiClient apiClient;
 
     private ProjectRef modpackProjectRef;
-    private Mono<Version> modpackVersionStream;
 
     private Loader modLoaderType;
     private String gameVersion;
     private VersionType defaultVersionType;
     private Path modpackOutputDirectory;
 
-    ModrinthApiPackFetcher(InstallModrinthModpackCommand config) {
-        this.apiClient = new ModrinthApiClient(
-            config.baseUrl, "install-modrinth-modpack",
-            config.sharedFetchArgs.options());
-        this.gameVersion = config.gameVersion;
-        this.defaultVersionType = config.defaultVersionType;
-        this.modpackOutputDirectory = config.outputDirectory;
-        this.modpackProjectRef =
-            ProjectRef.fromPossibleUrl(config.modpackProject, config.version);
-        this.modpackVersionStream = resolveModpackVersion(this.modpackProjectRef);
-
-        if (config.loader != null) {
-            this.modLoaderType = config.loader.asLoader();
-        }
+    ModrinthApiPackFetcher(
+            ModrinthApiClient apiClient, ProjectRef projectRef,
+            Path outputDirectory, String gameVersion,
+            VersionType defaultVersionType, Loader loader)
+    {
+        this.apiClient = apiClient;
+        this.modpackProjectRef = projectRef;
+        this.modpackOutputDirectory = outputDirectory;
+        this.gameVersion = gameVersion;
+        this.defaultVersionType = defaultVersionType;
+        this.modLoaderType = loader;
     }
 
     public Mono<Path> fetchModpack(ModrinthModpackManifest prevManifest) {
-        return this.modpackVersionStream
+        return this.resolveModpackVersion()
             .filter(version -> needsInstall(prevManifest, version))
             .flatMap(version ->
                 Mono.just(ModrinthApiClient.pickVersionFile(version)))
             .flatMap(versionFile -> apiClient.downloadMrPack(versionFile));
     }
 
-    private Mono<Version> resolveModpackVersion(
-            ProjectRef projectRef)
-    {
-        return this.apiClient.getProject(projectRef.getIdOrSlug())
+    private Mono<Version> resolveModpackVersion() {
+        return this.apiClient.getProject(this.modpackProjectRef.getIdOrSlug())
             .onErrorMap(FailedRequestException::isNotFound,
                 throwable ->
                     new InvalidParameterException(
                         "Unable to locate requested project given " +
-                        projectRef.getIdOrSlug(), throwable))
+                        this.modpackProjectRef.getIdOrSlug(), throwable))
             .flatMap(project ->
                 this.apiClient.resolveProjectVersion(
-                    project, projectRef, this.modLoaderType, this.gameVersion,
-                    this.defaultVersionType)
+                    project, this.modpackProjectRef, this.modLoaderType,
+                    this.gameVersion, this.defaultVersionType)
             );
     }
 
