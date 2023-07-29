@@ -1,4 +1,4 @@
-package me.itzg.helpers.modrinth.pack;
+package me.itzg.helpers.modrinth;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -20,8 +20,8 @@ import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.fabric.FabricLauncherInstaller;
 import me.itzg.helpers.files.IoStreams;
 import me.itzg.helpers.forge.ForgeInstaller;
+import me.itzg.helpers.http.SharedFetchArgs;
 import me.itzg.helpers.json.ObjectMappers;
-import me.itzg.helpers.modrinth.*;
 import me.itzg.helpers.modrinth.model.*;
 import me.itzg.helpers.quilt.QuiltInstaller;
 import reactor.core.publisher.Flux;
@@ -31,15 +31,21 @@ import reactor.core.scheduler.Schedulers;
 @Slf4j
 public class ModrinthPackInstaller {
     private final ModrinthApiClient apiClient;
-    private final ModrinthPack.Config config;
     private final Path zipFile;
+    private final Path outputDirectory;
+    private final Path resultsFile;
+    private final boolean forceModloaderReinstall;
+    private final SharedFetchArgs sharedFetchArgs;
 
-    public ModrinthPackInstaller(ModrinthPack.Config config, Path zipFile) {
+    public ModrinthPackInstaller(InstallModrinthModpackCommand config, Path zipFile) {
         this.apiClient = new ModrinthApiClient(
-            config.apiBaseUrl, "install-modrinth-modpack",
+            config.baseUrl, "install-modrinth-modpack",
             config.sharedFetchArgs.options());;
-        this.config = config;
         this.zipFile = zipFile;
+        this.outputDirectory = config.outputDirectory;
+        this.resultsFile = config.resultsFile;
+        this.sharedFetchArgs = config.sharedFetchArgs;
+        this.forceModloaderReinstall = config.forceModloaderReinstall;
     }
 
     public Mono<ModpackIndex> processModpack() {
@@ -105,7 +111,7 @@ public class ModrinthPackInstaller {
             .publishOn(Schedulers.boundedElastic())
             .flatMap(modpackFile -> {
                 final Path outFilePath =
-                    this.config.outputDirectory.resolve(modpackFile.getPath());
+                    this.outputDirectory.resolve(modpackFile.getPath());
                 try {
                     //noinspection BlockingMethodInNonBlockingContext
                     Files.createDirectories(outFilePath.getParent());
@@ -130,13 +136,13 @@ public class ModrinthPackInstaller {
             {
                 final String prefix = dir + "/";
                 final List<Path> extracted = new ArrayList<>();
-                try (ZipInputStream zipIn = 
+                try (ZipInputStream zipIn =
                     new ZipInputStream(Files.newInputStream(zipFile))) {
                     ZipEntry entry;
                     while ((entry = zipIn.getNextEntry()) != null) {
                         if (!entry.isDirectory()) {
                             if (entry.getName().startsWith(prefix)) {
-                                final Path outFile = this.config.outputDirectory.resolve(
+                                final Path outFile = this.outputDirectory.resolve(
                                     entry.getName().substring(prefix.length())
                                 );
                                 Files.createDirectories(outFile.getParent());
@@ -177,9 +183,9 @@ public class ModrinthPackInstaller {
             new ForgeInstaller().install(
                 minecraftVersion,
                 forgeVersion,
-                this.config.outputDirectory,
-                this.config.resultsFile,
-                this.config.forceModloaderReinstall,
+                this.outputDirectory,
+                this.resultsFile,
+                this.forceModloaderReinstall,
                 null
             );
             return;
@@ -187,8 +193,8 @@ public class ModrinthPackInstaller {
 
         final String fabricVersion = dependencies.get(DependencyId.fabricLoader);
         if (fabricVersion != null) {
-            new FabricLauncherInstaller(this.config.outputDirectory)
-                .setResultsFile(this.config.resultsFile)
+            new FabricLauncherInstaller(this.outputDirectory)
+                .setResultsFile(this.resultsFile)
                 .installUsingVersions(
                     minecraftVersion,
                     fabricVersion,
@@ -201,10 +207,10 @@ public class ModrinthPackInstaller {
         if (quiltVersion != null) {
             try (QuiltInstaller installer =
                 new QuiltInstaller(QuiltInstaller.DEFAULT_REPO_URL,
-                    this.config.sharedFetchArgs.options(),
-                    this.config.outputDirectory,
+                    this.sharedFetchArgs.options(),
+                    this.outputDirectory,
                     minecraftVersion)
-                .setResultsFile(this.config.resultsFile)) {
+                .setResultsFile(this.resultsFile)) {
 
                 installer.installWithVersion(null, quiltVersion);
             }

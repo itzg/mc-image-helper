@@ -1,4 +1,4 @@
-package me.itzg.helpers.modrinth.pack;
+package me.itzg.helpers.modrinth;
 
 import org.junit.jupiter.api.Test;
 
@@ -17,7 +17,10 @@ import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 
 import me.itzg.helpers.http.SharedFetchArgs;
 import me.itzg.helpers.modrinth.ModpackLoader;
+import me.itzg.helpers.modrinth.ModrinthApiPackFetcher;
 import me.itzg.helpers.modrinth.model.*;
+import me.itzg.helpers.modrinth.pack.ModrinthPack;
+import me.itzg.helpers.modrinth.pack.ModrinthPack.Config;
 
 @WireMockTest
 public class TestModrinthApiPackFetcher {
@@ -85,12 +88,12 @@ public class TestModrinthApiPackFetcher {
         stubModrinthModpack(
             wm, projectName, projectId, projectVersion, expectedModpackData);
 
-        ModrinthPack.Config config = new ModrinthPack.Config()
-            .setApiBaseUrl(wm.getHttpBaseUrl())
-            .setSharedFetchArgs(new SharedFetchArgs())
-            .setProject(projectName)
-            .setVersion(projectVersionId)
-            .setLoader(ModpackLoader.forge);
+        InstallModrinthModpackCommand config = new InstallModrinthModpackCommand();
+        config.baseUrl = wm.getHttpBaseUrl();
+        config.sharedFetchArgs = new SharedFetchArgs();
+        config.modpackProject = projectName;
+        config.version = projectVersionId;
+        config.loader = ModpackLoader.forge;
 
         ModrinthApiPackFetcher fetcherUT = new ModrinthApiPackFetcher(config);
         Path mrpackFile = fetcherUT.fetchModpack(null).block();
@@ -114,12 +117,12 @@ public class TestModrinthApiPackFetcher {
         stubModrinthModpack(
             wm, projectName, projectId, projectVersion, expectedModpackData);
 
-        ModrinthPack.Config config = new ModrinthPack.Config()
-            .setApiBaseUrl(wm.getHttpBaseUrl())
-            .setSharedFetchArgs(new SharedFetchArgs())
-            .setProject(projectName)
-            .setVersion("release")
-            .setLoader(ModpackLoader.forge);
+        InstallModrinthModpackCommand config = new InstallModrinthModpackCommand();
+        config.baseUrl = wm.getHttpBaseUrl();
+        config.sharedFetchArgs = new SharedFetchArgs();
+        config.modpackProject = projectName;
+        config.version = "release";
+        config.loader = ModpackLoader.forge;
 
         ModrinthApiPackFetcher fetcherUT = new ModrinthApiPackFetcher(config);
         Path mrpackFile = fetcherUT.fetchModpack(null).block();
@@ -144,12 +147,12 @@ public class TestModrinthApiPackFetcher {
         stubModrinthModpack(
             wm, projectName, projectId, projectVersion, expectedModpackData);
 
-        ModrinthPack.Config config = new ModrinthPack.Config()
-            .setApiBaseUrl(wm.getHttpBaseUrl())
-            .setSharedFetchArgs(new SharedFetchArgs())
-            .setProject(projectName)
-            .setVersion(projectVersionNumber)
-            .setLoader(ModpackLoader.forge);
+        InstallModrinthModpackCommand config = new InstallModrinthModpackCommand();
+        config.baseUrl = wm.getHttpBaseUrl();
+        config.sharedFetchArgs = new SharedFetchArgs();
+        config.modpackProject = projectName;
+        config.version = projectVersionNumber;
+        config.loader = ModpackLoader.forge;
 
         ModrinthApiPackFetcher fetcherUT = new ModrinthApiPackFetcher(config);
         Path mrpackFile = fetcherUT.fetchModpack(null).block();
