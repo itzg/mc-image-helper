@@ -60,7 +60,8 @@ public class TestModrinthPackInstaller {
             wm.getHttpBaseUrl(), "install-modrinth-modpack",
             fetchArgs.options());
 
-        ModrinthPackInstaller installerUT = new ModrinthPackInstaller(apiClient, fetchArgs, modpackPath, tempDir, resultsFile, false);
+        ModrinthPackInstaller installerUT = new ModrinthPackInstaller(
+            apiClient, fetchArgs, modpackPath, tempDir, resultsFile, false);
 
         assertNotNull(installerUT.processModpack());
     }

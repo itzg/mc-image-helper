@@ -37,7 +37,11 @@ public class ModrinthPackInstaller {
     private final boolean forceModloaderReinstall;
     private final SharedFetchArgs sharedFetchArgs;
 
-    public ModrinthPackInstaller(ModrinthApiClient apiClient, SharedFetchArgs sharedFetchArgs, Path zipFile, Path outputDirectory, Path resultsFile, boolean forceModloaderReinstall) {
+    public ModrinthPackInstaller(
+            ModrinthApiClient apiClient, SharedFetchArgs sharedFetchArgs,
+            Path zipFile, Path outputDirectory, Path resultsFile,
+            boolean forceModloaderReinstall)
+    {
         this.apiClient = apiClient;
         this.sharedFetchArgs = sharedFetchArgs;
         this.zipFile = zipFile;
@@ -137,24 +141,30 @@ public class ModrinthPackInstaller {
                     new ZipInputStream(Files.newInputStream(this.zipFile))) {
                     ZipEntry entry;
                     while ((entry = zipIn.getNextEntry()) != null) {
-                        if (!entry.isDirectory() && entry.getName().startsWith(prefix)) {
+                        if (!entry.isDirectory() &&
+                            entry.getName().startsWith(prefix))
+                        {
                             final Path outFile = this.outputDirectory.resolve(
                                 entry.getName().substring(prefix.length())
                             );
                             Files.createDirectories(outFile.getParent());
 
                             try {
-                                Files.copy(zipIn, outFile, StandardCopyOption.REPLACE_EXISTING);
+                                Files.copy(zipIn, outFile,
+                                    StandardCopyOption.REPLACE_EXISTING);
                                 extracted.add(outFile);
                             } catch (IOException e) {
                                 throw new GenericException(
-                                    String.format("Failed to extract %s from overrides", entry.getName()), e
+                                    String.format(
+                                        "Failed to extract %s from overrides",
+                                        entry.getName()), e
                                 );
                             }
                         }
                     }
                 } catch (IOException e) {
-                    throw new GenericException("Failed to extract overrides", e);
+                    throw new GenericException(
+                        "Failed to extract overrides", e);
                 }
                 return extracted.stream();
             });
