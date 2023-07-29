@@ -8,8 +8,8 @@ import me.itzg.helpers.modrinth.model.VersionType;
 
 public class TestProjectRef {
     private String expectedSlug = "test_project1";
+    private String expectedVersionName = "test_version1";
     private ProjectRef projectRefUT;
-
 
     @Test
     void testProjectRefHasProjectSlug() {
@@ -47,10 +47,44 @@ public class TestProjectRef {
 
     @Test
     void testProjectRefHasVersionNameForOtherValues() {
-        String expectedVersionName = "1.0.0";
-        projectRefUT = new ProjectRef(this.expectedSlug, expectedVersionName);
+        projectRefUT = new ProjectRef(
+            this.expectedSlug, this.expectedVersionName);
+
         assertEquals(expectedVersionName, projectRefUT.getVersionName());
         assertFalse(projectRefUT.hasVersionId());
         assertFalse(projectRefUT.hasVersionType());
+    }
+
+    @Test
+    void fromPossibleUrlDefaultsToGeneratingRefWithPassedValues() {
+        projectRefUT = ProjectRef.fromPossibleUrl(
+            this.expectedSlug, this.expectedVersionName);
+
+        assertEquals(this.expectedSlug, projectRefUT.getIdOrSlug());
+        assertEquals(expectedVersionName, projectRefUT.getVersionName());
+    }
+
+    @Test
+    void fromPossibleUrlExtractsProjectSlugFromUrl() {
+        String projectUrl = "https://modrinth.com/modpack/" +
+            this.expectedSlug;
+
+        projectRefUT = ProjectRef.fromPossibleUrl(
+            projectUrl, this.expectedVersionName);
+
+        assertEquals(this.expectedSlug, projectRefUT.getIdOrSlug());
+        assertEquals(expectedVersionName, projectRefUT.getVersionName());
+    }
+
+    @Test
+    void fromPossibleUrlExtractsProjectVersionFromUrlWhenPresent() {
+        String projectUrl = "https://modrinth.com/modpack/" +
+            this.expectedSlug + "/version/" + this.expectedVersionName;
+
+        projectRefUT = ProjectRef.fromPossibleUrl(
+            projectUrl, "release");
+
+        assertEquals(this.expectedSlug, projectRefUT.getIdOrSlug());
+        assertEquals(expectedVersionName, projectRefUT.getVersionName());
     }
 }

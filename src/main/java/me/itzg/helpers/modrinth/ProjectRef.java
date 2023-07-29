@@ -4,11 +4,15 @@ import lombok.Getter;
 import lombok.ToString;
 import me.itzg.helpers.modrinth.model.VersionType;
 
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @ToString
 public class ProjectRef {
-    private static final Pattern VERSIONS = Pattern.compile("[a-zA-z0-9]{8}");
+    private static final Pattern VERSIONS = Pattern.compile("[a-zA-Z0-9]{8}");
+    private final static Pattern MODPACK_PAGE_URL = Pattern.compile(
+        "https://modrinth.com/modpack/(?<slug>.+?)(/version/(?<versionName>.+))?"
+    );
 
     @Getter
     final String idOrSlug;
@@ -50,22 +54,15 @@ public class ProjectRef {
         }
     }
 
-    private boolean isVersionId(String version) {
-        if (version == null) {
-            return false;
-        }
-        return VERSIONS.matcher(version).matches();
-    }
+    public static ProjectRef fromPossibleUrl(
+            String projectUrl, String defaultVersion)
+    {
+        final Matcher m = MODPACK_PAGE_URL.matcher(projectUrl);
+        String projectSlug = m.matches() ? m.group("slug") : projectUrl;
+        String projectVersion = m.matches() && m.group("versionName") != null ?
+            m.group("versionName") : defaultVersion;
 
-    private VersionType parseVersionType(String version) {
-        if (version == null) {
-            return null;
-        }
-        try {
-            return VersionType.valueOf(version);
-        } catch (IllegalArgumentException e) {
-            return null;
-        }
+        return new ProjectRef(projectSlug, projectVersion);
     }
 
     public boolean hasVersionName() {
@@ -78,5 +75,20 @@ public class ProjectRef {
 
     public boolean hasVersionId() {
         return versionId != null;
+    }
+
+    private boolean isVersionId(String version) {
+        return version == null ? false : VERSIONS.matcher(version).matches();
+    }
+
+    private VersionType parseVersionType(String version) {
+        if (version == null) {
+            return null;
+        }
+        try {
+            return VersionType.valueOf(version);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 }
