@@ -8,7 +8,9 @@ public enum ModLoaderType {
     Cauldron,
     LiteLoader,
     Fabric,
-    Quilt;
+    Quilt,
+    // undocumented as of 2023-07-23 but referenced in https://www.curseforge.com/minecraft/mc-mods/chimes/files/4671986
+    NeoForge;
 
     @JsonValue
     public int toValue() {

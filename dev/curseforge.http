@@ -1,0 +1,34 @@
+###
+GET https://api.curseforge.com/v1/categories?gameId=432&classesOnly=true
+x-api-key: {{cfApiKey}}
+
+<> 2023-04-01T131517.200.json
+<> 2023-03-30T083426.200.json
+
+###
+GET https://api.curseforge.com/v1/mods/350464
+x-api-key: {{cfApiKey}}
+
+###
+GET https://api.curseforge.com/v1/mods/694605/files/4098018/download-url
+x-api-key: {{cfApiKey}}
+
+###
+GET https://api.curseforge.com/v1/mods/369096/files/4560441
+x-api-key: {{cfApiKey}}
+
+<> 2023-04-01T192357.200.json
+
+###
+GET https://api.curseforge.com/v1/mods/622737/files/4560441
+x-api-key: {{cfApiKey}}
+
+<> 2023-03-30T081023.200.json
+<> 2023-03-30T075419.200.json
+<> 2023-03-30T074422.200.json
+
+###
+GET https://api.curseforge.com/v1/mods/707734/files/4415193
+x-api-key: {{cfApiKey}}
+
+<> 2023-03-30T080528.403.html
