@@ -1,0 +1,21 @@
+###
+GET https://api.purpurmc.org/v2/purpur/1.20
+User-Agent: mc-image-helper
+
+<> f-3.txt
+<> f-2.txt
+
+###
+GET https://api.purpurmc.org/v2/purpur/1.19.4/1985
+User-Agent: mc-image-helper
+
+<> 2023-06-13T204234.200.json
+
+###
+GET https://api.purpurmc.org/v2/purpur/1.19.4/1985/download
+User-Agent: mc-image-helper
+
+<> purpur-1.19.4-1985.jar
+<> 2023-06-13T170922.200.json
+<> f-1.txt
+<> f.txt

@@ -53,7 +53,7 @@ public class CurseForgeApiClient implements AutoCloseable {
         preparedFetch.close();
     }
 
-    public CategoryInfo loadCategoryInfo(Set<String> applicableClassIdSlugs, String categorySlug) {
+    CategoryInfo loadModpacksCategoryInfo(Set<String> applicableClassIdSlugs) {
         return preparedFetch
             // get only categories that are classes, like mc-mods
             .fetch(uriBuilder.resolve("/categories?gameId={gameId}&classesOnly=true", gameId))
@@ -67,7 +67,7 @@ public class CurseForgeApiClient implements AutoCloseable {
                         if (applicableClassIdSlugs.contains(category.getSlug())) {
                             contentClassIds.put(category.getId(), category);
                         }
-                        if (category.getSlug().equals(categorySlug)) {
+                        if (category.getSlug().equals(CurseForgeInstaller.CATEGORY_SLUG_MODPACKS)) {
                             modpackClassId = category.getId();
                         }
                     }
@@ -82,7 +82,7 @@ public class CurseForgeApiClient implements AutoCloseable {
             .block();
     }
 
-    public CurseForgeMod searchMod(String slug, CategoryInfo categoryInfo) {
+    CurseForgeMod searchMod(String slug, CategoryInfo categoryInfo) {
         final ModsSearchResponse searchResponse = preparedFetch.fetch(
                 uriBuilder.resolve("/mods/search?gameId={gameId}&slug={slug}&classId={classId}",
                     gameId, slug, categoryInfo.modpackClassId
@@ -130,7 +130,7 @@ public class CurseForgeApiClient implements AutoCloseable {
             });
     }
 
-    public Mono<Integer> slugToId(CategoryInfo categoryInfo,
+    Mono<Integer> slugToId(CategoryInfo categoryInfo,
         String slug
     ) {
         return preparedFetch
@@ -158,6 +158,7 @@ public class CurseForgeApiClient implements AutoCloseable {
             )
             .toObject(GetModResponse.class)
             .assemble()
+            .checkpoint("Getting mod info for " + projectID)
             .map(GetModResponse::getData);
     }
 
