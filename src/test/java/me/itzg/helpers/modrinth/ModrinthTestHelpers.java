@@ -3,6 +3,8 @@ package me.itzg.helpers.modrinth;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -105,4 +107,19 @@ class ModrinthTestHelpers {
         return modpackPath;
     }
 
+    static ModpackIndex.ModpackFile createHostedModpackFile(
+            String relativeFileLocation, String data, String wmBaseUrl
+        ) throws URISyntaxException
+    {
+        stubFor(get("/files/" + relativeFileLocation)
+            .willReturn(ok().withBody(data)));
+
+        ModpackIndex.ModpackFile modpackFile = new ModpackIndex.ModpackFile()
+            .setDownloads(new ArrayList<URI>())
+            .setPath(relativeFileLocation);
+        modpackFile.getDownloads().add(
+            new URI(wmBaseUrl + "/files/" + relativeFileLocation));
+
+        return modpackFile;
+    }
 }

@@ -1,6 +1,8 @@
 package me.itzg.helpers.modrinth;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 import org.junit.jupiter.api.Test;
@@ -18,7 +20,7 @@ import me.itzg.helpers.modrinth.model.*;
 @WireMockTest
 public class TestModrinthPackInstaller {
     @Test
-    void modpackInstallerReturnsTheModpackIndex(
+    void installReturnsTheModpackIndex(
             WireMockRuntimeInfo wm, @TempDir Path tempDir
         ) throws IOException
     {
@@ -39,5 +41,39 @@ public class TestModrinthPackInstaller {
 
         assertNotNull(actualIndex);
         assertEquals(expectedIndex, actualIndex);
+    }
+
+    @Test
+    void installDownloadsDependentFilesToInstalllation(
+            WireMockRuntimeInfo wm, @TempDir Path tempDir
+        ) throws IOException, URISyntaxException
+    {
+        SharedFetchArgs fetchArgs = new SharedFetchArgs();
+        ModrinthApiClient apiClient = new ModrinthApiClient(
+            wm.getHttpBaseUrl(), "install-modrinth-modpack",
+            fetchArgs.options());
+
+        String expectedFileData = "some test data";
+        String relativeFilePath = "test_file";
+        Path expectedFilePath = tempDir.resolve(relativeFilePath);
+        Path resultsFile = tempDir.resolve("results");
+
+        ModpackIndex index = createBasicModpackIndex();
+        index.getFiles().add(createHostedModpackFile(
+            relativeFilePath, expectedFileData, wm.getHttpBaseUrl()));
+
+        Path modpackPath = createModrinthPack(index, tempDir);
+
+        ModrinthPackInstaller installerUT = new ModrinthPackInstaller(
+            apiClient, fetchArgs, modpackPath, tempDir, resultsFile, false);
+
+        installerUT.processModpack().block();
+
+        assertTrue(Files.exists(expectedFilePath));
+
+        String actualFileData =
+            new String(Files.readAllBytes(expectedFilePath));
+
+        assertEquals(expectedFileData, actualFileData);
     }
 }
