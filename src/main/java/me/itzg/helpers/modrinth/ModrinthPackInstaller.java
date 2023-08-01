@@ -76,7 +76,7 @@ public class ModrinthPackInstaller {
                     modpackIndex.getGame()));
         }
 
-        return processModpackFiles(apiClient, modpackIndex)
+        return processModpackFiles(modpackIndex)
             .collectList()
             .map(modFiles ->
                 Stream.of(
@@ -98,9 +98,7 @@ public class ModrinthPackInstaller {
             });
     }
 
-    private Flux<Path> processModpackFiles(
-            ModrinthApiClient apiClient, ModpackIndex modpackIndex)
-    {
+    private Flux<Path> processModpackFiles(ModpackIndex modpackIndex) {
         return Flux.fromStream(modpackIndex.getFiles().stream()
                 .filter(modpackFile ->
                     // env is optional
@@ -121,7 +119,7 @@ public class ModrinthPackInstaller {
                         "Failed to created directory for file to download", e));
                 }
 
-                return apiClient.downloadFileFromUrl(
+                return this.apiClient.downloadFileFromUrl(
                     outFilePath,
                     modpackFile.getDownloads().get(0),
                     (uri, file, contentSizeBytes) ->

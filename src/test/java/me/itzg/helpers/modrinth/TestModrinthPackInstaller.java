@@ -31,19 +31,19 @@ public class TestModrinthPackInstaller {
     {
         ObjectMapper mapper = new ObjectMapper();
 
-        ModpackIndex modrinthIndex = new ModpackIndex()
+        ModpackIndex expectedIndex = new ModpackIndex()
             .setName(null)
             .setGame("minecraft")
             .setDependencies(new HashMap<DependencyId, String>())
             .setFiles(new ArrayList<ModpackIndex.ModpackFile>())
             .setVersionId(null);
+        expectedIndex.getDependencies().put(DependencyId.minecraft, "1.20.1");
 
-        ByteArrayOutputStream zipFileOutputStream = new ByteArrayOutputStream();
-        ZipOutputStream zipOutputStream = new ZipOutputStream(zipFileOutputStream);
+        ByteArrayOutputStream zipBytesOutputStream = new ByteArrayOutputStream();
 
+        ZipOutputStream zipOutputStream = new ZipOutputStream(zipBytesOutputStream);
         zipOutputStream.putNextEntry(new ZipEntry("modrinth.index.json"));
-        zipFileOutputStream.write(mapper.writeValueAsBytes(modrinthIndex));
-
+        zipOutputStream.write(mapper.writeValueAsBytes(expectedIndex));
         zipOutputStream.closeEntry();
         zipOutputStream.close();
 
@@ -52,8 +52,9 @@ public class TestModrinthPackInstaller {
 
         OutputStream modpackFileOutputStream;
         modpackFileOutputStream = Files.newOutputStream(modpackPath);
-        modpackFileOutputStream.write(zipFileOutputStream.toByteArray());
+        modpackFileOutputStream.write(zipBytesOutputStream.toByteArray());
         modpackFileOutputStream.close();
+        zipBytesOutputStream.close();
 
         SharedFetchArgs fetchArgs = new SharedFetchArgs();
         ModrinthApiClient apiClient = new ModrinthApiClient(
@@ -63,6 +64,9 @@ public class TestModrinthPackInstaller {
         ModrinthPackInstaller installerUT = new ModrinthPackInstaller(
             apiClient, fetchArgs, modpackPath, tempDir, resultsFile, false);
 
-        assertNotNull(installerUT.processModpack());
+        ModpackIndex actualIndex = installerUT.processModpack().block();
+
+        assertNotNull(actualIndex);
+        assertEquals(expectedIndex, actualIndex);
     }
 }
