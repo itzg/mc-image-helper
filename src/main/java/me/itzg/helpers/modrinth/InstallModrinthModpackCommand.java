@@ -100,7 +100,7 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
     SharedFetchArgs sharedFetchArgs = new SharedFetchArgs();
 
     @Override
-    public Integer call() throws Exception {
+    public Integer call() throws IOException {
         final ModrinthModpackManifest prevManifest = Manifests.load(
             outputDirectory, ModrinthModpackManifest.ID, ModrinthModpackManifest.class);
 
