@@ -2,10 +2,8 @@ package me.itzg.helpers.modrinth;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -32,7 +30,7 @@ class ModrinthTestHelpers {
 
     static void stubModrinthModpackApi(
             WireMockRuntimeInfo wm, String projectName, String projectId,
-            Version projectVersion, String expectedData
+            Version projectVersion, byte[] expectedData
         ) throws JsonProcessingException, IOException
     {
         String modpackDownloadPath = "/download/test_project1.mrpack";
@@ -84,7 +82,7 @@ class ModrinthTestHelpers {
         return index;
     }
 
-    static Path createModrinthPack(ModpackIndex index, Path basePath)
+    static byte[] createModrinthPack(ModpackIndex index, Path basePath)
             throws IOException
     {
         ByteArrayOutputStream zipBytesOutputStream =
@@ -97,14 +95,10 @@ class ModrinthTestHelpers {
         zipOutputStream.closeEntry();
         zipOutputStream.close();
 
-        Path modpackPath = basePath.resolve("testpack.mrpack");
-        OutputStream modpackFileOutputStream =
-            Files.newOutputStream(modpackPath);
-        modpackFileOutputStream.write(zipBytesOutputStream.toByteArray());
-        modpackFileOutputStream.close();
+        byte[] zipBytes = zipBytesOutputStream.toByteArray();
         zipBytesOutputStream.close();
 
-        return modpackPath;
+        return zipBytes;
     }
 
     static ModpackIndex.ModpackFile createHostedModpackFile(

@@ -14,6 +14,7 @@ import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidParameterException;
@@ -50,7 +51,7 @@ public class ModrinthPackInstaller {
         this.forceModloaderReinstall = forceModloaderReinstall;
     }
 
-    public Mono<ModpackIndex> processModpack() {
+    public Mono<Installation> processModpack() {
         final ModpackIndex modpackIndex;
         try {
             modpackIndex = IoStreams.readFileFromZip(
@@ -94,7 +95,9 @@ public class ModrinthPackInstaller {
                         new GenericException("Failed to apply mod loader", e));
                 }
 
-                return Mono.just(modpackIndex);
+                return Mono.just(new Installation()
+                    .setIndex(modpackIndex)
+                    .setFiles(paths));
             });
     }
 
@@ -161,8 +164,7 @@ public class ModrinthPackInstaller {
                         }
                     }
                 } catch (IOException e) {
-                    throw new GenericException(
-                        "Failed to extract overrides", e);
+                    throw new GenericException("Failed to extract overrides", e);
                 }
                 return extracted.stream();
             });
@@ -217,7 +219,11 @@ public class ModrinthPackInstaller {
                 installer.installWithVersion(null, quiltVersion);
             }
         }
-
     }
 
+    @Data
+    class Installation {
+        ModpackIndex index;
+        List<Path> files;
+    }
 }

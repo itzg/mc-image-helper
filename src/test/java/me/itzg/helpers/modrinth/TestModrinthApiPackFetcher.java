@@ -27,7 +27,7 @@ public class TestModrinthApiPackFetcher {
         String projectName = "test_project1";
         String projectId = "efgh5678";
         String projectVersionId = "abcd1234";
-        String expectedModpackData = "test_data";
+        byte[] expectedModpackData = "test_data".getBytes();
         Version projectVersion = createModrinthProjectVersion(projectVersionId);
 
         stubModrinthModpackApi(
@@ -44,7 +44,7 @@ public class TestModrinthApiPackFetcher {
         Path mrpackFile = fetcherUT.fetchModpack(null).block();
         String actualModpackData = new String(Files.readAllBytes(mrpackFile));
 
-        assertEquals(expectedModpackData, actualModpackData);
+        assertEquals(new String(expectedModpackData), actualModpackData);
     }
 
     @Test
@@ -55,7 +55,7 @@ public class TestModrinthApiPackFetcher {
         String projectName = "test_project1";
         String projectId = "efgh5678";
         String projectVersionId = "abcd1234";
-        String expectedModpackData = "test_data";
+        byte[] expectedModpackData = "test_data".getBytes();
         Version projectVersion = createModrinthProjectVersion(projectVersionId)
             .setVersionType(VersionType.release);
 
@@ -81,7 +81,7 @@ public class TestModrinthApiPackFetcher {
         Path mrpackFile = fetcherUT.fetchModpack(null).block();
         String actualModpackData = new String(Files.readAllBytes(mrpackFile));
 
-        assertEquals(expectedModpackData, actualModpackData);
+        assertEquals(new String(expectedModpackData), actualModpackData);
     }
 
     @Test
@@ -92,7 +92,7 @@ public class TestModrinthApiPackFetcher {
         String projectName = "test_project1";
         String projectId = "efgh5678";
         String projectVersionNumber = "1.0.0";
-        String expectedModpackData = "test_data";
+        byte[] expectedModpackData = "test_data".getBytes();
         Version projectVersion = createModrinthProjectVersion("abcd1234")
             .setVersionType(VersionType.release)
             .setVersionNumber(projectVersionNumber);
@@ -111,6 +111,6 @@ public class TestModrinthApiPackFetcher {
         Path mrpackFile = fetcherUT.fetchModpack(null).block();
         String actualModpackData = new String(Files.readAllBytes(mrpackFile));
 
-        assertEquals(expectedModpackData, actualModpackData);
+        assertEquals(new String(expectedModpackData), actualModpackData);
     }
 }

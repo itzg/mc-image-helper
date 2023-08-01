@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -20,7 +21,7 @@ import me.itzg.helpers.modrinth.model.*;
 @WireMockTest
 public class TestModrinthPackInstaller {
     @Test
-    void installReturnsTheModpackIndex(
+    void installReturnsTheModpackIndexAndInstalledFiles(
             WireMockRuntimeInfo wm, @TempDir Path tempDir
         ) throws IOException
     {
@@ -29,22 +30,26 @@ public class TestModrinthPackInstaller {
             wm.getHttpBaseUrl(), "install-modrinth-modpack",
             fetchArgs.options());
 
-        ModpackIndex expectedIndex = createBasicModpackIndex();
-        Path modpackPath = createModrinthPack(expectedIndex, tempDir);
-
+        Path modpackPath = tempDir.resolve("test.mrpack");
         Path resultsFile = tempDir.resolve("results");
+
+        ModpackIndex expectedIndex = createBasicModpackIndex();
+
+        Files.write(modpackPath, createModrinthPack(expectedIndex, tempDir));
 
         ModrinthPackInstaller installerUT = new ModrinthPackInstaller(
             apiClient, fetchArgs, modpackPath, tempDir, resultsFile, false);
 
-        ModpackIndex actualIndex = installerUT.processModpack().block();
+        ModrinthPackInstaller.Installation actualInstallation =
+            installerUT.processModpack().block();
 
-        assertNotNull(actualIndex);
-        assertEquals(expectedIndex, actualIndex);
+        assertNotNull(actualInstallation.getIndex());
+        assertEquals(expectedIndex, actualInstallation.getIndex());
+        assertEquals(0, actualInstallation.getFiles().size());
     }
 
     @Test
-    void installDownloadsDependentFilesToInstalllation(
+    void installDownloadsDependentFilesToInstallation(
             WireMockRuntimeInfo wm, @TempDir Path tempDir
         ) throws IOException, URISyntaxException
     {
@@ -57,17 +62,19 @@ public class TestModrinthPackInstaller {
         String relativeFilePath = "test_file";
         Path expectedFilePath = tempDir.resolve(relativeFilePath);
         Path resultsFile = tempDir.resolve("results");
+        Path modpackPath = tempDir.resolve("test.mrpack");
 
         ModpackIndex index = createBasicModpackIndex();
         index.getFiles().add(createHostedModpackFile(
             relativeFilePath, expectedFileData, wm.getHttpBaseUrl()));
 
-        Path modpackPath = createModrinthPack(index, tempDir);
+        Files.write(modpackPath, createModrinthPack(index, tempDir));
 
         ModrinthPackInstaller installerUT = new ModrinthPackInstaller(
             apiClient, fetchArgs, modpackPath, tempDir, resultsFile, false);
 
-        installerUT.processModpack().block();
+        List<Path> installedFiles =
+            installerUT.processModpack().block().getFiles();
 
         assertTrue(Files.exists(expectedFilePath));
 
@@ -75,5 +82,7 @@ public class TestModrinthPackInstaller {
             new String(Files.readAllBytes(expectedFilePath));
 
         assertEquals(expectedFileData, actualFileData);
+        assertEquals(1, installedFiles.size());
+        assertEquals(expectedFilePath, installedFiles.get(0));
     }
 }
