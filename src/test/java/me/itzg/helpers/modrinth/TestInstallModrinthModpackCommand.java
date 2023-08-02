@@ -9,14 +9,12 @@ import static me.itzg.helpers.modrinth.ModrinthTestHelpers.*;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.*;
-import java.util.List;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 
-import me.itzg.helpers.http.SharedFetchArgs;
 import me.itzg.helpers.modrinth.model.*;
 
 @WireMockTest
@@ -38,15 +36,17 @@ public class TestInstallModrinthModpackCommand {
         ModpackIndex index = createBasicModpackIndex();
         index.getFiles().add(createHostedModpackFile(
             relativeFilePath, expectedFileData, wm.getHttpBaseUrl()));
+        byte[] modpackBytes = createModrinthPack(index);
 
         stubModrinthModpackApi(
-            wm, projectName, projectId, projectVersion, createModrinthPack(index, tempDir));
+            wm, projectName, projectId, projectVersion, modpackBytes);
 
         InstallModrinthModpackCommand commandUT = new InstallModrinthModpackCommand();
         commandUT.baseUrl = wm.getHttpBaseUrl();
         commandUT.outputDirectory = tempDir;
         commandUT.modpackProject = projectName;
         commandUT.version = projectVersionId;
+        commandUT.loader = ModpackLoader.forge;
 
         int status = commandUT.call();
 
@@ -57,7 +57,5 @@ public class TestInstallModrinthModpackCommand {
             new String(Files.readAllBytes(expectedFilePath));
 
         assertEquals(expectedFileData, actualFileData);
-
-
     }
 }

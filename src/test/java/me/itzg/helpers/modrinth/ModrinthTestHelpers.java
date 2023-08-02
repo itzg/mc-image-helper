@@ -4,7 +4,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -34,7 +33,6 @@ class ModrinthTestHelpers {
         ) throws JsonProcessingException, IOException
     {
         String modpackDownloadPath = "/download/test_project1.mrpack";
-        String expectedModpackData = "test_data";
 
         JsonNode responseProject = mapper.valueToTree(
             new Project()
@@ -67,7 +65,7 @@ class ModrinthTestHelpers {
         stubFor(get(modpackDownloadPath)
             .willReturn(ok()
             .withHeader("Content-Type", "application/x-modrinth-modpack+zip")
-            .withBody(expectedModpackData)));
+            .withBody(expectedData)));
     }
 
     static ModpackIndex createBasicModpackIndex() {
@@ -82,9 +80,7 @@ class ModrinthTestHelpers {
         return index;
     }
 
-    static byte[] createModrinthPack(ModpackIndex index, Path basePath)
-            throws IOException
-    {
+    static byte[] createModrinthPack(ModpackIndex index) throws IOException {
         ByteArrayOutputStream zipBytesOutputStream =
             new ByteArrayOutputStream();
 

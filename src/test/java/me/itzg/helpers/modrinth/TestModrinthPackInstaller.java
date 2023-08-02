@@ -35,7 +35,7 @@ public class TestModrinthPackInstaller {
 
         ModpackIndex expectedIndex = createBasicModpackIndex();
 
-        Files.write(modpackPath, createModrinthPack(expectedIndex, tempDir));
+        Files.write(modpackPath, createModrinthPack(expectedIndex));
 
         ModrinthPackInstaller installerUT = new ModrinthPackInstaller(
             apiClient, fetchArgs, modpackPath, tempDir, resultsFile, false);
@@ -68,7 +68,7 @@ public class TestModrinthPackInstaller {
         index.getFiles().add(createHostedModpackFile(
             relativeFilePath, expectedFileData, wm.getHttpBaseUrl()));
 
-        Files.write(modpackPath, createModrinthPack(index, tempDir));
+        Files.write(modpackPath, createModrinthPack(index));
 
         ModrinthPackInstaller installerUT = new ModrinthPackInstaller(
             apiClient, fetchArgs, modpackPath, tempDir, resultsFile, false);
