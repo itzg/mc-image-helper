@@ -417,6 +417,29 @@ class FindCommandTest {
     }
 
     @Test
+    void deleteWithExcludesByFilesInSubdir() throws Exception {
+        final Path a = Files.createFile(tempDir.resolve("a.txt"));
+        final Path subdir = Files.createDirectories(tempDir.resolve("subdir"));
+        final Path datFile = Files.createFile(subdir.resolve("b.dat"));
+        final Path c = Files.createFile(tempDir.resolve("c.cfg"));
+
+        final int exitCode = new CommandLine(new FindCommand())
+                .execute(
+                    "--delete",
+                    "--type", "f",
+                    "--name=*",
+                    "--exclude-name=*.dat",
+                    tempDir.toString()
+                );
+
+        assertThat(exitCode).isEqualTo(ExitCode.OK);
+
+        assertThat(datFile).exists();
+        assertThat(a).doesNotExist();
+        assertThat(c).doesNotExist();
+    }
+
+    @Test
     void excludesByDirectory() throws Exception {
         Files.createFile(
             Files.createDirectories(tempDir.resolve("a").resolve("b"))
