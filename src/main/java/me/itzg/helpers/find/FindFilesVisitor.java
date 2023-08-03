@@ -6,8 +6,10 @@ import java.nio.file.FileVisitor;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -18,6 +20,8 @@ public class FindFilesVisitor implements FileVisitor<Path> {
     private final List<PathMatcher> excludeNames;
     private final Path startingPoint;
     private final MatchHandler handleMatch;
+    private final List<Integer> nestedCounts = new ArrayList<>();
+    @Getter
     private int matchCount;
 
     public FindFilesVisitor(EnumSet<FindType> type, List<PathMatcher> names, List<PathMatcher> excludeNames,
@@ -32,6 +36,7 @@ public class FindFilesVisitor implements FileVisitor<Path> {
 
     @Override
     public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
+        nestedCounts.add(0);
         final Path dirName = dir.getFileName();
 
         if (excludeNames != null &&
@@ -72,6 +77,7 @@ public class FindFilesVisitor implements FileVisitor<Path> {
             names.stream().anyMatch(pathMatcher -> pathMatcher.matches(fileName))) {
             ++matchCount;
             try {
+                nestedCounts.replaceAll(count -> count + 1);
                 return handleMatch.handle(startingPoint, path);
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -88,11 +94,11 @@ public class FindFilesVisitor implements FileVisitor<Path> {
     }
 
     @Override
-    public FileVisitResult postVisitDirectory(Path dir, IOException exc) {
+    public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+        final int depth = nestedCounts.size() - 1;
+        handleMatch.postDirectory(dir, nestedCounts.get(depth), depth);
+        nestedCounts.remove(depth);
         return FileVisitResult.CONTINUE;
     }
 
-    public int getMatchCount() {
-        return matchCount;
-    }
 }
