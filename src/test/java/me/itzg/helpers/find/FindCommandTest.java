@@ -417,29 +417,6 @@ class FindCommandTest {
     }
 
     @Test
-    void deleteWithExcludesByFilesInSubdir() throws Exception {
-        final Path a = Files.createFile(tempDir.resolve("a.txt"));
-        final Path subdir = Files.createDirectories(tempDir.resolve("subdir"));
-        final Path datFile = Files.createFile(subdir.resolve("b.dat"));
-        final Path c = Files.createFile(tempDir.resolve("c.cfg"));
-
-        final int exitCode = new CommandLine(new FindCommand())
-                .execute(
-                    "--delete",
-                    "--type", "f",
-                    "--name=*",
-                    "--exclude-name=*.dat",
-                    tempDir.toString()
-                );
-
-        assertThat(exitCode).isEqualTo(ExitCode.OK);
-
-        assertThat(datFile).exists();
-        assertThat(a).doesNotExist();
-        assertThat(c).doesNotExist();
-    }
-
-    @Test
     void excludesByDirectory() throws Exception {
         Files.createFile(
             Files.createDirectories(tempDir.resolve("a").resolve("b"))
@@ -665,14 +642,17 @@ class FindCommandTest {
                     "--name=*.txt",
                     "--quiet",
                     "--delete",
+                    "--min-depth", "1",
                     tempDir.toString()
                 );
 
             assertThat(exitCode).isEqualTo(ExitCode.OK);
 
-            assertThat(a).exists();
+            assertThat(a).doesNotExist();
             assertThat(b).doesNotExist();
             assertThat(c).doesNotExist();
+            // but make sure the starting point was left alone
+            assertThat(tempDir).exists();
         }
 
         @Test
@@ -702,6 +682,90 @@ class FindCommandTest {
             assertThat(e).exists();
         }
 
+        @Test
+        void withExcludesByFilesInSubdir() throws Exception {
+            final Path a = Files.createFile(tempDir.resolve("a.txt"));
+            final Path subdir = Files.createDirectories(tempDir.resolve("subdir"));
+            final Path datFile = Files.createFile(subdir.resolve("b.dat"));
+            final Path c = Files.createFile(tempDir.resolve("c.cfg"));
+            final Path keepdir = Files.createDirectories(tempDir.resolve("keepdir"));
+            final Path keepFile = Files.createFile(keepdir.resolve("keep.txt"));
+
+            final int exitCode = new CommandLine(new FindCommand())
+                .execute(
+                    "--delete",
+                    "--type", "f",
+                    "--name=*",
+                    "--exclude-name=*.dat,keepdir",
+                    tempDir.toString()
+                );
+
+            assertThat(exitCode).isEqualTo(ExitCode.OK);
+
+            assertThat(datFile).exists();
+            assertThat(keepFile).exists();
+            assertThat(a).doesNotExist();
+            assertThat(c).doesNotExist();
+        }
+
+        @Test
+        void removesEmptiedDirectoriesByDefault() throws IOException {
+            // directory with mix of file to keep and file to delete
+            final Path keepDir = Files.createDirectories(tempDir.resolve("keepdir"));
+            final Path keepDat = Files.createFile(keepDir.resolve("keep.dat"));
+            Files.createFile(keepDir.resolve("delete.txt"));
+            // directory with only a file to delete
+            final Path emptyDir = Files.createDirectories(tempDir.resolve("empty"));
+            Files.createFile(emptyDir.resolve("delete.txt"));
+            // check recursive cleanup
+            final Path bDir = Files.createDirectories(tempDir.resolve("b"));
+            final Path dDir = Files.createDirectories(bDir.resolve("c/d"));
+            Files.createFile(dDir.resolve("e.txt"));
+
+            // but not an empty directory that wasn't touched
+            final Path fDir = Files.createDirectories(tempDir.resolve("f"));
+
+            final int exitCode = new CommandLine(new FindCommand())
+                .execute(
+                    "--delete",
+                    "--type", "f",
+                    "--name=*",
+                    "--exclude-name=*.dat",
+                    tempDir.toString()
+                );
+
+            assertThat(exitCode).isEqualTo(ExitCode.OK);
+
+            assertThat(keepDat).exists();
+            assertThat(emptyDir).doesNotExist();
+            assertThat(bDir).doesNotExist();
+            assertThat(fDir).exists();
+        }
+
+        @Test
+        void keepEmptyDirectoriesWhenRequested() throws IOException {
+            final Path aDir = Files.createDirectories(tempDir.resolve("a"));
+            final Path bFile = Files.createFile(aDir.resolve("delete.txt"));
+            final Path dDir = Files.createDirectories(tempDir.resolve("b/c/d"));
+            final Path eFile = Files.createFile(dDir.resolve("e.txt"));
+
+            final int exitCode = new CommandLine(new FindCommand())
+                .execute(
+                    "--delete",
+                    "--delete-empty-directories", "false",
+                    "--type", "f",
+                    "--name=*",
+                    "--exclude-name=*.dat",
+                    tempDir.toString()
+                );
+
+            assertThat(exitCode).isEqualTo(ExitCode.OK);
+
+            assertThat(aDir).exists();
+            assertThat(dDir).exists();
+            assertThat(bFile).doesNotExist();
+            assertThat(eFile).doesNotExist();
+        }
     }
 
 }

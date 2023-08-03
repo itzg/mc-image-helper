@@ -3,6 +3,7 @@ package me.itzg.helpers.find;
 import static me.itzg.helpers.McImageHelper.OPTION_SPLIT_COMMAS;
 
 import java.io.IOException;
+import java.nio.file.DirectoryStream;
 import java.nio.file.FileVisitOption;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
@@ -75,6 +76,11 @@ public class FindCommand implements Callable<Integer> {
         + " When searching for directories, each directory and its contents will be recursively deleted.")
     boolean delete;
 
+    @Option(names = "--delete-empty-directories",
+        description = "Deletes a traversed directory if it becomes empty after matching files/directories within it were deleted",
+        defaultValue = "true")
+    boolean deleteEmptyDirectories;
+
     @Parameters(arity = "1..*", paramLabel = "startDir",
         description = "One or more starting directories")
     List<Path> startingPoints;
@@ -92,11 +98,27 @@ public class FindCommand implements Callable<Integer> {
             }
         }
         else {
-            final int matchCount = walkStartingPoints((startingPoint, path) -> {
-                if (!outputCountOnly) {
-                    handleEntry(startingPoint, path);
+            final int matchCount = walkStartingPoints(new MatchHandler() {
+                @Override
+                public FileVisitResult handle(Path startingPath, Path path) throws IOException {
+                    if (!outputCountOnly) {
+                        handleEntry(startingPath, path);
+                    }
+                    return stopOnFirst ? FileVisitResult.TERMINATE : FileVisitResult.CONTINUE;
                 }
-                return stopOnFirst ? FileVisitResult.TERMINATE : FileVisitResult.CONTINUE;
+
+                @Override
+                public void postDirectory(Path directory, int matchCount, int depth) throws IOException {
+                    if (delete
+                        && deleteEmptyDirectories
+                        && matchCount > 0
+                        && depth >= minDepth
+                        && isDirectoryEmpty(directory)) {
+
+                        log.debug("Deleting directory that had deleted files and became empty");
+                        delete(directory);
+                    }
+                }
             });
 
             if (outputCountOnly) {
@@ -108,6 +130,12 @@ public class FindCommand implements Callable<Integer> {
         }
 
         return ExitCode.OK;
+    }
+
+    private boolean isDirectoryEmpty(Path directory) throws IOException {
+        try (DirectoryStream<Path> dir = Files.newDirectoryStream(directory)) {
+            return !dir.iterator().hasNext();
+        }
     }
 
     protected void handleEntry(Path startingPoint, Path path) throws IOException {
