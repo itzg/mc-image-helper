@@ -124,14 +124,18 @@ public class TestInstallModrinthModpackCommand {
             projectName, projectVersionId, ModpackLoader.forge)
             .call();
 
-        wm.getWireMock().resetMappings();
+        String newProjectVersionId = "1234abcd";
+        Version newProjectVersion =
+            createModrinthProjectVersion(newProjectVersionId);
+        index.getFiles().remove(testFile);
+
         stubModrinthModpackApi(
-            wm, projectName, projectId, projectVersion,
-            createModrinthPack(createBasicModpackIndex()));
+            wm, projectName, projectId, newProjectVersion,
+            createModrinthPack(index));
 
         int commandStatus =
             createInstallModrinthModpackCommand(wm.getHttpBaseUrl(), tempDir,
-                projectName, projectVersionId, ModpackLoader.forge)
+                projectName, newProjectVersionId, ModpackLoader.forge)
                 .call();
 
         assertEquals(0, commandStatus);
