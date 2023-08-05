@@ -111,9 +111,7 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
         final ProjectRef projectRef =
             ProjectRef.fromPossibleUrl(modpackProject, version);
 
-        new ModrinthApiPackFetcher(
-            apiClient, projectRef, this.outputDirectory, this.gameVersion,
-            this.defaultVersionType, this.loader.asLoader())
+        buildModpackFetcher(apiClient, projectRef)
             .fetchModpack(prevManifest)
             .flatMap(archivePath ->
                 new ModrinthPackInstaller(apiClient, this.sharedFetchArgs,
@@ -138,5 +136,13 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
             .block();
 
         return ExitCode.OK;
+    }
+
+    private ModrinthPackFetcher buildModpackFetcher(
+            ModrinthApiClient apiClient, ProjectRef projectRef)
+    {
+        return new ModrinthApiPackFetcher(
+            apiClient, projectRef, this.outputDirectory, this.gameVersion,
+            this.defaultVersionType, this.loader.asLoader());
     }
 }

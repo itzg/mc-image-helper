@@ -5,6 +5,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static me.itzg.helpers.modrinth.ModrinthTestHelpers.*;
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -140,5 +141,38 @@ public class TestInstallModrinthModpackCommand {
 
         assertEquals(0, commandStatus);
         assertFalse(Files.exists(tempDir.resolve(relativeFilePath)));
+    }
+
+    @Test
+    void downloadsAndInstallsGenericModpacksOverHttp(
+            WireMockRuntimeInfo wm, @TempDir Path tempDir
+        ) throws JsonProcessingException, IOException, URISyntaxException
+    {
+        String expectedFileData = "some test data";
+        String relativeFilePath = "test_file";
+        String modpackDownloadPath = "/files/modpacks/test_modpack-1.0.0.mrpack";
+        ModpackFile testFile = createHostedModpackFile(
+            relativeFilePath, expectedFileData, wm.getHttpBaseUrl());
+
+        ModpackIndex index = createBasicModpackIndex();
+        index.getFiles().add(testFile);
+
+        stubFor(get(modpackDownloadPath)
+            .willReturn(ok()
+            .withHeader("Content-Type", "application/x-modrinth-modpack+zip")
+            .withBody(createModrinthPack(index))));
+
+        InstallModrinthModpackCommand commandUT =
+            createInstallModrinthModpackCommand(wm.getHttpBaseUrl(), tempDir,
+                wm.getHttpBaseUrl() + modpackDownloadPath, null, null);
+
+        int commandStatus = commandUT.call();
+
+        assertEquals(0, commandStatus);
+
+        String actualFileData =
+            new String(Files.readAllBytes(tempDir.resolve(relativeFilePath)));
+
+        assertEquals(expectedFileData, actualFileData);
     }
 }
