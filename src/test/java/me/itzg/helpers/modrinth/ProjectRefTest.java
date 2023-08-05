@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 
 import me.itzg.helpers.modrinth.model.VersionType;
 
-public class TestProjectRef {
+public class ProjectRefTest {
     private String expectedSlug = "test_project1";
     private String expectedVersionName = "test_version1";
     private ProjectRef projectRefUT;

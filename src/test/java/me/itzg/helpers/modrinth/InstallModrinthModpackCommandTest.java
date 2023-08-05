@@ -21,7 +21,7 @@ import me.itzg.helpers.modrinth.model.*;
 import me.itzg.helpers.modrinth.model.ModpackIndex.ModpackFile;
 
 @WireMockTest
-public class TestInstallModrinthModpackCommand {
+public class InstallModrinthModpackCommandTest {
     private String projectName = "test_project1";
     private String projectId = "efgh5678";
     private String projectVersionId = "abcd1234";

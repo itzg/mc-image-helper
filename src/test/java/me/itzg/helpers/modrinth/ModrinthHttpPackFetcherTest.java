@@ -1,10 +1,8 @@
 package me.itzg.helpers.modrinth;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -21,7 +19,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @WireMockTest
-public class TestModrinthHttpPackFetcher {
+public class ModrinthHttpPackFetcherTest {
     @Test
     void fetchesMrpackViaHttp(
             WireMockRuntimeInfo wm, @TempDir Path tempDir

@@ -19,7 +19,7 @@ import me.itzg.helpers.http.SharedFetchArgs;
 import me.itzg.helpers.modrinth.model.*;
 
 @WireMockTest
-public class TestModrinthPackInstaller {
+public class ModrinthPackInstallerTest {
     @Test
     void installReturnsTheModpackIndexAndInstalledFiles(
             WireMockRuntimeInfo wm, @TempDir Path tempDir

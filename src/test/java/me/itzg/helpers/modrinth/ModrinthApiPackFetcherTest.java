@@ -18,7 +18,7 @@ import me.itzg.helpers.http.SharedFetchArgs;
 import me.itzg.helpers.modrinth.model.*;
 
 @WireMockTest
-public class TestModrinthApiPackFetcher {
+public class ModrinthApiPackFetcherTest {
     @Test
     void testApiFetcherFetchesModpackBySlugAndVersionId(
             WireMockRuntimeInfo wm, @TempDir Path tempDir
