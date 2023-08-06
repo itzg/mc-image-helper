@@ -2,6 +2,11 @@ package me.itzg.helpers.modrinth;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+
+import static org.assertj.core.api.Assertions.*;
+
 import org.junit.jupiter.api.Test;
 
 import me.itzg.helpers.modrinth.model.VersionType;
@@ -86,5 +91,27 @@ public class ProjectRefTest {
 
         assertEquals(this.expectedSlug, projectRefUT.getIdOrSlug());
         assertEquals(expectedVersionName, projectRefUT.getVersionName());
+    }
+
+    @Test
+    void fromPossibleUrlCreatesProjectRefWithProjectUrlWhenUrlIsNotModrinthProject() {
+        String projectUri = "https://files.example.test/modpack/testpack.mrpack";
+
+        projectRefUT = ProjectRef.fromPossibleUrl(
+            projectUri, null);
+
+        assertThat(projectRefUT.getProjectUri().toString())
+            .isEqualTo(projectUri);
+    }
+
+    @Test
+    void ProjectRefURIConstructorPullsProjectSlugFromURI()
+        throws URISyntaxException
+    {
+        URI projectUri = new URI(
+            "https://files.example.test/modpack/" + expectedSlug + ".mrpack");
+
+        assertThat(new ProjectRef(projectUri, null).getIdOrSlug())
+            .isEqualTo(expectedSlug);
     }
 }

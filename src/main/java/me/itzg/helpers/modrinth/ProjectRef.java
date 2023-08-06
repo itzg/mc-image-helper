@@ -4,6 +4,10 @@ import lombok.Getter;
 import lombok.ToString;
 import me.itzg.helpers.modrinth.model.VersionType;
 
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -13,9 +17,14 @@ public class ProjectRef {
     private final static Pattern MODPACK_PAGE_URL = Pattern.compile(
         "https://modrinth.com/modpack/(?<slug>.+?)(/version/(?<versionName>.+))?"
     );
+    private final static Pattern HOMEBREW_MRPACK = Pattern.compile(
+        ".+/(?<slug>\\w+?)\\.mrpack"
+    );
 
     @Getter
     final String idOrSlug;
+    @Getter
+    final URI projectUri;
     @Getter
     final VersionType versionType;
     @Getter
@@ -37,6 +46,7 @@ public class ProjectRef {
      */
     public ProjectRef(String projectSlug, String version) {
         this.idOrSlug = projectSlug;
+        this.projectUri = null;
         this.versionType = parseVersionType(version);
         if (this.versionType == null) {
             if (isVersionId(version)) {
@@ -54,15 +64,33 @@ public class ProjectRef {
         }
     }
 
-    public static ProjectRef fromPossibleUrl(
-            String projectUrl, String defaultVersion)
-    {
-        final Matcher m = MODPACK_PAGE_URL.matcher(projectUrl);
-        String projectSlug = m.matches() ? m.group("slug") : projectUrl;
-        String projectVersion = m.matches() && m.group("versionName") != null ?
-            m.group("versionName") : defaultVersion;
+    public ProjectRef(URI projectUri, String versionId) {
+        this.projectUri = projectUri;
+        final Matcher m = HOMEBREW_MRPACK.matcher(projectUri.toString());
+        this.idOrSlug = m.matches() ? m.group("slug") : "boo";
+    
+        this.versionName = null;
+        this.versionType = null;
+        this.versionId = versionId;
+    }
 
-        return new ProjectRef(projectSlug, projectVersion);
+    public static ProjectRef fromPossibleUrl(
+            String possibleUrl, String defaultVersion)
+    {
+        final Matcher m = MODPACK_PAGE_URL.matcher(possibleUrl);
+        if(m.matches()) {
+            String projectSlug = m.group("slug");
+            String projectVersion = m.group("versionName") != null ?
+                m.group("versionName") : defaultVersion;
+            return new ProjectRef(projectSlug, projectVersion);
+        } else {
+            try {
+                return new ProjectRef(
+                    new URL(possibleUrl).toURI(), defaultVersion);
+            } catch(MalformedURLException | URISyntaxException e) {
+                return new ProjectRef(possibleUrl, defaultVersion);
+            }
+        }
     }
 
     public boolean hasVersionName() {
@@ -75,6 +103,10 @@ public class ProjectRef {
 
     public boolean hasVersionId() {
         return versionId != null;
+    }
+
+    public boolean hasProjectUri() {
+        return projectUri != null;
     }
 
     private boolean isVersionId(String version) {

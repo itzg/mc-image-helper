@@ -12,7 +12,6 @@ import org.junit.jupiter.api.io.TempDir;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 
-import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.http.SharedFetchArgs;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
@@ -28,13 +27,13 @@ public class ModrinthHttpPackFetcherTest {
         String modpackUrlPath = "/files/modpack/test.mrpack";
         String expectedModpackData = "test modpack data";
 
-        SharedFetch sharedFetch = 
-            new SharedFetch("unit-test", new SharedFetchArgs().options());
+        ModrinthApiClient apiClient = new ModrinthApiClient(
+            wm.getHttpBaseUrl(), "unit-test", new SharedFetchArgs().options());
 
         stubFor(get(modpackUrlPath).willReturn(ok().withBody(expectedModpackData)));
 
         ModrinthHttpPackFetcher fetcherUT = new ModrinthHttpPackFetcher(
-            sharedFetch, tempDir, new URI(wm.getHttpBaseUrl() + modpackUrlPath));
+            apiClient, tempDir, new URI(wm.getHttpBaseUrl() + modpackUrlPath));
 
         Path mrpackFile = fetcherUT.fetchModpack(null).block();
         String actualModpackData = new String(Files.readAllBytes(mrpackFile));

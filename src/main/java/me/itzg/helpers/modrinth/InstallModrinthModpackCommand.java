@@ -1,45 +1,18 @@
 package me.itzg.helpers.modrinth;
 
 import lombok.extern.slf4j.Slf4j;
-import me.itzg.helpers.errors.GenericException;
-import me.itzg.helpers.errors.InvalidParameterException;
-import me.itzg.helpers.fabric.FabricLauncherInstaller;
-import me.itzg.helpers.files.IoStreams;
 import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.files.ResultsFileWriter;
-import me.itzg.helpers.forge.ForgeInstaller;
-import me.itzg.helpers.http.FailedRequestException;
 import me.itzg.helpers.http.SharedFetchArgs;
-import me.itzg.helpers.json.ObjectMappers;
 import me.itzg.helpers.modrinth.model.*;
-import me.itzg.helpers.quilt.QuiltInstaller;
-import org.jetbrains.annotations.Blocking;
-import org.jetbrains.annotations.NotNull;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.Option;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.Callable;
-import java.util.function.Function;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-
-import static me.itzg.helpers.modrinth.ModrinthApiClient.pickVersionFile;
 
 @CommandLine.Command(name = "install-modrinth-modpack",
     description = "Supports installation of Modrinth modpacks along with the associated mod loader",
@@ -47,10 +20,6 @@ import static me.itzg.helpers.modrinth.ModrinthApiClient.pickVersionFile;
 )
 @Slf4j
 public class InstallModrinthModpackCommand implements Callable<Integer> {
-    private final static Pattern MODPACK_PAGE_URL = Pattern.compile(
-        "https://modrinth.com/modpack/(?<slug>.+?)(/version/(?<versionName>.+))?"
-    );
-
     @Option(names = "--project", required = true,
         description = "One of" +
             "%n- Project ID or slug" +
@@ -141,8 +110,13 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
     private ModrinthPackFetcher buildModpackFetcher(
             ModrinthApiClient apiClient, ProjectRef projectRef)
     {
-        return new ModrinthApiPackFetcher(
-            apiClient, projectRef, this.outputDirectory, this.gameVersion,
-            this.defaultVersionType, this.loader.asLoader());
+        if(projectRef.hasProjectUri()) {
+            return new ModrinthHttpPackFetcher(
+                apiClient, outputDirectory, projectRef.getProjectUri());
+        } else {
+            return new ModrinthApiPackFetcher(
+                apiClient, projectRef, this.outputDirectory, this.gameVersion,
+                this.defaultVersionType, this.loader.asLoader());
+        }
     }
 }
