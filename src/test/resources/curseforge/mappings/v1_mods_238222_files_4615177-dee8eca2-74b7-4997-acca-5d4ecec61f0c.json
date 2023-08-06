@@ -1,0 +1,22 @@
+{
+  "id" : "dee8eca2-74b7-4997-acca-5d4ecec61f0c",
+  "name" : "v1_mods_238222_files_4615177",
+  "request" : {
+    "url" : "/v1/mods/238222/files/4615177",
+    "method" : "GET"
+  },
+  "response" : {
+    "status" : 200,
+    "body" : "{\"data\":{\"id\":4615177,\"gameId\":432,\"modId\":238222,\"isAvailable\":true,\"displayName\":\"jei-1.19.2-forge-11.6.0.1016.jar\",\"fileName\":\"jei-1.19.2-forge-11.6.0.1016.jar\",\"releaseType\":2,\"fileStatus\":4,\"hashes\":[{\"value\":\"9a3ab559d678756ca50f49e4ea6487e43068af44\",\"algo\":1},{\"value\":\"05f4ea9c27d3f01d04f8264bcc6e1247\",\"algo\":2}],\"fileDate\":\"2023-06-29T02:51:10.433Z\",\"fileLength\":1090499,\"downloadCount\":0,\"downloadUrl\":\"{{request.baseUrl}}/files/jei-1.19.2-forge-11.6.0.1016.jar\",\"gameVersions\":[\"1.19.2\",\"Forge\"],\"sortableGameVersions\":[{\"gameVersionName\":\"1.19.2\",\"gameVersionPadded\":\"0000000001.0000000019.0000000002\",\"gameVersion\":\"1.19.2\",\"gameVersionReleaseDate\":\"2022-08-05T14:12:22.413Z\",\"gameVersionTypeId\":73407},{\"gameVersionName\":\"Forge\",\"gameVersionPadded\":\"0\",\"gameVersion\":\"\",\"gameVersionReleaseDate\":\"2022-10-01T00:00:00Z\",\"gameVersionTypeId\":68441}],\"dependencies\":[],\"alternateFileId\":0,\"isServerPack\":false,\"fileFingerprint\":1639277599,\"modules\":[{\"name\":\"META-INF\",\"fingerprint\":3186904263},{\"name\":\"mezz\",\"fingerprint\":2041176697},{\"name\":\"pack.mcmeta\",\"fingerprint\":1550930300},{\"name\":\"assets\",\"fingerprint\":3065967970},{\"name\":\"jei-icon.png\",\"fingerprint\":2007185424}]}}",
+    "headers" : {
+      "Content-Type" : "application/json; charset=utf-8",
+      "Date" : "Sun, 06 Aug 2023 03:30:31 GMT",
+      "Vary" : "Accept-Encoding",
+      "X-Cache" : "Miss from cloudfront",
+      "Via" : "1.1 ad310b4d7c581c35032fa3fce068e53c.cloudfront.net (CloudFront)",
+      "X-Amz-Cf-Pop" : "DFW57-P1",
+      "X-Amz-Cf-Id" : "AS7MUeaeVdHEX8FUKI8hi58XfpersFHe53qpee2rmaCCTcO3_uhzGA=="
+    }
+  },
+  "uuid" : "dee8eca2-74b7-4997-acca-5d4ecec61f0c"
+}

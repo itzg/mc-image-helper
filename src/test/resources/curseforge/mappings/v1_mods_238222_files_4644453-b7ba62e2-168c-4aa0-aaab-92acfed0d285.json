@@ -1,0 +1,23 @@
+{
+  "id" : "b7ba62e2-168c-4aa0-aaab-92acfed0d285",
+  "name" : "v1_mods_238222_files_4644453",
+  "request" : {
+    "url" : "/v1/mods/238222/files/4644453",
+    "method" : "GET"
+  },
+  "response" : {
+    "status" : 200,
+    "body" : "{\"data\":{\"id\":4644453,\"gameId\":432,\"modId\":238222,\"isAvailable\":true,\"displayName\":\"jei-1.20.1-forge-15.2.0.23.jar\",\"fileName\":\"jei-1.20.1-forge-15.2.0.23.jar\",\"releaseType\":2,\"fileStatus\":4,\"hashes\":[{\"value\":\"480813d80c8a32cc3d05950250f9b3390a1d931d\",\"algo\":1},{\"value\":\"227343c41d400cea82e949bd411480af\",\"algo\":2}],\"fileDate\":\"2023-07-14T22:12:02.65Z\",\"fileLength\":1112923,\"downloadCount\":0,\"downloadUrl\":\"{{request.baseUrl}}/files/jei-1.20.1-forge-15.2.0.23.jar\",\"gameVersions\":[\"1.20.1\",\"Forge\"],\"sortableGameVersions\":[{\"gameVersionName\":\"1.20.1\",\"gameVersionPadded\":\"0000000001.0000000020.0000000001\",\"gameVersion\":\"1.20.1\",\"gameVersionReleaseDate\":\"2023-06-12T14:26:38.477Z\",\"gameVersionTypeId\":75125},{\"gameVersionName\":\"Forge\",\"gameVersionPadded\":\"0\",\"gameVersion\":\"\",\"gameVersionReleaseDate\":\"2022-10-01T00:00:00Z\",\"gameVersionTypeId\":68441}],\"dependencies\":[],\"alternateFileId\":0,\"isServerPack\":false,\"fileFingerprint\":1355995934,\"modules\":[{\"name\":\"META-INF\",\"fingerprint\":1731804188},{\"name\":\"assets\",\"fingerprint\":3290647580},{\"name\":\"jei-icon.png\",\"fingerprint\":2007185424},{\"name\":\"mezz\",\"fingerprint\":1720990856},{\"name\":\"pack.mcmeta\",\"fingerprint\":2606738017}]}}",
+    "headers" : {
+      "Content-Type" : "application/json; charset=utf-8",
+      "Date" : "Sun, 06 Aug 2023 03:06:40 GMT",
+      "Vary" : "Accept-Encoding",
+      "X-Cache" : "Hit from cloudfront",
+      "Via" : "1.1 995d6494814d695ff2add6899f970080.cloudfront.net (CloudFront)",
+      "X-Amz-Cf-Pop" : "DFW57-P1",
+      "X-Amz-Cf-Id" : "EbCvFo7z9w2pzwOcV6GWHCHaognAej8e6fr4QdO4gk6y3ErSu2aqJQ==",
+      "Age" : "82"
+    }
+  },
+  "uuid" : "b7ba62e2-168c-4aa0-aaab-92acfed0d285"
+}

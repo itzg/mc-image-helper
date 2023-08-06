@@ -6,7 +6,18 @@ x-api-key: {{cfApiKey}}
 <> 2023-03-30T083426.200.json
 
 ###
-GET https://api.curseforge.com/v1/mods/350464
+# mod
+GET https://api.curseforge.com/v1/mods/search?gameId=432&slug=jei&classId=6
+x-api-key: {{cfApiKey}}
+
+###
+# mod
+GET https://api.curseforge.com/v1/mods/238222
+x-api-key: {{cfApiKey}}
+
+###
+# bukkit-plugin
+GET https://api.curseforge.com/v1/mods/31043
 x-api-key: {{cfApiKey}}
 
 ###
@@ -14,7 +25,7 @@ GET https://api.curseforge.com/v1/mods/694605/files/4098018/download-url
 x-api-key: {{cfApiKey}}
 
 ###
-GET https://api.curseforge.com/v1/mods/369096/files/4560441
+GET https://api.curseforge.com/v1/mods/238222/files/4644453
 x-api-key: {{cfApiKey}}
 
 <> 2023-04-01T192357.200.json
@@ -32,3 +43,8 @@ GET https://api.curseforge.com/v1/mods/707734/files/4415193
 x-api-key: {{cfApiKey}}
 
 <> 2023-03-30T080528.403.html
+
+
+###
+GET http://localhost:8080/v1/mods/238222/files/4615177
+x-api-key: {{cfApiKey}}

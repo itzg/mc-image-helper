@@ -1,0 +1,22 @@
+{
+  "id" : "452fda0d-5d8a-48ad-a86c-b3d73cb7738d",
+  "name" : "v1_categories",
+  "request" : {
+    "url" : "/v1/categories?gameId=432&classesOnly=true",
+    "method" : "GET"
+  },
+  "response" : {
+    "status" : 200,
+    "body" : "{\"data\":[{\"id\":4546,\"gameId\":432,\"name\":\"Customization\",\"slug\":\"customization\",\"url\":\"https://www.curseforge.com/minecraft/customization\",\"iconUrl\":\"https://media.forgecdn.net/avatars/52/99/636111139136535634.png\",\"dateModified\":\"2018-08-14T16:13:35.533Z\",\"isClass\":true,\"displayIndex\":0},{\"id\":4471,\"gameId\":432,\"name\":\"Modpacks\",\"slug\":\"modpacks\",\"url\":\"https://www.curseforge.com/minecraft/modpacks\",\"iconUrl\":\"https://media.forgecdn.net/avatars/52/100/636111139251397737.png\",\"dateModified\":\"2016-10-03T22:52:05.14Z\",\"isClass\":true,\"displayIndex\":0},{\"id\":5,\"gameId\":432,\"name\":\"Bukkit Plugins\",\"slug\":\"bukkit-plugins\",\"url\":\"https://www.curseforge.com/minecraft/bukkit-plugins\",\"iconUrl\":\"https://media.forgecdn.net/avatars/65/443/636162895990633284.png\",\"dateModified\":\"2022-11-10T20:44:39.38Z\",\"isClass\":true,\"displayIndex\":0},{\"id\":12,\"gameId\":432,\"name\":\"Resource Packs\",\"slug\":\"texture-packs\",\"url\":\"https://www.curseforge.com/minecraft/texture-packs\",\"iconUrl\":\"https://media.forgecdn.net/avatars/52/102/636111139761599118.png\",\"dateModified\":\"2020-06-30T17:54:39.063Z\",\"isClass\":true,\"displayIndex\":2},{\"id\":17,\"gameId\":432,\"name\":\"Worlds\",\"slug\":\"worlds\",\"url\":\"https://www.curseforge.com/minecraft/worlds\",\"iconUrl\":\"https://media.forgecdn.net/avatars/52/103/636111139893035422.png\",\"dateModified\":\"2016-10-03T22:53:09.303Z\",\"isClass\":true,\"displayIndex\":3},{\"id\":6,\"gameId\":432,\"name\":\"Mods\",\"slug\":\"mc-mods\",\"url\":\"https://www.curseforge.com/minecraft/mc-mods\",\"iconUrl\":\"https://media.forgecdn.net/avatars/52/101/636111139584399357.png\",\"dateModified\":\"2020-03-28T16:30:35.283Z\",\"isClass\":true,\"displayIndex\":1},{\"id\":4559,\"gameId\":432,\"name\":\"Addons\",\"slug\":\"mc-addons\",\"url\":\"https://www.curseforge.com/minecraft/mc-addons\",\"iconUrl\":\"https://media.forgecdn.net/avatars/53/339/636123919846079516.png\",\"dateModified\":\"2023-07-26T11:51:11.64Z\",\"isClass\":true,\"displayIndex\":0}]}",
+    "headers" : {
+      "Content-Type" : "application/json; charset=utf-8",
+      "Date" : "Fri, 04 Aug 2023 02:55:05 GMT",
+      "X-Cache" : "Hit from cloudfront",
+      "Via" : "1.1 848ee9f48eafd6caa6bf5371a2f79f28.cloudfront.net (CloudFront)",
+      "X-Amz-Cf-Pop" : "DFW57-P1",
+      "X-Amz-Cf-Id" : "74RMyH7zI8FuUzcB0s93PUHOnt6YFmAK17EWRikVHuhi9-oznbxEJw==",
+      "Age" : "120"
+    }
+  },
+  "uuid" : "452fda0d-5d8a-48ad-a86c-b3d73cb7738d"
+}

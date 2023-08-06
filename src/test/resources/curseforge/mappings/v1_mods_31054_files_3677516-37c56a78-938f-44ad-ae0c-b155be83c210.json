@@ -1,0 +1,22 @@
+{
+  "id" : "37c56a78-938f-44ad-ae0c-b155be83c210",
+  "name" : "v1_mods_31054_files_3677516",
+  "request" : {
+    "url" : "/v1/mods/31054/files/3677516",
+    "method" : "GET"
+  },
+  "response" : {
+    "status" : 200,
+    "transformers": ["response-template"],
+    "body" : "{\"data\":{\"id\":3677516,\"gameId\":432,\"modId\":31054,\"isAvailable\":true,\"displayName\":\"WorldGuard 7.0.7 (MC 1.17.1-1.18.2)\",\"fileName\":\"worldguard-bukkit-7.0.7-dist.jar\",\"releaseType\":1,\"fileStatus\":4,\"hashes\":[{\"value\":\"1f46cd9d227ce28cd4890f55ffd79d2f6d3ce731\",\"algo\":1},{\"value\":\"bc0cd74f6bfc77fc73193f8ac0cce79f\",\"algo\":2}],\"fileDate\":\"2022-03-06T14:03:24.497Z\",\"fileLength\":1168769,\"downloadCount\":284893,\"downloadUrl\":\"{{request.baseUrl}}/files/worldguard-bukkit-7.0.7-dist.jar\",\"gameVersions\":[\"1.18.1\",\"1.17\",\"1.18.2\"],\"sortableGameVersions\":[{\"gameVersionName\":\"1.18.1\",\"gameVersionPadded\":\"0000000001.0000000018.0000000001\",\"gameVersion\":\"1.18.1\",\"gameVersionReleaseDate\":\"2021-12-26T00:00:00Z\",\"gameVersionTypeId\":1},{\"gameVersionName\":\"1.17\",\"gameVersionPadded\":\"0000000001.0000000017\",\"gameVersion\":\"1.17\",\"gameVersionReleaseDate\":\"2021-06-08T00:00:00Z\",\"gameVersionTypeId\":1},{\"gameVersionName\":\"1.18.2\",\"gameVersionPadded\":\"0000000001.0000000018.0000000002\",\"gameVersion\":\"1.18.2\",\"gameVersionReleaseDate\":\"2022-03-02T00:00:00Z\",\"gameVersionTypeId\":1}],\"dependencies\":[{\"modId\":31043,\"relationType\":3}],\"alternateFileId\":0,\"isServerPack\":false,\"fileFingerprint\":3511285572,\"modules\":[{\"name\":\"META-INF\",\"fingerprint\":1566757170},{\"name\":\"com\",\"fingerprint\":3047288578},{\"name\":\"defaults\",\"fingerprint\":1739653355},{\"name\":\"migrations\",\"fingerprint\":4042865746},{\"name\":\"plugin.yml\",\"fingerprint\":3504307119},{\"name\":\"org\",\"fingerprint\":2661636969}]}}",
+    "headers" : {
+      "Content-Type" : "application/json; charset=utf-8",
+      "Date" : "Fri, 04 Aug 2023 02:57:04 GMT",
+      "X-Cache" : "Miss from cloudfront",
+      "Via" : "1.1 b5141080f2dac9506b5156fa7721b41c.cloudfront.net (CloudFront)",
+      "X-Amz-Cf-Pop" : "DFW57-P1",
+      "X-Amz-Cf-Id" : "70sNKJ5vh4BflUTsqKFmBYg5KqXz8vnRxd6fuwsHg72MUHpufzYlng=="
+    }
+  },
+  "uuid" : "37c56a78-938f-44ad-ae0c-b155be83c210"
+}

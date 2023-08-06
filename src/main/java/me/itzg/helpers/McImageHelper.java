@@ -12,6 +12,7 @@ import java.util.jar.Manifest;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.assertcmd.AssertCommand;
+import me.itzg.helpers.curseforge.CurseForgeFilesCommand;
 import me.itzg.helpers.curseforge.InstallCurseForgeCommand;
 import me.itzg.helpers.errors.ExceptionHandler;
 import me.itzg.helpers.errors.ExitCodeMapper;
@@ -52,6 +53,7 @@ import picocli.CommandLine.Option;
         Asciify.class,
         AssertCommand.class,
         CompareVersionsCommand.class,
+        CurseForgeFilesCommand.class,
         FindCommand.class,
         GetCommand.class,
         HashCommand.class,
@@ -87,8 +89,7 @@ public class McImageHelper {
   //language=RegExp
   public static final String VERSION_REGEX = "\\d+(\\.\\d+)+";
 
-  @SuppressWarnings("unused")
-  @CommandLine.Option(names = {"-h",
+  @Option(names = {"-h",
       "--help"}, usageHelp = true, description = "Show this usage and exit")
   boolean showHelp;
 
@@ -130,6 +131,7 @@ public class McImageHelper {
   @Getter
   boolean silent;
 
+  @Getter
   private static String version;
 
   public static void main(String[] args) {
@@ -163,10 +165,6 @@ public class McImageHelper {
       }
     }
     return "???";
-  }
-
-  public static String getVersion() {
-    return version;
   }
 
   public static class AppVersionProvider implements IVersionProvider {

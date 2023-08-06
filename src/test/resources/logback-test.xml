@@ -27,6 +27,8 @@
 
     <!-- it's noisy at info level -->
     <logger name="org.mockserver.log.MockServerEventLog" level="${mockServerLogLevel:-warn}"/>
+    <!-- Jetty used by Wiremock -->
+    <logger name="org.eclipse.jetty" level="warn"/>
 
     <root level="info">
         <appender-ref ref="STDERR"/>
