@@ -51,6 +51,10 @@ public class CurseForgeApiClient implements AutoCloseable {
 
     public CurseForgeApiClient(String apiBaseUrl, String apiKey, SharedFetch.Options sharedFetchOptions, String gameId
     ) {
+        if (apiKey == null || apiKey.isEmpty()) {
+            throw new InvalidParameterException("CurseForge API key is required");
+        }
+
         this.preparedFetch = Fetch.sharedFetch("install-curseforge",
             (sharedFetchOptions != null ? sharedFetchOptions : SharedFetch.Options.builder().build())
                 .withHeader(API_KEY_HEADER, apiKey)

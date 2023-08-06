@@ -73,7 +73,6 @@ public class CurseForgeFilesCommand implements Callable<Integer> {
     String apiBaseUrl;
 
     @Option(names = "--api-key", defaultValue = "${env:" + CurseForgeInstaller.API_KEY_VAR + "}",
-        required = true,
         description = "An API key allocated from the Eternal developer console at "
             + CurseForgeInstaller.ETERNAL_DEVELOPER_CONSOLE_URL +
             "%nCan also be passed via " + CurseForgeInstaller.API_KEY_VAR
@@ -105,41 +104,47 @@ public class CurseForgeFilesCommand implements Callable<Integer> {
 
     @Override
     public Integer call() throws Exception {
-        try (CurseForgeApiClient apiClient = new CurseForgeApiClient(
-            apiBaseUrl, apiKey, sharedFetchArgs.options(),
-            CurseForgeApiClient.MINECRAFT_GAME_ID
-        )) {
+        final CurseForgeFilesManifest oldManifest = Manifests.load(outputDir, CurseForgeFilesManifest.ID,
+            CurseForgeFilesManifest.class
+        );
 
-            final CurseForgeFilesManifest oldManifest = Manifests.load(outputDir, CurseForgeFilesManifest.ID,
-                CurseForgeFilesManifest.class
-            );
+        final Map<ModFileIds, FileEntry> previousFiles = buildPreviousFilesFromManifest(oldManifest);
 
-            final Map<ModFileIds, FileEntry> previousFiles = buildPreviousFilesFromManifest(oldManifest);
+        final CurseForgeFilesManifest newManifest;
 
-            final CurseForgeFilesManifest newManifest =
-                apiClient.loadCategoryInfo(Arrays.asList(CATEGORY_MC_MODS, CATEGORY_BUKKIT_PLUGINS))
+        if (modFileRefs != null && !modFileRefs.isEmpty()) {
+            try (CurseForgeApiClient apiClient = new CurseForgeApiClient(
+                apiBaseUrl, apiKey, sharedFetchArgs.options(),
+                CurseForgeApiClient.MINECRAFT_GAME_ID
+            )) {
+                newManifest = apiClient.loadCategoryInfo(Arrays.asList(CATEGORY_MC_MODS, CATEGORY_BUKKIT_PLUGINS))
                     .flatMap(categoryInfo ->
                         processModFileRefs(categoryInfo, previousFiles, apiClient)
                             .map(entries -> CurseForgeFilesManifest.builder()
                                 .entries(entries)
                                 .build()))
                     .block();
+            }
+        }
+        else {
+            // nothing to install or requesting full cleanup
+            newManifest = null;
+        }
 
-            if (oldManifest != null && newManifest != null) {
-                Manifests.cleanup(outputDir,
-                    mapFilePathsFromEntries(oldManifest),
-                    mapFilePathsFromEntries(newManifest),
-                    s -> log.info("Removing old file {}", s)
-                );
-            }
-            if (newManifest != null && newManifest.getEntries() != null
-                && !newManifest.getEntries().isEmpty()
-            ) {
-                Manifests.save(outputDir, CurseForgeFilesManifest.ID, newManifest);
-            }
-            else {
-                Manifests.remove(outputDir, CurseForgeFilesManifest.ID);
-            }
+        if (oldManifest != null) {
+            Manifests.cleanup(outputDir,
+                mapFilePathsFromEntries(oldManifest),
+                mapFilePathsFromEntries(newManifest),
+                s -> log.info("Removing old file {}", s)
+            );
+        }
+        if (newManifest != null && newManifest.getEntries() != null
+            && !newManifest.getEntries().isEmpty()
+        ) {
+            Manifests.save(outputDir, CurseForgeFilesManifest.ID, newManifest);
+        }
+        else {
+            Manifests.remove(outputDir, CurseForgeFilesManifest.ID);
         }
 
         return ExitCode.OK;
@@ -253,9 +258,11 @@ public class CurseForgeFilesCommand implements Callable<Integer> {
             .subscribeOn(Schedulers.boundedElastic());
     }
 
-    @NotNull
     private static List<String> mapFilePathsFromEntries(CurseForgeFilesManifest oldManifest) {
-        return oldManifest.entries.stream().map(FileEntry::getFilePath).collect(Collectors.toList());
+        return
+            oldManifest != null ?
+            oldManifest.entries.stream().map(FileEntry::getFilePath).collect(Collectors.toList())
+            : null;
     }
 
 }
