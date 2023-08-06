@@ -204,14 +204,30 @@ public class CurseForgeFilesCommand implements Callable<Integer> {
         CurseForgeFile curseForgeFile
     ) {
         return apiClient.getModInfo(curseForgeFile.getModId())
-            .flatMap(curseForgeMod ->
-                setupSubdir(categoryInfo, curseForgeMod)
-                    .flatMap(subdir ->
-                        apiClient.download(curseForgeFile,
-                            outputDir.resolve(subdir).resolve(curseForgeFile.getFileName()),
-                            modFileDownloadStatusHandler(outputDir, log)
-                        )
-                    ));
+            .flatMap(curseForgeMod -> {
+                    if (curseForgeFile.getDownloadUrl() == null) {
+                        log.error("The authors of the mod '{}' have disallowed automated downloads. " +
+                                "Manually download the file '{}' from {} and supply separately.",
+                            curseForgeMod.getName(), curseForgeFile.getDisplayName(), curseForgeMod.getLinks().getWebsiteUrl()
+                        );
+
+                        return Mono.error(new InvalidParameterException(
+                            String.format("The authors of %s do not allow automated downloads",
+                                curseForgeMod.getName()
+                            ))
+                        );
+                    }
+
+                    return setupSubdir(categoryInfo, curseForgeMod)
+                        .flatMap(subdir ->
+                            apiClient.download(curseForgeFile,
+                                outputDir.resolve(subdir).resolve(curseForgeFile.getFileName()),
+                                modFileDownloadStatusHandler(outputDir, log)
+                            )
+                        );
+                }
+            )
+            .checkpoint(String.format("Retrieving %d:%d", curseForgeFile.getModId(), curseForgeFile.getId()));
     }
 
     @NotNull
