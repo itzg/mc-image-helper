@@ -32,7 +32,7 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
     @Option(names = {"--help","-h"}, usageHelp = true)
     boolean help;
 
-    @Option(names = "--output-directory", defaultValue = ".", paramLabel = "DIR")
+    @Option(names = {"--output-directory", "-o"}, defaultValue = ".", paramLabel = "DIR")
     Path outputDirectory;
 
     @Option(names = "--results-file", description = ResultsFileWriter.OPTION_DESCRIPTION, paramLabel = "FILE")
@@ -59,9 +59,10 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
     Path modpackZip;
 
     @Option(names = "--modpack-manifest", paramLabel = "PATH",
-        description = "Similar to --modpack-zip but provide the manifest.json from the modpack"
+        description = "Similar to --modpack-zip but provide the manifest.json from the modpack."
+            + "%nCan be a local file path or a URL to a manifest."
     )
-    Path modpackManifest;
+    String modpackManifest;
 
     @Option(names = "--downloads-repo", paramLabel = "DIR",
         description = "A local directory that will supply pre-downloaded mod and modpack files that " +

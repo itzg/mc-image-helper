@@ -1,0 +1,22 @@
+{
+  "id" : "302af753-b376-4818-86ce-aa930437b4d1",
+  "name" : "v1_mods_238222_files_4593548",
+  "request" : {
+    "url" : "/v1/mods/238222/files/4593548",
+    "method" : "GET"
+  },
+  "response" : {
+    "status" : 200,
+    "transformers": ["response-template"],
+    "body" : "{\"data\":{\"id\":4593548,\"gameId\":432,\"modId\":238222,\"isAvailable\":true,\"displayName\":\"jei-1.18.2-forge-10.2.1.1005.jar\",\"fileName\":\"jei-1.18.2-forge-10.2.1.1005.jar\",\"releaseType\":1,\"fileStatus\":4,\"hashes\":[{\"value\":\"95ac179f935376235eb35fa6a854b5051590dcfe\",\"algo\":1},{\"value\":\"2ca8e4f60a1f0ff78838a93f5fb8f697\",\"algo\":2}],\"fileDate\":\"2023-06-17T18:36:36.233Z\",\"fileLength\":1085640,\"downloadCount\":25762,\"downloadUrl\":\"{{request.baseUrl}}/files/jei-1.18.2-forge-10.2.1.1005.jar\",\"gameVersions\":[\"1.18.2\",\"Forge\"],\"sortableGameVersions\":[{\"gameVersionName\":\"1.18.2\",\"gameVersionPadded\":\"0000000001.0000000018.0000000002\",\"gameVersion\":\"1.18.2\",\"gameVersionReleaseDate\":\"2022-02-28T14:23:37.723Z\",\"gameVersionTypeId\":73250},{\"gameVersionName\":\"Forge\",\"gameVersionPadded\":\"0\",\"gameVersion\":\"\",\"gameVersionReleaseDate\":\"2022-10-01T00:00:00Z\",\"gameVersionTypeId\":68441}],\"dependencies\":[],\"alternateFileId\":0,\"isServerPack\":false,\"fileFingerprint\":1251961014,\"modules\":[{\"name\":\"META-INF\",\"fingerprint\":1204616540},{\"name\":\"mezz\",\"fingerprint\":85559634},{\"name\":\"pack.mcmeta\",\"fingerprint\":1550930300},{\"name\":\"assets\",\"fingerprint\":843262602},{\"name\":\"jei-icon.png\",\"fingerprint\":2007185424}]}}",
+    "headers" : {
+      "Content-Type" : "application/json; charset=utf-8",
+      "Date" : "Fri, 04 Aug 2023 02:57:05 GMT",
+      "X-Cache" : "Miss from cloudfront",
+      "Via" : "1.1 4bbf91f2f9edc22eb68408b6405ae452.cloudfront.net (CloudFront)",
+      "X-Amz-Cf-Pop" : "DFW57-P1",
+      "X-Amz-Cf-Id" : "-U_QozQ6RkbueyecOVrehpd-lDvGGeeYOO09o9W38kM4b2EuegpS_g=="
+    }
+  },
+  "uuid" : "302af753-b376-4818-86ce-aa930437b4d1"
+}
