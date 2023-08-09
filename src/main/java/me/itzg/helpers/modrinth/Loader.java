@@ -7,7 +7,9 @@ public enum Loader {
   bukkit("plugins"),
   spigot("plugins"),
   paper("plugins"),
-  purpur("plugins");
+  purpur("plugins"),
+  bungeecord("plugins"),
+  velocity("plugins");
 
   private final String type;
 
