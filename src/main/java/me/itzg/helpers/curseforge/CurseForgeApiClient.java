@@ -6,9 +6,10 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.curseforge.model.Category;
 import me.itzg.helpers.curseforge.model.CurseForgeFile;
@@ -27,19 +28,33 @@ import me.itzg.helpers.http.FileDownloadStatusHandler;
 import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.http.UriBuilder;
 import me.itzg.helpers.json.ObjectMappers;
+import org.slf4j.Logger;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
 @Slf4j
 public class CurseForgeApiClient implements AutoCloseable {
+
+    public static final String CATEGORY_MODPACKS = "modpacks";
+    public static final String CATEGORY_MC_MODS = "mc-mods";
+    public static final String CATEGORY_BUKKIT_PLUGINS = "bukkit-plugins";
+    public static final String CATEGORY_WORLDS = "worlds";
+
     private static final String API_KEY_HEADER = "x-api-key";
+    static final String MINECRAFT_GAME_ID = "432";
 
     private final SharedFetch preparedFetch;
     private final UriBuilder uriBuilder;
     private final String gameId;
 
+    private final ConcurrentHashMap<Integer, CurseForgeMod> cachedMods = new ConcurrentHashMap<>();
+
     public CurseForgeApiClient(String apiBaseUrl, String apiKey, SharedFetch.Options sharedFetchOptions, String gameId
     ) {
+        if (apiKey == null || apiKey.isEmpty()) {
+            throw new InvalidParameterException("CurseForge API key is required");
+        }
+
         this.preparedFetch = Fetch.sharedFetch("install-curseforge",
             (sharedFetchOptions != null ? sharedFetchOptions : SharedFetch.Options.builder().build())
                 .withHeader(API_KEY_HEADER, apiKey)
@@ -48,57 +63,66 @@ public class CurseForgeApiClient implements AutoCloseable {
         this.gameId = gameId;
     }
 
+    static FileDownloadStatusHandler modFileDownloadStatusHandler(Path outputDir, Logger log) {
+        return (status, uri, f) -> {
+            switch (status) {
+                case SKIP_FILE_EXISTS:
+                    log.info("Mod file {} already exists", outputDir.relativize(f));
+                    break;
+                case DOWNLOADED:
+                    log.info("Downloaded mod file {}", outputDir.relativize(f));
+                    break;
+            }
+        };
+    }
+
     @Override
     public void close() {
         preparedFetch.close();
     }
 
-    public CategoryInfo loadCategoryInfo(Set<String> applicableClassIdSlugs, String categorySlug) {
+    Mono<CategoryInfo> loadCategoryInfo(Collection<String> applicableClassIdSlugs) {
         return preparedFetch
             // get only categories that are classes, like mc-mods
-            .fetch(uriBuilder.resolve("/categories?gameId={gameId}&classesOnly=true", gameId))
+            .fetch(uriBuilder.resolve("/v1/categories?gameId={gameId}&classesOnly=true", gameId))
             .toObject(GetCategoriesResponse.class)
             .assemble()
             .flatMap(resp -> {
                     final Map<Integer, Category> contentClassIds = new HashMap<>();
-                    Integer modpackClassId = null;
+                    final Map<String, Integer> slugIds = new HashMap<>();
 
                     for (final Category category : resp.getData()) {
                         if (applicableClassIdSlugs.contains(category.getSlug())) {
                             contentClassIds.put(category.getId(), category);
-                        }
-                        if (category.getSlug().equals(categorySlug)) {
-                            modpackClassId = category.getId();
+                            slugIds.put(category.getSlug(), category.getId());
                         }
                     }
 
-                    if (modpackClassId == null) {
-                        return Mono.error(new GenericException("Unable to lookup classId for modpacks"));
-                    }
-
-                    return Mono.just(new CategoryInfo(contentClassIds, modpackClassId));
+                    return Mono.just(new CategoryInfo(contentClassIds, slugIds));
                 }
-            )
-            .block();
+            );
     }
 
-    public CurseForgeMod searchMod(String slug, CategoryInfo categoryInfo) {
-        final ModsSearchResponse searchResponse = preparedFetch.fetch(
-                uriBuilder.resolve("/mods/search?gameId={gameId}&slug={slug}&classId={classId}",
-                    gameId, slug, categoryInfo.modpackClassId
+    Mono<CurseForgeMod> searchMod(String slug, int classId) {
+        return preparedFetch.fetch(
+                uriBuilder.resolve("/v1/mods/search?gameId={gameId}&slug={slug}&classId={classId}",
+                    gameId, slug, classId
                 )
             )
             .toObject(ModsSearchResponse.class)
-            .execute();
-
-        if (searchResponse.getData() == null || searchResponse.getData().isEmpty()) {
-            throw new GenericException("No mods found with slug={}" + slug);
-        } else if (searchResponse.getData().size() > 1) {
-            throw new GenericException("More than one mod found with slug=" + slug);
-        } else {
-            return searchResponse.getData().get(0);
-        }
-
+            .assemble()
+            .flatMap(searchResponse -> {
+                if (searchResponse.getData() == null || searchResponse.getData().isEmpty()) {
+                    return Mono.error(new GenericException("No mods found with slug=" + slug));
+                }
+                else if (searchResponse.getData().size() > 1) {
+                    return Mono.error(new GenericException("More than one mod found with slug=" + slug));
+                }
+                else {
+                    return Mono.just(searchResponse.getData().get(0));
+                }
+            })
+            .doOnNext(curseForgeMod -> cachedMods.put(curseForgeMod.getId(), curseForgeMod));
     }
 
     /**
@@ -110,7 +134,7 @@ public class CurseForgeApiClient implements AutoCloseable {
     ) {
         // NOTE latestFiles in mod is only one or two files, so retrieve the full list instead
         final GetModFilesResponse resp = preparedFetch.fetch(
-                uriBuilder.resolve("/mods/{modId}/files", mod.getId()
+                uriBuilder.resolve("/v1/mods/{modId}/files", mod.getId()
                 )
             )
             .toObject(GetModFilesResponse.class)
@@ -130,12 +154,12 @@ public class CurseForgeApiClient implements AutoCloseable {
             });
     }
 
-    public Mono<Integer> slugToId(CategoryInfo categoryInfo,
+    Mono<Integer> slugToId(CategoryInfo categoryInfo,
         String slug
     ) {
         return preparedFetch
             .fetch(
-                uriBuilder.resolve("/mods/search?gameId={gameId}&slug={slug}", gameId, slug)
+                uriBuilder.resolve("/v1/mods/search?gameId={gameId}&slug={slug}", gameId, slug)
             )
             .toObject(ModsSearchResponse.class)
             .assemble()
@@ -153,12 +177,19 @@ public class CurseForgeApiClient implements AutoCloseable {
     ) {
         log.debug("Getting mod metadata for {}", projectID);
 
+        final CurseForgeMod cached = cachedMods.get(projectID);
+        if (cached != null) {
+            return Mono.just(cached);
+        }
+
         return preparedFetch.fetch(
-                uriBuilder.resolve("/mods/{modId}", projectID)
+                uriBuilder.resolve("/v1/mods/{modId}", projectID)
             )
             .toObject(GetModResponse.class)
             .assemble()
-            .map(GetModResponse::getData);
+            .checkpoint("Getting mod info for " + projectID)
+            .map(GetModResponse::getData)
+            .doOnNext(curseForgeMod -> cachedMods.put(curseForgeMod.getId(), curseForgeMod));
     }
 
     public Mono<CurseForgeFile> getModFileInfo(
@@ -167,7 +198,7 @@ public class CurseForgeApiClient implements AutoCloseable {
         log.debug("Getting mod file metadata for {}:{}", projectID, fileID);
 
         return preparedFetch.fetch(
-                uriBuilder.resolve("/mods/{modId}/files/{fileId}", projectID, fileID)
+                uriBuilder.resolve("/v1/mods/{modId}/files/{fileId}", projectID, fileID)
             )
             .toObject(GetModFileResponse.class)
             .assemble()

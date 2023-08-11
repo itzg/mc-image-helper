@@ -139,4 +139,15 @@ public class Manifests {
 
     private Manifests() {
     }
+
+    public static void remove(Path outputDir, String id) {
+        final Path manifestPath = buildManifestPath(outputDir, id);
+        if (Files.exists(manifestPath)) {
+            try {
+                Files.delete(manifestPath);
+            } catch (IOException e) {
+                throw new ManifestException("Failed to remove manifest file", e);
+            }
+        }
+    }
 }

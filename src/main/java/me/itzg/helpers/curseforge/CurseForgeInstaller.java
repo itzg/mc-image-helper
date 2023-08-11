@@ -1,12 +1,44 @@
 package me.itzg.helpers.curseforge;
 
+import static java.util.Collections.emptySet;
+import static java.util.Objects.requireNonNull;
+import static java.util.Optional.ofNullable;
+import static me.itzg.helpers.curseforge.CurseForgeApiClient.modFileDownloadStatusHandler;
+import static me.itzg.helpers.singles.MoreCollections.safeStreamFrom;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.curseforge.ExcludeIncludesContent.ExcludeIncludes;
-import me.itzg.helpers.curseforge.model.*;
+import me.itzg.helpers.curseforge.model.Category;
+import me.itzg.helpers.curseforge.model.CurseForgeFile;
+import me.itzg.helpers.curseforge.model.CurseForgeMod;
+import me.itzg.helpers.curseforge.model.ManifestFileRef;
+import me.itzg.helpers.curseforge.model.ManifestType;
+import me.itzg.helpers.curseforge.model.MinecraftModpackManifest;
+import me.itzg.helpers.curseforge.model.ModLoader;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.fabric.FabricLauncherInstaller;
@@ -14,27 +46,13 @@ import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.files.ResultsFileWriter;
 import me.itzg.helpers.forge.ForgeInstaller;
 import me.itzg.helpers.http.FailedRequestException;
+import me.itzg.helpers.http.Fetch;
 import me.itzg.helpers.http.SharedFetch;
+import me.itzg.helpers.http.Uris;
 import me.itzg.helpers.json.ObjectMappers;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
-
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-
-import static java.util.Collections.emptySet;
-import static java.util.Objects.requireNonNull;
-import static java.util.Optional.ofNullable;
-import static me.itzg.helpers.singles.MoreCollections.safeStreamFrom;
 
 @RequiredArgsConstructor
 @Slf4j
@@ -44,11 +62,9 @@ public class CurseForgeInstaller {
     public static final String MODPACK_ZIP_VAR = "CF_MODPACK_ZIP";
 
     public static final String ETERNAL_DEVELOPER_CONSOLE_URL = "https://console.curseforge.com/";
-    private static final String MINECRAFT_GAME_ID = "432";
     public static final String CURSEFORGE_ID = "curseforge";
     public static final String LEVEL_DAT_SUFFIX = "/level.dat";
     public static final int LEVEL_DAT_SUFFIX_LEN = LEVEL_DAT_SUFFIX.length();
-    public static final String CATEGORY_SLUG_MODPACKS = "modpacks";
     public static final String REPO_SUBDIR_MODPACKS = "modpacks";
     public static final String REPO_SUBDIR_MODS = "mods";
     public static final String REPO_SUBDIR_WORLDS = "worlds";
@@ -57,7 +73,7 @@ public class CurseForgeInstaller {
     private final Path resultsFile;
 
     @Getter @Setter
-    private String apiBaseUrl = "https://api.curseforge.com/v1";
+    private String apiBaseUrl = "https://api.curseforge.com";
 
     @Getter @Setter
     private String apiKey;
@@ -85,9 +101,10 @@ public class CurseForgeInstaller {
     private Path downloadsRepo;
 
     private final Set<String> applicableClassIdSlugs = new HashSet<>(Arrays.asList(
-        "mc-mods",
-        "bukkit-plugins",
-        "worlds"
+        CurseForgeApiClient.CATEGORY_MODPACKS,
+        CurseForgeApiClient.CATEGORY_MC_MODS,
+        CurseForgeApiClient.CATEGORY_BUKKIT_PLUGINS,
+        CurseForgeApiClient.CATEGORY_WORLDS
     ));
 
     /**
@@ -108,12 +125,24 @@ public class CurseForgeInstaller {
     /**
      * @throws MissingModsException if any mods need to be manually downloaded
      */
-    public void installFromModpackManifest(Path modpackManifestPath, String slug) throws IOException {
-        requireNonNull(modpackManifestPath, "modpackManifest is required");
+    public void installFromModpackManifest(String modpackManifestLoc, String slug) throws IOException {
+        requireNonNull(modpackManifestLoc, "modpackManifest is required");
 
         install(slug, context -> {
-            final MinecraftModpackManifest modpackManifest = ObjectMappers.defaultMapper()
-                .readValue(modpackManifestPath.toFile(), MinecraftModpackManifest.class);
+            final MinecraftModpackManifest modpackManifest;
+            if (Uris.isUri(modpackManifestLoc)) {
+                modpackManifest = Fetch.fetch(URI.create(modpackManifestLoc))
+                    .toObject(MinecraftModpackManifest.class)
+                    .assemble()
+                    .block();
+                if (modpackManifest == null) {
+                    throw new GenericException("Modpack manifest could not be fetched");
+                }
+            }
+            else {
+                modpackManifest = ObjectMappers.defaultMapper()
+                    .readValue(new File(modpackManifestLoc), MinecraftModpackManifest.class);
+            }
 
             processModpackManifest(context, modpackManifest,
                 () -> new OverridesResult(Collections.emptyList(), null)
@@ -131,7 +160,7 @@ public class CurseForgeInstaller {
         );
     }
 
-    protected void install(String slug, InstallationEntryPoint entryPoint) throws IOException {
+    void install(String slug, InstallationEntryPoint entryPoint) throws IOException {
         requireNonNull(outputDir, "outputDir is required");
         requireNonNull(slug);
         requireNonNull(entryPoint);
@@ -157,10 +186,11 @@ public class CurseForgeInstaller {
         try (
             CurseForgeApiClient cfApi = new CurseForgeApiClient(
                 apiBaseUrl, apiKey, sharedFetchOptions,
-                MINECRAFT_GAME_ID
+                CurseForgeApiClient.MINECRAFT_GAME_ID
             )
         ) {
-            final CategoryInfo categoryInfo = cfApi.loadCategoryInfo(applicableClassIdSlugs, CATEGORY_SLUG_MODPACKS);
+            final CategoryInfo categoryInfo = cfApi.loadCategoryInfo(applicableClassIdSlugs)
+                .block();
 
             entryPoint.install(
                 new InstallContext(slug, cfApi, categoryInfo, manifest)
@@ -191,7 +221,10 @@ public class CurseForgeInstaller {
     }
 
     private void installByRetrievingModpackZip(InstallContext context, String fileMatcher, Integer fileId) throws IOException {
-        final CurseForgeMod curseForgeMod = context.cfApi.searchMod(context.slug, context.categoryInfo);
+        final CurseForgeMod curseForgeMod = context.cfApi.searchMod(context.slug,
+            context.categoryInfo.getClassIdForSlug(CurseForgeApiClient.CATEGORY_MODPACKS)
+        )
+            .block();
 
         resolveModpackFileAndProcess(context, curseForgeMod, fileId, fileMatcher);
     }
@@ -813,16 +846,7 @@ public class CurseForgeInstaller {
             }
         }
         else {
-            return context.cfApi.download(cfFile, outputFile, (status, uri, f) -> {
-                switch (status) {
-                    case SKIP_FILE_EXISTS:
-                        log.info("Mod file {} already exists", outputDir.relativize(f));
-                        break;
-                    case DOWNLOADED:
-                        log.info("Downloaded mod file {}", outputDir.relativize(f));
-                        break;
-                }
-            })
+            return context.cfApi.download(cfFile, outputFile, modFileDownloadStatusHandler(outputDir, log))
                 .map(ResolveResult::new);
         }
     }

@@ -1,24 +1,22 @@
 package me.itzg.helpers.mvn;
 
-import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import java.net.URI;
+import java.nio.file.Path;
+import java.util.concurrent.Callable;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.hc.core5.net.URIBuilder;
+import me.itzg.helpers.http.Fetch;
+import me.itzg.helpers.http.SharedFetch;
+import me.itzg.helpers.http.SharedFetchArgs;
+import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.Option;
-
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.file.Path;
-import java.util.concurrent.Callable;
-
-import static me.itzg.helpers.http.Fetch.fetch;
 
 @Command(name = "maven-download", description = "Downloads a maven artifact from a Maven repository")
 @Slf4j
 public class MavenDownloadCommand implements Callable<Integer> {
 
+    public static final String MAVEN_CACHE_SUBDIR = ".maven";
     @Option(names = {"--help", "-h"}, usageHelp = true)
     boolean help;
 
@@ -55,42 +53,31 @@ public class MavenDownloadCommand implements Callable<Integer> {
     @Option(names = "--skip-existing", defaultValue = "false")
     boolean skipExisting;
 
+    @ArgGroup(exclusive = false)
+    SharedFetchArgs sharedFetchArgs = new SharedFetchArgs();
+
     @Override
     public Integer call() throws Exception {
-        final MavenMetadata mavenMetadata = getMavenMetadata();
+        final Path result;
+        try (SharedFetch sharedFetch = Fetch.sharedFetch("maven-download", sharedFetchArgs.options())) {
+            final MavenRepoApi mavenRepoApi = new MavenRepoApi(mavenRepo.toString(), sharedFetch)
+                .setMetadataCacheDir(outputDirectory.resolve(MAVEN_CACHE_SUBDIR))
+                .setSkipExisting(skipExisting)
+                .setSkipUpToDate(skipUpToDate);
 
-        final String resolvedVersion = resolveVersion(mavenMetadata);
+            result = mavenRepoApi.fetchMetadata(group, artifact)
+                .flatMap(mavenMetadata -> mavenRepoApi.download(
+                    outputDirectory, group, artifact, resolveVersion(mavenMetadata), packaging, classifier
+                ))
+                .block();
+        }
 
-        final Path result = download(resolvedVersion);
         log.debug("Downloaded artifact to {}", result);
         if (printFilename) {
             System.out.println(result);
         }
 
         return ExitCode.OK;
-    }
-
-    private Path download(String resolvedVersion) throws URISyntaxException, IOException {
-        final String groupPath = group.replace('.', '/');
-
-        final String filename = String.format("%s-%s%s.%s",
-                artifact, resolvedVersion, classifier != null ? "-" + classifier : "", packaging);
-        final URI uri = new URIBuilder(mavenRepo)
-            .appendPath(String.join("/",
-                groupPath,
-                artifact,
-                resolvedVersion,
-                filename
-            ))
-            .build();
-
-        log.debug("Downloading from {}", uri);
-        return fetch(uri)
-            .userAgentCommand("maven-download")
-            .toFile(outputDirectory.resolve(filename))
-            .skipUpToDate(skipUpToDate)
-            .skipExisting(skipExisting)
-            .execute();
     }
 
     private String resolveVersion(MavenMetadata mavenMetadata) {
@@ -116,16 +103,4 @@ public class MavenDownloadCommand implements Callable<Integer> {
         }
     }
 
-    private MavenMetadata getMavenMetadata() throws URISyntaxException {
-        final String groupPath = group.replace('.', '/');
-        final URI metadataUri = new URIBuilder(mavenRepo)
-            .appendPath(String.join("/", groupPath, artifact, "maven-metadata.xml"))
-            .build();
-
-        log.debug("Fetching metadata from {}", metadataUri);
-        return fetch(metadataUri)
-            .userAgentCommand("maven-download")
-            .toObject(MavenMetadata.class, new XmlMapper())
-            .execute();
-    }
 }

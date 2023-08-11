@@ -1,15 +1,6 @@
 package me.itzg.helpers.curseforge;
 
-import me.itzg.helpers.files.ResultsFileWriter;
-import me.itzg.helpers.files.TabularOutput;
-import me.itzg.helpers.http.PathOrUri;
-import me.itzg.helpers.http.PathOrUriConverter;
-import me.itzg.helpers.http.SharedFetchArgs;
-import me.itzg.helpers.json.ObjectMappers;
-import picocli.CommandLine.ArgGroup;
-import picocli.CommandLine.Command;
-import picocli.CommandLine.ExitCode;
-import picocli.CommandLine.Option;
+import static me.itzg.helpers.http.Fetch.fetch;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -22,8 +13,16 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static me.itzg.helpers.http.Fetch.fetch;
+import me.itzg.helpers.files.ResultsFileWriter;
+import me.itzg.helpers.files.TabularOutput;
+import me.itzg.helpers.http.PathOrUri;
+import me.itzg.helpers.http.PathOrUriConverter;
+import me.itzg.helpers.http.SharedFetchArgs;
+import me.itzg.helpers.json.ObjectMappers;
+import picocli.CommandLine.ArgGroup;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.ExitCode;
+import picocli.CommandLine.Option;
 
 @Command(name = "install-curseforge", subcommands = {
     SchemasCommand.class
@@ -33,7 +32,7 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
     @Option(names = {"--help","-h"}, usageHelp = true)
     boolean help;
 
-    @Option(names = "--output-directory", defaultValue = ".", paramLabel = "DIR")
+    @Option(names = {"--output-directory", "-o"}, defaultValue = ".", paramLabel = "DIR")
     Path outputDirectory;
 
     @Option(names = "--results-file", description = ResultsFileWriter.OPTION_DESCRIPTION, paramLabel = "FILE")
@@ -60,9 +59,10 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
     Path modpackZip;
 
     @Option(names = "--modpack-manifest", paramLabel = "PATH",
-        description = "Similar to --modpack-zip but provide the manifest.json from the modpack"
+        description = "Similar to --modpack-zip but provide the manifest.json from the modpack."
+            + "%nCan be a local file path or a URL to a manifest."
     )
-    Path modpackManifest;
+    String modpackManifest;
 
     @Option(names = "--downloads-repo", paramLabel = "DIR",
         description = "A local directory that will supply pre-downloaded mod and modpack files that " +
@@ -228,7 +228,7 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
             System.err.println("Some mod authors disallow automated downloads.");
             System.err.println("The following need to be manually downloaded into the repo or excluded:");
             if (needsDownloadFile != null) {
-                System.err.printf("(Also written to %s%n", needsDownloadFile);
+                System.err.printf("(Also written to %s)%n", needsDownloadFile);
             }
             System.err.println();
             final PrintWriter out = new PrintWriter(System.err);

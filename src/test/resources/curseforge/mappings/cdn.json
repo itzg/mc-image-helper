@@ -1,0 +1,13 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPathPattern": "/files/.+"
+  },
+  "response": {
+    "body": "{{request.path.[1]}}",
+    "headers": {
+      "Content-Disposition": "attachment; filename=\"{{request.path.[1]}}\""
+    },
+    "transformers": ["response-template"]
+  }
+}
