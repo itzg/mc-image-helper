@@ -1,5 +1,20 @@
 package me.itzg.helpers.modrinth;
 
+import static me.itzg.helpers.modrinth.ModrinthApiClient.pickVersionFile;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.Callable;
+import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.zip.ZipFile;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidParameterException;
@@ -11,7 +26,14 @@ import me.itzg.helpers.forge.ForgeInstaller;
 import me.itzg.helpers.http.FailedRequestException;
 import me.itzg.helpers.http.SharedFetchArgs;
 import me.itzg.helpers.json.ObjectMappers;
-import me.itzg.helpers.modrinth.model.*;
+import me.itzg.helpers.modrinth.model.DependencyId;
+import me.itzg.helpers.modrinth.model.Env;
+import me.itzg.helpers.modrinth.model.EnvType;
+import me.itzg.helpers.modrinth.model.ModpackIndex;
+import me.itzg.helpers.modrinth.model.Project;
+import me.itzg.helpers.modrinth.model.Version;
+import me.itzg.helpers.modrinth.model.VersionFile;
+import me.itzg.helpers.modrinth.model.VersionType;
 import me.itzg.helpers.quilt.QuiltInstaller;
 import org.jetbrains.annotations.Blocking;
 import org.jetbrains.annotations.NotNull;
@@ -21,25 +43,6 @@ import picocli.CommandLine.Option;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
-
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.Callable;
-import java.util.function.Function;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-
-import static me.itzg.helpers.modrinth.ModrinthApiClient.pickVersionFile;
 
 @CommandLine.Command(name = "install-modrinth-modpack",
     description = "Supports installation of Modrinth modpacks along with the associated mod loader",
@@ -306,37 +309,36 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
 
     @SuppressWarnings("SameParameterValue")
     private Stream<Path> extractOverrides(Path zipFile, String... overridesDirs) {
-        return Stream.of(overridesDirs)
-            .flatMap(dir ->
-            {
-                final String prefix = dir + "/";
-                final List<Path> extracted = new ArrayList<>();
-                try (ZipInputStream zipIn = new ZipInputStream(Files.newInputStream(zipFile))) {
-                    ZipEntry entry;
-                    while ((entry = zipIn.getNextEntry()) != null) {
-                        if (!entry.isDirectory()) {
-                            if (entry.getName().startsWith(prefix)) {
-                                final Path outFile = outputDirectory.resolve(
-                                    entry.getName().substring(prefix.length())
-                                );
-                                Files.createDirectories(outFile.getParent());
+        try (ZipFile zipFileReader = new ZipFile(zipFile.toFile())) {
+            return Stream.of(overridesDirs)
+                .flatMap(dir -> {
+                    final String prefix = dir + "/";
+                    return zipFileReader.stream()
+                        .filter(entry -> !entry.isDirectory()
+                            && entry.getName().startsWith(prefix)
+                        )
+                        .map(entry -> {
+                            final Path outFile = outputDirectory.resolve(
+                                entry.getName().substring(prefix.length())
+                            );
 
-                                try {
-                                    Files.copy(zipIn, outFile, StandardCopyOption.REPLACE_EXISTING);
-                                    extracted.add(outFile);
-                                } catch (IOException e) {
-                                    throw new GenericException(
-                                        String.format("Failed to extract %s from overrides", entry.getName()), e
-                                    );
-                                }
+                            try {
+                                Files.createDirectories(outFile.getParent());
+                                Files.copy(zipFileReader.getInputStream(entry), outFile, StandardCopyOption.REPLACE_EXISTING);
+                                return outFile;
+                            } catch (IOException e) {
+                                throw new GenericException(
+                                    String.format("Failed to extract %s from overrides", entry.getName()), e
+                                );
                             }
-                        }
-                    }
-                } catch (IOException e) {
-                    throw new GenericException("Failed to extract overrides", e);
-                }
-                return extracted.stream();
-            });
+                        });
+                })
+                // need to eager load the stream while the zip file is open
+                .collect(Collectors.toList())
+                .stream();
+        } catch (IOException e) {
+            throw new GenericException("Failed to extract overrides", e);
+        }
     }
 
     private Flux<Path> processModpackFiles(ModrinthApiClient apiClient, ModpackIndex modpackIndex) {
