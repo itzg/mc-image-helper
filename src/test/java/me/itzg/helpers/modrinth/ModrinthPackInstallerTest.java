@@ -12,7 +12,7 @@ import org.junit.jupiter.api.io.TempDir;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.*;
 import static me.itzg.helpers.modrinth.ModrinthTestHelpers.*;
 
 import me.itzg.helpers.http.SharedFetchArgs;
@@ -43,9 +43,9 @@ public class ModrinthPackInstallerTest {
         ModrinthPackInstaller.Installation actualInstallation =
             installerUT.processModpack().block();
 
-        assertNotNull(actualInstallation.getIndex());
-        assertEquals(expectedIndex, actualInstallation.getIndex());
-        assertEquals(0, actualInstallation.getFiles().size());
+        assertThat(actualInstallation.getIndex()).isNotNull();
+        assertThat(actualInstallation.getIndex()).isEqualTo(expectedIndex);
+        assertThat(actualInstallation.getFiles().size()).isEqualTo(0);
     }
 
     @Test
@@ -76,13 +76,10 @@ public class ModrinthPackInstallerTest {
         List<Path> installedFiles =
             installerUT.processModpack().block().getFiles();
 
-        assertTrue(Files.exists(expectedFilePath));
-
-        String actualFileData =
-            new String(Files.readAllBytes(expectedFilePath));
-
-        assertEquals(expectedFileData, actualFileData);
-        assertEquals(1, installedFiles.size());
-        assertEquals(expectedFilePath, installedFiles.get(0));
+        assertThat(expectedFilePath).isRegularFile();
+        assertThat(expectedFilePath).content()
+            .isEqualTo(expectedFileData);
+        assertThat(installedFiles.size()).isEqualTo(1);
+        assertThat(installedFiles.get(0)).isEqualTo(expectedFilePath);
     }
 }

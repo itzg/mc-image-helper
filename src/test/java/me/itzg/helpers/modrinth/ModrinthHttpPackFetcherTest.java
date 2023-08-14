@@ -3,7 +3,6 @@ package me.itzg.helpers.modrinth;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 
 import org.junit.jupiter.api.Test;
@@ -15,7 +14,7 @@ import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import me.itzg.helpers.http.SharedFetchArgs;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.*;
 
 @WireMockTest
 public class ModrinthHttpPackFetcherTest {
@@ -36,8 +35,7 @@ public class ModrinthHttpPackFetcherTest {
             apiClient, tempDir, new URI(wm.getHttpBaseUrl() + modpackUrlPath));
 
         Path mrpackFile = fetcherUT.fetchModpack(null).block();
-        String actualModpackData = new String(Files.readAllBytes(mrpackFile));
-
-        assertEquals(new String(expectedModpackData), actualModpackData);
+        assertThat(mrpackFile).content()
+            .isEqualTo(new String(expectedModpackData));
     }
 }

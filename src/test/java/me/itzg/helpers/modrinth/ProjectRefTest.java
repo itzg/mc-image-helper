@@ -1,7 +1,5 @@
 package me.itzg.helpers.modrinth;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 import java.net.URI;
 import java.net.URISyntaxException;
 
@@ -20,34 +18,37 @@ public class ProjectRefTest {
     void testProjectRefHasProjectSlug() {
         projectRefUT = new ProjectRef(this.expectedSlug, null);
 
-        assertEquals(expectedSlug, projectRefUT.getIdOrSlug());
+        assertThat(projectRefUT.getIdOrSlug()).isEqualTo(expectedSlug);
     }
 
     @Test
     void testProjectRefHasVersionTypeWhenVersionIsType() {
         projectRefUT = new ProjectRef(this.expectedSlug, "release");
-        assertEquals(VersionType.release, projectRefUT.getVersionType());
-        assertFalse(projectRefUT.hasVersionId());
-        assertFalse(projectRefUT.hasVersionName());
+        assertThat(projectRefUT.getVersionType())
+            .isEqualTo(VersionType.release);
+        assertThat(projectRefUT.hasVersionId()).isFalse();
+        assertThat(projectRefUT.hasVersionName()).isFalse();
 
         projectRefUT = new ProjectRef(this.expectedSlug, "beta");
-        assertEquals(VersionType.beta, projectRefUT.getVersionType());
-        assertFalse(projectRefUT.hasVersionId());
-        assertFalse(projectRefUT.hasVersionName());
+        assertThat(projectRefUT.getVersionType())
+            .isEqualTo(VersionType.beta);
+        assertThat(projectRefUT.hasVersionId()).isFalse();
+        assertThat(projectRefUT.hasVersionName()).isFalse();
 
         projectRefUT = new ProjectRef(this.expectedSlug, "alpha");
-        assertEquals(VersionType.alpha, projectRefUT.getVersionType());
-        assertFalse(projectRefUT.hasVersionId());
-        assertFalse(projectRefUT.hasVersionName());
+        assertThat(projectRefUT.getVersionType())
+            .isEqualTo(VersionType.alpha);
+        assertThat(projectRefUT.hasVersionId()).isFalse();
+        assertThat(projectRefUT.hasVersionName()).isFalse();
     }
 
     @Test
     void testProjectRefHasVersionIDWhenVersionIs8CharAlphaNum() {
         String expectedVersionId = "abcdEF12";
         projectRefUT = new ProjectRef(this.expectedSlug, expectedVersionId);
-        assertEquals(expectedVersionId, projectRefUT.getVersionId());
-        assertFalse(projectRefUT.hasVersionType());
-        assertFalse(projectRefUT.hasVersionName());
+        assertThat(projectRefUT.getVersionId()).isEqualTo(expectedVersionId);
+        assertThat(projectRefUT.hasVersionType()).isFalse();
+        assertThat(projectRefUT.hasVersionName()).isFalse();
     }
 
     @Test
@@ -55,9 +56,10 @@ public class ProjectRefTest {
         projectRefUT = new ProjectRef(
             this.expectedSlug, this.expectedVersionName);
 
-        assertEquals(expectedVersionName, projectRefUT.getVersionName());
-        assertFalse(projectRefUT.hasVersionId());
-        assertFalse(projectRefUT.hasVersionType());
+        assertThat(projectRefUT.getVersionName())
+            .isEqualTo(expectedVersionName);
+        assertThat(projectRefUT.hasVersionId()).isFalse();
+        assertThat(projectRefUT.hasVersionType()).isFalse();
     }
 
     @Test
@@ -65,8 +67,10 @@ public class ProjectRefTest {
         projectRefUT = ProjectRef.fromPossibleUrl(
             this.expectedSlug, this.expectedVersionName);
 
-        assertEquals(this.expectedSlug, projectRefUT.getIdOrSlug());
-        assertEquals(expectedVersionName, projectRefUT.getVersionName());
+        assertThat(projectRefUT.getIdOrSlug())
+            .isEqualTo(this.expectedSlug);
+        assertThat(projectRefUT.getVersionName())
+            .isEqualTo(expectedVersionName);
     }
 
     @Test
@@ -77,8 +81,10 @@ public class ProjectRefTest {
         projectRefUT = ProjectRef.fromPossibleUrl(
             projectUrl, this.expectedVersionName);
 
-        assertEquals(this.expectedSlug, projectRefUT.getIdOrSlug());
-        assertEquals(expectedVersionName, projectRefUT.getVersionName());
+        assertThat(projectRefUT.getIdOrSlug())
+            .isEqualTo(this.expectedSlug);
+        assertThat(projectRefUT.getVersionName())
+            .isEqualTo(expectedVersionName);
     }
 
     @Test
@@ -89,8 +95,10 @@ public class ProjectRefTest {
         projectRefUT = ProjectRef.fromPossibleUrl(
             projectUrl, "release");
 
-        assertEquals(this.expectedSlug, projectRefUT.getIdOrSlug());
-        assertEquals(expectedVersionName, projectRefUT.getVersionName());
+        assertThat(projectRefUT.getIdOrSlug())
+            .isEqualTo(this.expectedSlug);
+        assertThat(projectRefUT.getVersionName())
+            .isEqualTo(expectedVersionName);
     }
 
     @Test

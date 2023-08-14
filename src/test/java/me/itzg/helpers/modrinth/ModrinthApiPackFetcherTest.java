@@ -3,7 +3,7 @@ package me.itzg.helpers.modrinth;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.*;
 import static me.itzg.helpers.modrinth.ModrinthTestHelpers.*;
 
 import java.io.IOException;
@@ -41,10 +41,10 @@ public class ModrinthApiPackFetcherTest {
         ModrinthApiPackFetcher fetcherUT = new ModrinthApiPackFetcher(
             apiClient, testProjectRef, tempDir, "",
             VersionType.release, ModpackLoader.forge.asLoader());
-        Path mrpackFile = fetcherUT.fetchModpack(null).block();
-        String actualModpackData = new String(Files.readAllBytes(mrpackFile));
 
-        assertEquals(new String(expectedModpackData), actualModpackData);
+        Path mrpackFile = fetcherUT.fetchModpack(null).block();
+        assertThat(mrpackFile).content()
+            .isEqualTo(new String(expectedModpackData));
     }
 
     @Test
@@ -79,9 +79,8 @@ public class ModrinthApiPackFetcherTest {
             VersionType.release, ModpackLoader.forge.asLoader());
 
         Path mrpackFile = fetcherUT.fetchModpack(null).block();
-        String actualModpackData = new String(Files.readAllBytes(mrpackFile));
-
-        assertEquals(new String(expectedModpackData), actualModpackData);
+        assertThat(mrpackFile).content()
+            .isEqualTo(new String(expectedModpackData));
     }
 
     @Test
@@ -108,9 +107,9 @@ public class ModrinthApiPackFetcherTest {
         ModrinthApiPackFetcher fetcherUT = new ModrinthApiPackFetcher(
             apiClient, testProjectRef, tempDir, "",
             VersionType.release, ModpackLoader.forge.asLoader());
-        Path mrpackFile = fetcherUT.fetchModpack(null).block();
-        String actualModpackData = new String(Files.readAllBytes(mrpackFile));
 
-        assertEquals(new String(expectedModpackData), actualModpackData);
+        Path mrpackFile = fetcherUT.fetchModpack(null).block();
+        assertThat(mrpackFile).content()
+            .isEqualTo(new String(expectedModpackData));
     }
 }

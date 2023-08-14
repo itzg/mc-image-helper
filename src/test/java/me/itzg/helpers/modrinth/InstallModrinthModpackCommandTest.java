@@ -3,7 +3,7 @@ package me.itzg.helpers.modrinth;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.*;
 import static me.itzg.helpers.modrinth.ModrinthTestHelpers.*;
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 
@@ -66,12 +66,9 @@ public class InstallModrinthModpackCommandTest {
 
         int commandStatus = commandUT.call();
 
-        assertEquals(0, commandStatus);
-
-        String actualFileData =
-            new String(Files.readAllBytes(tempDir.resolve(relativeFilePath)));
-
-        assertEquals(expectedFileData, actualFileData);
+        assertThat(commandStatus).isEqualTo(0);
+        assertThat(tempDir.resolve(relativeFilePath)).content()
+            .isEqualTo(expectedFileData);
     }
 
     @Test
@@ -91,17 +88,20 @@ public class InstallModrinthModpackCommandTest {
 
         int commandStatus = commandUT.call();
 
-        assertEquals(0, commandStatus);
+        assertThat(commandStatus).isEqualTo(0);
 
         ModrinthModpackManifest installedManifest = Manifests.load(tempDir,
             ModrinthModpackManifest.ID, ModrinthModpackManifest.class);
 
-        assertNotNull(installedManifest);
-        assertEquals(projectName, installedManifest.getProjectSlug());
-        assertEquals(projectVersionId, installedManifest.getVersionId());
-        assertEquals(0, installedManifest.getFiles().size());
-        assertEquals(
-            index.getDependencies(), installedManifest.getDependencies());
+        assertThat(installedManifest).isNotNull();
+        assertThat(installedManifest.getProjectSlug())
+            .isEqualTo(projectName);
+        assertThat(installedManifest.getVersionId())
+            .isEqualTo(projectVersionId);
+        assertThat(installedManifest.getFiles().size())
+            .isEqualTo(0);
+        assertThat(installedManifest.getDependencies())
+            .isEqualTo(index.getDependencies());
     }
 
     @Test
@@ -139,8 +139,8 @@ public class InstallModrinthModpackCommandTest {
                 projectName, newProjectVersionId, ModpackLoader.forge)
                 .call();
 
-        assertEquals(0, commandStatus);
-        assertFalse(Files.exists(tempDir.resolve(relativeFilePath)));
+        assertThat(commandStatus).isEqualTo(0);
+        assertThat(tempDir.resolve(relativeFilePath)).doesNotExist();
     }
 
     @Test
@@ -168,11 +168,8 @@ public class InstallModrinthModpackCommandTest {
 
         int commandStatus = commandUT.call();
 
-        assertEquals(0, commandStatus);
-
-        String actualFileData =
-            new String(Files.readAllBytes(tempDir.resolve(relativeFilePath)));
-
-        assertEquals(expectedFileData, actualFileData);
+        assertThat(commandStatus).isEqualTo(0);
+        assertThat(tempDir.resolve(relativeFilePath)).content()
+            .isEqualTo(expectedFileData);
     }
 }
