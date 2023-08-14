@@ -16,6 +16,7 @@ import static org.assertj.core.api.Assertions.*;
 import static me.itzg.helpers.modrinth.ModrinthTestHelpers.*;
 
 import me.itzg.helpers.http.SharedFetchArgs;
+import me.itzg.helpers.http.SharedFetch.Options;
 import me.itzg.helpers.modrinth.model.*;
 
 @WireMockTest
@@ -25,10 +26,9 @@ public class ModrinthPackInstallerTest {
             WireMockRuntimeInfo wm, @TempDir Path tempDir
         ) throws IOException
     {
-        SharedFetchArgs fetchArgs = new SharedFetchArgs();
+        Options fetchOptions = new SharedFetchArgs().options();
         ModrinthApiClient apiClient = new ModrinthApiClient(
-            wm.getHttpBaseUrl(), "install-modrinth-modpack",
-            fetchArgs.options());
+            wm.getHttpBaseUrl(), "install-modrinth-modpack", fetchOptions);
 
         Path modpackPath = tempDir.resolve("test.mrpack");
         Path resultsFile = tempDir.resolve("results");
@@ -38,7 +38,7 @@ public class ModrinthPackInstallerTest {
         Files.write(modpackPath, createModrinthPack(expectedIndex));
 
         ModrinthPackInstaller installerUT = new ModrinthPackInstaller(
-            apiClient, fetchArgs, modpackPath, tempDir, resultsFile, false);
+            apiClient, fetchOptions, modpackPath, tempDir, resultsFile, false);
 
         ModrinthPackInstaller.Installation actualInstallation =
             installerUT.processModpack().block();
@@ -53,10 +53,9 @@ public class ModrinthPackInstallerTest {
             WireMockRuntimeInfo wm, @TempDir Path tempDir
         ) throws IOException, URISyntaxException
     {
-        SharedFetchArgs fetchArgs = new SharedFetchArgs();
+        Options fetchOpts = new SharedFetchArgs().options();
         ModrinthApiClient apiClient = new ModrinthApiClient(
-            wm.getHttpBaseUrl(), "install-modrinth-modpack",
-            fetchArgs.options());
+            wm.getHttpBaseUrl(), "install-modrinth-modpack", fetchOpts);
 
         String expectedFileData = "some test data";
         String relativeFilePath = "test_file";
@@ -71,7 +70,7 @@ public class ModrinthPackInstallerTest {
         Files.write(modpackPath, createModrinthPack(index));
 
         ModrinthPackInstaller installerUT = new ModrinthPackInstaller(
-            apiClient, fetchArgs, modpackPath, tempDir, resultsFile, false);
+            apiClient, fetchOpts, modpackPath, tempDir, resultsFile, false);
 
         List<Path> installedFiles =
             installerUT.processModpack().block().getFiles();

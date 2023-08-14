@@ -19,7 +19,7 @@ import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.fabric.FabricLauncherInstaller;
 import me.itzg.helpers.files.IoStreams;
 import me.itzg.helpers.forge.ForgeInstaller;
-import me.itzg.helpers.http.SharedFetchArgs;
+import me.itzg.helpers.http.SharedFetch.Options;
 import me.itzg.helpers.json.ObjectMappers;
 import me.itzg.helpers.modrinth.model.*;
 import me.itzg.helpers.quilt.QuiltInstaller;
@@ -34,15 +34,15 @@ public class ModrinthPackInstaller {
     private final Path outputDirectory;
     private final Path resultsFile;
     private final boolean forceModloaderReinstall;
-    private final SharedFetchArgs sharedFetchArgs;
+    private final Options sharedFetchOpts;
 
     public ModrinthPackInstaller(
-            ModrinthApiClient apiClient, SharedFetchArgs sharedFetchArgs,
+            ModrinthApiClient apiClient, Options sharedFetchOpts,
             Path zipFile, Path outputDirectory, Path resultsFile,
             boolean forceModloaderReinstall)
     {
         this.apiClient = apiClient;
-        this.sharedFetchArgs = sharedFetchArgs;
+        this.sharedFetchOpts = sharedFetchOpts;
         this.zipFile = zipFile;
         this.outputDirectory = outputDirectory;
         this.resultsFile = resultsFile;
@@ -204,7 +204,7 @@ public class ModrinthPackInstaller {
         if (quiltVersion != null) {
             try (QuiltInstaller installer =
                 new QuiltInstaller(QuiltInstaller.DEFAULT_REPO_URL,
-                    this.sharedFetchArgs.options(),
+                    this.sharedFetchOpts,
                     this.outputDirectory,
                     minecraftVersion)
                 .setResultsFile(this.resultsFile)) {

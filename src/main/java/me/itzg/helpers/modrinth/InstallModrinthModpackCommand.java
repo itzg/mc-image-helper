@@ -82,7 +82,8 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
         buildModpackFetcher(apiClient, projectRef)
             .fetchModpack(prevManifest)
             .flatMap(archivePath ->
-                new ModrinthPackInstaller(apiClient, this.sharedFetchArgs,
+                new ModrinthPackInstaller(
+                    apiClient, this.sharedFetchArgs.options(),
                     archivePath, this.outputDirectory, this.resultsFile,
                     this.forceModloaderReinstall)
                 .processModpack())
