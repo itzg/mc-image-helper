@@ -1,5 +1,8 @@
 package me.itzg.helpers.modrinth;
 
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.concurrent.Callable;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.files.ResultsFileWriter;
@@ -9,10 +12,6 @@ import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.Option;
 import reactor.core.publisher.Mono;
-
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.concurrent.Callable;
 
 @CommandLine.Command(name = "install-modrinth-modpack",
     description = "Supports installation of Modrinth modpacks along with the associated mod loader",

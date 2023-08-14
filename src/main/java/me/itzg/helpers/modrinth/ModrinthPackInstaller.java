@@ -4,15 +4,13 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
+import java.util.zip.ZipFile;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -133,41 +131,36 @@ public class ModrinthPackInstaller {
 
     @SuppressWarnings("SameParameterValue")
     private Stream<Path> extractOverrides(String... overridesDirs) {
-        return Stream.of(overridesDirs)
-            .flatMap(dir ->
-            {
-                final String prefix = dir + "/";
-                final List<Path> extracted = new ArrayList<>();
-                try (ZipInputStream zipIn =
-                    new ZipInputStream(Files.newInputStream(this.zipFile))) {
-                    ZipEntry entry;
-                    while ((entry = zipIn.getNextEntry()) != null) {
-                        if (!entry.isDirectory() &&
-                            entry.getName().startsWith(prefix))
-                        {
-                            final Path outFile = this.outputDirectory.resolve(
+        try (ZipFile zipFileReader = new ZipFile(zipFile.toFile())) {
+            return Stream.of(overridesDirs)
+                .flatMap(dir -> {
+                    final String prefix = dir + "/";
+                    return zipFileReader.stream()
+                        .filter(entry -> !entry.isDirectory()
+                            && entry.getName().startsWith(prefix)
+                        )
+                        .map(entry -> {
+                            final Path outFile = outputDirectory.resolve(
                                 entry.getName().substring(prefix.length())
                             );
-                            Files.createDirectories(outFile.getParent());
 
                             try {
-                                Files.copy(zipIn, outFile,
-                                    StandardCopyOption.REPLACE_EXISTING);
-                                extracted.add(outFile);
+                                Files.createDirectories(outFile.getParent());
+                                Files.copy(zipFileReader.getInputStream(entry), outFile, StandardCopyOption.REPLACE_EXISTING);
+                                return outFile;
                             } catch (IOException e) {
                                 throw new GenericException(
-                                    String.format(
-                                        "Failed to extract %s from overrides",
-                                        entry.getName()), e
+                                    String.format("Failed to extract %s from overrides", entry.getName()), e
                                 );
                             }
-                        }
-                    }
-                } catch (IOException e) {
-                    throw new GenericException("Failed to extract overrides", e);
-                }
-                return extracted.stream();
-            });
+                        });
+                })
+                // need to eager load the stream while the zip file is open
+                .collect(Collectors.toList())
+                .stream();
+        } catch (IOException e) {
+            throw new GenericException("Failed to extract overrides", e);
+        }
     }
 
     private void applyModLoader(
