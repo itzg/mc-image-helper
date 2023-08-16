@@ -1,5 +1,6 @@
 package me.itzg.helpers.errors;
 
+import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.IExitCodeExceptionMapper;
 
 public class ExitCodeMapper implements IExitCodeExceptionMapper {
@@ -15,6 +16,6 @@ public class ExitCodeMapper implements IExitCodeExceptionMapper {
       return annotation.value();
     }
 
-    return 1;
+    return ExitCode.SOFTWARE;
   }
 }
