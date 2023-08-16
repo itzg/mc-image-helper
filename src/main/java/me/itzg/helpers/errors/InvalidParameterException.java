@@ -1,6 +1,8 @@
 package me.itzg.helpers.errors;
 
-@EmitsExitCode(200)
+import picocli.CommandLine.ExitCode;
+
+@EmitsExitCode(ExitCode.USAGE)
 public class InvalidParameterException extends RuntimeException {
 
   public InvalidParameterException(String message) {

@@ -35,6 +35,7 @@ import me.itzg.helpers.sync.InterpolateCommand;
 import me.itzg.helpers.sync.MulitCopyCommand;
 import me.itzg.helpers.sync.Sync;
 import me.itzg.helpers.sync.SyncAndInterpolate;
+import me.itzg.helpers.users.ManageUsersCommand;
 import me.itzg.helpers.vanillatweaks.VanillaTweaksCommand;
 import me.itzg.helpers.versions.CompareVersionsCommand;
 import me.itzg.helpers.versions.JavaReleaseCommand;
@@ -66,6 +67,7 @@ import picocli.CommandLine.Option;
         InstallQuiltCommand.class,
         InterpolateCommand.class,
         JavaReleaseCommand.class,
+        ManageUsersCommand.class,
         MavenDownloadCommand.class,
         ModrinthCommand.class,
         MulitCopyCommand.class,

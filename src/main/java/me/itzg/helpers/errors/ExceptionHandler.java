@@ -3,6 +3,7 @@ package me.itzg.helpers.errors;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.McImageHelper;
 import picocli.CommandLine;
+import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.IExecutionExceptionHandler;
 import picocli.CommandLine.IExitCodeExceptionMapper;
 import picocli.CommandLine.ParseResult;
@@ -33,6 +34,6 @@ public class ExceptionHandler implements IExecutionExceptionHandler {
     }
 
     final IExitCodeExceptionMapper mapper = commandLine.getExitCodeExceptionMapper();
-    return mapper != null ? mapper.getExitCode(e) : 1;
+    return mapper != null ? mapper.getExitCode(e) : ExitCode.SOFTWARE;
   }
 }
