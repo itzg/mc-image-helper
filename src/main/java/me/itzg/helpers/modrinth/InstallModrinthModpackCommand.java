@@ -116,7 +116,7 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
         } else {
             return new ModrinthApiPackFetcher(
                 apiClient, projectRef, this.outputDirectory, this.gameVersion,
-                this.defaultVersionType, this.loader.asLoader());
+                defaultVersionType, loader != null ? loader.asLoader() : null);
         }
     }
 }
