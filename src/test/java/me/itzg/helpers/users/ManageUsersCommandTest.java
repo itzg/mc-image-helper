@@ -617,6 +617,37 @@ class ManageUsersCommandTest {
 
         @ParameterizedTest
         @EnumSource(Type.class)
+        void localFileDestinationExists(Type type, WireMockRuntimeInfo wmInfo) throws IOException {
+
+            final Path expectedFile = tempDir.resolve(
+                type == Type.JAVA_OPS ? "ops.json" : "whitelist.json"
+            );
+
+            Files.write(expectedFile, Collections.singletonList("[]"));
+
+            @Language("JSON") final String sourceContent = "[{\"name\": \"testing\", \"uuid\": \"dec16109-30d4-4425-bcc1-5222255eb6b0\"}]";
+
+            final Path inputFile = Files.write(tempDir.resolve("input.json"),
+                Collections.singletonList(sourceContent));
+
+            final int exitCode = new CommandLine(
+                new ManageUsersCommand()
+            )
+                .execute(
+                    "--mojang-api-base-url", wmInfo.getHttpBaseUrl(),
+                    "--type", type.name(),
+                    "--output-directory", tempDir.toString(),
+                    "--input-is-file",
+                    inputFile.toString()
+                );
+
+            assertThat(exitCode).isEqualTo(ExitCode.OK);
+
+            assertThat(expectedFile).hasContent(sourceContent);
+        }
+
+        @ParameterizedTest
+        @EnumSource(Type.class)
         void remoteFile(Type type, WireMockRuntimeInfo wmInfo) {
 
             @Language("JSON") final String sourceContent = "[{\"name\": \"testing\", \"uuid\": \"dec16109-30d4-4425-bcc1-5222255eb6b0\"}]";

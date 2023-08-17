@@ -8,6 +8,7 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -48,6 +49,7 @@ public class ManageUsersCommand implements Callable<Integer> {
     };
     private static final ComparableVersion MIN_VERSION_USES_JSON = new ComparableVersion("1.7.3");
 
+    @SuppressWarnings("unused")
     @Option(names = {"--help", "-h"}, usageHelp = true)
     boolean help;
 
@@ -322,7 +324,7 @@ public class ManageUsersCommand implements Callable<Integer> {
         else {
             log.debug("Copying from {} to {}", filePathUrl, outputFile);
 
-            Files.copy(Paths.get(filePathUrl), outputFile);
+            Files.copy(Paths.get(filePathUrl), outputFile, StandardCopyOption.REPLACE_EXISTING);
         }
     }
 
