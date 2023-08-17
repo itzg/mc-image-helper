@@ -7,23 +7,24 @@ import me.itzg.helpers.errors.*;
 import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.http.FailedRequestException;
 import me.itzg.helpers.modrinth.model.*;
+import org.jetbrains.annotations.Nullable;
 import reactor.core.publisher.Mono;
 
 @Slf4j
 public class ModrinthApiPackFetcher implements ModrinthPackFetcher {
-    private ModrinthApiClient apiClient;
+    private final ModrinthApiClient apiClient;
 
-    private ProjectRef modpackProjectRef;
+    private final ProjectRef modpackProjectRef;
 
-    private Loader modLoaderType;
-    private String gameVersion;
-    private VersionType defaultVersionType;
-    private Path modpackOutputDirectory;
+    private final Loader modLoaderType;
+    private final String gameVersion;
+    private final VersionType defaultVersionType;
+    private final Path modpackOutputDirectory;
 
     ModrinthApiPackFetcher(
             ModrinthApiClient apiClient, ProjectRef projectRef,
             Path outputDirectory, String gameVersion,
-            VersionType defaultVersionType, Loader loader)
+            VersionType defaultVersionType, @Nullable Loader loader)
     {
         this.apiClient = apiClient;
         this.modpackProjectRef = projectRef;
@@ -38,7 +39,7 @@ public class ModrinthApiPackFetcher implements ModrinthPackFetcher {
             .filter(version -> needsInstall(prevManifest, version))
             .flatMap(version ->
                 Mono.just(ModrinthApiClient.pickVersionFile(version)))
-            .flatMap(versionFile -> apiClient.downloadMrPack(versionFile));
+            .flatMap(apiClient::downloadMrPack);
     }
 
     private Mono<Version> resolveModpackVersion() {

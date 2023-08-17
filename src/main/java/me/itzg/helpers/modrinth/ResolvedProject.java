@@ -6,7 +6,7 @@ import me.itzg.helpers.modrinth.model.Project;
 
 @RequiredArgsConstructor
 @Data
-class ResolvedProject {
+public class ResolvedProject {
     final private ProjectRef projectRef;
     final private Project project;
 }
