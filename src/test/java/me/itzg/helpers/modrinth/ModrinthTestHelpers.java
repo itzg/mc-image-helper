@@ -1,10 +1,5 @@
 package me.itzg.helpers.modrinth;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
@@ -14,11 +9,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
-import me.itzg.helpers.modrinth.model.DependencyId;
-import me.itzg.helpers.modrinth.model.ModpackIndex;
-import me.itzg.helpers.modrinth.model.Project;
-import me.itzg.helpers.modrinth.model.Version;
-import me.itzg.helpers.modrinth.model.VersionFile;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
+
+import me.itzg.helpers.modrinth.model.*;
 
 class ModrinthTestHelpers {
     static final ObjectMapper mapper = new ObjectMapper();
@@ -26,13 +24,14 @@ class ModrinthTestHelpers {
     static Version createModrinthProjectVersion(String versionId) {
         return new Version()
             .setId(versionId)
-            .setFiles(new ArrayList<>());
+            .setFiles(new ArrayList<VersionFile>());
     }
 
     static void stubModrinthModpackApi(
             WireMockRuntimeInfo wm, String projectName, String projectId,
             Version projectVersion, byte[] expectedData
-        ) {
+        ) throws JsonProcessingException, IOException
+    {
         String modpackDownloadPath = "/download/test_project1.mrpack";
 
         JsonNode responseProject = mapper.valueToTree(
@@ -46,7 +45,7 @@ class ModrinthTestHelpers {
             .setUrl(wm.getHttpBaseUrl() + modpackDownloadPath));
         JsonNode responseVersion = mapper.valueToTree(projectVersion);
 
-        List<Version> projectVersionList = new ArrayList<>();
+        List<Version> projectVersionList = new ArrayList<Version>();
         projectVersionList.add(projectVersion);
         JsonNode responseVersionList = mapper.valueToTree(projectVersionList);
 
@@ -56,10 +55,6 @@ class ModrinthTestHelpers {
             .withJsonBody(responseProject)));
         stubFor(get(urlPathMatching("/v2/project/" + projectId + "/version"))
             .withQueryParam("loader", equalTo("[\"forge\"]"))
-            .willReturn(ok()
-            .withHeader("Content-Type", "application/json")
-            .withJsonBody(responseVersionList)));
-        stubFor(get(urlPathMatching("/v2/project/" + projectId + "/version"))
             .willReturn(ok()
             .withHeader("Content-Type", "application/json")
             .withJsonBody(responseVersionList)));
@@ -77,8 +72,8 @@ class ModrinthTestHelpers {
         ModpackIndex index = new ModpackIndex()
             .setName(null)
             .setGame("minecraft")
-            .setDependencies(new HashMap<>())
-            .setFiles(new ArrayList<>())
+            .setDependencies(new HashMap<DependencyId, String>())
+            .setFiles(new ArrayList<ModpackIndex.ModpackFile>())
             .setVersionId(null);
         index.getDependencies().put(DependencyId.minecraft, "1.20.1");
 
@@ -110,7 +105,7 @@ class ModrinthTestHelpers {
             .willReturn(ok().withBody(data)));
 
         ModpackIndex.ModpackFile modpackFile = new ModpackIndex.ModpackFile()
-            .setDownloads(new ArrayList<>())
+            .setDownloads(new ArrayList<URI>())
             .setPath(relativeFileLocation);
         modpackFile.getDownloads().add(
             new URI(wmBaseUrl + "/files/" + relativeFileLocation));

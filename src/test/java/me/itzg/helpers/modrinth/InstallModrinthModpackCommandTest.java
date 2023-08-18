@@ -1,27 +1,31 @@
 package me.itzg.helpers.modrinth;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
-import static me.itzg.helpers.modrinth.ModrinthTestHelpers.*;
-import static org.assertj.core.api.Assertions.assertThat;
-
-import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
-import com.github.tomakehurst.wiremock.junit5.WireMockTest;
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.nio.file.Path;
-import me.itzg.helpers.files.Manifests;
-import me.itzg.helpers.modrinth.model.ModpackIndex;
-import me.itzg.helpers.modrinth.model.ModpackIndex.ModpackFile;
-import me.itzg.helpers.modrinth.model.Version;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import static org.assertj.core.api.Assertions.*;
+import static me.itzg.helpers.modrinth.ModrinthTestHelpers.*;
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
+
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.nio.file.*;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+
+import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
+import com.github.tomakehurst.wiremock.junit5.WireMockTest;
+
+import me.itzg.helpers.files.Manifests;
+import me.itzg.helpers.modrinth.model.*;
+import me.itzg.helpers.modrinth.model.ModpackIndex.ModpackFile;
+
 @WireMockTest
 public class InstallModrinthModpackCommandTest {
-    private final String projectName = "test_project1";
-    private final String projectId = "efgh5678";
-    private final String projectVersionId = "abcd1234";
-    private final Version projectVersion =
+    private String projectName = "test_project1";
+    private String projectId = "efgh5678";
+    private String projectVersionId = "abcd1234";
+    private Version projectVersion =
         createModrinthProjectVersion(projectVersionId);
 
     static InstallModrinthModpackCommand createInstallModrinthModpackCommand(
@@ -42,7 +46,7 @@ public class InstallModrinthModpackCommandTest {
     @Test
     void downloadsAndInstallsModrinthModpack(
             WireMockRuntimeInfo wm, @TempDir Path tempDir
-        ) throws IOException, URISyntaxException
+        ) throws JsonProcessingException, IOException, URISyntaxException
     {
         String expectedFileData = "some test data";
         String relativeFilePath = "test_file";
@@ -68,40 +72,10 @@ public class InstallModrinthModpackCommandTest {
     }
 
     @Test
-    void downloadsAndInstallsModrinthModpack_versionNumberAndAnyLoader(
-            WireMockRuntimeInfo wm, @TempDir Path tempDir
-        ) throws IOException, URISyntaxException
-    {
-        String expectedFileData = "some test data";
-        String relativeFilePath = "test_file";
-        ModpackFile testFile = createHostedModpackFile(
-            relativeFilePath, expectedFileData, wm.getHttpBaseUrl());
-
-        ModpackIndex index = createBasicModpackIndex();
-        index.getFiles().add(testFile);
-
-        String projectVersionNumber = "1.6.1";
-        stubModrinthModpackApi(
-            wm, projectName, this.projectId,
-            createModrinthProjectVersion(projectVersionId).setVersionNumber(projectVersionNumber),
-            createModrinthPack(index)
-        );
-
-        InstallModrinthModpackCommand commandUT =
-            createInstallModrinthModpackCommand(wm.getHttpBaseUrl(), tempDir,
-                projectName, projectVersionNumber, null);
-
-        int commandStatus = commandUT.call();
-
-        assertThat(commandStatus).isEqualTo(0);
-        assertThat(tempDir.resolve(relativeFilePath)).content()
-            .isEqualTo(expectedFileData);
-    }
-
-    @Test
     void createsModrinthModpackManifestForModpackInstallation(
                 WireMockRuntimeInfo wm, @TempDir Path tempDir
-        ) throws IOException {
+        ) throws JsonProcessingException, IOException, URISyntaxException
+    {
         ModpackIndex index = createBasicModpackIndex();
 
         stubModrinthModpackApi(
@@ -133,7 +107,7 @@ public class InstallModrinthModpackCommandTest {
     @Test
     void removesFilesNoLongerNeedeByUpdatedModpack(
             WireMockRuntimeInfo wm, @TempDir Path tempDir
-        ) throws IOException, URISyntaxException
+        ) throws JsonProcessingException, IOException, URISyntaxException
     {
         String expectedFileData = "some test data";
         String relativeFilePath = "test_file";
@@ -172,7 +146,7 @@ public class InstallModrinthModpackCommandTest {
     @Test
     void downloadsAndInstallsGenericModpacksOverHttp(
             WireMockRuntimeInfo wm, @TempDir Path tempDir
-        ) throws IOException, URISyntaxException
+        ) throws JsonProcessingException, IOException, URISyntaxException
     {
         String expectedFileData = "some test data";
         String relativeFilePath = "test_file";
