@@ -25,7 +25,6 @@ import me.itzg.helpers.modrinth.model.Project;
 import me.itzg.helpers.modrinth.model.Version;
 import me.itzg.helpers.modrinth.model.VersionFile;
 import me.itzg.helpers.modrinth.model.VersionType;
-import org.jetbrains.annotations.Nullable;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
@@ -39,7 +38,7 @@ public class ModrinthApiClient implements AutoCloseable {
         sharedFetch = Fetch.sharedFetch(command, options);
     }
 
-    public static VersionFile pickVersionFile(Version version) {
+    static VersionFile pickVersionFile(Version version) {
         if (version.getFiles().size() == 1) {
             return version.getFiles().get(0);
         }
@@ -115,7 +114,7 @@ public class ModrinthApiClient implements AutoCloseable {
      * @param gameVersion can be null for any
      */
     public Mono<Version> resolveProjectVersion(Project project, ProjectRef projectRef,
-                                               @Nullable Loader loader, String gameVersion,
+                                               Loader loader, String gameVersion,
                                                VersionType defaultVersionType) {
         if (projectRef.hasVersionName()) {
             return getVersionsForProject(project.getId(), loader, gameVersion)
@@ -162,7 +161,7 @@ public class ModrinthApiClient implements AutoCloseable {
      * @param gameVersion can be null for any
      */
     public Mono<List<Version>> getVersionsForProject(String projectIdOrSlug,
-                                                     @Nullable Loader loader, String gameVersion
+                                                     Loader loader, String gameVersion
     ) {
         return sharedFetch.fetch(
                 uriBuilder.resolve("/v2/project/{id|slug}/version",
