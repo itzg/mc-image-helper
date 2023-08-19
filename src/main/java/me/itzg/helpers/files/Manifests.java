@@ -94,8 +94,18 @@ public class Manifests {
     }
 
     public static boolean allFilesPresent(Path basePath, BaseManifest manifest) {
+        return allFilesPresent(basePath, manifest, null);
+    }
+
+    /**
+     * @param ignoreMissingFiles relative paths of files to ignore if they're missing
+     */
+    public static boolean allFilesPresent(Path basePath, BaseManifest manifest, List<String> ignoreMissingFiles) {
         return manifest.getFiles().stream()
-            .allMatch(p -> Files.exists(basePath.resolve(p)));
+            .allMatch(p ->
+                    (ignoreMissingFiles != null && ignoreMissingFiles.contains(p))
+                || Files.exists(basePath.resolve(p))
+            );
     }
 
     /**

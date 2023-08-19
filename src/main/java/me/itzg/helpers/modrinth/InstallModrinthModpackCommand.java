@@ -2,8 +2,10 @@ package me.itzg.helpers.modrinth;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.concurrent.Callable;
 import lombok.extern.slf4j.Slf4j;
+import me.itzg.helpers.McImageHelper;
 import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.files.ResultsFileWriter;
 import me.itzg.helpers.http.SharedFetchArgs;
@@ -62,6 +64,12 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
         description = "Default: ${DEFAULT-VALUE}"
     )
     String baseUrl;
+
+    @Option(names = "--ignore-missing-files",
+        split = McImageHelper.SPLIT_COMMA_NL, splitSynopsisLabel = McImageHelper.SPLIT_SYNOPSIS_COMMA_NL,
+        description = "These files will be ignored when evaluating if the modpack is up to date"
+    )
+    List<String> ignoreMissingFiles;
 
     @CommandLine.ArgGroup(exclusive = false)
     SharedFetchArgs sharedFetchArgs = new SharedFetchArgs();

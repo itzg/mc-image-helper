@@ -1,7 +1,9 @@
 package me.itzg.helpers.modrinth;
 
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Objects;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.files.Manifests;
@@ -22,6 +24,9 @@ public class ModrinthApiPackFetcher implements ModrinthPackFetcher {
     private final VersionType defaultVersionType;
     private final boolean forceSynchronize;
     private final Path modpackOutputDirectory;
+
+    @Setter
+    private List<String> ignoreMissingFiles;
 
     ModrinthApiPackFetcher(
             ModrinthApiClient apiClient, ProjectRef projectRef,
@@ -65,7 +70,7 @@ public class ModrinthApiPackFetcher implements ModrinthPackFetcher {
         if (prevManifest != null) {
             if (Objects.equals(prevManifest.getProjectSlug(), projectSlug)
                 && Objects.equals(prevManifest.getVersionId(), version.getId())
-                && Manifests.allFilesPresent(modpackOutputDirectory, prevManifest)
+                && Manifests.allFilesPresent(modpackOutputDirectory, prevManifest, ignoreMissingFiles)
             ) {
                 if (forceSynchronize) {
                     log.info("Force synchronize requested for modpack {} version {}",
