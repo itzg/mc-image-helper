@@ -1,6 +1,7 @@
 package me.itzg.helpers.modrinth;
 
-import static me.itzg.helpers.McImageHelper.OPTION_SPLIT_COMMAS;
+import static me.itzg.helpers.McImageHelper.SPLIT_COMMA_NL;
+import static me.itzg.helpers.McImageHelper.SPLIT_SYNOPSIS_COMMA_NL;
 import static me.itzg.helpers.http.Fetch.fetch;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -41,7 +42,8 @@ import picocli.CommandLine.Option;
 @Slf4j
 public class ModrinthCommand implements Callable<Integer> {
 
-    @Option(names = "--projects", description = "Project ID or Slug", split = OPTION_SPLIT_COMMAS,
+    @Option(names = "--projects", description = "Project ID or Slug",
+        split = SPLIT_COMMA_NL, splitSynopsisLabel = SPLIT_SYNOPSIS_COMMA_NL,
         paramLabel = "id|slug"
     )
     List<String> projects;

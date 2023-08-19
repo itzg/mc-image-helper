@@ -1,0 +1,150 @@
+[
+  {
+    "id": "o9dFD9SO",
+    "project_id": "9s6osm5g",
+    "author_id": "1Hsaf75m",
+    "featured": false,
+    "name": "[Fabric 1.19-1.19.2] v8.3.103",
+    "version_number": "8.3.103+fabric",
+    "changelog": "",
+    "changelog_url": null,
+    "date_published": "2023-07-09T13:47:49.876681Z",
+    "downloads": 29986,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+      {
+        "hashes": {
+          "sha1": "475ab5dec26fa5d25b1d899b8261b054fbc283d6",
+          "sha512": "b490a5df321d2f3907a47d18e9549751bb97bc9de6d04aa265cd9000321b516627bc57b1ef30ae4d854d558b2936c5d3413d34d784849e0c3ffa083605ca8d3d"
+        },
+        "url": "{{request.baseUrl}}/cdn/data/9s6osm5g/versions/o9dFD9SO/cloth-config-8.3.103-fabric.jar",
+        "filename": "cloth-config-8.3.103-fabric.jar",
+        "primary": true,
+        "size": 1153446,
+        "file_type": null
+      }
+    ],
+    "dependencies": [],
+    "game_versions": [
+      "1.19",
+      "1.19.1",
+      "1.19.2"
+    ],
+    "loaders": [
+      "fabric"
+    ]
+  },
+  {
+    "id": "EXrxCjl6",
+    "project_id": "9s6osm5g",
+    "author_id": "1Hsaf75m",
+    "featured": false,
+    "name": "[Fabric 1.19-1.19.2] v8.2.88",
+    "version_number": "8.2.88+fabric",
+    "changelog": "",
+    "changelog_url": null,
+    "date_published": "2022-09-07T15:01:19.140646Z",
+    "downloads": 313893,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+      {
+        "hashes": {
+          "sha512": "6a135c608dadaf5dcc07601cbca456170025e39b8adec43915e08fc140ab5b3f0fb19e3123994e30cec88770a444265a1251289422cda2944c9a17007e58065c",
+          "sha1": "4b93c69f22e9bdeeca201992e99632824b55f9cb"
+        },
+        "url": "{{request.baseUrl}}/cdn/data/9s6osm5g/versions/EXrxCjl6/cloth-config-8.2.88-fabric.jar",
+        "filename": "cloth-config-8.2.88-fabric.jar",
+        "primary": true,
+        "size": 1141796,
+        "file_type": null
+      }
+    ],
+    "dependencies": [],
+    "game_versions": [
+      "1.19",
+      "1.19.1",
+      "1.19.2"
+    ],
+    "loaders": [
+      "fabric"
+    ]
+  },
+  {
+    "id": "JaKvOQIz",
+    "project_id": "9s6osm5g",
+    "author_id": "1Hsaf75m",
+    "featured": false,
+    "name": "[Fabric 1.19-1.19.2] v8.1.77",
+    "version_number": "8.1.77+fabric",
+    "changelog": "",
+    "changelog_url": null,
+    "date_published": "2022-09-04T11:34:52.808375Z",
+    "downloads": 2184,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+      {
+        "hashes": {
+          "sha1": "2fae6b5b8985babc340828ac45958be7b2dd2253",
+          "sha512": "c638fc635f0e43bfc08536071c62db09240adec84e182352268e7b76ff23aeb5e26a049594888cf1d8294885b2d8094d68ffe63a5e2ac23055328666d7d943cc"
+        },
+        "url": "{{request.baseUrl}}/cdn/data/9s6osm5g/versions/JaKvOQIz/cloth-config-8.1.77-fabric.jar",
+        "filename": "cloth-config-8.1.77-fabric.jar",
+        "primary": true,
+        "size": 1132338,
+        "file_type": null
+      }
+    ],
+    "dependencies": [],
+    "game_versions": [
+      "1.19",
+      "1.19.1",
+      "1.19.2"
+    ],
+    "loaders": [
+      "fabric"
+    ]
+  },
+  {
+    "id": "hg9bSXT3",
+    "project_id": "9s6osm5g",
+    "author_id": "1Hsaf75m",
+    "featured": false,
+    "name": "[Fabric 1.19-1.19.2] v8.0.75",
+    "version_number": "8.0.75+fabric",
+    "changelog": "",
+    "changelog_url": null,
+    "date_published": "2022-07-29T18:43:05.481036Z",
+    "downloads": 16409,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+      {
+        "hashes": {
+          "sha512": "a6fb5bbb4ddd14ecb3a907e48a3ce2485430e4713a8b0326b001c4a25ed2c1d9e36e1279f3bbb99e8cabcf13801eff0d43563c3505ee80687347f73212661923",
+          "sha1": "1d6175cee479a4fac60fc314e988e70485bd29b1"
+        },
+        "url": "{{request.baseUrl}}/cdn/data/9s6osm5g/versions/8.0.75%2Bfabric/cloth-config-8.0.75-fabric.jar",
+        "filename": "cloth-config-8.0.75-fabric.jar",
+        "primary": true,
+        "size": 1129049,
+        "file_type": null
+      }
+    ],
+    "dependencies": [],
+    "game_versions": [
+      "1.19",
+      "1.19.1",
+      "1.19.2"
+    ],
+    "loaders": [
+      "fabric"
+    ]
+  }
+]

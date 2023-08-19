@@ -1,0 +1,737 @@
+[
+  {
+    "id": "fO05PwUR",
+    "project_id": "P7dR8mSH",
+    "author_id": "JZA4dW8o",
+    "featured": false,
+    "name": "[1.19.2] Fabric API 0.76.1+1.19.2",
+    "version_number": "0.76.1+1.19.2",
+    "changelog": "- Bump version (modmuss50)\n- Fix #3255 (#3257) (modmuss)\n",
+    "changelog_url": null,
+    "date_published": "2023-08-13T15:45:54.812537Z",
+    "downloads": 17072,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+      {
+        "hashes": {
+          "sha512": "e2954043f33415b3d2cc56cb1c05dadd0ffe13eb865aa9e9c5063b66021dc110a891d80a3b31773c8c8a5ba34db51af077c71d2867d97570b304ee8525a769dd",
+          "sha1": "1f4ea036c5cdc7931a663deb85abc279d00c81c5"
+        },
+        "url": "{{request.baseUrl}}/cdn/data/P7dR8mSH/versions/fO05PwUR/fabric-api-0.76.1%2B1.19.2.jar",
+        "filename": "fabric-api-0.76.1+1.19.2.jar",
+        "primary": true,
+        "size": 1882037,
+        "file_type": null
+      }
+    ],
+    "dependencies": [],
+    "game_versions": [
+      "1.19.2"
+    ],
+    "loaders": [
+      "fabric"
+    ]
+  },
+  {
+    "id": "hfsU4hXq",
+    "project_id": "P7dR8mSH",
+    "author_id": "JZA4dW8o",
+    "featured": false,
+    "name": "[1.19.2] Fabric API 0.76.0+1.19.2",
+    "version_number": "0.76.0+1.19.2",
+    "changelog": "- Bump version (Amirhan-Taipovjan-Greatest-I)\n- Fix Programmer Art resource pack injection support (#2956) (Julian Burner)\n- Create zh_cn.json (#2945) (RawDiamondMC)\n- Update ko_kr.json (#2927) (#2941) (Alpha)\n- Update pl_pl.json (#2929) (Yoosk)\n- Conventional Biome Tags tweaks (#2955) (Maity)\n- EquipmentSlotProvider: Add javadoc link to getPreferredEquipmentSlot (#2935) (Juuz)\n- Fixed end biome source injection (#2940) (TelepathicGrunt)\n- Add 'Windswept Hills' biome convention tag (#2878) (Michael)\n- Update et_ee.json (#2894) (Madis Otenurm)\n",
+    "changelog_url": null,
+    "date_published": "2023-03-15T13:53:44.858507Z",
+    "downloads": 486137,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+      {
+        "hashes": {
+          "sha512": "4524c26af66bf266eb076bfd1682fa06d36f0b8ee7af46fc070447e2fb31885aa3d212a5a7dbfaebf57ba69e939cbd2d6e500055c246640cd0d5845c7712d625",
+          "sha1": "f29a349b29324338ebe3acaa2914637008be15f4"
+        },
+        "url": "{{request.baseUrl}}/cdn/data/P7dR8mSH/versions/hfsU4hXq/fabric-api-0.76.0%2B1.19.2.jar",
+        "filename": "fabric-api-0.76.0+1.19.2.jar",
+        "primary": true,
+        "size": 1882121,
+        "file_type": null
+      }
+    ],
+    "dependencies": [],
+    "game_versions": [
+      "1.19.2"
+    ],
+    "loaders": [
+      "fabric"
+    ]
+  },
+  {
+    "id": "6iOab8Tp",
+    "project_id": "P7dR8mSH",
+    "author_id": "JZA4dW8o",
+    "featured": false,
+    "name": "[1.19.2] Fabric API 0.75.1+1.19.2",
+    "version_number": "0.75.1+1.19.2",
+    "changelog": "- Bump version (modmuss50)\n- Fix #2925: deprecate item functions in BlockRenderLayerMap (#2930) (Technici4n)\n",
+    "changelog_url": null,
+    "date_published": "2023-02-24T10:37:47.950286Z",
+    "downloads": 27983,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+      {
+        "hashes": {
+          "sha1": "8c39ce0a82cb2b5f9e909f47a61d7825e29ccf05",
+          "sha512": "df9727346b1b645364dd9f847e362162aff47731fc4868e9a9c3d7402efd3276e004ed9d73809a4e80ddf0d7551dba49cec7e9abcac46ec9d7639f2491b5685a"
+        },
+        "url": "{{request.baseUrl}}/cdn/data/P7dR8mSH/versions/6iOab8Tp/fabric-api-0.75.1%2B1.19.2.jar",
+        "filename": "fabric-api-0.75.1+1.19.2.jar",
+        "primary": true,
+        "size": 1881109,
+        "file_type": null
+      }
+    ],
+    "dependencies": [],
+    "game_versions": [
+      "1.19.2"
+    ],
+    "loaders": [
+      "fabric"
+    ]
+  },
+  {
+    "id": "VOZ8sKAb",
+    "project_id": "P7dR8mSH",
+    "author_id": "JZA4dW8o",
+    "featured": false,
+    "name": "[1.19.2] Fabric API 0.75.0+1.19.2",
+    "version_number": "0.75.0+1.19.2",
+    "changelog": "- Bump version (modmuss50)\n- Indigo shade related fixes and other changes (#2898) (PepperCode1)\n",
+    "changelog_url": null,
+    "date_published": "2023-02-23T13:39:07.747393Z",
+    "downloads": 3434,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+      {
+        "hashes": {
+          "sha512": "5879866d0390b52202eb79d37d36705121ee0c9499c764432751336949649407378104248190e08ba1dcfe7e09af5fed1992fc6b5462d7f7a406891decd13ef6",
+          "sha1": "f088148f1fa5229902201c2e035c67442c90e276"
+        },
+        "url": "{{request.baseUrl}}/cdn/data/P7dR8mSH/versions/VOZ8sKAb/fabric-api-0.75.0%2B1.19.2.jar",
+        "filename": "fabric-api-0.75.0+1.19.2.jar",
+        "primary": true,
+        "size": 1880954,
+        "file_type": null
+      }
+    ],
+    "dependencies": [],
+    "game_versions": [
+      "1.19.2"
+    ],
+    "loaders": [
+      "fabric"
+    ]
+  },
+  {
+    "id": "wRYBRKfJ",
+    "project_id": "P7dR8mSH",
+    "author_id": "JZA4dW8o",
+    "featured": false,
+    "name": "[1.19.2] Fabric API 0.73.2+1.19.2",
+    "version_number": "0.73.2+1.19.2",
+    "changelog": "- Bump versions (modmuss50)\n- Fix vanilla behaviour change causing Dragon Breath's to leave an empty Glass Bottle in Brewing Stand (#2874) (modmuss50)\n- Fix memory leak by using weak set for ArrayBackedEvent list (#2848) (BasiqueEvangelist)\n",
+    "changelog_url": null,
+    "date_published": "2023-01-31T11:10:52.299158Z",
+    "downloads": 31231,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+      {
+        "hashes": {
+          "sha512": "2d26ac60a61dc00dec356157088fc7844228d60179ae0ff98f123eab127a4b3b109dcc30a8763a2484b12d3dd2f3c040e35c61e1a28145c3102d8871476fe621",
+          "sha1": "7a351ef5e53b4e708172ea0e3b56527a2fd7ffce"
+        },
+        "url": "{{request.baseUrl}}/cdn/data/P7dR8mSH/versions/wRYBRKfJ/fabric-api-0.73.2%2B1.19.2.jar",
+        "filename": "fabric-api-0.73.2+1.19.2.jar",
+        "primary": true,
+        "size": 1881399,
+        "file_type": null
+      }
+    ],
+    "dependencies": [],
+    "game_versions": [
+      "1.19.2"
+    ],
+    "loaders": [
+      "fabric"
+    ]
+  },
+  {
+    "id": "6XyLcjn4",
+    "project_id": "P7dR8mSH",
+    "author_id": "JZA4dW8o",
+    "featured": false,
+    "name": "[1.19.2] Fabric API 0.73.0+1.19.2",
+    "version_number": "0.73.0+1.19.2",
+    "changelog": "- Bump version (Technici4n)\n- Fix ItemStack.EMPTY.getItem() rarely returning null due to threading (#2826) (Technici4n)\n- [1.19.2] Implement custom SignTypes (#2585) (AlphaMode, apple502j, modmuss50)\n",
+    "changelog_url": null,
+    "date_published": "2023-01-20T19:28:50.254533Z",
+    "downloads": 25275,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+      {
+        "hashes": {
+          "sha1": "ff72eca059050bb6d13dbc4e9f140a7e4749612e",
+          "sha512": "dc1de5b42d76267ff5483e586fa8dd8a6a6d03a3c8451a832dc379b8047cc6378c2cdfd6fd399c34b5c27bd0dcac9c7b358960a16809058fa5914e62fb8a2621"
+        },
+        "url": "{{request.baseUrl}}/cdn/data/P7dR8mSH/versions/6XyLcjn4/fabric-api-0.73.0%2B1.19.2.jar",
+        "filename": "fabric-api-0.73.0+1.19.2.jar",
+        "primary": true,
+        "size": 1881136,
+        "file_type": null
+      }
+    ],
+    "dependencies": [],
+    "game_versions": [
+      "1.19.2"
+    ],
+    "loaders": [
+      "fabric"
+    ]
+  },
+  {
+    "id": "qbOkGdTB",
+    "project_id": "P7dR8mSH",
+    "author_id": "JZA4dW8o",
+    "featured": false,
+    "name": "[1.19.2] Fabric API 0.72.0+1.19.2",
+    "version_number": "0.72.0+1.19.2",
+    "changelog": "- Bump versions (modmuss50)\n- Two Transfer API fixes (#2818) (Technici4n)\n- Entity Selector Option API (#2667) (apple502j, modmuss50, Technici4n)\n- add fabric-recipe-api-v1: Custom ingredients (#2586) (modmuss50, apple502j, modmuss50)\n",
+    "changelog_url": null,
+    "date_published": "2023-01-05T13:44:07.587844Z",
+    "downloads": 23419,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+      {
+        "hashes": {
+          "sha512": "17ca188cb8edd753ca0d2208ddd131c5721bc739214a29b865888b577d5c6871c23ce5bd474525f920348c6a0149660eefc9835eadc58b7029febd0153ba46f7",
+          "sha1": "2c4c698167e23e30a5132a2ef3523a3b0e704352"
+        },
+        "url": "{{request.baseUrl}}/cdn/data/P7dR8mSH/versions/qbOkGdTB/fabric-api-0.72.0%2B1.19.2.jar",
+        "filename": "fabric-api-0.72.0+1.19.2.jar",
+        "primary": true,
+        "size": 1877493,
+        "file_type": null
+      }
+    ],
+    "dependencies": [],
+    "game_versions": [
+      "1.19.2"
+    ],
+    "loaders": [
+      "fabric"
+    ]
+  },
+  {
+    "id": "QL74kcxU",
+    "project_id": "P7dR8mSH",
+    "author_id": "JZA4dW8o",
+    "featured": false,
+    "name": "[1.19.2] Fabric API 0.71.0+1.19.2",
+    "version_number": "0.71.0+1.19.2",
+    "changelog": "- Bump versions (modmuss50)\n- Biome modification API small enhancements  (#2789) (apple502j)\n- Fixed blocks with vanilla loot tables making strict validation of datagen fail (#2816) (Shnupbups)\n- Interaction events fixes (#2774) (Technici4n)\n- Indigo and Renderer API fixes related to fallback consumers (#2775) (Technici4n)\n- Keybindings API: New Years cleanup (#2799) (apple502j)\n- Replace old nullability comments with annotations (#2800) (Silver)\n- Catch exception inside client-side JOIN event (#2813) (apple502j, haykam821)\n",
+    "changelog_url": null,
+    "date_published": "2023-01-02T14:45:26.591744Z",
+    "downloads": 5965,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+      {
+        "hashes": {
+          "sha1": "3f2a4b23c5ee54e632c03c2af9b4817b7ca2dd3c",
+          "sha512": "5cea3989b4fc36824e4c4f904bff8bb8687cd2cf46ec7b7e7a6c669751b0daf661ea1c109a5be70dffd7ace4eeae2b3c1c53adda90013bf6b6bb328651e93a12"
+        },
+        "url": "{{request.baseUrl}}/cdn/data/P7dR8mSH/versions/QL74kcxU/fabric-api-0.71.0%2B1.19.2.jar",
+        "filename": "fabric-api-0.71.0+1.19.2.jar",
+        "primary": true,
+        "size": 1827530,
+        "file_type": null
+      }
+    ],
+    "dependencies": [],
+    "game_versions": [
+      "1.19.2"
+    ],
+    "loaders": [
+      "fabric"
+    ]
+  },
+  {
+    "id": "mrB7EiW4",
+    "project_id": "P7dR8mSH",
+    "author_id": "JZA4dW8o",
+    "featured": false,
+    "name": "[1.19.2] Fabric API 0.70.0+1.19.2",
+    "version_number": "0.70.0+1.19.2",
+    "changelog": "- Bump versions (modmuss50)\n- Block Entity Lifecycle fixes (#2783) (Technici4n)\n- Don't break the ordering of ResourcePackProviders (#2784) (Technici4n)\n- Add Traditional Chinese (#2776) (Miku)\n- API for brewing recipes which use Ingredients instead of Items (#2670) (Daomephsta, Juuz)\n- Deprecated BlockEntityRendererRegistry in favor of vanilla's BlockEntityRendererFactories (#2582) (AlphaMode, haykam821)\n- Fix #602: Allow querying registered `DynamicItemRenderer`s (#2779) (Technici4n)\n- Javadoc and typo fixes (#2782) (apple502j)\n- Fix block api resources path (#2749) (Sideroo)\n- Small Cleanups (#2767) (modmuss50)\n- Fix #1145: Long enum gamerule name hidden by button (#2768) (Technici4n)\n- Disable the gametest command on the server by default. (#2769) (modmuss50)\n- Fix disconnect screen scissoring on high-resolution displays (#2770) (modmuss50)\n",
+    "changelog_url": null,
+    "date_published": "2022-12-23T18:22:26.534420Z",
+    "downloads": 25484,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+      {
+        "hashes": {
+          "sha1": "af9d3dc8c1adee121e284d3ca429abfd06f23374",
+          "sha512": "39aef9d1413458ad31e57094c27415fba4ced4076d9a21782d043612a692d2a206fdea94a1eb79fbcd492502e4a0bf29b068e6f4f71c5c49d588846fe15de208"
+        },
+        "url": "{{request.baseUrl}}/cdn/data/P7dR8mSH/versions/mrB7EiW4/fabric-api-0.70.0%2B1.19.2.jar",
+        "filename": "fabric-api-0.70.0+1.19.2.jar",
+        "primary": true,
+        "size": 1823785,
+        "file_type": null
+      }
+    ],
+    "dependencies": [],
+    "game_versions": [
+      "1.19.2"
+    ],
+    "loaders": [
+      "fabric"
+    ]
+  },
+  {
+    "id": "25Hm7c3j",
+    "project_id": "P7dR8mSH",
+    "author_id": "JZA4dW8o",
+    "featured": false,
+    "name": "[1.19.2] Fabric API 0.69.0+1.19.2",
+    "version_number": "0.69.0+1.19.2",
+    "changelog": "- Update signing Gradle plugin (modmuss50)\n- Bump version (modmuss50)\n- Load default translations from all namespaces on the server (#2709) (Teddy Li, modmuss50)\n- GameTest: improve javadoc (#2734) (apple502j)\n- Add c:shields convention tag (#2727) (miir, itsmiir)\n- Screen API: Fix MinecraftClientMixin overwriting the vanilla logger (#2726) (Juuz)\n",
+    "changelog_url": null,
+    "date_published": "2022-12-11T15:59:43.392153Z",
+    "downloads": 22197,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+      {
+        "hashes": {
+          "sha512": "783b081479f2de98075a328b36e535cd60d30245dd8d579d631130401923101444a602dc15bcb433a6f5785e2a5e6422188061fa30c6ab6fff28d238ccc4eb38",
+          "sha1": "91ccd8078d374160dcbe176512b203fbd3a5e923"
+        },
+        "url": "{{request.baseUrl}}/cdn/data/P7dR8mSH/versions/25Hm7c3j/fabric-api-0.69.0%2B1.19.2.jar",
+        "filename": "fabric-api-0.69.0+1.19.2.jar",
+        "primary": true,
+        "size": 1822053,
+        "file_type": null
+      }
+    ],
+    "dependencies": [],
+    "game_versions": [
+      "1.19.2"
+    ],
+    "loaders": [
+      "fabric"
+    ]
+  },
+  {
+    "id": "BXfHW8Ww",
+    "project_id": "P7dR8mSH",
+    "author_id": "JZA4dW8o",
+    "featured": false,
+    "name": "[1.19.2] Fabric API 0.68.0+1.19.2",
+    "version_number": "0.68.0+1.19.2",
+    "changelog": "- Bump version (modmuss50)\n- Networking: fix type of created packet (#2712) (apple502j)\n- AttackBlockCallback: creative fix and javadoc update (#2691) (Technici4n, Juuz)\n- Add `BakedModel` unwrapping API (#2686) (Technici4n)\n",
+    "changelog_url": null,
+    "date_published": "2022-11-29T18:53:55.677Z",
+    "downloads": 29436,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+      {
+        "hashes": {
+          "sha1": "bb4d02f261723dd81effd117df9437bfa20dc728",
+          "sha512": "bfe8b60875794c60b589754f9f6abefdd97581463d31dc4d2ac68a0735aea060e925964ba5bfdbb14dcab1ec9f426fb8aebba86ca28bd0dfd052052b435786e7"
+        },
+        "url": "{{request.baseUrl}}/cdn/data/P7dR8mSH/versions/BXfHW8Ww/fabric-api-0.68.0%2B1.19.2.jar",
+        "filename": "fabric-api-0.68.0+1.19.2.jar",
+        "primary": true,
+        "size": 1820290,
+        "file_type": null
+      }
+    ],
+    "dependencies": [],
+    "game_versions": [
+      "1.19.2"
+    ],
+    "loaders": [
+      "fabric"
+    ]
+  },
+  {
+    "id": "gdGDJ2bh",
+    "project_id": "P7dR8mSH",
+    "author_id": "JZA4dW8o",
+    "featured": false,
+    "name": "[1.19.2] Fabric API 0.67.1+1.19.2",
+    "version_number": "0.67.1+1.19.2",
+    "changelog": "- Bump version (modmuss50)\n- Remove maven specific jar (modmuss50)\n- Add license to client only entries for client modules. (#2683) (modmuss50)\n- Convert flowing fluids to still ones in fluid variants (#2679) (Juuz)\n- Generate package-info files for all impl and mixin packages (#2615) (Juuz, modmuss50)\n",
+    "changelog_url": null,
+    "date_published": "2022-11-22T17:34:20.497284Z",
+    "downloads": 30187,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+      {
+        "hashes": {
+          "sha512": "6dca8eb1695aebb9c47df7a86031e1a6438d91d8068d62f8176656739be9ef7f08c12868398b9a7a28a4f45c98cf85b086acb97dd67f112e97e9191dc6dc41b3",
+          "sha1": "1f21538bb3d1ef459627b37cbec84008f51be36d"
+        },
+        "url": "{{request.baseUrl}}/cdn/data/P7dR8mSH/versions/gdGDJ2bh/fabric-api-0.67.1%2B1.19.2.jar",
+        "filename": "fabric-api-0.67.1+1.19.2.jar",
+        "primary": true,
+        "size": 1819120,
+        "file_type": null
+      }
+    ],
+    "dependencies": [],
+    "game_versions": [
+      "1.19.2"
+    ],
+    "loaders": [
+      "fabric"
+    ]
+  },
+  {
+    "id": "gugCMs27",
+    "project_id": "P7dR8mSH",
+    "author_id": "JZA4dW8o",
+    "featured": false,
+    "name": "[1.19.2] Fabric API 0.67.0+1.19.2",
+    "version_number": "0.67.0+1.19.2",
+    "changelog": "- Bump version (modmuss50)\n- Only load default language on the server. (modmuss50)\n- Fix #2657: Transfer API edge case with bad isValid overrides (#2659) (Technici4n, modmuss50)\n- Support stack aware recipe remainders (#2556) (AlphaMode, apple502j, Technici4n, Salvatore Peluso, modmuss50)\n- Split all duplicated packages (#2617) (Juuz)\n- Fixed ScreenEvents Javadoc (#2618) (Kevinthegreat)\n- Add access widener for `ItemModelGenerator#writer` (#2635) (90)\n- Adjust nether biomes injection point (#2666) (modmuss50, apple502j)\n- Load modded translations on the server (#2668) (Jonathan Coates)\n- Fix shulker boxes accepting other shulkers when using a directionless `InventoryStorage` (#2669) (Jonathan Coates)\n",
+    "changelog_url": null,
+    "date_published": "2022-11-20T15:36:35.200829Z",
+    "downloads": 4367,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+      {
+        "hashes": {
+          "sha512": "a21f7dbcb0b56a7dd0d6456e3038fad9b7a814681ad81eca71350c38e8b3385592436159c8719688805a03b62236eda6d01f723cff73958121effd0179c10bc9",
+          "sha1": "7f8fe33471586644676caa2ff28a765228617b85"
+        },
+        "url": "{{request.baseUrl}}/cdn/data/P7dR8mSH/versions/gugCMs27/fabric-api-0.67.0%2B1.19.2.jar",
+        "filename": "fabric-api-0.67.0+1.19.2.jar",
+        "primary": true,
+        "size": 1770386,
+        "file_type": null
+      }
+    ],
+    "dependencies": [],
+    "game_versions": [
+      "1.19.2"
+    ],
+    "loaders": [
+      "fabric"
+    ]
+  },
+  {
+    "id": "8rIblgME",
+    "project_id": "P7dR8mSH",
+    "author_id": "JZA4dW8o",
+    "featured": false,
+    "name": "[1.19.2] Fabric API 0.66.0+1.19.2",
+    "version_number": "0.66.0+1.19.2",
+    "changelog": "- Bump version (modmuss50)\n- Enforce Minecraft 1.19.2 (modmuss50)\n- Edit `ko-kr` translations for `resource-loader` (#2593) (Dalsu)\n- Implement a version of `FabricDefaultAttributeRegistry#register` that takes a `DefaultAttributeContainer` (#2589) (triphora)\n- Add a block appearance API (#2579) (Technici4n)\n- Add `AFTER_DEATH` and `ALLOW_DAMAGE` events; generalise `ALLOW_DEATH` to living entities (#2573) (Technici4n)\n",
+    "changelog_url": null,
+    "date_published": "2022-11-07T21:13:59.576448Z",
+    "downloads": 22724,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+      {
+        "hashes": {
+          "sha512": "afaa80ad396c16da7cbac30a1b63b8d7c6d10856c07053c6c28d083cd203be0d133aa5fed5da43b1c8abb1a96bc58b32e1ac948a5edcf3f0d18358527eb26f72",
+          "sha1": "bb8b91dde3d3140a3b8e83b0d2631d9e9e73e2ff"
+        },
+        "url": "{{request.baseUrl}}/cdn/data/P7dR8mSH/versions/8rIblgME/fabric-api-0.66.0%2B1.19.2.jar",
+        "filename": "fabric-api-0.66.0+1.19.2.jar",
+        "primary": true,
+        "size": 1761313,
+        "file_type": null
+      }
+    ],
+    "dependencies": [],
+    "game_versions": [
+      "1.19.2"
+    ],
+    "loaders": [
+      "fabric"
+    ]
+  },
+  {
+    "id": "9nx74dYD",
+    "project_id": "P7dR8mSH",
+    "author_id": "JZA4dW8o",
+    "featured": false,
+    "name": "[1.19.2] Fabric API 0.64.0+1.19.2",
+    "version_number": "0.64.0+1.19.2",
+    "changelog": "- Bump version (modmuss50)\n- Add way to specify the PathNodeType for a block, add missing tests in content registries testmod. (#2519) (Salvatore Peluso, Technici4n, Juuxel)\n- Create `ko_kr` translations for `resource-loader` and `item-groups` (#2591) (Dalsu)\n- Create `pl_pl` translation for `resource-loader` (#2590) (Yoosk)\n",
+    "changelog_url": null,
+    "date_published": "2022-10-18T13:29:54.442721Z",
+    "downloads": 30100,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+      {
+        "hashes": {
+          "sha1": "be9700fc86ae93f21b0a8775a5824eaaedff05a7",
+          "sha512": "64c21c31f2a292046bb8eb6e9203e8904d472c39fe6d5e2b46027bd40c0ae711e047ad5266805dae85def15a856d0f56489c3ce28973f963c955a9fabaf17831"
+        },
+        "url": "{{request.baseUrl}}/cdn/data/P7dR8mSH/versions/9nx74dYD/fabric-api-0.64.0%2B1.19.2.jar",
+        "filename": "fabric-api-0.64.0+1.19.2.jar",
+        "primary": true,
+        "size": 1746219,
+        "file_type": null
+      }
+    ],
+    "dependencies": [],
+    "game_versions": [
+      "1.19.2"
+    ],
+    "loaders": [
+      "fabric"
+    ]
+  },
+  {
+    "id": "hjQL60eb",
+    "project_id": "P7dR8mSH",
+    "author_id": "JZA4dW8o",
+    "featured": false,
+    "name": "[1.19.2] Fabric API 0.63.0+1.19.2",
+    "version_number": "0.63.0+1.19.2",
+    "changelog": "- Bump versions (modmuss50)\n- Skip adding out-of-bound sprites to SpriteFinderImpl (#2584) (Technici4n)\n- Added it_it language. (#2581) (Salvatore Peluso)\n- Change test LSHIFT keybind to RSHIFT (#2580) (AlphaMode)\n- Update Finnish translation for resource loader (#2578) (Juuz)\n- Added Brazilian Portuguese translations (#2569) (Luligabi1)\n- Create `es_es` translations for `resource-loader` and `item-groups` (#2568) (altrisi)\n- French translation update (#2565) (Julienraptor01)\n- Resource conditions: support all tags (#2564) (apple502j)\n- Add Sound API to allow sound instances to play custom audio streams (#2558) (Jonathan Coates)\n- Create parent directory when writing test report (#2554) (Jonathan Coates)\n",
+    "changelog_url": null,
+    "date_published": "2022-10-16T15:02:53.570655Z",
+    "downloads": 6790,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+      {
+        "hashes": {
+          "sha1": "2cb0e1c7db68751eb01a992d77284ac0c9353194",
+          "sha512": "e238d166434cf895e587569312520fc0f2bf5cc46deeb86707db54de4468ff40f6cb10bb99f8ef2d68e5c7bff045b4919657edb509dc9272e10df12d9ea7478c"
+        },
+        "url": "{{request.baseUrl}}/cdn/data/P7dR8mSH/versions/hjQL60eb/fabric-api-0.63.0%2B1.19.2.jar",
+        "filename": "fabric-api-0.63.0+1.19.2.jar",
+        "primary": true,
+        "size": 1740808,
+        "file_type": null
+      }
+    ],
+    "dependencies": [],
+    "game_versions": [
+      "1.19.2"
+    ],
+    "loaders": [
+      "fabric"
+    ]
+  },
+  {
+    "id": "uLpYu4FP",
+    "project_id": "P7dR8mSH",
+    "author_id": "JZA4dW8o",
+    "featured": false,
+    "name": "[1.19.2] Fabric API 0.62.0+1.19.2",
+    "version_number": "0.62.0+1.19.2",
+    "changelog": "- Bump version. (modmuss50)\n- Support namespaced armor textures. Fixes #96 (#2542) (modmuss50)\n- Bump versions. (modmuss50)\n- Fix @SafeVarargs warnings in Resource Conditions and ColorProviderRegistry (#2547) (Technici4n)\n- Cleanup incorrect mixin shadow annotations/access (modmuss50)\n- Update Loom, Yarn, Checkstyle (#2538) (modmuss50)\n- Add DataGeneratorEntrypoint.getEffectiveModId (#2534) (modmuss50)\n- Add ServerEntityEvents.EquipmentChange event (#2533) (modmuss50)\n- Fix many javadoc issues (#2526) (apple502j, Juuz)\n- ModNioResourcePack: don't extend AbstractFileResourcePack (#2509) (J. Fronny)\n- FabricLanguageProvider - Data Generation API (#2451) (mineblock11, modmuss50, apple502j)\n",
+    "changelog_url": null,
+    "date_published": "2022-09-25T15:38:58.830996Z",
+    "downloads": 33459,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+      {
+        "hashes": {
+          "sha1": "25a4d08f232706a10ef0835f3d5844ce2ddd2ad1",
+          "sha512": "67514f6f8a3755831ddce54cd33e548f52c70b101014b65056512a77a682079ac7f1dff3bfa1e6fcc15248c963a45091bee83b010fd434715c70ecfeb6431eea"
+        },
+        "url": "{{request.baseUrl}}/cdn/data/P7dR8mSH/versions/uLpYu4FP/fabric-api-0.62.0%2B1.19.2.jar",
+        "filename": "fabric-api-0.62.0+1.19.2.jar",
+        "primary": true,
+        "size": 1723926,
+        "file_type": null
+      }
+    ],
+    "dependencies": [],
+    "game_versions": [
+      "1.19.2"
+    ],
+    "loaders": [
+      "fabric"
+    ]
+  },
+  {
+    "id": "XV9QDCar",
+    "project_id": "P7dR8mSH",
+    "author_id": "JZA4dW8o",
+    "featured": false,
+    "name": "[1.19.2] Fabric API 0.61.0+1.19.2",
+    "version_number": "0.61.0+1.19.2",
+    "changelog": "- Bump versions. (modmuss50)\n- Transfer API improvements 4 (#2375) (Technici4n, Juuxel)\n- Update Modrinth plugin version (#2082) (wafflecoffee)\n- Item Group API: refactor & add more javadoc (#2518) (apple502j)\n- Fix crash when replacing SimpleRegistry contents (#2504) (Benonardo)\n- Added doc to SculkSensorRegistry (#2490) (2ndDerivative)\n- Refactor Dimension API and fix a bug (#2486) (apple502j)\n- Add overwriting screen handler factory (#2373) (apple502j)\n- Add publish checkstyle report action (#2514) (Juuz)\n",
+    "changelog_url": null,
+    "date_published": "2022-09-11T14:45:43.160741Z",
+    "downloads": 24017,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+      {
+        "hashes": {
+          "sha512": "491de6e3cf06711a525f08dbcf97e168e152ad50d9531be5260c3d5507fbc4defcb07f862412078738c6a6705f52bbdd4c4556bc4589b52ae2a03a3b7c5d3527",
+          "sha1": "33bcdba60c1f4b201f8033da1a287de970928101"
+        },
+        "url": "{{request.baseUrl}}/cdn/data/P7dR8mSH/versions/XV9QDCar/fabric-api-0.61.0%2B1.19.2.jar",
+        "filename": "fabric-api-0.61.0+1.19.2.jar",
+        "primary": true,
+        "size": 1517325,
+        "file_type": null
+      }
+    ],
+    "dependencies": [],
+    "game_versions": [
+      "1.19.2"
+    ],
+    "loaders": [
+      "fabric"
+    ]
+  },
+  {
+    "id": "RAzwgZkP",
+    "project_id": "P7dR8mSH",
+    "author_id": "JZA4dW8o",
+    "featured": false,
+    "name": "[1.19.2] Fabric API 0.60.0+1.19.2",
+    "version_number": "0.60.0+1.19.2",
+    "changelog": "- Bump versions. (modmuss50)\n- Rename and validate Mixin class names. (#2450) (modmuss50)\n- Add many more transitive access wideners (#2341) (Shnupbups)\n- Merge remote-tracking branch 'origin/1.19.1' into 1.19.2 (modmuss50)\n- Add development guidelines (CONTRIBUTING.md) (#2377) (Technici4n, apple502j, Juuxel, liach)\n",
+    "changelog_url": null,
+    "date_published": "2022-08-15T18:33:42.338909Z",
+    "downloads": 47752,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+      {
+        "hashes": {
+          "sha1": "f50871a5552f12055b9d3f569ae4d1e914cda227",
+          "sha512": "8dd02890e3dbe8a87c07706ec8afd77b4fdf67e0e091a2b59cb34f4500bbb2499b9415e1fc94bd3cfb6371d9ebde59f7bfdf5c4d98beac62f54e26e59208b5d7"
+        },
+        "url": "{{request.baseUrl}}/cdn/data/P7dR8mSH/versions/0.60.0%2B1.19.2/fabric-api-0.60.0%2B1.19.2.jar",
+        "filename": "fabric-api-0.60.0+1.19.2.jar",
+        "primary": false,
+        "size": 1510130,
+        "file_type": null
+      }
+    ],
+    "dependencies": [],
+    "game_versions": [
+      "1.19.2"
+    ],
+    "loaders": [
+      "fabric"
+    ]
+  },
+  {
+    "id": "EsaWeELS",
+    "project_id": "P7dR8mSH",
+    "author_id": "JZA4dW8o",
+    "featured": false,
+    "name": "[1.19.2] Fabric API 0.59.0+1.19.2",
+    "version_number": "0.59.0+1.19.2",
+    "changelog": "- Bump version (modmuss50)\n- Message API: fix outdated and incorrect javadoc (apple502j)\n- Add Japanese translations (apple502j)\n- Create et_ee.json (Madis Otenurm)\n- Fix POI types not being registered properly (apple502j)\n- Split icy tag into ICY and AQUATIC_ICY (TelepathicGrunt)\n- Make `DEFAULT_ENABLED` work with client resource pack (deirn)\n- Rename modid to \"fabric-api\" and provide \"fabric\". Update loom (#2446) (modmuss50)\n- ModelHelper: remove useless contract (#2422) (apple502j)\n- Make static-only classes final and unconstructible (#2421) (apple502j)\n- ModResourcePackUtil: Properly handle special chars in mod name (#2407) (apple502j)\n- Add client tags module (#2308) (Deximus-Maximus, deirn)\n- Add TagUtil (#2307) (Deximus-Maximus, haykam821, Technici4n)\n- Move a few object builders to transitive AWs (#2154) (Technici4n)\n",
+    "changelog_url": null,
+    "date_published": "2022-08-06T19:19:56.630751Z",
+    "downloads": 12454,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+      {
+        "hashes": {
+          "sha512": "82d170de030fb9fcf196b2060c47fe7fe16cb60ae5aad6e881282727e2cdd667a47b1622a2b3a53cfb1bbc07f826f9010f5704ff4f33e73380d48ffe46d97955",
+          "sha1": "d2254514b5c41fae491839045769601c51c546db"
+        },
+        "url": "{{request.baseUrl}}/cdn/data/P7dR8mSH/versions/0.59.0%2B1.19.2/fabric-api-0.59.0%2B1.19.2.jar",
+        "filename": "fabric-api-0.59.0+1.19.2.jar",
+        "primary": true,
+        "size": 1513362,
+        "file_type": null
+      }
+    ],
+    "dependencies": [],
+    "game_versions": [
+      "1.19.2"
+    ],
+    "loaders": [
+      "fabric"
+    ]
+  },
+  {
+    "id": "6Iv0Y14L",
+    "project_id": "P7dR8mSH",
+    "author_id": "JZA4dW8o",
+    "featured": false,
+    "name": "[1.19.2] Fabric API 0.58.6+1.19.2",
+    "version_number": "0.58.6+1.19.2",
+    "changelog": "Inital release",
+    "changelog_url": null,
+    "date_published": "2022-08-05T14:40:43.352296Z",
+    "downloads": 2271,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+      {
+        "hashes": {
+          "sha512": "b7b82233fc34320e5486d7ba1071c70e142d49514e31d56d5d9042bfe0d9e8fd0d02f4b6553d5420c7eec5dc03f41195d98dec0cd4b12323af178d59ffda2099",
+          "sha1": "8e73d8015382496f93f5215fe6b16c41f1d230a2"
+        },
+        "url": "{{request.baseUrl}}/cdn/data/P7dR8mSH/versions/0.58.6%2B1.19.2/fabric-api-0.58.6%2B1.19.2.jar",
+        "filename": "fabric-api-0.58.6+1.19.2.jar",
+        "primary": false,
+        "size": 1498244,
+        "file_type": null
+      }
+    ],
+    "dependencies": [],
+    "game_versions": [
+      "1.19.2"
+    ],
+    "loaders": [
+      "fabric"
+    ]
+  }
+]
