@@ -5,15 +5,18 @@ GET https://api.modrinth.com/v2/project/cobblemon-fabric
 GET https://api.modrinth.com/v2/projects?ids=["terra"]
 
 ###
-GET https://api.modrinth.com/v2/projects?ids=["simple-voice-chat"]
+GET https://api.modrinth.com/v2/projects?ids=["fabric-api","cloth-config"]
 
 ###
 GET https://api.modrinth.com/v2/project/cobblemon-fabric/version?loaders=fabric&game_versions=1.19.2
 
+###
+GET https://api.modrinth.com/v2/project/9s6osm5g/version?loaders=%5B%22fabric%22%5D&game_versions=%5B%221.19.2%22%5D
 ###
 GET https://api.modrinth.com/v2/project/cobblemon-fabric/version
 
 ###
 GET https://api.modrinth.com/v2/version/OTgqK0Zh
 
-
+###
+GET https://cdn.modrinth.com/data/9s6osm5g/versions/o9dFD9SO/cloth-config-8.3.103-fabric.jar

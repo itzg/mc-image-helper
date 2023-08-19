@@ -86,7 +86,7 @@ public class McImageHelper {
   //language=RegExp
   public static final String OPTION_SPLIT_COMMAS = "\\s*,\\s*";
   //language=RegExp
-  public static final String SPLIT_COMMA_NL = "[,\\n]";
+  public static final String SPLIT_COMMA_NL = "\\n|\\s*,\\s*";
   public static final String SPLIT_SYNOPSIS_COMMA_NL = ",|<nl>";
   //language=RegExp
   public static final String VERSION_REGEX = "\\d+(\\.\\d+)+";
