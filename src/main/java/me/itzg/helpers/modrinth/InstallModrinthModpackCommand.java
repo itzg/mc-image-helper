@@ -129,7 +129,8 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
                 outputDirectory,
                 gameVersion,
                 defaultVersionType, loader != null ? loader.asLoader() : null
-            );
+            )
+                .setIgnoreMissingFiles(ignoreMissingFiles);
         }
     }
 }
