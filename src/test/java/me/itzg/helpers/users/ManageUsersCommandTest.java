@@ -532,6 +532,37 @@ class ManageUsersCommandTest {
         }
 
         @Test
+        void givenNamesWithExtraSpace(WireMockRuntimeInfo wmInfo) {
+            setupUserStubs();
+
+            final int exitCode = new CommandLine(
+                new ManageUsersCommand()
+            )
+                .execute(
+                    "--mojang-api-base-url", wmInfo.getHttpBaseUrl(),
+                    "--type", "JAVA_OPS",
+                    "--output-directory", tempDir.toString(),
+                    " user1"
+                );
+
+            assertThat(exitCode).isEqualTo(0);
+
+            final Path expectedFile = tempDir.resolve("ops.json");
+
+            assertThat(expectedFile).exists();
+
+            assertJson(expectedFile)
+                .isArrayContainingExactlyInAnyOrder(
+                    conditions()
+                        .satisfies(conditions()
+                            .at("/name").hasValue("user1")
+                            .at("/uuid").hasValue(USER1_UUID)
+                            .at("/level").hasValue(4)
+                        )
+                );
+        }
+
+        @Test
         void givenNamesAndAllExist(WireMockRuntimeInfo wmInfo) throws IOException {
             setupUserStubs();
 

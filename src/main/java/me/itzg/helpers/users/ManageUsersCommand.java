@@ -144,7 +144,7 @@ public class ManageUsersCommand implements Callable<Integer> {
         }
 
         for (final String input : inputs) {
-            final JavaUser resolvedUser = resolveJavaUserId(sharedFetch, existing, input);
+            final JavaUser resolvedUser = resolveJavaUserId(sharedFetch, existing, input.trim());
 
             if (!appendOnly || !containsUserByUuid(reconciled, resolvedUser.getUuid())) {
                 if (type == Type.JAVA_OPS) {
