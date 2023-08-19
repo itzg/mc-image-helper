@@ -13,3 +13,7 @@ GET https://api.modrinth.com/v2/project/cobblemon-fabric/version?loaders=fabric&
 ###
 GET https://api.modrinth.com/v2/project/cobblemon-fabric/version
 
+###
+GET https://api.modrinth.com/v2/version/OTgqK0Zh
+
+
