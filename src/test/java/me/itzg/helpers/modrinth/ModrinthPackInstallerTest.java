@@ -1,23 +1,20 @@
 package me.itzg.helpers.modrinth;
 
+import static me.itzg.helpers.modrinth.ModrinthTestHelpers.*;
+import static org.assertj.core.api.Assertions.assertThat;
+
+import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
+import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-
+import me.itzg.helpers.http.SharedFetch.Options;
+import me.itzg.helpers.http.SharedFetchArgs;
+import me.itzg.helpers.modrinth.model.ModpackIndex;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-
-import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
-import com.github.tomakehurst.wiremock.junit5.WireMockTest;
-
-import static org.assertj.core.api.Assertions.*;
-import static me.itzg.helpers.modrinth.ModrinthTestHelpers.*;
-
-import me.itzg.helpers.http.SharedFetchArgs;
-import me.itzg.helpers.http.SharedFetch.Options;
-import me.itzg.helpers.modrinth.model.*;
 
 @WireMockTest
 public class ModrinthPackInstallerTest {
@@ -40,9 +37,10 @@ public class ModrinthPackInstallerTest {
         ModrinthPackInstaller installerUT = new ModrinthPackInstaller(
             apiClient, fetchOptions, modpackPath, tempDir, resultsFile, false);
 
-        ModrinthPackInstaller.Installation actualInstallation =
+        Installation actualInstallation =
             installerUT.processModpack().block();
 
+        assertThat(actualInstallation).isNotNull();
         assertThat(actualInstallation.getIndex()).isNotNull();
         assertThat(actualInstallation.getIndex()).isEqualTo(expectedIndex);
         assertThat(actualInstallation.getFiles().size()).isEqualTo(0);
@@ -72,8 +70,9 @@ public class ModrinthPackInstallerTest {
         ModrinthPackInstaller installerUT = new ModrinthPackInstaller(
             apiClient, fetchOpts, modpackPath, tempDir, resultsFile, false);
 
-        List<Path> installedFiles =
-            installerUT.processModpack().block().getFiles();
+        final Installation installation = installerUT.processModpack().block();
+        assertThat(installation).isNotNull();
+        List<Path> installedFiles = installation.getFiles();
 
         assertThat(expectedFilePath).isRegularFile();
         assertThat(expectedFilePath).content()

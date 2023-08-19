@@ -1,8 +1,9 @@
 package me.itzg.helpers.modrinth;
 
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-
+import java.util.Base64;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
 
@@ -19,10 +20,16 @@ public class ModrinthHttpPackFetcher implements ModrinthPackFetcher {
     }
 
     @Override
-    public Mono<Path> fetchModpack(ModrinthModpackManifest prevManifest) {
-        return this.apiClient.downloadFileFromUrl(
-            this.destFilePath, this.modpackUri,
-            (uri, file, contentSizeBytes) ->
-                log.info("Downloaded {}", this.destFilePath));
+    public Mono<FetchedPack> fetchModpack(ModrinthModpackManifest prevManifest) {
+        return apiClient.downloadFileFromUrl(
+                destFilePath, modpackUri,
+                (uri, file, contentSizeBytes) ->
+                    log.info("Downloaded {}", destFilePath)
+            )
+            .map(mrPackFile -> new FetchedPack(mrPackFile, "custom", deriveVersionId()));
+    }
+
+    private String deriveVersionId() {
+        return Base64.getUrlEncoder().encodeToString(modpackUri.toString().getBytes(StandardCharsets.UTF_8));
     }
 }

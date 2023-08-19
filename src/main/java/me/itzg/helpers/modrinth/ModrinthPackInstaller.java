@@ -4,15 +4,12 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipFile;
-
-import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidParameterException;
@@ -21,7 +18,10 @@ import me.itzg.helpers.files.IoStreams;
 import me.itzg.helpers.forge.ForgeInstaller;
 import me.itzg.helpers.http.SharedFetch.Options;
 import me.itzg.helpers.json.ObjectMappers;
-import me.itzg.helpers.modrinth.model.*;
+import me.itzg.helpers.modrinth.model.DependencyId;
+import me.itzg.helpers.modrinth.model.Env;
+import me.itzg.helpers.modrinth.model.EnvType;
+import me.itzg.helpers.modrinth.model.ModpackIndex;
 import me.itzg.helpers.quilt.QuiltInstaller;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -214,9 +214,4 @@ public class ModrinthPackInstaller {
         }
     }
 
-    @Data
-    class Installation {
-        ModpackIndex index;
-        List<Path> files;
-    }
 }

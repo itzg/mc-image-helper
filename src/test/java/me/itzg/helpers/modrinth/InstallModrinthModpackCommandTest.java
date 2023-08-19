@@ -69,9 +69,8 @@ public class InstallModrinthModpackCommandTest {
 
     @Test
     void downloadsAndInstallsModrinthModpack_versionNumberAndAnyLoader(
-            WireMockRuntimeInfo wm, @TempDir Path tempDir
-        ) throws IOException, URISyntaxException
-    {
+        WireMockRuntimeInfo wm, @TempDir Path tempDir
+    ) throws IOException, URISyntaxException {
         String expectedFileData = "some test data";
         String relativeFilePath = "test_file";
         ModpackFile testFile = createHostedModpackFile(
@@ -89,13 +88,37 @@ public class InstallModrinthModpackCommandTest {
 
         InstallModrinthModpackCommand commandUT =
             createInstallModrinthModpackCommand(wm.getHttpBaseUrl(), tempDir,
-                projectName, projectVersionNumber, null);
+                projectName, projectVersionNumber, null
+            );
 
-        int commandStatus = commandUT.call();
+        assertThat(
+            commandUT.call()
+        ).isEqualTo(0);
 
-        assertThat(commandStatus).isEqualTo(0);
         assertThat(tempDir.resolve(relativeFilePath)).content()
             .isEqualTo(expectedFileData);
+
+        final ModrinthModpackManifest manifest = Manifests.load(tempDir, ModrinthModpackManifest.ID,
+            ModrinthModpackManifest.class
+        );
+
+        assertThat(manifest).isNotNull();
+        assertThat(manifest.getProjectSlug()).isEqualTo(projectName);
+        assertThat(manifest.getVersionId()).isNotNull();
+
+        // attempt to re-install same version
+        assertThat(
+            commandUT.call()
+        ).isEqualTo(0);
+
+        final ModrinthModpackManifest manifestAfterReinstall = Manifests.load(tempDir, ModrinthModpackManifest.ID,
+            ModrinthModpackManifest.class
+        );
+
+        assertThat(manifestAfterReinstall).isNotNull();
+        assertThat(manifestAfterReinstall.getTimestamp())
+            .isNotNull()
+            .isEqualTo(manifest.getTimestamp());
     }
 
     @Test

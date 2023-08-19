@@ -5,6 +5,8 @@
 /bin/
 /.gradle/
 
+/tmp/
+
 /dependency-reduced-pom.xml
 /pom.xml.releaseBackup
 /release.properties

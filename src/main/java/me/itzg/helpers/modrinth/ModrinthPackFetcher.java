@@ -1,9 +1,11 @@
 package me.itzg.helpers.modrinth;
 
-import java.nio.file.Path;
-
 import reactor.core.publisher.Mono;
 
 public interface ModrinthPackFetcher {
-    Mono<Path> fetchModpack(ModrinthModpackManifest prevManifest);
+
+    /**
+     * @return the fetched modpack or empty if the requested modpack was already up-to-date
+     */
+    Mono<FetchedPack> fetchModpack(ModrinthModpackManifest prevManifest);
 }

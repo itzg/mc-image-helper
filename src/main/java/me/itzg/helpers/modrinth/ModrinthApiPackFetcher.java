@@ -1,12 +1,13 @@
 package me.itzg.helpers.modrinth;
 
 import java.nio.file.Path;
-
+import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
-import me.itzg.helpers.errors.*;
+import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.http.FailedRequestException;
-import me.itzg.helpers.modrinth.model.*;
+import me.itzg.helpers.modrinth.model.Version;
+import me.itzg.helpers.modrinth.model.VersionType;
 import org.jetbrains.annotations.Nullable;
 import reactor.core.publisher.Mono;
 
@@ -19,57 +20,63 @@ public class ModrinthApiPackFetcher implements ModrinthPackFetcher {
     private final Loader modLoaderType;
     private final String gameVersion;
     private final VersionType defaultVersionType;
+    private final boolean forceSynchronize;
     private final Path modpackOutputDirectory;
 
     ModrinthApiPackFetcher(
             ModrinthApiClient apiClient, ProjectRef projectRef,
+            boolean forceSynchronize,
             Path outputDirectory, String gameVersion,
             VersionType defaultVersionType, @Nullable Loader loader)
     {
         this.apiClient = apiClient;
         this.modpackProjectRef = projectRef;
+        this.forceSynchronize = forceSynchronize;
         this.modpackOutputDirectory = outputDirectory;
         this.gameVersion = gameVersion;
         this.defaultVersionType = defaultVersionType;
         this.modLoaderType = loader;
     }
 
-    public Mono<Path> fetchModpack(ModrinthModpackManifest prevManifest) {
-        return this.resolveModpackVersion()
-            .filter(version -> needsInstall(prevManifest, version))
-            .flatMap(version ->
-                Mono.just(ModrinthApiClient.pickVersionFile(version)))
-            .flatMap(apiClient::downloadMrPack);
-    }
-
-    private Mono<Version> resolveModpackVersion() {
-        return this.apiClient.getProject(this.modpackProjectRef.getIdOrSlug())
+    public Mono<FetchedPack> fetchModpack(ModrinthModpackManifest prevManifest) {
+        return apiClient.getProject(modpackProjectRef.getIdOrSlug())
             .onErrorMap(FailedRequestException::isNotFound,
                 throwable ->
                     new InvalidParameterException(
                         "Unable to locate requested project given " +
-                        this.modpackProjectRef.getIdOrSlug(), throwable))
+                            this.modpackProjectRef.getIdOrSlug(), throwable)
+            )
             .flatMap(project ->
-                this.apiClient.resolveProjectVersion(
-                    project, this.modpackProjectRef, this.modLoaderType,
-                    this.gameVersion, this.defaultVersionType)
+                apiClient.resolveProjectVersion(
+                        project, modpackProjectRef, modLoaderType,
+                        gameVersion, defaultVersionType
+                    )
+                    .filter(version -> needsInstall(prevManifest, project.getSlug(), version))
+                    .flatMap(version ->
+                        apiClient.downloadMrPack(ModrinthApiClient.pickVersionFile(version))
+                            .map(mrPackFile -> new FetchedPack(mrPackFile, project.getSlug(), version.getId()))
+                    )
             );
     }
 
     private boolean needsInstall(
-            ModrinthModpackManifest prevManifest, Version version)
-    {
+        ModrinthModpackManifest prevManifest, String projectSlug, Version version
+    ) {
         if (prevManifest != null) {
-            if (prevManifest.getProjectSlug().equals(version.getProjectId())
-                && prevManifest.getVersionId().equals(version.getId())
-                && prevManifest.getDependencies() != null
-                && Manifests.allFilesPresent(
-                    modpackOutputDirectory, prevManifest)
+            if (Objects.equals(prevManifest.getProjectSlug(), projectSlug)
+                && Objects.equals(prevManifest.getVersionId(), version.getId())
+                && Manifests.allFilesPresent(modpackOutputDirectory, prevManifest)
             ) {
-            log.info("Modpack {} version {} is already installed",
-                version.getProjectId(), version.getName()
-            );
-            return false;
+                if (forceSynchronize) {
+                    log.info("Force synchronize requested for modpack {} version {}",
+                        projectSlug, version.getVersionNumber()
+                    );
+                    return true;
+                }
+                log.info("Modpack {} version {} is already installed",
+                    projectSlug, version.getVersionNumber()
+                );
+                return false;
             }
         }
         return true;

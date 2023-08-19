@@ -1,32 +1,28 @@
 package me.itzg.helpers.modrinth;
 
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
-
-import static org.assertj.core.api.Assertions.*;
-import static me.itzg.helpers.modrinth.ModrinthTestHelpers.*;
-
-import java.io.IOException;
-import java.nio.file.*;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
+import static me.itzg.helpers.modrinth.ModrinthTestHelpers.createModrinthProjectVersion;
+import static me.itzg.helpers.modrinth.ModrinthTestHelpers.stubModrinthModpackApi;
+import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
-
+import java.nio.file.Path;
 import me.itzg.helpers.http.SharedFetchArgs;
-import me.itzg.helpers.modrinth.model.*;
+import me.itzg.helpers.modrinth.model.Version;
+import me.itzg.helpers.modrinth.model.VersionType;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 @WireMockTest
 public class ModrinthApiPackFetcherTest {
     @Test
     void testApiFetcherFetchesModpackBySlugAndVersionId(
             WireMockRuntimeInfo wm, @TempDir Path tempDir
-        ) throws JsonProcessingException, IOException
-    {
+        ) {
         String projectName = "test_project1";
-        String projectId = "efgh5678";
-        String projectVersionId = "abcd1234";
+        String projectId = randomAlphanumeric(8);
+        String projectVersionId = randomAlphanumeric(8);
         byte[] expectedModpackData = "test_data".getBytes();
         Version projectVersion = createModrinthProjectVersion(projectVersionId);
 
@@ -39,22 +35,24 @@ public class ModrinthApiPackFetcherTest {
         ProjectRef testProjectRef = new ProjectRef(projectName, projectVersionId);
 
         ModrinthApiPackFetcher fetcherUT = new ModrinthApiPackFetcher(
-            apiClient, testProjectRef, tempDir, "",
+            apiClient, testProjectRef, false, tempDir, "",
             VersionType.release, ModpackLoader.forge.asLoader());
 
-        Path mrpackFile = fetcherUT.fetchModpack(null).block();
-        assertThat(mrpackFile).content()
+        final FetchedPack fetchedPack = fetcherUT.fetchModpack(null).block();
+        assertThat(fetchedPack).isNotNull();
+        assertThat(fetchedPack.getMrPackFile()).content()
             .isEqualTo(new String(expectedModpackData));
+        assertThat(fetchedPack.getProjectSlug()).isEqualTo(projectName);
+        assertThat(fetchedPack.getVersionId()).isEqualTo(projectVersionId);
     }
 
     @Test
     void testApiFetcherFetchesLatestModpackWhenVersionTypeSpecified(
             WireMockRuntimeInfo wm,  @TempDir Path tempDir
-        ) throws JsonProcessingException, IOException
-    {
+        ) {
         String projectName = "test_project1";
-        String projectId = "efgh5678";
-        String projectVersionId = "abcd1234";
+        String projectId = randomAlphanumeric(8);
+        String projectVersionId = randomAlphanumeric(8);
         byte[] expectedModpackData = "test_data".getBytes();
         Version projectVersion = createModrinthProjectVersion(projectVersionId)
             .setVersionType(VersionType.release);
@@ -75,24 +73,28 @@ public class ModrinthApiPackFetcherTest {
         ProjectRef testProjectRef = new ProjectRef(projectName, "release");
 
         ModrinthApiPackFetcher fetcherUT = new ModrinthApiPackFetcher(
-            apiClient, testProjectRef, tempDir, "",
+            apiClient, testProjectRef, false, tempDir, "",
             VersionType.release, ModpackLoader.forge.asLoader());
 
-        Path mrpackFile = fetcherUT.fetchModpack(null).block();
-        assertThat(mrpackFile).content()
+        final FetchedPack fetchedPack = fetcherUT.fetchModpack(null).block();
+        assertThat(fetchedPack).isNotNull();
+        assertThat(fetchedPack.getMrPackFile()).content()
             .isEqualTo(new String(expectedModpackData));
+
+        assertThat(fetchedPack.getProjectSlug()).isEqualTo(projectName);
+        assertThat(fetchedPack.getVersionId()).isEqualTo(projectVersionId);
     }
 
     @Test
     void testApiFetcherFetchesNumberedVersions(
             WireMockRuntimeInfo wm,  @TempDir Path tempDir
-        ) throws JsonProcessingException, IOException
-    {
+        ) {
         String projectName = "test_project1";
-        String projectId = "efgh5678";
+        String projectId = randomAlphanumeric(8);
         String projectVersionNumber = "1.0.0";
         byte[] expectedModpackData = "test_data".getBytes();
-        Version projectVersion = createModrinthProjectVersion("abcd1234")
+        final String projectVersionId = randomAlphanumeric(8);
+        Version projectVersion = createModrinthProjectVersion(projectVersionId)
             .setVersionType(VersionType.release)
             .setVersionNumber(projectVersionNumber);
 
@@ -105,11 +107,15 @@ public class ModrinthApiPackFetcherTest {
         ProjectRef testProjectRef = new ProjectRef(projectName, projectVersionNumber);
 
         ModrinthApiPackFetcher fetcherUT = new ModrinthApiPackFetcher(
-            apiClient, testProjectRef, tempDir, "",
+            apiClient, testProjectRef, false, tempDir, "",
             VersionType.release, ModpackLoader.forge.asLoader());
 
-        Path mrpackFile = fetcherUT.fetchModpack(null).block();
-        assertThat(mrpackFile).content()
+        final FetchedPack fetchedPack = fetcherUT.fetchModpack(null).block();
+        assertThat(fetchedPack).isNotNull();
+        assertThat(fetchedPack.getMrPackFile()).content()
             .isEqualTo(new String(expectedModpackData));
+
+        assertThat(fetchedPack.getProjectSlug()).isEqualTo(projectName);
+        assertThat(fetchedPack.getVersionId()).isEqualTo(projectVersionId);
     }
 }

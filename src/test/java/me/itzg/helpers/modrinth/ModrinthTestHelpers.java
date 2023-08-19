@@ -10,8 +10,8 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 import me.itzg.helpers.modrinth.model.DependencyId;
@@ -46,9 +46,7 @@ class ModrinthTestHelpers {
             .setUrl(wm.getHttpBaseUrl() + modpackDownloadPath));
         JsonNode responseVersion = mapper.valueToTree(projectVersion);
 
-        List<Version> projectVersionList = new ArrayList<>();
-        projectVersionList.add(projectVersion);
-        JsonNode responseVersionList = mapper.valueToTree(projectVersionList);
+        JsonNode responseVersionList = mapper.valueToTree(Collections.singletonList(projectVersion));
 
         stubFor(get("/v2/project/" + projectName)
             .willReturn(ok()

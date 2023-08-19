@@ -7,11 +7,10 @@ import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.files.ResultsFileWriter;
 import me.itzg.helpers.http.SharedFetchArgs;
-import me.itzg.helpers.modrinth.model.*;
+import me.itzg.helpers.modrinth.model.VersionType;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.Option;
-import reactor.core.publisher.Mono;
 
 @CommandLine.Command(name = "install-modrinth-modpack",
     description = "Supports installation of Modrinth modpacks along with the associated mod loader",
@@ -70,39 +69,40 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
     @Override
     public Integer call() throws IOException {
         final ModrinthApiClient apiClient = new ModrinthApiClient(
-            baseUrl, "install-modrinth-modpack", sharedFetchArgs.options());
+            baseUrl, "install-modrinth-modpack", sharedFetchArgs.options()
+        );
 
         final ModrinthModpackManifest prevManifest = Manifests.load(
             outputDirectory, ModrinthModpackManifest.ID,
-             ModrinthModpackManifest.class);
+             ModrinthModpackManifest.class
+        );
 
-        final ProjectRef projectRef =
-            ProjectRef.fromPossibleUrl(modpackProject, version);
+        final ProjectRef projectRef = ProjectRef.fromPossibleUrl(modpackProject, version);
 
-        buildModpackFetcher(apiClient, projectRef)
+        final ModrinthModpackManifest newManifest =
+            buildModpackFetcher(apiClient, projectRef)
             .fetchModpack(prevManifest)
-            .flatMap(archivePath ->
+            .flatMap(fetchedPack ->
                 new ModrinthPackInstaller(
                     apiClient, this.sharedFetchArgs.options(),
-                    archivePath, this.outputDirectory, this.resultsFile,
-                    this.forceModloaderReinstall)
-                .processModpack())
-            .flatMap(installation ->
-                Mono.just(ModrinthModpackManifest.builder()
-                    .files(Manifests.relativizeAll(this.outputDirectory, installation.files))
-                    .projectSlug(projectRef.getIdOrSlug())
-                    .versionId(projectRef.getVersionId())
-                    .dependencies(installation.index.getDependencies())
-                    .build()))
-            .handle((newManifest, sink) -> {
-                try {
-                    Manifests.cleanup(this.outputDirectory, prevManifest, newManifest, log);
-                    Manifests.save(outputDirectory, ModrinthModpackManifest.ID, newManifest);
-                } catch (IOException e) {
-                    sink.error(e);
-                }
-            })
+                    fetchedPack.getMrPackFile(), this.outputDirectory, this.resultsFile,
+                    this.forceModloaderReinstall
+                )
+                    .processModpack()
+                    .map(installation ->
+                        ModrinthModpackManifest.builder()
+                            .files(Manifests.relativizeAll(this.outputDirectory, installation.files))
+                            .projectSlug(fetchedPack.getProjectSlug())
+                            .versionId(fetchedPack.getVersionId())
+                            .dependencies(installation.index.getDependencies())
+                            .build())
+            )
             .block();
+
+        if (newManifest != null) {
+            Manifests.cleanup(this.outputDirectory, prevManifest, newManifest, log);
+            Manifests.save(outputDirectory, ModrinthModpackManifest.ID, newManifest);
+        }
 
         return ExitCode.OK;
     }
@@ -115,8 +115,13 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
                 apiClient, outputDirectory, projectRef.getProjectUri());
         } else {
             return new ModrinthApiPackFetcher(
-                apiClient, projectRef, this.outputDirectory, this.gameVersion,
-                defaultVersionType, loader != null ? loader.asLoader() : null);
+                apiClient,
+                projectRef,
+                forceSynchronize,
+                outputDirectory,
+                gameVersion,
+                defaultVersionType, loader != null ? loader.asLoader() : null
+            );
         }
     }
 }
