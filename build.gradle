@@ -95,7 +95,7 @@ dependencies {
     implementation 'com.kjetland:mbknor-jackson-jsonschema_2.13:1.0.39'
     implementation 'com.jayway.jsonpath:json-path:2.8.0'
     implementation 'org.apache.httpcomponents.client5:httpclient5:5.2.1'
-    implementation 'io.projectreactor.netty:reactor-netty-http:1.1.9'
+    implementation 'io.projectreactor.netty:reactor-netty-http:1.1.10'
     implementation 'org.apache.maven:maven-artifact:3.9.4'
     implementation 'commons-codec:commons-codec:1.16.0'
     // for RFC5987 parsing of content-disposition filename*
