@@ -22,9 +22,9 @@ import reactor.core.scheduler.Schedulers;
 public class ModFileRefResolver {
 
     private static final Pattern REF_FORMATS = Pattern.compile(
-        "https://(www|legacy).curseforge.com/minecraft/(?<category>[A-Za-z-]+)/(?<slugInUrl>[A-Za-z-]+)(/files/(?<fileIdInUrl>\\d+))?"
+        "https://(www|legacy).curseforge.com/minecraft/(?<category>[A-Za-z-]+)/(?<slugInUrl>[A-Za-z][A-Za-z0-9-]*)(/files/(?<fileIdInUrl>\\d+))?"
             + "|"
-            + "((?<modId>\\d+)|(?<slug>[A-Za-z-]+))((:(?<fileId>\\d+))|(@(?<fileMatcher>.+)))?"
+            + "((?<modId>\\d+)|(?<slug>[A-Za-z][A-Za-z0-9-]*))((:(?<fileId>\\d+))|(@(?<fileMatcher>.+)))?"
     );
     private final CurseForgeApiClient apiClient;
     private final CategoryInfo categoryInfo;
