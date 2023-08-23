@@ -59,8 +59,9 @@ public class ManageUsersCommand implements Callable<Integer> {
     @Option(names = {"--type", "-t"}, required = true, description = "Allowed: ${COMPLETION-CANDIDATES}")
     Type type;
 
-    @Option(names = {"-a", "--append", "--append-only"}, description = "Do not remove any existing users even when not mentioned in input parameters")
-    boolean appendOnly;
+    @Option(names = "--existing", defaultValue = "SYNCHRONIZE",
+        description = "Select the behavior when the resulting file already exists\nAllowed: ${COMPLETION-CANDIDATES}")
+    ExistingFileBehavior existingFileBehavior;
 
     @Option(names = "--version", description = "Minecraft game version. If not provided, assumes JSON format")
     String version;
@@ -92,6 +93,9 @@ public class ManageUsersCommand implements Callable<Integer> {
                 if (inputs.size() != 1) {
                     throw new InvalidParameterException("One and only one input file path/URL can be provided");
                 }
+                if (existingFileBehavior == ExistingFileBehavior.MERGE) {
+                    throw new InvalidParameterException("Merging is not supported with file input");
+                }
 
                 processInputAsFile(sharedFetch, inputs.get(0));
             }
@@ -112,6 +116,10 @@ public class ManageUsersCommand implements Callable<Integer> {
                 type == Type.JAVA_OPS ? "ops.txt" : "white-list.txt"
             );
 
+            if (handleSkipExistingFile(resultFile)) {
+                return;
+            }
+
             final Set<String> users = loadExistingTextUserList(resultFile);
 
             users.addAll(inputs);
@@ -124,6 +132,10 @@ public class ManageUsersCommand implements Callable<Integer> {
                 type == Type.JAVA_OPS ? "ops.json" : "whitelist.json"
             );
 
+            if (handleSkipExistingFile(resultFile)) {
+                return;
+            }
+
             objectMapper.writeValue(resultFile.toFile(),
                 reconcile(sharedFetch, inputs,
                     loadExistingJavaJson(resultFile)
@@ -132,11 +144,20 @@ public class ManageUsersCommand implements Callable<Integer> {
         }
     }
 
+    private boolean handleSkipExistingFile(Path resultFile) {
+        if (existingFileBehavior == ExistingFileBehavior.SKIP
+            && Files.exists(resultFile)) {
+            log.info("The file {} already exists, so no changes will be made", resultFile);
+            return true;
+        }
+        return false;
+    }
+
     private List<? extends JavaUser> reconcile(SharedFetch sharedFetch, List<String> inputs, List<? extends JavaUser> existing)
         throws IOException {
 
         final List<JavaUser> reconciled;
-        if (appendOnly) {
+        if (existingFileBehavior == ExistingFileBehavior.MERGE) {
             reconciled = new ArrayList<>(existing);
         }
         else {
@@ -146,7 +167,8 @@ public class ManageUsersCommand implements Callable<Integer> {
         for (final String input : inputs) {
             final JavaUser resolvedUser = resolveJavaUserId(sharedFetch, existing, input.trim());
 
-            if (!appendOnly || !containsUserByUuid(reconciled, resolvedUser.getUuid())) {
+            if (existingFileBehavior == ExistingFileBehavior.SYNCHRONIZE
+                    || !containsUserByUuid(reconciled, resolvedUser.getUuid())) {
                 if (type == Type.JAVA_OPS) {
                     final JavaOp resolvedOp = resolvedUser instanceof JavaOp ? ((JavaOp) resolvedUser) : null;
                     reconciled.add(JavaOp.builder()
@@ -286,7 +308,7 @@ public class ManageUsersCommand implements Callable<Integer> {
      * @return mutable set of users or empty if file doesn't exist
      */
     private Set<String> loadExistingTextUserList(Path resultFile) throws IOException {
-        if (appendOnly && Files.exists(resultFile)) {
+        if (existingFileBehavior == ExistingFileBehavior.MERGE && Files.exists(resultFile)) {
             log.debug("Loading existing users from {}", resultFile);
             return new HashSet<>(Files.readAllLines(resultFile));
         }
@@ -310,6 +332,10 @@ public class ManageUsersCommand implements Callable<Integer> {
                 : type == Type.JAVA_OPS ? "ops.json" : "whitelist.json"
         );
 
+        if (handleSkipExistingFile(outputFile)) {
+            return;
+        }
+
         if (Uris.isUri(filePathUrl)) {
             log.debug("Downloading from {} to {}", filePathUrl, outputFile);
 
@@ -331,5 +357,4 @@ public class ManageUsersCommand implements Callable<Integer> {
     private boolean usesTextUserList() {
         return version != null && new ComparableVersion(version).compareTo(MIN_VERSION_USES_JSON) < 0;
     }
-
 }

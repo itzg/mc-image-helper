@@ -230,7 +230,7 @@ class ManageUsersCommandTest {
         }
 
         @Test
-        void append(WireMockRuntimeInfo wmInfo) throws IOException {
+        void merge(WireMockRuntimeInfo wmInfo) throws IOException {
             setupUserStubs();
 
             final Path expectedFile = tempDir.resolve("whitelist.json");
@@ -250,7 +250,7 @@ class ManageUsersCommandTest {
                     "--mojang-api-base-url", wmInfo.getHttpBaseUrl(),
                     "--type", "JAVA_WHITELIST",
                     "--output-directory", tempDir.toString(),
-                    "--append-only",
+                    "--existing", "MERGE",
                     "user2"
                 );
 
@@ -273,6 +273,48 @@ class ManageUsersCommandTest {
 
             verify(0, getRequestedFor(urlEqualTo("/users/profiles/minecraft/user1")));
             verify(1, getRequestedFor(urlEqualTo("/users/profiles/minecraft/user2")));
+        }
+
+        @Test
+        void skipExisting(WireMockRuntimeInfo wmInfo) throws IOException {
+            setupUserStubs();
+
+            final Path expectedFile = tempDir.resolve("whitelist.json");
+            Files.write(expectedFile,
+                Collections.singletonList(
+                    "["
+                        + "{\"name\":\"user1\",\"uuid\":\"" + USER1_UUID + "\"}"
+                        + "]"
+                )
+            );
+
+            // now run with user2 not included
+            final int exitCode = new CommandLine(
+                new ManageUsersCommand()
+            )
+                .execute(
+                    "--mojang-api-base-url", wmInfo.getHttpBaseUrl(),
+                    "--type", "JAVA_WHITELIST",
+                    "--output-directory", tempDir.toString(),
+                    "--existing", "SKIP",
+                    "user2"
+                );
+
+            assertThat(exitCode).isEqualTo(0);
+
+            assertThat(expectedFile).exists();
+
+            assertJson(expectedFile)
+                .isArrayContainingExactlyInAnyOrder(
+                    conditions()
+                        .satisfies(conditions()
+                            .at("/name").hasValue("user1")
+                            .at("/uuid").hasValue(USER1_UUID)
+                        )
+                );
+
+            verify(0, getRequestedFor(urlEqualTo("/users/profiles/minecraft/user1")));
+            verify(0, getRequestedFor(urlEqualTo("/users/profiles/minecraft/user2")));
         }
 
         @Test
@@ -470,7 +512,7 @@ class ManageUsersCommandTest {
 
         @ParameterizedTest
         @EnumSource(Type.class)
-        void appendFile(Type type) throws IOException {
+        void merge(Type type) throws IOException {
             final Path expectedFile = tempDir.resolve( type == Type.JAVA_WHITELIST ? "white-list.txt" : "ops.txt");
             Files.write(expectedFile, Collections.singletonList("user1"));
 
@@ -481,7 +523,7 @@ class ManageUsersCommandTest {
                     "--type", type.name(),
                     "--output-directory", tempDir.toString(),
                     "--version", "1.7.1",
-                    "--append-only",
+                    "--existing", "MERGE",
                     "user2"
                 );
 
@@ -675,6 +717,39 @@ class ManageUsersCommandTest {
             assertThat(exitCode).isEqualTo(ExitCode.OK);
 
             assertThat(expectedFile).hasContent(sourceContent);
+        }
+
+        @ParameterizedTest
+        @EnumSource(Type.class)
+        void localFileDestinationExistsButSkip(Type type, WireMockRuntimeInfo wmInfo) throws IOException {
+
+            final Path expectedFile = tempDir.resolve(
+                type == Type.JAVA_OPS ? "ops.json" : "whitelist.json"
+            );
+
+            final String oldContent = "[{\"name\": \"other\", \"uuid\": \"c667495b-5ee0-479f-bf55-a71a8d137cb1\"}]";
+            Files.write(expectedFile, Collections.singletonList(oldContent));
+
+            @Language("JSON") final String newContent = "[{\"name\": \"testing\", \"uuid\": \"dec16109-30d4-4425-bcc1-5222255eb6b0\"}]";
+
+            final Path inputFile = Files.write(tempDir.resolve("input.json"),
+                Collections.singletonList(newContent));
+
+            final int exitCode = new CommandLine(
+                new ManageUsersCommand()
+            )
+                .execute(
+                    "--mojang-api-base-url", wmInfo.getHttpBaseUrl(),
+                    "--type", type.name(),
+                    "--output-directory", tempDir.toString(),
+                    "--input-is-file",
+                    "--existing", "SKIP",
+                    inputFile.toString()
+                );
+
+            assertThat(exitCode).isEqualTo(ExitCode.OK);
+
+            assertThat(expectedFile).hasContent(oldContent);
         }
 
         @ParameterizedTest
