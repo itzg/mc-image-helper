@@ -20,6 +20,24 @@ public class CompareVersionsCommand implements Callable<Integer> {
 
   @Override
   public Integer call() throws Exception {
+    char leftVersionChannel = leftVersion.charAt(0);
+    leftVersionChannel = Character.isDigit(leftVersionChannel) ? 'r' : leftVersionChannel;
+    char rightVersionChannel = rightVersion.charAt(0);
+    rightVersionChannel = Character.isDigit(rightVersionChannel) ? 'r' : rightVersionChannel;
+
+    if (comparison == Comparison.lt && leftVersionChannel < rightVersionChannel) {
+      return 0;
+    } else if (comparison == Comparison.lt && leftVersionChannel > rightVersionChannel) {
+      return 1;
+    }
+
+    if (leftVersion.startsWith("a") || leftVersion.startsWith("b")) {
+      leftVersion = leftVersion.substring(1);
+    }
+    if (rightVersion.startsWith("a") || rightVersion.startsWith("b")) {
+      rightVersion = rightVersion.substring(1);
+    }
+
     final ComparableVersion lhs = new ComparableVersion(leftVersion);
     final ComparableVersion rhs = new ComparableVersion(rightVersion);
 
