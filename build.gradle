@@ -6,7 +6,7 @@ plugins {
     id 'java'
     id 'application'
     id 'idea'
-    id "io.freefair.lombok" version '8.2.2'
+    id "io.freefair.lombok" version '8.3'
     // https://github.com/qoomon/gradle-git-versioning-plugin
     id 'me.qoomon.git-versioning' version '6.4.2'
     // https://github.com/itzg/github-releaser-gradle-plugin
