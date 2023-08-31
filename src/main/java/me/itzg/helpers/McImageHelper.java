@@ -25,6 +25,7 @@ import me.itzg.helpers.modrinth.ModrinthCommand;
 import me.itzg.helpers.mvn.MavenDownloadCommand;
 import me.itzg.helpers.paper.InstallPaperCommand;
 import me.itzg.helpers.patch.PatchCommand;
+import me.itzg.helpers.properties.SetPropertiesCommand;
 import me.itzg.helpers.purpur.InstallPurpurCommand;
 import me.itzg.helpers.quilt.InstallQuiltCommand;
 import me.itzg.helpers.singles.Asciify;
@@ -74,6 +75,7 @@ import picocli.CommandLine.Option;
         NetworkInterfacesCommand.class,
         PatchCommand.class,
         ResolveMinecraftVersionCommand.class,
+        SetPropertiesCommand.class,
         Sync.class,
         SyncAndInterpolate.class,
         YamlPathCmd.class,
