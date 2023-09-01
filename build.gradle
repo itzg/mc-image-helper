@@ -111,7 +111,7 @@ dependencies {
     testImplementation 'org.mockito:mockito-junit-jupiter:5.5.0'
     // would like to transition these to wiremock
     testImplementation 'org.mock-server:mockserver-junit-jupiter:5.15.0'
-    testImplementation "com.github.tomakehurst:wiremock-jre8:2.35.0"
+    testImplementation "com.github.tomakehurst:wiremock-jre8:3.0.0"
     // https://github.com/stefanbirkner/system-lambda
     testImplementation 'com.github.stefanbirkner:system-lambda:1.2.1'
 
