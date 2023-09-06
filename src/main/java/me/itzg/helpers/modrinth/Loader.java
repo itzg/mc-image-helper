@@ -1,23 +1,26 @@
 package me.itzg.helpers.modrinth;
 
+import lombok.Getter;
+
+@Getter
 public enum Loader {
-  fabric("mods"),
-  quilt("mods"),
-  forge("mods"),
-  bukkit("plugins"),
-  spigot("plugins"),
-  paper("plugins"),
-  purpur("plugins"),
-  bungeecord("plugins"),
-  velocity("plugins");
+    fabric("mods", null),
+    quilt("mods", fabric),
+    forge("mods", null),
+    bukkit("plugins", null),
+    spigot("plugins", null),
+    paper("plugins", spigot),
+    pufferfish("plugins", paper),
+    purpur("plugins", paper),
+    bungeecord("plugins", null),
+    velocity("plugins", null);
 
-  private final String type;
+    private final String type;
+    private final Loader compatibleWith;
 
-  Loader(String type) {
-    this.type = type;
-  }
+    Loader(String type, Loader compatibleWith) {
+        this.type = type;
+        this.compatibleWith = compatibleWith;
+    }
 
-  public String getType() {
-    return type;
-  }
 }

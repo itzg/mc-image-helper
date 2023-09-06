@@ -228,7 +228,7 @@ public class ModrinthCommand implements Callable<Integer> {
             return fetch(Uris.populateToUri(
                 baseUrl + "/v2/project/{id|slug}/version",
                 QueryParameters.queryParameters()
-                    .addStringArray("loaders", loader != null ? loader.toString() : null)
+                    .addStringArray("loaders", expandCompatibleLoaders(loader))
                     .addStringArray("game_versions", gameVersion),
                 project
             ))
@@ -238,6 +238,21 @@ public class ModrinthCommand implements Callable<Integer> {
         } catch (IOException e) {
             throw new RuntimeException("Getting versions for project " + project, e);
         }
+    }
+
+    private List<String> expandCompatibleLoaders(Loader loader) {
+        if (loader == null) {
+            return null;
+        }
+
+        final ArrayList<String> expanded = new ArrayList<>();
+        expanded.add(loader.toString());
+        Loader compatibleWith = loader;
+        while ((compatibleWith = compatibleWith.getCompatibleWith()) != null) {
+            expanded.add(compatibleWith.toString());
+        }
+
+        return expanded;
     }
 
     private Version getVersionFromId(String versionId) {
