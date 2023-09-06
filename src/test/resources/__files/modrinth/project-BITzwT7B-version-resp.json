@@ -1,0 +1,116 @@
+[
+  {
+    "id": "O9nndrTu",
+    "project_id": "BITzwT7B",
+    "author_id": "2KRirMjo",
+    "featured": false,
+    "name": "ClickVillagers 0.3",
+    "version_number": "0.3",
+    "changelog": "- Added permissions:\n  - clickvillagers.pickup\n  - clickvillagers.anchor\n  - clickvillagers.hopper\n- All permissions default to \"true\"\n- Fixed a bug where placing other heads would cause \"couldn't retrieve villager data\" and weren't able to be placed.\n",
+    "changelog_url": null,
+    "date_published": "2023-08-30T12:48:39.592803Z",
+    "downloads": 14,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+      {
+        "hashes": {
+          "sha512": "f5c0a0453f7e602c5d4091c42955fee39c9ae1e91cba24704fed1cd6d58b8c7521dde99ec7ea4648c5302ddf448649636245023c5a7d7ae4d8c356191ecec45a",
+          "sha1": "da6ab36a0d794d6920f15e0753a0250a1937493d"
+        },
+        "url": "https://cdn.modrinth.com/data/BITzwT7B/versions/O9nndrTu/ClickVillagers-0.3.jar",
+        "filename": "ClickVillagers-0.3.jar",
+        "primary": true,
+        "size": 31882,
+        "file_type": null
+      }
+    ],
+    "dependencies": [],
+    "game_versions": [
+      "1.20",
+      "1.20.1"
+    ],
+    "loaders": [
+      "bukkit",
+      "paper",
+      "spigot"
+    ]
+  },
+  {
+    "id": "DfUyEmsH",
+    "project_id": "BITzwT7B",
+    "author_id": "2KRirMjo",
+    "featured": false,
+    "name": "ClickVillagers 0.2",
+    "version_number": "0.2",
+    "changelog": "### New Features\n- Multi Language Support! Supported languages: **English, German, Turkish, Dutch, Ukrainian, Russian**\n- Added configuration to enable/disable certain features.\n- You can now pick up and anchor Zombie Villagers.\n- You can now put picked up villagers directly into minecarts or boats.\n- You will now be notified when a new version is available.\n\n### Fixes\n- Huge code clean-up & rewrite.\n- Optimized Villager Hoppers.\n- Fixed a bug where villagers wouldn't keep their data if the -- spawn chunks aren't loaded.",
+    "changelog_url": null,
+    "date_published": "2023-08-24T14:11:29.994155Z",
+    "downloads": 11,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+      {
+        "hashes": {
+          "sha512": "bf603e7f31319ab66577547e471e7dab3c6742a979c56f217581cea3e597c5d69ccc12575f0033a240043d27407a75d81b264f3f0bbf3c1975d202c2e4829ed2",
+          "sha1": "5fd52e1ae61ffaa4899c385fa584e0759e1cb1c3"
+        },
+        "url": "https://cdn.modrinth.com/data/BITzwT7B/versions/DfUyEmsH/ClickVillagers-0.2.jar",
+        "filename": "ClickVillagers-0.2.jar",
+        "primary": true,
+        "size": 31070,
+        "file_type": null
+      }
+    ],
+    "dependencies": [],
+    "game_versions": [
+      "1.20",
+      "1.20.1"
+    ],
+    "loaders": [
+      "bukkit",
+      "paper",
+      "spigot"
+    ]
+  },
+  {
+    "id": "oUJMLDhz",
+    "project_id": "BITzwT7B",
+    "author_id": "2KRirMjo",
+    "featured": false,
+    "name": "ClickVillagers 0.1",
+    "version_number": "0.1",
+    "changelog": "",
+    "changelog_url": null,
+    "date_published": "2023-07-22T19:57:58.585722Z",
+    "downloads": 75,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+      {
+        "hashes": {
+          "sha1": "ca10c645a60f96f25d576487e0d8260ac43735d6",
+          "sha512": "f83e3b327d2e2e49a0c94744e6b08740acebff79f99781098ac12d7661bcbe901bdbe028076f21329098dc2a358934ed74a0c2297713c3c18497075dcd0e7f69"
+        },
+        "url": "https://cdn.modrinth.com/data/BITzwT7B/versions/oUJMLDhz/ClickVillagers-0.1.jar",
+        "filename": "ClickVillagers-0.1.jar",
+        "primary": true,
+        "size": 17258,
+        "file_type": null
+      }
+    ],
+    "dependencies": [],
+    "game_versions": [
+      "1.20",
+      "1.20.1"
+    ],
+    "loaders": [
+      "bukkit",
+      "paper",
+      "sponge"
+    ]
+  }
+]

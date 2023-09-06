@@ -2,7 +2,7 @@
 GET https://api.modrinth.com/v2/project/cobblemon-fabric
 
 ###
-GET https://api.modrinth.com/v2/projects?ids=["terra"]
+GET https://api.modrinth.com/v2/projects?ids=["chunky"]
 
 ###
 GET https://api.modrinth.com/v2/projects?ids=["fabric-api","cloth-config"]
@@ -12,6 +12,12 @@ GET https://api.modrinth.com/v2/project/cobblemon-fabric/version?loaders=fabric&
 
 ###
 GET https://api.modrinth.com/v2/project/9s6osm5g/version?loaders=%5B%22fabric%22%5D&game_versions=%5B%221.19.2%22%5D
+
+###
+GET https://api.modrinth.com/v2/project/clickvillagers/version?loaders=["purpur","paper","spigot"]&game_versions=["1.20.1"]
+###
+GET https://api.modrinth.com/v2/project/BITzwT7B/version?loaders=["purpur","paper","spigot"]&game_versions=["1.20.1"]
+
 ###
 GET https://api.modrinth.com/v2/project/cobblemon-fabric/version
 

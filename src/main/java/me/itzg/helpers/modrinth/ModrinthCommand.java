@@ -25,7 +25,6 @@ import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.http.SharedFetchArgs;
 import me.itzg.helpers.http.Uris;
-import me.itzg.helpers.http.Uris.QueryParameters;
 import me.itzg.helpers.json.ObjectMappers;
 import me.itzg.helpers.modrinth.model.DependencyType;
 import me.itzg.helpers.modrinth.model.Project;
@@ -104,7 +103,7 @@ public class ModrinthCommand implements Callable<Integer> {
                 .defaultIfEmpty(Collections.emptyList())
                 .block()
                 .stream()
-                .flatMap(resolvedProject -> processProject(resolvedProject.getProjectRef(), resolvedProject.getProject()))
+                .flatMap(resolvedProject -> processProject(modrinthApiClient, resolvedProject.getProjectRef(), resolvedProject.getProject()))
                 .collect(Collectors.toList());
         }
     }
@@ -131,7 +130,7 @@ public class ModrinthCommand implements Callable<Integer> {
         return Manifests.load(outputDirectory, ModrinthManifest.ID, ModrinthManifest.class);
     }
 
-    private Stream<Version> expandDependencies(Version version) {
+    private Stream<Version> expandDependencies(ModrinthApiClient modrinthApiClient, Version version) {
         log.debug("Expanding dependencies of version={}", version);
         return version.getDependencies().stream()
             .filter(dep ->
@@ -146,7 +145,7 @@ public class ModrinthCommand implements Callable<Integer> {
                     if (dep.getVersionId() == null) {
                         log.debug("Fetching versions of dep={} and picking", dep);
                         depVersion = pickVersion(
-                            getVersionsForProject(dep.getProjectId())
+                            getVersionsForProject(modrinthApiClient, dep.getProjectId())
                         );
                     }
                     else {
@@ -157,7 +156,7 @@ public class ModrinthCommand implements Callable<Integer> {
                         log.debug("Resolved version={} for dep={}", depVersion.getVersionNumber(), dep);
                         return Stream.concat(
                                 Stream.of(depVersion),
-                                expandDependencies(depVersion)
+                                expandDependencies(modrinthApiClient, depVersion)
                             )
                             .peek(expandedVer -> log.debug("Expanded dependency={} into version={}", dep, expandedVer));
                     }
@@ -223,21 +222,15 @@ public class ModrinthCommand implements Callable<Integer> {
         }
     }
 
-    private List<Version> getVersionsForProject(String project) {
-        try {
-            return fetch(Uris.populateToUri(
-                baseUrl + "/v2/project/{id|slug}/version",
-                QueryParameters.queryParameters()
-                    .addStringArray("loaders", loader != null ? loader.toString() : null)
-                    .addStringArray("game_versions", gameVersion),
-                project
-            ))
-                .userAgentCommand("modrinth")
-                .toObjectList(Version.class)
-                .execute();
-        } catch (IOException e) {
-            throw new RuntimeException("Getting versions for project " + project, e);
+    private List<Version> getVersionsForProject(ModrinthApiClient modrinthApiClient, String project) {
+        final List<Version> versions = modrinthApiClient.getVersionsForProject(
+                project, loader, gameVersion
+            )
+            .block();
+        if (versions == null) {
+            throw new GenericException("Unable to retrieve versions for project " + project);
         }
+        return versions;
     }
 
     private Version getVersionFromId(String versionId) {
@@ -251,11 +244,11 @@ public class ModrinthCommand implements Callable<Integer> {
     }
 
 
-    private Stream<Path> processProject(ProjectRef projectRef, Project project) {
+    private Stream<Path> processProject(ModrinthApiClient modrinthApiClient, ProjectRef projectRef, Project project) {
         log.debug("Starting with projectRef={}", projectRef);
 
         if (projectsProcessed.add(project.getId())) {
-            final Version version = resolveProjectVersion(project, projectRef);
+            final Version version = resolveProjectVersion(modrinthApiClient, project, projectRef);
 
             if (version != null) {
                 if (version.getFiles().isEmpty()) {
@@ -264,7 +257,7 @@ public class ModrinthCommand implements Callable<Integer> {
 
                 return Stream.concat(
                         Stream.of(version),
-                        expandDependencies(version)
+                        expandDependencies(modrinthApiClient, version)
                     )
                     .map(ModrinthApiClient::pickVersionFile)
                     .map(versionFile -> download(project.getProjectType(), versionFile))
@@ -274,15 +267,15 @@ public class ModrinthCommand implements Callable<Integer> {
         return Stream.empty();
     }
 
-    private Version resolveProjectVersion(Project project, ProjectRef projectRef) {
+    private Version resolveProjectVersion(ModrinthApiClient modrinthApiClient, Project project, ProjectRef projectRef) {
         if (projectRef.hasVersionType()) {
-            return pickVersion(getVersionsForProject(project.getId()), projectRef.getVersionType());
+            return pickVersion(getVersionsForProject(modrinthApiClient, project.getId()), projectRef.getVersionType());
         }
         else if (projectRef.hasVersionId()) {
             return getVersionFromId(projectRef.getVersionId());
         }
         else {
-            final List<Version> versions = getVersionsForProject(project.getId());
+            final List<Version> versions = getVersionsForProject(modrinthApiClient, project.getId());
             if (versions.isEmpty()) {
                 throw new InvalidParameterException(
                     String.format("No files are available for the project '%s' (%s) for %s loader and Minecraft version %s",
