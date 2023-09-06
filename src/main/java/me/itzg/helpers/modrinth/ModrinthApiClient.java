@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -167,7 +168,7 @@ public class ModrinthApiClient implements AutoCloseable {
         return sharedFetch.fetch(
                 uriBuilder.resolve("/v2/project/{id|slug}/version",
                     queryParameters()
-                        .addStringArray("loader", loader != null ? loader.toString() : null)
+                        .addStringArray("loaders", expandCompatibleLoaders(loader))
                         .addStringArray("game_versions", gameVersion),
                     projectIdOrSlug
                 )
@@ -181,6 +182,21 @@ public class ModrinthApiClient implements AutoCloseable {
                         )))
                     : Mono.just(versions)
                 );
+    }
+
+    private List<String> expandCompatibleLoaders(Loader loader) {
+        if (loader == null) {
+            return null;
+        }
+
+        final ArrayList<String> expanded = new ArrayList<>();
+        expanded.add(loader.toString());
+        Loader compatibleWith = loader;
+        while ((compatibleWith = compatibleWith.getCompatibleWith()) != null) {
+            expanded.add(compatibleWith.toString());
+        }
+
+        return expanded;
     }
 
     public Mono<Version> getVersionFromId(String versionId) {
