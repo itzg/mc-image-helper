@@ -1,19 +1,35 @@
 package me.itzg.helpers.modrinth;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
+import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
+import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import java.nio.file.Path;
+import java.util.function.Consumer;
+import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
+import me.itzg.helpers.json.ObjectMappers;
+import me.itzg.helpers.modrinth.ModrinthCommand.DownloadDependencies;
+import org.assertj.core.api.AbstractPathAssert;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
 
 class ModrinthCommandTest {
+    final ObjectMapper objectMapper = ObjectMappers.defaultMapper();
+
     @RegisterExtension
     static WireMockExtension wm = WireMockExtension.newInstance()
         .options(wireMockConfig()
@@ -66,6 +82,124 @@ class ModrinthCommandTest {
 
         assertThat(tempDir.resolve("mods/fabric-api-0.76.1+1.19.2.jar")).exists();
         assertThat(tempDir.resolve("mods/cloth-config-8.3.103-fabric.jar")).exists();
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = ModrinthCommand.DownloadDependencies.class)
+    void downloadsOnlyRequestedDependencyTypes(ModrinthCommand.DownloadDependencies downloadDependencies, @TempDir Path tempDir) {
+        final String projectId = randomAlphanumeric(6);
+        final String projectSlug = randomAlphabetic(5);
+        final String versionId = randomAlphanumeric(6);
+        final String requiredDepProjectId = randomAlphanumeric(6);
+        final String requiredVersionId = randomAlphanumeric(6);
+        final String optionalDepProjectId = randomAlphanumeric(6);
+        final String optionalVersionId = randomAlphanumeric(6);
+
+        stubProjectBulkRequest(projectId, projectSlug);
+
+        stubVersionRequest(projectId, versionId, deps -> {
+            deps.addObject()
+                .put("project_id", requiredDepProjectId)
+                .put("dependency_type", "required");
+            deps.addObject()
+                .put("project_id", optionalDepProjectId)
+                .put("dependency_type", "optional");
+        });
+        stubVersionRequest(requiredDepProjectId, requiredVersionId, deps -> {});
+        stubVersionRequest(optionalDepProjectId, optionalVersionId, deps -> {});
+
+        stubFor(get(urlPathMatching("/cdn/(.+)"))
+            .willReturn(aResponse()
+                .withBody("{{request.pathSegments.[1]}}")
+                .withTransformers("response-template")
+            )
+        );
+
+        final int exitCode = new CommandLine(
+            new ModrinthCommand()
+        )
+            .execute(
+                "--api-base-url", wm.getRuntimeInfo().getHttpBaseUrl(),
+                "--output-directory", tempDir.toString(),
+                "--game-version", "1.21.1",
+                "--loader", "paper",
+                "--projects", projectId,
+                "--download-dependencies", downloadDependencies.name()
+            );
+
+        assertThat(exitCode).isEqualTo(ExitCode.OK);
+
+        assertVersionFile(tempDir, versionId).exists();
+        verify(projectVersionsRequest(projectId));
+        if (downloadDependencies == DownloadDependencies.REQUIRED) {
+            assertVersionFile(tempDir, requiredVersionId).exists();
+            assertVersionFile(tempDir, optionalVersionId).doesNotExist();
+            verify(projectVersionsRequest(requiredDepProjectId));
+            verify(0, projectVersionsRequest(optionalDepProjectId));
+        }
+        else if (downloadDependencies == DownloadDependencies.OPTIONAL) {
+            assertVersionFile(tempDir, requiredVersionId).exists();
+            assertVersionFile(tempDir, optionalVersionId).exists();
+            verify(projectVersionsRequest(optionalDepProjectId));
+        }
+        else {
+            assertVersionFile(tempDir, requiredVersionId).doesNotExist();
+            assertVersionFile(tempDir, optionalVersionId).doesNotExist();
+            verify(0, projectVersionsRequest(requiredDepProjectId));
+            verify(0, projectVersionsRequest(optionalDepProjectId));
+        }
+    }
+
+    @NotNull
+    private static RequestPatternBuilder projectVersionsRequest(String projectId) {
+        return getRequestedFor(urlPathEqualTo("/v2/project/" + projectId + "/version"));
+    }
+
+    @NotNull
+    private static AbstractPathAssert<?> assertVersionFile(Path tempDir, String versionId) {
+        return assertThat(tempDir.resolve("plugins").resolve(versionId + ".jar"));
+    }
+
+    private void stubProjectBulkRequest(String projectId, String projectSlug) {
+        final ArrayNode projectResp = objectMapper.createArrayNode();
+        projectResp
+            .addObject()
+            .put("id", projectId)
+            .put("slug", projectSlug)
+            .put("project_type", "mod")
+            .put("server_side", "required");
+        stubFor(get(urlPathEqualTo("/v2/projects"))
+            .withQueryParam("ids", equalTo("[\"" + projectId + "\"]"))
+            .willReturn(aResponse()
+                .withHeader("Content-Type", "application/json")
+                .withJsonBody(projectResp)
+            )
+        );
+    }
+
+    private void stubVersionRequest(String projectId, String versionId, Consumer<ArrayNode> depsAdder) {
+        final ArrayNode versionResp = objectMapper.createArrayNode();
+        final ObjectNode versionNode = versionResp
+            .addObject()
+            .put("id", versionId)
+            .put("project_id", projectId)
+            .put("version_type", "release");
+        versionNode.putArray("files")
+            .addObject()
+            .put("url", wm.getRuntimeInfo().getHttpBaseUrl() + "/cdn/" + versionId)
+            .put("filename", versionId + ".jar");
+        final ArrayNode dependenciesArray = versionNode.putArray("dependencies");
+        depsAdder.accept(dependenciesArray);
+
+        stubFor(get(urlPathEqualTo("/v2/project/" + projectId + "/version"))
+            .withQueryParam("loaders", equalTo("[\"paper\",\"spigot\"]"))
+            .withQueryParam("game_versions", equalTo("[\"1.21.1\"]"))
+            .willReturn(aResponse()
+                .withHeader("Content-Type", "application/json")
+                .withJsonBody(versionResp)
+            )
+        );
+
     }
 
     private static void setupStubs() {
