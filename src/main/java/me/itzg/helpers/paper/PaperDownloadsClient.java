@@ -88,7 +88,7 @@ public class PaperDownloadsClient implements AutoCloseable{
                             )
                     )
                         .toFile(outputDirectory.resolve(downloadInfo.getName()))
-                        .skipUpToDate(true)
+                        .skipExisting(true)
                         .handleStatus(downloadStatusHandler)
                         .assemble();
                 });
