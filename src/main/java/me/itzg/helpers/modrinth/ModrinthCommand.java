@@ -30,6 +30,7 @@ import me.itzg.helpers.modrinth.model.DependencyType;
 import me.itzg.helpers.modrinth.model.Project;
 import me.itzg.helpers.modrinth.model.ProjectType;
 import me.itzg.helpers.modrinth.model.Version;
+import me.itzg.helpers.modrinth.model.VersionDependency;
 import me.itzg.helpers.modrinth.model.VersionFile;
 import me.itzg.helpers.modrinth.model.VersionType;
 import picocli.CommandLine.ArgGroup;
@@ -56,8 +57,18 @@ public class ModrinthCommand implements Callable<Integer> {
     @Option(names = "--output-directory", defaultValue = ".", paramLabel = "DIR")
     Path outputDirectory;
 
-    @Option(names = "--download-optional-dependencies")
-    boolean downloadOptionalDependencies;
+    @Option(names = "--download-dependencies", defaultValue = "NONE",
+        description = "Default is ${DEFAULT-VALUE}\nValid values: ${COMPLETION-CANDIDATES}")
+    DownloadDependencies downloadDependencies;
+
+    public enum DownloadDependencies {
+        NONE,
+        REQUIRED,
+        /**
+         * Implies {@link #REQUIRED}
+         */
+        OPTIONAL
+    }
 
     @Option(names = "--allowed-version-type", defaultValue = "release", description = "Valid values: ${COMPLETION-CANDIDATES}")
     VersionType defaultVersionType;
@@ -133,10 +144,7 @@ public class ModrinthCommand implements Callable<Integer> {
     private Stream<Version> expandDependencies(ModrinthApiClient modrinthApiClient, Version version) {
         log.debug("Expanding dependencies of version={}", version);
         return version.getDependencies().stream()
-            .filter(dep ->
-                (dep.getDependencyType() == DependencyType.required ||
-                    downloadOptionalDependencies && dep.getDependencyType() == DependencyType.optional)
-            )
+            .filter(this::filterDependency)
             .filter(dep -> projectsProcessed.add(dep.getProjectId()))
             .flatMap(dep -> {
                 projectsProcessed.add(dep.getProjectId());
@@ -168,6 +176,18 @@ public class ModrinthCommand implements Callable<Integer> {
                 }
             });
 
+    }
+
+    private boolean filterDependency(VersionDependency dep) {
+        if (downloadDependencies == null) {
+            return false;
+        }
+
+        return (downloadDependencies == DownloadDependencies.REQUIRED && dep.getDependencyType() == DependencyType.required)
+            || (
+            downloadDependencies == DownloadDependencies.OPTIONAL
+                && (dep.getDependencyType() == DependencyType.required || dep.getDependencyType() == DependencyType.optional)
+        );
     }
 
     private Version getVersion(String versionId) throws IOException {
