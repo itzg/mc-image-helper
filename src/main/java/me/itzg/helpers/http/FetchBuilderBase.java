@@ -4,6 +4,7 @@ import static io.netty.handler.codec.http.HttpHeaderNames.ACCEPT;
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpStatusClass;
 import io.netty.handler.codec.http.HttpUtil;
@@ -38,11 +39,11 @@ import reactor.netty.http.client.HttpClientResponse;
 @Slf4j
 public class FetchBuilderBase<SELF extends FetchBuilderBase<SELF>> {
 
-    protected final static DateTimeFormatter httpDateTimeFormatter =
+    final static DateTimeFormatter httpDateTimeFormatter =
         DateTimeFormatter.RFC_1123_DATE_TIME.withZone(ZoneId.of("GMT"));
     private static final Pattern HEADER_KEYS_TO_REDACT = Pattern.compile("authorization|api-key", Pattern.CASE_INSENSITIVE);
 
-    static class State {
+    static protected class State {
         private final SharedFetch sharedFetch;
         private final URI uri;
         public String userAgentCommand;
@@ -211,6 +212,16 @@ public class FetchBuilderBase<SELF extends FetchBuilderBase<SELF>> {
             return respTypes.stream().noneMatch(s -> contentTypes.contains((String)HttpUtil.getMimeType(s)));
         }
         return false;
+    }
+
+    /**
+     * CDN providers like bukkit don't support HEAD and respond with a 200 OK and redirect to a path like /error?aspxerrorpath=/projects/worldedit/files/latest
+     * @param resp the response to evaluate
+     * @return true if this response to a HEAD seems to indicate it is not supported
+     */
+    protected static boolean isHeadUnsupportedResponse(HttpClientResponse resp) {
+        return resp.path().equals("error") &&
+            HttpUtil.getMimeType(resp.responseHeaders().get(HttpHeaderNames.CONTENT_TYPE.toString())).equals("text/html");
     }
 
     protected <R> Mono<R> failedContentTypeMono(HttpClientResponse resp) {
