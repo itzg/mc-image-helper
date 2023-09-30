@@ -234,10 +234,10 @@ public class MulitCopyCommand implements Callable<Integer> {
                         log.info("Downloading {} from {}", file, uri);
                         break;
                     case SKIP_FILE_UP_TO_DATE:
-                        log.info("{} is already up to date from {}", file, uri);
+                        log.info("The file {} is already up to date", file);
                         break;
                     case SKIP_FILE_EXISTS:
-                        log.info("{} already exists from {}", file, uri);
+                        log.info("The file {} already exists", file);
                         break;
                     case DOWNLOADED:
                         log.debug("Finished downloading to file={}", file);
