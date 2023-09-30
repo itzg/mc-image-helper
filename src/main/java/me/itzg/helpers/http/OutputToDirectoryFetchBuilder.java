@@ -107,6 +107,7 @@ public class OutputToDirectoryFetchBuilder extends FetchBuilderBase<OutputToDire
                 }
 
                 final Path outputFile = outputDirectory.resolve(extractFilename(resp));
+                statusHandler.call(FileDownloadStatus.DOWNLOADING, uri(), outputFile);
 
                 return skipExisting(resp, outputFile)
                     .flatMap(skip -> skip ? Mono.just(outputFile)
@@ -213,6 +214,7 @@ public class OutputToDirectoryFetchBuilder extends FetchBuilderBase<OutputToDire
                     )
                     .followRedirect(true)
                     .doOnRequest(debugLogRequest(log, "file fetch"))
+                    .doOnRequest((httpClientRequest, connection) -> statusHandler.call(FileDownloadStatus.DOWNLOADING, uri(), outputFile))
                     .get()
                     .uri(resourceUrl)
                     .responseSingle((resp, bodyMono) -> {
