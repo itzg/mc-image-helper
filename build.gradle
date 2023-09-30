@@ -112,7 +112,7 @@ dependencies {
     // would like to transition these to wiremock
     testImplementation 'org.mock-server:mockserver-junit-jupiter:5.15.0'
     // https://github.com/wiremock/wiremock/releases/tag/3.0.0 drops support for Java 8
-    testImplementation 'com.github.tomakehurst:wiremock-jre8:[2.35.0,3.0.0)'
+    testImplementation 'com.github.tomakehurst:wiremock-jre8:[2.35.1,3.0.0)'
     // https://github.com/stefanbirkner/system-lambda
     testImplementation 'com.github.stefanbirkner:system-lambda:1.2.1'
 
