@@ -15,6 +15,7 @@ import picocli.CommandLine.Spec;
 
 @Command(name = "install-forge", description = "Downloads and installs a requested version of Forge")
 public class InstallForgeCommand implements Callable<Integer> {
+
     @Spec
     CommandLine.Model.CommandSpec spec;
 
@@ -78,9 +79,15 @@ public class InstallForgeCommand implements Callable<Integer> {
     @Option(names = "--force-reinstall")
     boolean forceReinstall;
 
+    @Option(names = "--files-base-url", defaultValue = "${env:FORGE_FILES_URL:-https://files.minecraftforge.net/maven}")
+    String filesBaseUrl;
+
+    @Option(names = "--maven-repo-url", defaultValue = "${env:FORGE_MAVEN_REPO_URL:-https://maven.minecraftforge.net}")
+    String mavenRepoUrl;
+
     @Override
     public Integer call() throws Exception {
-        final ForgeInstaller installer = new ForgeInstaller();
+        final ForgeInstaller installer = new ForgeInstaller(filesBaseUrl, mavenRepoUrl);
         installer.install(minecraftVersion, versionOrInstaller.version, outputDirectory, resultsFile, forceReinstall, versionOrInstaller.installer);
 
         return ExitCode.OK;

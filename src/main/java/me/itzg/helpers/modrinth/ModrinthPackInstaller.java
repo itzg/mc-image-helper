@@ -177,7 +177,7 @@ public class ModrinthPackInstaller {
 
         final String forgeVersion = dependencies.get(DependencyId.forge);
         if (forgeVersion != null) {
-            new ForgeInstaller().install(
+            new ForgeInstaller("https://files.minecraftforge.net/maven", "https://maven.minecraftforge.net").install(
                 minecraftVersion,
                 forgeVersion,
                 this.outputDirectory,

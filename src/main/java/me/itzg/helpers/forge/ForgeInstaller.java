@@ -49,6 +49,14 @@ public class ForgeInstaller {
 
     private static final Pattern OLD_FORGE_ID_VERSION = Pattern.compile("forge(.+)", Pattern.CASE_INSENSITIVE);
 
+    private final String filesBaseUrl;
+    private final String mavenRepoUrl;
+
+    public ForgeInstaller(String filesBaseUrl, String mavenRepoUrl) {
+        this.filesBaseUrl = filesBaseUrl;
+        this.mavenRepoUrl = mavenRepoUrl;
+    }
+
     @AllArgsConstructor
     private static class VersionPair {
         String minecraft;
@@ -381,7 +389,8 @@ public class ForgeInstaller {
         }) {
             try {
                 fetch(Uris.populateToUri(
-                    "https://maven.minecraftforge.net/net/minecraftforge/forge/{version}/forge-{version}-installer.jar",
+                    mavenRepoUrl
+                        + "/net/minecraftforge/forge/{version}/forge-{version}-installer.jar",
                     installerUrlVersion, installerUrlVersion
                 ))
                     .userAgentCommand("forge")
@@ -449,8 +458,9 @@ public class ForgeInstaller {
         }
     }
 
-    private static PromotionsSlim loadPromotions() {
-        return fetch(URI.create("https://files.minecraftforge.net/maven/net/minecraftforge/forge/promotions_slim.json"))
+    private PromotionsSlim loadPromotions() {
+        return fetch(URI.create(filesBaseUrl
+            + "/net/minecraftforge/forge/promotions_slim.json"))
             .userAgentCommand("forge")
             .toObject(PromotionsSlim.class)
             .execute();

@@ -945,7 +945,8 @@ public class CurseForgeInstaller {
     }
 
     private void prepareForge(String minecraftVersion, String forgeVersion) {
-        final ForgeInstaller installer = new ForgeInstaller();
+        final ForgeInstaller installer = new ForgeInstaller("https://files.minecraftforge.net/maven",
+            "https://maven.minecraftforge.net");
         installer.install(minecraftVersion, forgeVersion, outputDir, resultsFile, false, null);
     }
 
