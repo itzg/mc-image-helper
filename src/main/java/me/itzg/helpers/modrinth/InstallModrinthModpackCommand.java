@@ -8,6 +8,8 @@ import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.McImageHelper;
 import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.files.ResultsFileWriter;
+import me.itzg.helpers.http.Fetch;
+import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.http.SharedFetchArgs;
 import me.itzg.helpers.modrinth.model.VersionType;
 import picocli.CommandLine;
@@ -76,36 +78,41 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
 
     @Override
     public Integer call() throws IOException {
-        final ModrinthApiClient apiClient = new ModrinthApiClient(
-            baseUrl, "install-modrinth-modpack", sharedFetchArgs.options()
-        );
 
-        final ModrinthModpackManifest prevManifest = Manifests.load(
-            outputDirectory, ModrinthModpackManifest.ID,
-             ModrinthModpackManifest.class
-        );
+        final ModrinthModpackManifest prevManifest;
+        final ModrinthModpackManifest newManifest;
 
-        final ProjectRef projectRef = ProjectRef.fromPossibleUrl(modpackProject, version);
+        try (SharedFetch sharedFetch = Fetch.sharedFetch("install-modrinth-modpack", sharedFetchArgs.options())) {
+            final ModrinthApiClient apiClient = new ModrinthApiClient(
+                baseUrl, sharedFetch
+            );
 
-        final ModrinthModpackManifest newManifest =
-            buildModpackFetcher(apiClient, projectRef)
-            .fetchModpack(prevManifest)
-            .flatMap(fetchedPack ->
-                new ModrinthPackInstaller(
-                    apiClient, this.sharedFetchArgs.options(),
-                    fetchedPack.getMrPackFile(), this.outputDirectory, this.resultsFile,
-                    this.forceModloaderReinstall
+            prevManifest = Manifests.load(
+                outputDirectory, ModrinthModpackManifest.ID,
+                ModrinthModpackManifest.class
+            );
+
+            final ProjectRef projectRef = ProjectRef.fromPossibleUrl(modpackProject, version);
+
+            newManifest = buildModpackFetcher(apiClient, projectRef)
+                .fetchModpack(prevManifest)
+                .flatMap(fetchedPack ->
+                    new ModrinthPackInstaller(
+                        apiClient, this.sharedFetchArgs.options(),
+                        fetchedPack.getMrPackFile(), this.outputDirectory, this.resultsFile,
+                        this.forceModloaderReinstall
+                    )
+                        .processModpack(sharedFetch)
+                        .map(installation ->
+                            ModrinthModpackManifest.builder()
+                                .files(Manifests.relativizeAll(this.outputDirectory, installation.files))
+                                .projectSlug(fetchedPack.getProjectSlug())
+                                .versionId(fetchedPack.getVersionId())
+                                .dependencies(installation.index.getDependencies())
+                                .build())
                 )
-                    .processModpack()
-                    .map(installation ->
-                        ModrinthModpackManifest.builder()
-                            .files(Manifests.relativizeAll(this.outputDirectory, installation.files))
-                            .projectSlug(fetchedPack.getProjectSlug())
-                            .versionId(fetchedPack.getVersionId())
-                            .dependencies(installation.index.getDependencies())
-                            .build())
-            )
-            .block();
+                .block();
+        }
 
         if (newManifest != null) {
             Manifests.cleanup(this.outputDirectory, prevManifest, newManifest, log);

@@ -45,6 +45,7 @@ import me.itzg.helpers.fabric.FabricLauncherInstaller;
 import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.files.ResultsFileWriter;
 import me.itzg.helpers.forge.ForgeInstaller;
+import me.itzg.helpers.forge.ForgeInstallerResolver;
 import me.itzg.helpers.http.FailedRequestException;
 import me.itzg.helpers.http.Fetch;
 import me.itzg.helpers.http.SharedFetch;
@@ -927,14 +928,17 @@ public class CurseForgeInstaller {
             throw new GenericException("Unknown modloader ID: " + id);
         }
 
-        switch (parts[0]) {
-            case "forge":
-                prepareForge(minecraftVersion, parts[1]);
-                break;
+        try (SharedFetch sharedFetch = Fetch.sharedFetch("install-curseforge", sharedFetchOptions)) {
 
-            case "fabric":
-                prepareFabric(minecraftVersion, parts[1]);
-                break;
+            switch (parts[0]) {
+                case "forge":
+                    prepareForge(sharedFetch, minecraftVersion, parts[1]);
+                    break;
+
+                case "fabric":
+                    prepareFabric(minecraftVersion, parts[1]);
+                    break;
+            }
         }
     }
 
@@ -944,9 +948,13 @@ public class CurseForgeInstaller {
         installer.installUsingVersions(minecraftVersion, loaderVersion, null);
     }
 
-    private void prepareForge(String minecraftVersion, String forgeVersion) {
-        final ForgeInstaller installer = new ForgeInstaller();
-        installer.install(minecraftVersion, forgeVersion, outputDir, resultsFile, false, null);
+    private void prepareForge(SharedFetch sharedFetch, String minecraftVersion, String forgeVersion) {
+        new ForgeInstaller(
+            new ForgeInstallerResolver(sharedFetch,
+                minecraftVersion, forgeVersion
+            )
+        )
+            .install(outputDir, resultsFile, false, "Forge");
     }
 
     private MinecraftModpackManifest extractModpackManifest(Path modpackZip) throws IOException {

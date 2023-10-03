@@ -10,14 +10,13 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.FileTime;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
+import me.itzg.helpers.files.ReactiveFileUtils;
 import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
 
 @Slf4j
 @Accessors(fluent = true)
@@ -32,7 +31,7 @@ public class SpecificFileFetchBuilder extends FetchBuilderBase<SpecificFileFetch
     @Setter
     private boolean skipExisting;
 
-    public SpecificFileFetchBuilder(State state, Path file) {
+    SpecificFileFetchBuilder(State state, Path file) {
         super(state);
         this.file = file;
     }
@@ -109,30 +108,16 @@ public class SpecificFileFetchBuilder extends FetchBuilderBase<SpecificFileFetch
                     }
 
                     return bodyMono.asInputStream()
-                        .publishOn(Schedulers.boundedElastic())
-                        .flatMap(inputStream -> {
-                            final long size;
-                            try {
-                                //noinspection BlockingMethodInNonBlockingContext
-                                size = Files.copy(inputStream, file, StandardCopyOption.REPLACE_EXISTING);
-                                statusHandler.call(FileDownloadStatus.DOWNLOADED, uri, file);
-                                downloadedHandler.call(uri, file, size);
-                            } catch (IOException e) {
-                                return Mono.error(e);
-                            } finally {
-                                try {
-                                    //noinspection BlockingMethodInNonBlockingContext
-                                    inputStream.close();
-                                } catch (IOException e) {
-                                    log.warn("Unable to close body input stream", e);
-                                }
-                            }
+                        .flatMap(inputStream -> ReactiveFileUtils.copyInputStreamToFile(inputStream, file))
+                        .flatMap(fileSize -> {
+                            statusHandler.call(FileDownloadStatus.DOWNLOADED, uri, file);
+                            downloadedHandler.call(uri, file, fileSize);
                             return Mono
                                 .deferContextual(contextView -> {
                                     if (log.isDebugEnabled()) {
                                         final long durationMillis = currentTimeMillis() - contextView.<Long>get("downloadStart");
                                         log.debug("Download of {} took {} at {}",
-                                            uri, formatDuration(durationMillis), transferRate(durationMillis, size));
+                                            uri, formatDuration(durationMillis), transferRate(durationMillis, fileSize));
                                     }
                                     return Mono.just(file);
                                 });

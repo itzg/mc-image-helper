@@ -16,8 +16,8 @@ import picocli.CommandLine.Option;
 import picocli.CommandLine.ParameterException;
 import picocli.CommandLine.Spec;
 
-@Command(name = "install-forge", description = "Downloads and installs a requested version of Forge")
-public class InstallForgeCommand implements Callable<Integer> {
+@Command(name = "install-neoforge", description = "Downloads and installs a requested version of NeoForge")
+public class InstallNeoForgeCommand implements Callable<Integer> {
 
     @Spec
     CommandLine.Model.CommandSpec spec;
@@ -31,7 +31,7 @@ public class InstallForgeCommand implements Callable<Integer> {
     );
 
     public static final Pattern ALLOWED_FORGE_VERSION = Pattern.compile(
-        String.join("|", ForgeInstallerResolver.LATEST, ForgeInstallerResolver.RECOMMENDED, VERSION_REGEX),
+        String.join("|", "latest", VERSION_REGEX),
         Pattern.CASE_INSENSITIVE
     );
 
@@ -48,32 +48,20 @@ public class InstallForgeCommand implements Callable<Integer> {
 
     String minecraftVersion;
 
-    static class VersionOrInstaller {
-
-        @Spec
-        CommandLine.Model.CommandSpec spec;
-
-        String version;
-
-        @Option(names = "--forge-version", required = true, defaultValue = ForgeInstallerResolver.RECOMMENDED,
-            description = "A specific Forge version or to auto-resolve the version provide 'latest' or 'recommended'."
-                + " Default value is ${DEFAULT-VALUE}"
-        )
-        public void setVersion(String version) {
-            if (!ALLOWED_FORGE_VERSION.matcher(version).matches()) {
-                throw new ParameterException(spec.commandLine(),
-                    "Invalid value for --forge-version: " + version
-                );
-            }
-            this.version = version.toLowerCase();
+    @Option(names = "--neoforge-version", required = true, defaultValue = "latest",
+        description = "A specific NeoForge version or to auto-resolve the version provide 'latest'."
+            + " Default value is ${DEFAULT-VALUE}"
+    )
+    public void setVersion(String version) {
+        if (!ALLOWED_FORGE_VERSION.matcher(version).matches()) {
+            throw new ParameterException(spec.commandLine(),
+                "Invalid value for --forge-version: " + version
+            );
         }
-
-        @Option(names = "--forge-installer", description = "Use a local forge installer")
-        Path installer;
+        this.neoForgeVersion = version.toLowerCase();
     }
 
-    @ArgGroup
-    VersionOrInstaller versionOrInstaller = new VersionOrInstaller();
+    private String neoForgeVersion;
 
     @Option(names = "--output-directory", defaultValue = ".", paramLabel = "DIR")
     Path outputDirectory;
@@ -91,16 +79,12 @@ public class InstallForgeCommand implements Callable<Integer> {
 
     @Override
     public Integer call() throws Exception {
-        try (SharedFetch sharedFetch = Fetch.sharedFetch("install-forge", sharedFetchArgs.options())) {
+        try (SharedFetch sharedFetch = Fetch.sharedFetch("install-neoforge", sharedFetchArgs.options())) {
 
-            final ForgeInstaller installer = new ForgeInstaller(
-                versionOrInstaller.installer != null ?
-                    new ProvidedInstallerResolver(versionOrInstaller.installer)
-                    : new ForgeInstallerResolver(sharedFetch, minecraftVersion, versionOrInstaller.version)
-
-            );
-
-            installer.install(outputDirectory, resultsFile, forceReinstall, "Forge");
+            new ForgeInstaller(
+                new NeoForgeInstallerResolver(sharedFetch, minecraftVersion, neoForgeVersion)
+            )
+                .install(outputDirectory, resultsFile, forceReinstall, "NeoForge");
         }
 
         return ExitCode.OK;

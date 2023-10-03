@@ -10,6 +10,14 @@ x-api-key: {{cfApiKey}}
 GET https://api.curseforge.com/v1/mods/search?gameId=432&slug=jei&classId=6
 x-api-key: {{cfApiKey}}
 
+### modpack that claims neoforge support...but uses 1.18.2 of Forge, which is not availalbe in NeoForge
+GET https://api.curseforge.com/v1/mods/search?gameId=432&slug=projekt-arcturus&classId=4471
+x-api-key: {{cfApiKey}}
+
+###
+GET https://api.curseforge.com/v1/mods/644077/files/4772539
+x-api-key: {{cfApiKey}}
+
 ###
 # mod
 GET https://api.curseforge.com/v1/mods/238222

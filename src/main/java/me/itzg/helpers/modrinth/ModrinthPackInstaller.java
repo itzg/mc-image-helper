@@ -16,6 +16,8 @@ import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.fabric.FabricLauncherInstaller;
 import me.itzg.helpers.files.IoStreams;
 import me.itzg.helpers.forge.ForgeInstaller;
+import me.itzg.helpers.forge.ForgeInstallerResolver;
+import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.http.SharedFetch.Options;
 import me.itzg.helpers.json.ObjectMappers;
 import me.itzg.helpers.modrinth.model.DependencyId;
@@ -49,7 +51,7 @@ public class ModrinthPackInstaller {
         this.forceModloaderReinstall = forceModloaderReinstall;
     }
 
-    public Mono<Installation> processModpack() {
+    public Mono<Installation> processModpack(SharedFetch sharedFetch) {
         final ModpackIndex modpackIndex;
         try {
             modpackIndex = IoStreams.readFileFromZip(
@@ -87,7 +89,7 @@ public class ModrinthPackInstaller {
             )
             .flatMap(paths -> {
                 try {
-                    applyModLoader(modpackIndex.getDependencies());
+                    applyModLoader(sharedFetch, modpackIndex.getDependencies());
                 } catch (IOException e) {
                     return Mono.error(
                         new GenericException("Failed to apply mod loader", e));
@@ -164,7 +166,7 @@ public class ModrinthPackInstaller {
     }
 
     private void applyModLoader(
-            Map<DependencyId, String> dependencies
+        SharedFetch sharedFetch, Map<DependencyId, String> dependencies
         ) throws IOException
     {
         log.debug("Applying mod loader from dependencies={}", dependencies);
@@ -177,14 +179,15 @@ public class ModrinthPackInstaller {
 
         final String forgeVersion = dependencies.get(DependencyId.forge);
         if (forgeVersion != null) {
-            new ForgeInstaller().install(
-                minecraftVersion,
-                forgeVersion,
-                this.outputDirectory,
-                this.resultsFile,
-                this.forceModloaderReinstall,
-                null
-            );
+            new ForgeInstaller(
+                new ForgeInstallerResolver(sharedFetch, minecraftVersion, forgeVersion)
+            )
+                .install(
+                    this.outputDirectory,
+                    this.resultsFile,
+                    this.forceModloaderReinstall,
+                    "Forge"
+                );
             return;
         }
 

@@ -40,6 +40,11 @@ public class ModrinthApiClient implements AutoCloseable {
         sharedFetch = Fetch.sharedFetch(command, options);
     }
 
+    public ModrinthApiClient(String baseUrl, SharedFetch sharedFetch) {
+        uriBuilder = UriBuilder.withBaseUrl(baseUrl);
+        this.sharedFetch = sharedFetch;
+    }
+
     public static VersionFile pickVersionFile(Version version) {
         if (version.getFiles().size() == 1) {
             return version.getFiles().get(0);
