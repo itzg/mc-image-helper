@@ -85,7 +85,7 @@ public class ForgeInstaller {
             final Path forgeInstallerJar = installerResolver.download(resolved.minecraft, resolved.forge, outputDir);
 
             try {
-                newManifest = install(forgeInstallerJar, outputDir, resolved.minecraft, resolved.forge);
+                newManifest = install(forgeInstallerJar, outputDir, resolved.minecraft, variant, resolved.forge);
 
             } finally {
 
@@ -149,8 +149,8 @@ public class ForgeInstaller {
     /**
      *
      */
-    private ForgeManifest install(Path installerJar, Path outputDir, String minecraftVersion, String forgeVersion) {
-        log.info("Running Forge installer. This might take a while...");
+    private ForgeManifest install(Path installerJar, Path outputDir, String minecraftVersion, String variant, String forgeVersion) {
+        log.info("Running {} installer. This might take a while...", variant);
 
         try {
             final Process process = new ProcessBuilder(
