@@ -19,6 +19,7 @@ import me.itzg.helpers.errors.ExitCodeMapper;
 import me.itzg.helpers.fabric.InstallFabricLoaderCommand;
 import me.itzg.helpers.find.FindCommand;
 import me.itzg.helpers.forge.InstallForgeCommand;
+import me.itzg.helpers.forge.InstallNeoForgeCommand;
 import me.itzg.helpers.get.GetCommand;
 import me.itzg.helpers.modrinth.InstallModrinthModpackCommand;
 import me.itzg.helpers.modrinth.ModrinthCommand;
@@ -63,6 +64,7 @@ import picocli.CommandLine.Option;
         InstallFabricLoaderCommand.class,
         InstallForgeCommand.class,
         InstallModrinthModpackCommand.class,
+        InstallNeoForgeCommand.class,
         InstallPaperCommand.class,
         InstallPurpurCommand.class,
         InstallQuiltCommand.class,

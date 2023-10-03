@@ -2,6 +2,12 @@
 GET https://api.modrinth.com/v2/project/cobblemon-fabric
 
 ###
+GET https://api.modrinth.com/v2/project/nerbvival
+
+### Nerbvival v5
+GET https://api.modrinth.com/v2/version/ayspYmZQ
+
+###
 GET https://api.modrinth.com/v2/projects?ids=["female-gender-spigot"]
 
 ###

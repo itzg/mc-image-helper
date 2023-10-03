@@ -31,10 +31,17 @@ public class ReactiveFileUtils {
     }
 
     /**
+     * Copies the given inputStream's content into outputFile and then closes inputStream.
      * @return Returned Mono is already subscribed on bounded elastic scheduler.
      */
     public static Mono<Long> copyInputStreamToFile(InputStream inputStream, Path outputFile) {
-        return Mono.fromCallable(() -> Files.copy(inputStream, outputFile, StandardCopyOption.REPLACE_EXISTING))
+        return Mono.fromCallable(() -> {
+                try {
+                    return Files.copy(inputStream, outputFile, StandardCopyOption.REPLACE_EXISTING);
+                } finally {
+                    inputStream.close();
+                }
+            })
             .subscribeOn(Schedulers.boundedElastic());
     }
 
