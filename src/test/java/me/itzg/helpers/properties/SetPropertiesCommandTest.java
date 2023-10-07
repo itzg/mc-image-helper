@@ -111,8 +111,7 @@ class SetPropertiesCommandTest {
     @Test
     void removesMarkedForRemoval() throws IOException {
         final Path hasWhiteList = Files.write(tempDir.resolve("old.properties"), Collections.singletonList("white-list=true"));
-        final int exitCode = new CommandLine(new SetPropertiesCommand()
-        )
+        final int exitCode = new CommandLine(new SetPropertiesCommand())
             .execute(
                 "--definitions", definitionsFile.toString(),
                 hasWhiteList.toString()
@@ -126,6 +125,52 @@ class SetPropertiesCommandTest {
         }
 
         assertThat(properties).doesNotContainKey("white-list");
+    }
+
+    @Test
+    void handlesNewCustomProperty() throws IOException {
+        final Path outputProperties = tempDir.resolve("output.properties");
+
+        final int exitCode = new CommandLine(new SetPropertiesCommand())
+            .execute(
+                "--custom-property", "key1=value1",
+                outputProperties.toString()
+            );
+
+        assertThat(exitCode).isEqualTo(ExitCode.OK);
+
+        final Properties properties = new Properties();
+        try (InputStream propsIn = Files.newInputStream(outputProperties)) {
+            properties.load(propsIn);
+        }
+
+        assertThat(properties)
+            .containsEntry("key1", "value1");
+    }
+
+    @Test
+    void handlesModifiedCustomProperties() throws IOException {
+        final Path outputProperties = tempDir.resolve("output.properties");
+        Files.write(outputProperties, Collections.singletonList("key1=value1"));
+
+        final int exitCode = new CommandLine(new SetPropertiesCommand())
+            .execute(
+                "--custom-property", "key1=newValue1",
+                "--custom-property", "key2=value2",
+                outputProperties.toString()
+            );
+
+        assertThat(exitCode).isEqualTo(ExitCode.OK);
+
+        final Properties properties = new Properties();
+        try (InputStream propsIn = Files.newInputStream(outputProperties)) {
+            properties.load(propsIn);
+        }
+
+        assertThat(properties)
+            .hasSize(2)
+            .containsEntry("key1", "newValue1")
+            .containsEntry("key2", "value2");
     }
 
     private void assertPropertiesEqualExcept(Properties properties, String... propertiesToIgnore) {

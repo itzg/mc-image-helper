@@ -7,7 +7,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.concurrent.Callable;
@@ -29,8 +31,11 @@ public class SetPropertiesCommand implements Callable<Integer> {
     public static final TypeReference<Map<String, PropertyDefinition>> PROPERTY_DEFINITIONS_TYPE = new TypeReference<Map<String, PropertyDefinition>>() {
     };
 
-    @Option(names = "--definitions", required = true, description = "JSON file of property names to PropertyDefinition mappings")
-    Path propertyDefinitions;
+    @Option(names = "--definitions", description = "JSON file of property names to PropertyDefinition mappings")
+    Path propertyDefinitionsFile;
+
+    @Option(names = {"--custom-property", "--custom-properties", "-p"}, description = "Key=value pairs of custom properties to set")
+    Map<String,String> customProperties;
 
     @Parameters(arity = "1")
     Path propertiesFile;
@@ -40,13 +45,23 @@ public class SetPropertiesCommand implements Callable<Integer> {
 
     @Override
     public Integer call() throws Exception {
-
-        if (!Files.exists(propertyDefinitions)) {
-            throw new InvalidParameterException("Property definitions file does not exist");
+        if (propertyDefinitionsFile == null && customProperties == null) {
+            System.err.println("Either definitions or custom properties need to be provided");
+            return ExitCode.USAGE;
         }
 
-        final Map<String, PropertyDefinition> propertyDefinitions = ObjectMappers.defaultMapper()
-            .readValue(this.propertyDefinitions.toFile(), PROPERTY_DEFINITIONS_TYPE);
+        final Map<String, PropertyDefinition> propertyDefinitions;
+        if (propertyDefinitionsFile != null) {
+            if (!Files.exists(propertyDefinitionsFile)) {
+                throw new InvalidParameterException("Property definitions file does not exist");
+            }
+
+            propertyDefinitions = ObjectMappers.defaultMapper()
+                .readValue(this.propertyDefinitionsFile.toFile(), PROPERTY_DEFINITIONS_TYPE);
+        }
+        else {
+            propertyDefinitions = Collections.emptyMap();
+        }
 
         final Properties properties = new Properties();
         if (Files.exists(propertiesFile)) {
@@ -55,11 +70,11 @@ public class SetPropertiesCommand implements Callable<Integer> {
             }
         }
 
-        final long changes = processProperties(propertyDefinitions, properties);
+        final long changes = processProperties(propertyDefinitions, properties, customProperties);
         if (changes > 0) {
             log.info("Created/updated {} propert{} in {}", changes, changes != 1 ? "ies":"y", propertiesFile);
 
-            try (OutputStream propsOut = Files.newOutputStream(propertiesFile, StandardOpenOption.TRUNCATE_EXISTING)) {
+            try (OutputStream propsOut = Files.newOutputStream(propertiesFile, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE)) {
                 properties.store(propsOut, String.format("Updated %s by mc-image-helper", Instant.now()));
             }
         }
@@ -70,23 +85,22 @@ public class SetPropertiesCommand implements Callable<Integer> {
     /**
      * @return count of added/modified properties
      */
-    private long processProperties(Map<String, PropertyDefinition> propertyDefinitions, Properties properties) {
-        return propertyDefinitions.entrySet().stream()
-            .map(entry -> {
-                final String name = entry.getKey();
-                final PropertyDefinition definition = entry.getValue();
+    private long processProperties(Map<String, PropertyDefinition> propertyDefinitions, Properties properties,
+        Map<String, String> customProperties
+    ) {
+        long modifiedViaDefinitions = 0;
+        for (final Entry<String, PropertyDefinition> entry : propertyDefinitions.entrySet()) {
+            final String name = entry.getKey();
+            final PropertyDefinition definition = entry.getValue();
 
-                if (definition.isRemove()) {
-                    if (properties.containsKey(name)) {
-                        log.debug("Removing {}, which is marked for removal", name);
-                        properties.remove(name);
-                        return true;
-                    }
-                    else {
-                        return false;
-                    }
+            if (definition.isRemove()) {
+                if (properties.containsKey(name)) {
+                    log.debug("Removing {}, which is marked for removal", name);
+                    properties.remove(name);
+                    ++modifiedViaDefinitions;
                 }
-
+            }
+            else {
                 final String envValue = environmentVariablesProvider.get(definition.getEnv());
                 if (envValue != null) {
                     final String expectedValue = mapAndValidateValue(definition, envValue);
@@ -94,16 +108,33 @@ public class SetPropertiesCommand implements Callable<Integer> {
                     final String propValue = properties.getProperty(name);
 
                     if (!Objects.equals(expectedValue, propValue)) {
-                        log.debug("Setting property {} to new value '{}'", name, expectedValue);
+                        log.debug("Setting property {} to new value '{}'", name, needsValueRedacted(name) ? "***" : expectedValue);
                         properties.setProperty(name, expectedValue);
-                        return true;
+                        ++modifiedViaDefinitions;
                     }
                 }
+            }
+        }
 
-                return false;
-            })
-            .filter(modified -> modified)
-            .count();
+        long modifiedViaCustom = 0;
+        if (customProperties != null) {
+            for (final Entry<String, String> entry : customProperties.entrySet()) {
+                final String name = entry.getKey();
+                final String targetValue = entry.getValue();
+                final String propValue = properties.getProperty(name);
+                if (!Objects.equals(targetValue, propValue)) {
+                    log.debug("Setting property {} to new value '{}'", name, targetValue);
+                    properties.setProperty(name, targetValue);
+                    ++modifiedViaCustom;
+                }
+            }
+        }
+
+        return modifiedViaDefinitions + modifiedViaCustom;
+    }
+
+    private static boolean needsValueRedacted(String name) {
+        return name.contains("password");
     }
 
     private String mapAndValidateValue(PropertyDefinition definition, String value) {
