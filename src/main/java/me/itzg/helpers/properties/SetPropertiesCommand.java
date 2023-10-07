@@ -34,7 +34,9 @@ public class SetPropertiesCommand implements Callable<Integer> {
     @Option(names = "--definitions", description = "JSON file of property names to PropertyDefinition mappings")
     Path propertyDefinitionsFile;
 
-    @Option(names = {"--custom-property", "--custom-properties", "-p"}, description = "Key=value pairs of custom properties to set")
+    @Option(names = {"--custom-property", "--custom-properties", "-p"},
+        split = "\n", splitSynopsisLabel = "<NL>",
+        description = "Key=value pairs of custom properties to set")
     Map<String,String> customProperties;
 
     @Parameters(arity = "1")
