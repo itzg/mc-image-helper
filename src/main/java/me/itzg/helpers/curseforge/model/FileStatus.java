@@ -2,6 +2,9 @@ package me.itzg.helpers.curseforge.model;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 
+/**
+ * <a href="https://docs.curseforge.com/#tocS_FileStatus">Schema</a>
+ */
 public enum FileStatus {
     Processing,
     ChangesRequired,

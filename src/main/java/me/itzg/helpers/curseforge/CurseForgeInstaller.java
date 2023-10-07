@@ -802,7 +802,8 @@ public class CurseForgeInstaller {
                                     .setCurseForgeFile(cfFile)
                             );
                     });
-            });
+            })
+            .checkpoint(String.format("Downloading file from modpack %d:%d", projectID, fileID));
     }
 
     @RequiredArgsConstructor
