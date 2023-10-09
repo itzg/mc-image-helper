@@ -96,7 +96,7 @@ dependencies {
     implementation 'com.jayway.jsonpath:json-path:2.8.0'
     implementation 'org.apache.httpcomponents.client5:httpclient5:5.2.1'
     implementation 'io.projectreactor.netty:reactor-netty-http:1.1.11'
-    implementation 'org.apache.maven:maven-artifact:3.9.4'
+    implementation 'org.apache.maven:maven-artifact:3.9.5'
     implementation 'commons-codec:commons-codec:1.16.0'
     // for RFC5987 parsing of content-disposition filename*
     // 3.5.x is last of Java8 compatible: https://cxf.apache.org/download.html
