@@ -101,17 +101,17 @@ class ModrinthTestHelpers {
     }
 
     static ModpackIndex.ModpackFile createHostedModpackFile(
-            String relativeFileLocation, String data, String wmBaseUrl
+            String relativeFileLocation, String urlSubpath, String data, String wmBaseUrl
         ) throws URISyntaxException
     {
-        stubFor(get("/files/" + relativeFileLocation)
+        stubFor(get("/files/" + urlSubpath)
             .willReturn(ok().withBody(data)));
 
         ModpackIndex.ModpackFile modpackFile = new ModpackIndex.ModpackFile()
             .setDownloads(new ArrayList<>())
             .setPath(relativeFileLocation);
         modpackFile.getDownloads().add(
-            new URI(wmBaseUrl + "/files/" + relativeFileLocation));
+            new URI(wmBaseUrl + "/files/" + urlSubpath));
 
         return modpackFile;
     }
