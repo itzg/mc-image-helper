@@ -112,8 +112,9 @@ public class ModrinthPackInstaller {
             )
             .publishOn(Schedulers.boundedElastic())
             .flatMap(modpackFile -> {
+                final String modpackFilePath = sanitizeModFilePath(modpackFile.getPath());
                 final Path outFilePath =
-                    this.outputDirectory.resolve(modpackFile.getPath());
+                    this.outputDirectory.resolve(modpackFilePath);
                 try {
                     //noinspection BlockingMethodInNonBlockingContext
                     Files.createDirectories(outFilePath.getParent());
@@ -126,9 +127,20 @@ public class ModrinthPackInstaller {
                     outFilePath,
                     modpackFile.getDownloads().get(0),
                     (uri, file, contentSizeBytes) ->
-                        log.info("Downloaded {}", modpackFile.getPath())
+                        log.info("Downloaded {}", modpackFilePath)
                 );
             });
+    }
+
+    private String sanitizeModFilePath(String path) {
+        // Using only backslash delimiters and not forward slashes?
+        // (mixed usage will assume backslashes were purposeful)
+        if (path.contains("\\") && !path.contains("/")) {
+            return path.replace("\\", "/");
+        }
+        else {
+            return path;
+        }
     }
 
     @SuppressWarnings("SameParameterValue")
