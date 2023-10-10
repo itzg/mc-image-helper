@@ -47,7 +47,7 @@ public class InstallModrinthModpackCommandTest {
         String expectedFileData = "some test data";
         String relativeFilePath = "test_file";
         ModpackFile testFile = createHostedModpackFile(
-            relativeFilePath, expectedFileData, wm.getHttpBaseUrl());
+            relativeFilePath, relativeFilePath, expectedFileData, wm.getHttpBaseUrl());
 
         ModpackIndex index = createBasicModpackIndex();
         index.getFiles().add(testFile);
@@ -74,7 +74,7 @@ public class InstallModrinthModpackCommandTest {
         String expectedFileData = "some test data";
         String relativeFilePath = "test_file";
         ModpackFile testFile = createHostedModpackFile(
-            relativeFilePath, expectedFileData, wm.getHttpBaseUrl());
+            relativeFilePath, relativeFilePath, expectedFileData, wm.getHttpBaseUrl());
 
         ModpackIndex index = createBasicModpackIndex();
         index.getFiles().add(testFile);
@@ -161,7 +161,7 @@ public class InstallModrinthModpackCommandTest {
         String expectedFileData = "some test data";
         String relativeFilePath = "test_file";
         ModpackFile testFile = createHostedModpackFile(
-            relativeFilePath, expectedFileData, wm.getHttpBaseUrl());
+            relativeFilePath, relativeFilePath, expectedFileData, wm.getHttpBaseUrl());
 
         ModpackIndex index = createBasicModpackIndex();
         index.getFiles().add(testFile);
@@ -201,7 +201,7 @@ public class InstallModrinthModpackCommandTest {
         String relativeFilePath = "test_file";
         String modpackDownloadPath = "/files/modpacks/test_modpack-1.0.0.mrpack";
         ModpackFile testFile = createHostedModpackFile(
-            relativeFilePath, expectedFileData, wm.getHttpBaseUrl());
+            relativeFilePath, relativeFilePath, expectedFileData, wm.getHttpBaseUrl());
 
         ModpackIndex index = createBasicModpackIndex();
         index.getFiles().add(testFile);

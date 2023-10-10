@@ -69,7 +69,44 @@ public class ModrinthPackInstallerTest {
 
             ModpackIndex index = createBasicModpackIndex();
             index.getFiles().add(createHostedModpackFile(
-                relativeFilePath, expectedFileData, wm.getHttpBaseUrl()));
+                relativeFilePath, relativeFilePath, expectedFileData, wm.getHttpBaseUrl()));
+
+            Files.write(modpackPath, createModrinthPack(index));
+
+            ModrinthPackInstaller installerUT = new ModrinthPackInstaller(
+                apiClient, fetchOpts, modpackPath, tempDir, resultsFile, false);
+
+            final Installation installation = installerUT.processModpack(sharedFetch).block();
+
+            assertThat(installation).isNotNull();
+            List<Path> installedFiles = installation.getFiles();
+
+            assertThat(expectedFilePath).isRegularFile();
+            assertThat(expectedFilePath).content()
+                .isEqualTo(expectedFileData);
+            assertThat(installedFiles.size()).isEqualTo(1);
+            assertThat(installedFiles.get(0)).isEqualTo(expectedFilePath);
+        }
+    }
+
+    @Test
+    void sanitizesModFilePath(
+            WireMockRuntimeInfo wm, @TempDir Path tempDir
+        ) throws IOException, URISyntaxException
+    {
+        Options fetchOpts = new SharedFetchArgs().options();
+        try (SharedFetch sharedFetch = Fetch.sharedFetch("install-modrinth-modpack", fetchOpts)) {
+            ModrinthApiClient apiClient = new ModrinthApiClient(
+                wm.getHttpBaseUrl(), "install-modrinth-modpack", fetchOpts);
+
+            String expectedFileData = "some test data";
+            Path expectedFilePath = tempDir.resolve("mods/mod.jar");
+            Path resultsFile = tempDir.resolve("results");
+            Path modpackPath = tempDir.resolve("test.mrpack");
+
+            ModpackIndex index = createBasicModpackIndex();
+            index.getFiles().add(createHostedModpackFile(
+                "mods\\mod.jar", "mods/mod.jar", expectedFileData, wm.getHttpBaseUrl()));
 
             Files.write(modpackPath, createModrinthPack(index));
 
