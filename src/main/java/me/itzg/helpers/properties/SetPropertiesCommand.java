@@ -13,6 +13,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.concurrent.Callable;
+import java.util.regex.Pattern;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.env.EnvironmentVariablesProvider;
@@ -28,7 +29,9 @@ import picocli.CommandLine.Parameters;
 @Slf4j
 public class SetPropertiesCommand implements Callable<Integer> {
 
-    public static final TypeReference<Map<String, PropertyDefinition>> PROPERTY_DEFINITIONS_TYPE = new TypeReference<Map<String, PropertyDefinition>>() {
+    private static final Pattern BOOLEAN_PATTERN = Pattern.compile("true|false", Pattern.CASE_INSENSITIVE);
+
+    private static final TypeReference<Map<String, PropertyDefinition>> PROPERTY_DEFINITIONS_TYPE = new TypeReference<Map<String, PropertyDefinition>>() {
     };
 
     @Option(names = "--definitions", description = "JSON file of property names to PropertyDefinition mappings")
@@ -139,9 +142,24 @@ public class SetPropertiesCommand implements Callable<Integer> {
         return name.contains("password");
     }
 
+    /**
+     * This will
+     * <ul>
+     *     <li>Apply mappings</li>
+     *     <li>Normalize true|false values to lowercase</li>
+     *     <li>Enforce allowed values</li>
+     * </ul>
+     * @return normalized value
+     */
     private String mapAndValidateValue(PropertyDefinition definition, String value) {
         if (definition.getMappings() != null) {
             value = definition.getMappings().getOrDefault(value, value);
+        }
+        else {
+            // normalize booleans to lowercase
+            if (BOOLEAN_PATTERN.matcher(value).matches()) {
+                return value.toLowerCase();
+            }
         }
         if (definition.getAllowed() != null) {
             if (!definition.getAllowed().contains(value)) {
