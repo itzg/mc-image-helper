@@ -1,8 +1,9 @@
 package me.itzg.helpers.properties;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.Reader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -70,8 +71,8 @@ public class SetPropertiesCommand implements Callable<Integer> {
 
         final Properties properties = new Properties();
         if (Files.exists(propertiesFile)) {
-            try (InputStream propsIn = Files.newInputStream(propertiesFile)) {
-                properties.load(propsIn);
+            try (Reader propsReader = Files.newBufferedReader(propertiesFile, StandardCharsets.UTF_8)) {
+                properties.load(propsReader);
             }
         }
 

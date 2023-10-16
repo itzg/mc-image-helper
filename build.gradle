@@ -123,6 +123,14 @@ java {
     sourceCompatibility = JavaVersion.VERSION_1_8
 }
 
+compileJava {
+  options.encoding = 'utf-8'
+}
+
+compileTestJava {
+  options.encoding = 'utf-8'
+}
+
 githubReleaser {
     project {
         homepage = 'https://github.com/itzg/mc-image-helper'
