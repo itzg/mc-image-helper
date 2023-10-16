@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -34,7 +35,7 @@ class SetPropertiesCommandTest {
 
     @BeforeEach
     void setUp() throws IOException, URISyntaxException {
-        propertiesFile = preparePropertiesFile();
+        propertiesFile = preparePropertiesFile("server.properties");
 
         final URL definitionsResource = getClass().getResource("/properties/property-definitions.json");
         assertThat(definitionsResource).isNotNull();
@@ -173,6 +174,24 @@ class SetPropertiesCommandTest {
             .containsEntry("key2", "value2");
     }
 
+    @Test
+    void handlesExistingUnicodePropertyValue() throws IOException {
+        final Path outputProperties = preparePropertiesFile("with-unicode.txt");
+
+        final int exitCode = new CommandLine(new SetPropertiesCommand())
+            .execute(
+                "--custom-property", "key1=value1",
+                outputProperties.toString()
+            );
+
+        assertThat(exitCode).isEqualTo(ExitCode.OK);
+
+        assertThat(outputProperties)
+            .content(StandardCharsets.UTF_8)
+            .containsIgnoringNewLines("motd=\\u00A7c\\u00A7lT\\u00A76\\u00A7le\\u00A7e\\u00A7ls\\u00A7a\\u00A7lt\\u00A73\\u00A7li\\u00A79\\u00A7ln\\u00A75\\u00A7lg \\u00A76\\u00A7l1\\u00A7e\\u00A7l2\\u00A7a\\u00A7l3")
+            .containsIgnoringNewLines("key1=value1");
+    }
+
     private void assertPropertiesEqualExcept(Properties properties, String... propertiesToIgnore) {
         final HashSet<Object> actualKeys = new HashSet<>(properties.keySet());
         Arrays.asList(propertiesToIgnore).forEach(actualKeys::remove);
@@ -196,12 +215,13 @@ class SetPropertiesCommandTest {
         return properties;
     }
 
-    private Path preparePropertiesFile() throws IOException {
-        try (InputStream in = getClass().getClassLoader().getResourceAsStream("properties/server.properties")) {
-            assertThat(in).isNotNull();
-            final Path outFile = tempDir.resolve("server.properties");
-            Files.copy(in, outFile);
-            return outFile;
+    private Path preparePropertiesFile(String filename) throws IOException {
+        final URL resource = getClass().getClassLoader().getResource("properties/" + filename);
+        assertThat(resource).isNotNull();
+        try {
+            return Files.copy(Paths.get(resource.toURI()), tempDir.resolve(filename));
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
         }
     }
 }
