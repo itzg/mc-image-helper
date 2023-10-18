@@ -48,6 +48,17 @@ jar {
     }
 }
 
+graalvmNative {
+  toolchainDetection = true
+  binaries {
+    main {
+      buildArgs.add('--static')
+      buildArgs.add('--initialize-at-build-time=org.slf4j.LoggerFactory,ch.qos.logback')
+      buildArgs.add('--initialize-at-run-time=io.netty')
+    }
+  }
+}
+
 java {
     sourceCompatibility = JavaVersion.VERSION_1_8
 }
