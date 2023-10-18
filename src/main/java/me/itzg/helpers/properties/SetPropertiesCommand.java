@@ -1,8 +1,8 @@
 package me.itzg.helpers.properties;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import java.io.OutputStream;
 import java.io.Reader;
+import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -80,7 +80,7 @@ public class SetPropertiesCommand implements Callable<Integer> {
         if (changes > 0) {
             log.info("Created/updated {} propert{} in {}", changes, changes != 1 ? "ies":"y", propertiesFile);
 
-            try (OutputStream propsOut = Files.newOutputStream(propertiesFile, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE)) {
+            try (Writer propsOut = Files.newBufferedWriter(propertiesFile, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE)) {
                 properties.store(propsOut, String.format("Updated %s by mc-image-helper", Instant.now()));
             }
         }
