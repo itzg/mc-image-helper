@@ -21,6 +21,8 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
 
@@ -174,9 +176,10 @@ class SetPropertiesCommandTest {
             .containsEntry("key2", "value2");
     }
 
-    @Test
-    void handlesExistingUnicodePropertyValue() throws IOException {
-        final Path outputProperties = preparePropertiesFile("with-unicode.txt");
+    @ParameterizedTest
+    @ValueSource(strings = {"with-unicode.txt", "with-escapes.txt"})
+    void handlesExistingUnicodePropertyValue(String filename) throws IOException {
+        final Path outputProperties = preparePropertiesFile(filename);
 
         final int exitCode = new CommandLine(new SetPropertiesCommand())
             .execute(
@@ -188,7 +191,7 @@ class SetPropertiesCommandTest {
 
         assertThat(outputProperties)
             .content(StandardCharsets.UTF_8)
-            .containsIgnoringNewLines("motd=\\u00A7c\\u00A7lT\\u00A76\\u00A7le\\u00A7e\\u00A7ls\\u00A7a\\u00A7lt\\u00A73\\u00A7li\\u00A79\\u00A7ln\\u00A75\\u00A7lg \\u00A76\\u00A7l1\\u00A7e\\u00A7l2\\u00A7a\\u00A7l3")
+            .containsIgnoringNewLines("motd=§c§lT§6§le§e§ls§a§lt§3§li§9§ln§5§lg §6§l1§e§l2§a§l3")
             .containsIgnoringNewLines("key1=value1");
     }
 
