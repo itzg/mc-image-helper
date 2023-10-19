@@ -17,11 +17,13 @@ import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.Option;
 
 @CommandLine.Command(name = "install-modrinth-modpack",
-    description = "Supports installation of Modrinth modpacks along with the associated mod loader",
-    mixinStandardHelpOptions = true
+    description = "Supports installation of Modrinth modpacks along with the associated mod loader"
 )
 @Slf4j
 public class InstallModrinthModpackCommand implements Callable<Integer> {
+    @Option(names = "--help", usageHelp = true)
+    boolean showHelp;
+
     @Option(names = "--project", required = true,
         description = "One of" +
             "%n- Project ID or slug" +
