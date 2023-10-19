@@ -19,6 +19,7 @@ import me.itzg.helpers.http.PathOrUri;
 import me.itzg.helpers.http.PathOrUriConverter;
 import me.itzg.helpers.http.SharedFetchArgs;
 import me.itzg.helpers.json.ObjectMappers;
+import org.jetbrains.annotations.NotNull;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.ExitCode;
@@ -208,15 +209,7 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
             return ExitCode.OK;
         } catch (MissingModsException e) {
 
-            final TabularOutput tabOut = new TabularOutput('=', "  ", "Mod", "Slug", "Filename", "Download page");
-            for (PathWithInfo info : e.getNeedsDownload()) {
-                tabOut.addRow(
-                    info.getModInfo().getName(),
-                    info.getModInfo().getSlug(),
-                    info.getCurseForgeFile().getDisplayName(),
-                    info.getModInfo().getLinks().getWebsiteUrl()
-                );
-            }
+            final TabularOutput tabOut = buildTabularOutput(e);
 
             if (needsDownloadFile != null) {
                 try (BufferedWriter writer = Files.newBufferedWriter(needsDownloadFile)) {
@@ -238,6 +231,21 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
             return ExitCode.USAGE;
         }
 
+    }
+
+    @NotNull
+    private static TabularOutput buildTabularOutput(MissingModsException e) {
+        final TabularOutput tabOut = new TabularOutput('=', "  ",
+            "Mod", "Filename", "Download page"
+        );
+        for (PathWithInfo info : e.getNeedsDownload()) {
+            tabOut.addRow(
+                info.getModInfo().getName(),
+                info.getCurseForgeFile().getDisplayName(),
+                info.getModInfo().getLinks().getWebsiteUrl() + "/files/" + info.getCurseForgeFile().getId()
+            );
+        }
+        return tabOut;
     }
 
     private ExcludeIncludesContent loadExcludeIncludes() throws IOException {
