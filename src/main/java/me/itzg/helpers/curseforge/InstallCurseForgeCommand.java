@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
@@ -25,9 +26,10 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.Option;
 
-@Command(name = "install-curseforge", subcommands = {
-    SchemasCommand.class
-})
+@Command(name = "install-curseforge",
+    description = "Downloads, installs, and upgrades CurseForge modpacks",
+    subcommands = {SchemasCommand.class}
+)
 public class InstallCurseForgeCommand implements Callable<Integer> {
 
     @Option(names = {"--help","-h"}, usageHelp = true)
@@ -114,7 +116,6 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
         }
     }
 
-
     @Option(names = "--filename-matcher", paramLabel = "STR",
         description = "Substring to select specific modpack filename")
     String filenameMatcher;
@@ -134,6 +135,15 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
         description = "When enabled, existing files will not be replaced by overrides content from the modpack"
     )
     boolean overridesSkipExisting;
+
+    @Option(names = "--overrides-exclusions",
+        split = "\n|,", splitSynopsisLabel = "NL or ,",
+        description = "Excludes files from the overrides that match these ant-style patterns\n"
+            + "*  : matches any non-slash characters\n"
+            + "** : matches any characters\n"
+            + "?  : matches one character"
+    )
+    List<String> overridesExclusions;
 
     @ArgGroup(exclusive = false)
     SharedFetchArgs sharedFetchArgs = new SharedFetchArgs();
@@ -182,6 +192,7 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
             .setForceSynchronize(forceSynchronize)
             .setLevelFrom(levelFrom)
             .setOverridesSkipExisting(overridesSkipExisting)
+            .setOverridesExclusions(overridesExclusions)
             .setSharedFetchOptions(sharedFetchArgs.options())
             .setApiKey(apiKey)
             .setDownloadsRepo(downloadsRepo);
