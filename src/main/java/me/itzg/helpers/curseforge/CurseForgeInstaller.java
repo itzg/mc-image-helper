@@ -12,8 +12,6 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -32,6 +30,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.curseforge.ExcludeIncludesContent.ExcludeIncludes;
+import me.itzg.helpers.curseforge.OverridesApplier.Result;
 import me.itzg.helpers.curseforge.model.Category;
 import me.itzg.helpers.curseforge.model.CurseForgeFile;
 import me.itzg.helpers.curseforge.model.CurseForgeMod;
@@ -64,8 +63,6 @@ public class CurseForgeInstaller {
 
     public static final String ETERNAL_DEVELOPER_CONSOLE_URL = "https://console.curseforge.com/";
     public static final String CURSEFORGE_ID = "curseforge";
-    public static final String LEVEL_DAT_SUFFIX = "/level.dat";
-    public static final int LEVEL_DAT_SUFFIX_LEN = LEVEL_DAT_SUFFIX.length();
     public static final String REPO_SUBDIR_MODPACKS = "modpacks";
     public static final String REPO_SUBDIR_MODS = "mods";
     public static final String REPO_SUBDIR_WORLDS = "worlds";
@@ -108,6 +105,9 @@ public class CurseForgeInstaller {
         CurseForgeApiClient.CATEGORY_WORLDS
     ));
 
+    @Getter @Setter
+    private List<String> overridesExclusions;
+
     /**
      * @throws MissingModsException if any mods need to be manually downloaded
      */
@@ -118,8 +118,12 @@ public class CurseForgeInstaller {
             final MinecraftModpackManifest modpackManifest = extractModpackManifest(modpackZip);
 
             processModpackManifest(context, modpackManifest,
-                () -> applyOverrides(modpackZip, modpackManifest.getOverrides())
-                );
+                new OverridesFromZipApplier(
+                    outputDir, modpackZip, overridesSkipExisting,
+                    modpackManifest.getOverrides(),
+                    levelFrom, overridesExclusions
+                )
+            );
         });
     }
 
@@ -146,7 +150,7 @@ public class CurseForgeInstaller {
             }
 
             processModpackManifest(context, modpackManifest,
-                () -> new OverridesResult(Collections.emptyList(), null)
+                () -> new Result(Collections.emptyList(), null)
                 );
         });
     }
@@ -359,8 +363,13 @@ public class CurseForgeInstaller {
         try {
 
             final MinecraftModpackManifest modpackManifest = extractModpackManifest(modpackZip);
-            results = processModpack(context, modpackManifest, () -> applyOverrides(modpackZip,
-                modpackManifest.getOverrides()));
+            results = processModpack(context, modpackManifest,
+                new OverridesFromZipApplier(
+                    outputDir, modpackZip, overridesSkipExisting,
+                    modpackManifest.getOverrides(),
+                    levelFrom, overridesExclusions
+                )
+            );
         } finally {
             Files.delete(modpackZip);
         }
@@ -479,9 +488,6 @@ public class CurseForgeInstaller {
         });
     }
 
-    /**
-     * @param overridesApplier typically calls {@link #applyOverrides(Path, String)}
-     */
     private ModPackResults processModpack(InstallContext context,
         MinecraftModpackManifest modpackManifest, OverridesApplier overridesApplier
     ) throws IOException {
@@ -540,14 +546,14 @@ public class CurseForgeInstaller {
             .collectList()
             .block();
 
-        final OverridesResult overridesResult = overridesApplier.apply();
+        final Result overridesResult = overridesApplier.apply();
 
         prepareModLoader(modLoader.getId(), modpackManifest.getMinecraft().getVersion());
 
         return buildResults(modpackManifest, modLoader, modFiles, overridesResult);
     }
 
-    private ModPackResults buildResults(MinecraftModpackManifest modpackManifest, ModLoader modLoader, List<PathWithInfo> modFiles, OverridesResult overridesResult) {
+    private ModPackResults buildResults(MinecraftModpackManifest modpackManifest, ModLoader modLoader, List<PathWithInfo> modFiles, Result overridesResult) {
         return new ModPackResults()
             .setName(modpackManifest.getName())
             .setVersion(modpackManifest.getVersion())
@@ -572,7 +578,7 @@ public class CurseForgeInstaller {
             .setModLoaderId(modLoader.getId());
     }
 
-    private String resolveLevelName(List<PathWithInfo> modFiles, OverridesResult overridesResult) {
+    private String resolveLevelName(List<PathWithInfo> modFiles, Result overridesResult) {
         if (levelFrom == LevelFrom.OVERRIDES && overridesResult.levelName != null) {
             return overridesResult.levelName;
         }
@@ -636,96 +642,6 @@ public class CurseForgeInstaller {
                 }
             })
             .collect(Collectors.toSet());
-    }
-
-    @AllArgsConstructor
-    static class OverridesResult {
-        List<Path> paths;
-        String levelName;
-    }
-
-    interface OverridesApplier {
-        OverridesResult apply() throws IOException;
-    }
-
-    private OverridesResult applyOverrides(Path modpackZip, String overridesDir) throws IOException {
-        log.debug("Applying overrides from '{}' in zip file", overridesDir);
-
-        final String levelEntryName = findLevelEntryInOverrides(modpackZip, overridesDir);
-        final String levelEntryNamePrefix = levelEntryName != null ? levelEntryName+"/" : null;
-
-        final boolean worldOutputDirExists = levelEntryName != null &&
-            Files.exists(outputDir.resolve(levelEntryName));
-
-        log.debug("While applying overrides, found level entry='{}' in modpack overrides and worldOutputDirExists={}",
-            levelEntryName, worldOutputDirExists);
-
-        final String overridesDirPrefix = overridesDir + "/";
-        final int overridesPrefixLen = overridesDirPrefix.length();
-
-        final List<Path> overrides = new ArrayList<>();
-        try (ZipInputStream zip = new ZipInputStream(Files.newInputStream(modpackZip))) {
-            ZipEntry entry;
-            while ((entry = zip.getNextEntry()) != null) {
-                if (entry.getName().startsWith(overridesDirPrefix)) {
-                    if (!entry.isDirectory()) {
-                        if (log.isTraceEnabled()) {
-                            log.trace("Processing override entry={}:{}", entry.isDirectory() ? "D":"F", entry.getName());
-                        }
-                        final String subpath = entry.getName().substring(overridesPrefixLen);
-                        final Path outPath = outputDir.resolve(subpath);
-
-                        // Rules
-                        // - don't ever overwrite world data
-                        // - user has option to not overwrite any existing file from overrides
-                        // - otherwise user will want latest modpack's overrides content
-
-                        final boolean isInWorldDirectory = levelEntryNamePrefix != null &&
-                            subpath.startsWith(levelEntryNamePrefix);
-
-                        if (worldOutputDirExists && isInWorldDirectory) {
-                            continue;
-                        }
-
-                        if ( !(overridesSkipExisting && Files.exists(outPath)) ) {
-                            log.trace("Applying override {}", subpath);
-                            // zip files don't always list the directories before the files, so just create-as-needed
-                            Files.createDirectories(outPath.getParent());
-                            Files.copy(zip, outPath, StandardCopyOption.REPLACE_EXISTING);
-                        }
-                        else {
-                            log.trace("Skipping override={} since the file already existed", subpath);
-                        }
-
-                        // Track this path for later cleanup
-                        // UNLESS it is within a world/level directory
-                        if (levelEntryName == null || !isInWorldDirectory) {
-                            overrides.add(outPath);
-                        }
-                    }
-                }
-            }
-        }
-
-        return new OverridesResult(overrides,
-            levelFrom == LevelFrom.OVERRIDES ? levelEntryName : null
-        );
-    }
-
-    /**
-     * @return if present, the subpath to a world/level directory with the overrides prefix removed otherwise null
-     */
-    private String findLevelEntryInOverrides(Path modpackZip, String overridesDir) throws IOException {
-        try (ZipInputStream zip = new ZipInputStream(Files.newInputStream(modpackZip))) {
-            ZipEntry entry;
-            while ((entry = zip.getNextEntry()) != null) {
-                final String name = entry.getName();
-                if (!entry.isDirectory() && name.startsWith(overridesDir + "/") && name.endsWith(LEVEL_DAT_SUFFIX)) {
-                    return name.substring(overridesDir.length()+1, name.length() - LEVEL_DAT_SUFFIX_LEN);
-                }
-            }
-        }
-        return null;
     }
 
     /**
