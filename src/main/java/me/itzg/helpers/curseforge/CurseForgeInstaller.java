@@ -840,6 +840,8 @@ public class CurseForgeInstaller {
     }
 
     private void prepareModLoader(String id, String minecraftVersion) {
+        log.debug("Preparing mod loader given id={} minecraftVersion={}", id, minecraftVersion);
+
         final String[] parts = id.split("-", 2);
         if (parts.length != 2) {
             throw new GenericException("Unknown modloader ID: " + id);
