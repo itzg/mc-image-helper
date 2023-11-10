@@ -1,5 +1,6 @@
 package me.itzg.helpers.files;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -10,9 +11,11 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.json.ObjectMappers;
 import org.slf4j.Logger;
 
+@Slf4j
 public class Manifests {
 
     private static final String SUFFIX = ".json";
@@ -112,6 +115,7 @@ public class Manifests {
      *
      * @param outputDir directory where manifest and other module files are based
      * @param id module identifier, such as "fabric"
+     * @return the loaded manifest file or null if it didn't exist or was invalid content
      */
     public static <M extends BaseManifest> M load(Path outputDir, String id, Class<M> manifestClass) {
         final Path manifestPath = buildManifestPath(outputDir, id);
@@ -119,6 +123,9 @@ public class Manifests {
             final M manifest;
             try {
                 manifest = ObjectMappers.defaultMapper().readValue(manifestPath.toFile(), manifestClass);
+            } catch (JsonProcessingException e) {
+                log.error("Failed to parse existing manifest file {}", manifestPath, e);
+                return null;
             } catch (IOException e) {
                 throw new ManifestException("Failed to load existing manifest from "+manifestPath, e);
             }
