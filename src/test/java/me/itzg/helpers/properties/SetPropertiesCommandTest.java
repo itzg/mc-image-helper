@@ -219,6 +219,29 @@ class SetPropertiesCommandTest {
 
     }
 
+    @Test
+    void encodesPreEscaped() {
+        final Path outputProperties = tempDir.resolve("out.properties");
+
+        final int exitCode = new CommandLine(new SetPropertiesCommand()
+            .setEnvironmentVariablesProvider(MappedEnvVarProvider.of(
+                "LEVEL_NAME", "sv\\u011Bt"
+            ))
+        )
+            .execute(
+                "--definitions", definitionsFile.toString(),
+                outputProperties.toString()
+            );
+
+        assertThat(exitCode).isEqualTo(ExitCode.OK);
+
+        //noinspection UnnecessaryUnicodeEscape
+        assertThat(outputProperties)
+            .content(StandardCharsets.UTF_8)
+            .containsIgnoringNewLines("level-name=svět");
+
+    }
+
     private void assertPropertiesEqualExcept(Properties properties, String... propertiesToIgnore) {
         final HashSet<Object> actualKeys = new HashSet<>(properties.keySet());
         Arrays.asList(propertiesToIgnore).forEach(actualKeys::remove);

@@ -16,6 +16,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.concurrent.Callable;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +24,7 @@ import me.itzg.helpers.env.EnvironmentVariablesProvider;
 import me.itzg.helpers.env.StandardEnvironmentVariablesProvider;
 import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.json.ObjectMappers;
+import org.jetbrains.annotations.NotNull;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.Option;
@@ -53,6 +55,8 @@ public class SetPropertiesCommand implements Callable<Integer> {
 
     @Setter
     private EnvironmentVariablesProvider environmentVariablesProvider = new StandardEnvironmentVariablesProvider();
+
+    private static final Pattern UNICODE_ESCAPE = Pattern.compile("\\\\u([0-9a-fA-F]{4})");
 
     @Override
     public Integer call() throws Exception {
@@ -204,6 +208,25 @@ public class SetPropertiesCommand implements Callable<Integer> {
                 );
             }
         }
-        return value;
+
+        return unescapeUnicode(value);
+    }
+
+    @NotNull
+    private static String unescapeUnicode(String value) {
+        final Matcher m = UNICODE_ESCAPE.matcher(value);
+        if (m.find()) {
+            StringBuffer sb = new StringBuffer();
+            do {
+                final int charValue = Integer.parseUnsignedInt(m.group(1), 16);
+                m.appendReplacement(sb, ""+(char)charValue);
+            } while (m.find());
+            m.appendTail(sb);
+
+            return sb.toString();
+        }
+        else {
+            return value;
+        }
     }
 }
