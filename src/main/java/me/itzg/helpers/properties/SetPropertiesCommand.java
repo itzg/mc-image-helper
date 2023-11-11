@@ -1,9 +1,11 @@
 package me.itzg.helpers.properties;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.Reader;
 import java.io.Writer;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -43,6 +45,9 @@ public class SetPropertiesCommand implements Callable<Integer> {
         description = "Key=value pairs of custom properties to set")
     Map<String,String> customProperties;
 
+    @Option(names = "--escape-unicode")
+    boolean escapeUnicode;
+
     @Parameters(arity = "1")
     Path propertiesFile;
 
@@ -70,22 +75,50 @@ public class SetPropertiesCommand implements Callable<Integer> {
         }
 
         final Properties properties = new Properties();
-        if (Files.exists(propertiesFile)) {
-            try (Reader propsReader = Files.newBufferedReader(propertiesFile, StandardCharsets.UTF_8)) {
-                properties.load(propsReader);
-            }
-        }
+        loadProperties(properties);
 
         final long changes = processProperties(propertyDefinitions, properties, customProperties);
         if (changes > 0) {
             log.info("Created/updated {} propert{} in {}", changes, changes != 1 ? "ies":"y", propertiesFile);
 
-            try (Writer propsOut = Files.newBufferedWriter(propertiesFile, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE)) {
-                properties.store(propsOut, String.format("Updated %s by mc-image-helper", Instant.now()));
-            }
+            storeProperties(properties);
         }
 
         return ExitCode.OK;
+    }
+
+    private void storeProperties(Properties properties) throws IOException {
+        final String comment = String.format("Updated %s by mc-image-helper", Instant.now());
+        if (escapeUnicode) {
+            try (OutputStream out = Files.newOutputStream(propertiesFile,
+                StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE
+            )) {
+                properties.store(out, comment);
+            }
+        }
+        else {
+            try (Writer propsOut = Files.newBufferedWriter(propertiesFile,
+                StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE)
+            ) {
+
+                properties.store(propsOut, comment);
+            }
+        }
+    }
+
+    private void loadProperties(Properties properties) throws IOException {
+        if (Files.exists(propertiesFile)) {
+            if (escapeUnicode) {
+                try (InputStream is = Files.newInputStream(propertiesFile)) {
+                    properties.load(is);
+                }
+            }
+            else {
+                try (Reader propsReader = Files.newBufferedReader(propertiesFile)) {
+                    properties.load(propsReader);
+                }
+            }
+        }
     }
 
     /**
@@ -109,13 +142,13 @@ public class SetPropertiesCommand implements Callable<Integer> {
             else {
                 final String envValue = environmentVariablesProvider.get(definition.getEnv());
                 if (envValue != null) {
-                    final String expectedValue = mapAndValidateValue(definition, envValue);
+                    final String targetValue = mapAndValidateValue(definition, envValue);
 
                     final String propValue = properties.getProperty(name);
 
-                    if (!Objects.equals(expectedValue, propValue)) {
-                        log.debug("Setting property {} to new value '{}'", name, needsValueRedacted(name) ? "***" : expectedValue);
-                        properties.setProperty(name, expectedValue);
+                    if (!Objects.equals(targetValue, propValue)) {
+                        log.debug("Setting property {} to new value '{}'", name, needsValueRedacted(name) ? "***" : targetValue);
+                        properties.setProperty(name, targetValue);
                         ++modifiedViaDefinitions;
                     }
                 }

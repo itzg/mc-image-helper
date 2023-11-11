@@ -8,6 +8,9 @@
   "server-portv6": {
     "env": "SERVER_PORT_V6"
   },
+  "motd": {
+    "env": "MOTD"
+  },
   "gamemode": {
     "env": "GAMEMODE",
     "allowed": ["survival","creative","adventure"],

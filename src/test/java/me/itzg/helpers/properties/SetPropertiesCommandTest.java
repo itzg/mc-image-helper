@@ -195,6 +195,30 @@ class SetPropertiesCommandTest {
             .containsIgnoringNewLines("key1=value1");
     }
 
+    @Test
+    void encodesWithGivenEncoding() {
+        final Path outputProperties = tempDir.resolve("ascii.properties");
+
+        final int exitCode = new CommandLine(new SetPropertiesCommand()
+            .setEnvironmentVariablesProvider(MappedEnvVarProvider.of(
+                "MOTD", "§ctest"
+            ))
+        )
+            .execute(
+                "--definitions", definitionsFile.toString(),
+                "--escape-unicode",
+                outputProperties.toString()
+            );
+
+        assertThat(exitCode).isEqualTo(ExitCode.OK);
+
+        //noinspection UnnecessaryUnicodeEscape
+        assertThat(outputProperties)
+            .content()
+            .containsIgnoringNewLines("motd=\\u00A7ctest");
+
+    }
+
     private void assertPropertiesEqualExcept(Properties properties, String... propertiesToIgnore) {
         final HashSet<Object> actualKeys = new HashSet<>(properties.keySet());
         Arrays.asList(propertiesToIgnore).forEach(actualKeys::remove);
