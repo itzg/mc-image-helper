@@ -69,9 +69,6 @@ public class ManageUsersCommand implements Callable<Integer> {
     @Option(names = {"-f", "--input-is-file"})
     boolean inputIsFile;
 
-    @Option(names = "--offline", description = "Disable API conversion of usernames to UUID")
-    boolean offline;
-
     @Option(names = "--mojang-api-base-url", defaultValue = "${env:MOJANG_API_BASE_URL:-https://api.mojang.com/}")
     String mojangApiBaseUrl;
 
@@ -239,10 +236,6 @@ public class ManageUsersCommand implements Callable<Integer> {
                     return existingUser;
                 }
             }
-        }
-
-        if (offline) {
-            throw new InvalidParameterException("Unable to resolve username while offline: " + input);
         }
 
         return resolveUserFromApi(sharedFetch, input);
