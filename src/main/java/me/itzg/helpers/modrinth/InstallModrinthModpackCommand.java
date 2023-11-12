@@ -15,6 +15,8 @@ import me.itzg.helpers.modrinth.model.VersionType;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.Option;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 @CommandLine.Command(name = "install-modrinth-modpack",
     description = "Supports installation of Modrinth modpacks along with the associated mod loader",
@@ -103,6 +105,14 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
                         this.forceModloaderReinstall
                     )
                         .processModpack(sharedFetch)
+                        .flatMap(installation -> {
+                            if (resultsFile != null) {
+                                return processResultsFile(fetchedPack, installation);
+                            }
+                            else {
+                                return Mono.just(installation);
+                            }
+                        })
                         .map(installation ->
                             ModrinthModpackManifest.builder()
                                 .files(Manifests.relativizeAll(this.outputDirectory, installation.files))
@@ -120,6 +130,17 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
         }
 
         return ExitCode.OK;
+    }
+
+    private Mono<Installation> processResultsFile(FetchedPack fetchedPack, Installation installation) {
+        return Mono.fromCallable(() -> {
+                try (ResultsFileWriter results = new ResultsFileWriter(resultsFile, true)) {
+                    results.write(ResultsFileWriter.MODPACK_NAME, installation.getIndex().getName());
+                    results.write(ResultsFileWriter.MODPACK_VERSION, fetchedPack.getVersionNumber());
+                }
+                return installation;
+            })
+            .subscribeOn(Schedulers.boundedElastic());
     }
 
     private ModrinthPackFetcher buildModpackFetcher(

@@ -10,4 +10,9 @@ public class FetchedPack {
     String projectSlug;
 
     String versionId;
+
+    /**
+     * Human-readable version
+     */
+    String versionNumber;
 }

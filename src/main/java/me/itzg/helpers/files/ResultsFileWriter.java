@@ -18,6 +18,8 @@ public class ResultsFileWriter implements AutoCloseable {
     public static final String OPTION_DESCRIPTION =
         "A key=value file suitable for scripted environment variables. Currently includes"
             + "\n  SERVER: the entry point jar or script";
+    public static final String MODPACK_NAME = "MODPACK_NAME";
+    public static final String MODPACK_VERSION = "MODPACK_VERSION";
     private final BufferedWriter writer;
 
     public ResultsFileWriter(Path resultsFile) throws IOException {
@@ -33,7 +35,7 @@ public class ResultsFileWriter implements AutoCloseable {
     }
 
     public ResultsFileWriter write(String field, String value) throws IOException {
-        log.debug("Writing {}={} to results file", field, value);
+        log.debug("Writing {}=\"{}\" to results file", field, value);
         writer.write(String.format("%s=\"%s\"", field, value));
         writer.newLine();
         return this;
