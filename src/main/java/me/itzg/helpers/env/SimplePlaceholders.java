@@ -22,7 +22,7 @@ public class SimplePlaceholders {
      *     <li>%date:YYYY%</li>
      * </ul>
      */
-    private static final Pattern PLACEHOLDERS_PATTERN = Pattern.compile("%((?<type>\\w+):)?(?<var>\\w+)%");
+    private static final Pattern PLACEHOLDERS_PATTERN = Pattern.compile("%((?<type>\\w+):)?(?<var>.+?)%");
 
     private final EnvironmentVariablesProvider environmentVariablesProvider;
     private final Clock clock;
@@ -51,6 +51,7 @@ public class SimplePlaceholders {
     }
 
     private String buildPlaceholderReplacement(String type, String var, String fallback) {
+        log.debug("Building placeholder replacement from type={} with var='{}'", type, var);
         switch (type) {
             case "env":
                 final String result = environmentVariablesProvider.get(var);

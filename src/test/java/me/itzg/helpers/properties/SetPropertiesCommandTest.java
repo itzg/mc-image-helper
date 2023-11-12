@@ -255,8 +255,10 @@ class SetPropertiesCommandTest {
             arguments("Running %MODPACK_NAME%", "Running modpack"),
             arguments("Running %env:MODPACK_NAME%", "Running modpack"),
             arguments("Running %MODPACK_NAME% at %MODPACK_VERSION%", "Running modpack at version"),
-            arguments("Year month is %date:yyyy_MM%", "Year month is 2007_12"),
-            arguments("Stays %UNKNOWN%", "Stays %UNKNOWN%")
+            arguments("Date is %date:yyyy-MM-dd%", "Date is 2007-12-03"),
+            arguments("Stays %UNKNOWN%", "Stays %UNKNOWN%"),
+            arguments("%%", "%%"),
+            arguments("%MODPACK_NAME% and stray %", "modpack and stray %")
         );
     }
 
