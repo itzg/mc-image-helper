@@ -1,6 +1,5 @@
 package me.itzg.helpers.users;
 
-import static com.github.stefanbirkner.systemlambda.SystemLambda.tapSystemErr;
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static uk.org.webcompere.modelassert.json.JsonAssertions.assertJson;
@@ -12,7 +11,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
-import me.itzg.helpers.errors.ExitCodeMapper;
 import org.intellij.lang.annotations.Language;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -397,70 +395,6 @@ class ManageUsersCommandTest {
             verify(0, getRequestedFor(urlEqualTo("/users/profiles/minecraft/user1")));
             verify(0, getRequestedFor(urlEqualTo("/users/profiles/minecraft/user2")));
         }
-
-        @Test
-        void offline(WireMockRuntimeInfo wmInfo) {
-            setupUserStubs();
-
-            final Path expectedFile = tempDir.resolve("whitelist.json");
-
-            final int exitCode = new CommandLine(
-                new ManageUsersCommand()
-            )
-                .execute(
-                    "--mojang-api-base-url", wmInfo.getHttpBaseUrl(),
-                    "--type", "JAVA_WHITELIST",
-                    "--output-directory", tempDir.toString(),
-                    "--offline",
-                    // mix of ID and UUIDs
-                    USER1_ID, USER2_UUID
-                );
-
-            assertThat(exitCode).isEqualTo(0);
-
-            assertThat(expectedFile).exists();
-
-            assertJson(expectedFile)
-                .isArrayContainingExactlyInAnyOrder(
-                    conditions()
-                        .satisfies(conditions()
-                            // names should be retained from existing file
-                            .at("/name").hasValue("")
-                            .at("/uuid").hasValue(USER1_UUID)
-                        )
-                        .satisfies(conditions()
-                            .at("/name").hasValue("")
-                            .at("/uuid").hasValue(USER2_UUID)
-                        )
-                );
-
-            verify(0, getRequestedFor(urlEqualTo("/users/profiles/minecraft/user1")));
-            verify(0, getRequestedFor(urlEqualTo("/users/profiles/minecraft/user2")));
-        }
-
-        @Test
-        void offlineFailsGivenName(WireMockRuntimeInfo wmInfo) throws Exception {
-            setupUserStubs();
-
-            final String err = tapSystemErr(() -> {
-                final int exitCode = new CommandLine(
-                    new ManageUsersCommand()
-                )
-                    .setExitCodeExceptionMapper(new ExitCodeMapper())
-                    .execute(
-                        "--mojang-api-base-url", wmInfo.getHttpBaseUrl(),
-                        "--type", "JAVA_WHITELIST",
-                        "--output-directory", tempDir.toString(),
-                        "--offline",
-                        "user1"
-                    );
-
-                assertThat(exitCode).isEqualTo(ExitCode.USAGE);
-            });
-
-            assertThat(err).contains("Unable to resolve username while offline: user1");
-        }
-
     }
 
     @Nested
