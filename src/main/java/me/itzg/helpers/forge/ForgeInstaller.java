@@ -55,7 +55,7 @@ public class ForgeInstaller {
             needsInstall = true;
         }
         else if (prevManifest != null) {
-            if (!Files.exists(Paths.get(prevManifest.getServerEntry()))) {
+            if (!serverEntryExists(outputDir, prevManifest.getServerEntry())) {
                 log.warn("Server entry for Minecraft {} Forge {} is missing. Re-installing.",
                     prevManifest.getMinecraftVersion(), prevManifest.getForgeVersion()
                     );
@@ -108,6 +108,11 @@ public class ForgeInstaller {
                 throw new RuntimeException("Failed to populate results file", e);
             }
         }
+    }
+
+    private boolean serverEntryExists(@NonNull Path outputDir, String serverEntry) {
+        return (serverEntry.startsWith("/") && Files.exists(Paths.get(serverEntry)))
+            || Files.exists(outputDir.resolve(serverEntry));
     }
 
     private ForgeManifest loadManifest(Path outputDir, String variant) throws IOException {

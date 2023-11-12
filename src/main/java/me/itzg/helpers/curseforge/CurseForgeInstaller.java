@@ -429,6 +429,8 @@ public class CurseForgeInstaller {
                 if (prevManifest.getLevelName() != null) {
                     resultsFileWriter.write("LEVEL", prevManifest.getLevelName());
                 }
+                resultsFileWriter.write(ResultsFileWriter.MODPACK_NAME, prevManifest.getModpackName());
+                resultsFileWriter.write(ResultsFileWriter.MODPACK_VERSION, prevManifest.getModpackVersion());
             }
         }
     }
@@ -462,6 +464,8 @@ public class CurseForgeInstaller {
             try (ResultsFileWriter resultsFileWriter = new ResultsFileWriter(resultsFile, true)) {
                 if (results.getLevelName() != null) {
                     resultsFileWriter.write("LEVEL", results.getLevelName());
+                    resultsFileWriter.write(ResultsFileWriter.MODPACK_NAME, results.getName());
+                    resultsFileWriter.write(ResultsFileWriter.MODPACK_VERSION, results.getVersion());
                 }
             }
         }

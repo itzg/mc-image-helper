@@ -26,7 +26,13 @@ public class ModrinthHttpPackFetcher implements ModrinthPackFetcher {
                 (uri, file, contentSizeBytes) ->
                     log.info("Downloaded {}", destFilePath)
             )
-            .map(mrPackFile -> new FetchedPack(mrPackFile, "custom", deriveVersionId()));
+            .map(mrPackFile -> new FetchedPack(mrPackFile, "custom", deriveVersionId(), deriveVersionName()));
+    }
+
+    private String deriveVersionName() {
+        final int lastSlash = modpackUri.getPath().lastIndexOf('/');
+        return lastSlash > 0 ? modpackUri.getPath().substring(lastSlash + 1)
+            : "unknown";
     }
 
     private String deriveVersionId() {

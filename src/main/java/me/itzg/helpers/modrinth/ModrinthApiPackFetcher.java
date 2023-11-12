@@ -59,7 +59,9 @@ public class ModrinthApiPackFetcher implements ModrinthPackFetcher {
                     .filter(version -> needsInstall(prevManifest, project.getSlug(), version))
                     .flatMap(version ->
                         apiClient.downloadMrPack(ModrinthApiClient.pickVersionFile(version))
-                            .map(mrPackFile -> new FetchedPack(mrPackFile, project.getSlug(), version.getId()))
+                            .map(mrPackFile -> new FetchedPack(
+                                mrPackFile, project.getSlug(), version.getId(), version.getVersionNumber()
+                            ))
                     )
             );
     }

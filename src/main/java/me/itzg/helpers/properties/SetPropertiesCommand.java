@@ -9,6 +9,7 @@ import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Map;
@@ -21,6 +22,7 @@ import java.util.regex.Pattern;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.env.EnvironmentVariablesProvider;
+import me.itzg.helpers.env.SimplePlaceholders;
 import me.itzg.helpers.env.StandardEnvironmentVariablesProvider;
 import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.json.ObjectMappers;
@@ -39,6 +41,8 @@ public class SetPropertiesCommand implements Callable<Integer> {
     private static final TypeReference<Map<String, PropertyDefinition>> PROPERTY_DEFINITIONS_TYPE = new TypeReference<Map<String, PropertyDefinition>>() {
     };
 
+    private static final Pattern UNICODE_ESCAPE = Pattern.compile("\\\\u([0-9a-fA-F]{4})");
+
     @Option(names = "--definitions", description = "JSON file of property names to PropertyDefinition mappings")
     Path propertyDefinitionsFile;
 
@@ -56,7 +60,8 @@ public class SetPropertiesCommand implements Callable<Integer> {
     @Setter
     private EnvironmentVariablesProvider environmentVariablesProvider = new StandardEnvironmentVariablesProvider();
 
-    private static final Pattern UNICODE_ESCAPE = Pattern.compile("\\\\u([0-9a-fA-F]{4})");
+    @Setter
+    private Clock clock = Clock.systemDefaultZone();
 
     @Override
     public Integer call() throws Exception {
@@ -131,6 +136,8 @@ public class SetPropertiesCommand implements Callable<Integer> {
     private long processProperties(Map<String, PropertyDefinition> propertyDefinitions, Properties properties,
         Map<String, String> customProperties
     ) {
+        final SimplePlaceholders simplePlaceholders = new SimplePlaceholders(environmentVariablesProvider, clock);
+
         long modifiedViaDefinitions = 0;
         for (final Entry<String, PropertyDefinition> entry : propertyDefinitions.entrySet()) {
             final String name = entry.getKey();
@@ -146,7 +153,11 @@ public class SetPropertiesCommand implements Callable<Integer> {
             else {
                 final String envValue = environmentVariablesProvider.get(definition.getEnv());
                 if (envValue != null) {
-                    final String targetValue = mapAndValidateValue(definition, envValue);
+                    final String targetValue = mapAndValidateValue(definition,
+                        simplePlaceholders.processPlaceholders(
+                            unescapeUnicode(envValue)
+                        )
+                    );
 
                     final String propValue = properties.getProperty(name);
 
@@ -163,7 +174,10 @@ public class SetPropertiesCommand implements Callable<Integer> {
         if (customProperties != null) {
             for (final Entry<String, String> entry : customProperties.entrySet()) {
                 final String name = entry.getKey();
-                final String targetValue = entry.getValue();
+                final String targetValue =
+                    simplePlaceholders.processPlaceholders(
+                        unescapeUnicode(entry.getValue())
+                    );
                 final String propValue = properties.getProperty(name);
                 if (!Objects.equals(targetValue, propValue)) {
                     log.debug("Setting property {} to new value '{}'", name, targetValue);
@@ -175,6 +189,7 @@ public class SetPropertiesCommand implements Callable<Integer> {
 
         return modifiedViaDefinitions + modifiedViaCustom;
     }
+
 
     private static boolean needsValueRedacted(String name) {
         return name.contains("password");
@@ -209,7 +224,7 @@ public class SetPropertiesCommand implements Callable<Integer> {
             }
         }
 
-        return unescapeUnicode(value);
+        return value;
     }
 
     @NotNull

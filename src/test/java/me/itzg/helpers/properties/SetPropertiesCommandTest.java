@@ -2,6 +2,7 @@ package me.itzg.helpers.properties;
 
 import static com.github.stefanbirkner.systemlambda.SystemLambda.tapSystemErr;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -11,10 +12,14 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Properties;
+import java.util.stream.Stream;
 import me.itzg.helpers.env.MappedEnvVarProvider;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -22,6 +27,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
@@ -239,6 +246,44 @@ class SetPropertiesCommandTest {
         assertThat(outputProperties)
             .content(StandardCharsets.UTF_8)
             .containsIgnoringNewLines("level-name=svět");
+
+    }
+
+    public static Stream<Arguments> processesPlaceholdersArgs() {
+        return Stream.of(
+            arguments("simple", "simple"),
+            arguments("Running %MODPACK_NAME%", "Running modpack"),
+            arguments("Running %env:MODPACK_NAME%", "Running modpack"),
+            arguments("Running %MODPACK_NAME% at %MODPACK_VERSION%", "Running modpack at version"),
+            arguments("Year month is %date:yyyy_MM%", "Year month is 2007_12"),
+            arguments("Stays %UNKNOWN%", "Stays %UNKNOWN%")
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("processesPlaceholdersArgs")
+    void processesPlaceholders(String motd, String expected) {
+        final Path outputProperties = tempDir.resolve("out.properties");
+
+        final int exitCode = new CommandLine(new SetPropertiesCommand()
+            .setEnvironmentVariablesProvider(MappedEnvVarProvider.of(
+                "MODPACK_NAME", "modpack",
+                "MODPACK_VERSION", "version",
+                "MOTD", motd
+            ))
+            .setClock(Clock.fixed(Instant.parse("2007-12-03T10:15:30.00Z"), ZoneId.of("UTC")))
+        )
+            .execute(
+                "--definitions", definitionsFile.toString(),
+                outputProperties.toString()
+            );
+
+        assertThat(exitCode).isEqualTo(ExitCode.OK);
+
+        //noinspection UnnecessaryUnicodeEscape
+        assertThat(outputProperties)
+            .content(StandardCharsets.UTF_8)
+            .containsIgnoringNewLines("motd=" + expected);
 
     }
 
