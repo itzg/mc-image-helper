@@ -1,13 +1,17 @@
 package me.itzg.helpers.files;
 
-import java.io.InputStream;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.time.Instant;
+import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
+import reactor.netty.ByteBufFlux;
 
+@Slf4j
 public class ReactiveFileUtils {
 
     /**
@@ -30,19 +34,35 @@ public class ReactiveFileUtils {
             .subscribeOn(Schedulers.boundedElastic());
     }
 
-    /**
-     * Copies the given inputStream's content into outputFile and then closes inputStream.
-     * @return Returned Mono is already subscribed on bounded elastic scheduler.
-     */
-    public static Mono<Long> copyInputStreamToFile(InputStream inputStream, Path outputFile) {
+    public static Mono<Long> copyByteBufFluxToFile(ByteBufFlux byteBufFlux, Path file) {
         return Mono.fromCallable(() -> {
-                try {
-                    return Files.copy(inputStream, outputFile, StandardCopyOption.REPLACE_EXISTING);
-                } finally {
-                    inputStream.close();
+                    log.trace("Opening {} for writing", file);
+                    return Files.newByteChannel(file, StandardOpenOption.WRITE, StandardOpenOption.CREATE,
+                        StandardOpenOption.TRUNCATE_EXISTING
+                    );
                 }
-            })
-            .subscribeOn(Schedulers.boundedElastic());
+            )
+            .subscribeOn(Schedulers.boundedElastic())
+            .flatMap(outChannel -> byteBufFlux.asByteBuffer()
+                .flatMap(byteBuffer ->
+                    Mono.fromCallable(() -> {
+                                final int count = outChannel.write(byteBuffer);
+                                log.trace("Wrote {} bytes to {}", count, file);
+                                return count;
+                            }
+                        )
+                        .subscribeOn(Schedulers.boundedElastic())
+                )
+                .publishOn(Schedulers.boundedElastic())
+                .doOnTerminate(() -> {
+                    try {
+                        log.trace("Closing file for writing: {}", file);
+                        outChannel.close();
+                    } catch (IOException e) {
+                        log.error("Failed to close file for writing: {}", file, e);
+                    }
+                })
+                .collect(Collectors.<Integer>summingLong(value -> value))
+            );
     }
-
 }
