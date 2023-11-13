@@ -90,7 +90,7 @@ public class SpecificFileFetchBuilder extends FetchBuilderBase<SpecificFileFetch
                 .doOnRequest(debugLogRequest(log, "file fetch"))
                 .get()
                 .uri(uri)
-                .responseSingle((resp, bodyMono) -> {
+                .response((resp, byteBufFlux) -> {
                     final HttpResponseStatus status = resp.status();
 
                     if (useIfModifiedSince && status == NOT_MODIFIED) {
@@ -100,29 +100,32 @@ public class SpecificFileFetchBuilder extends FetchBuilderBase<SpecificFileFetch
                     }
 
                     if (notSuccess(resp)) {
-                        return failedRequestMono(resp, bodyMono, "Trying to retrieve file");
+                        return failedRequestMono(resp, byteBufFlux.aggregate(), "Trying to retrieve file");
                     }
 
                     if (notExpectedContentType(resp)) {
                         return failedContentTypeMono(resp);
                     }
 
-                    return bodyMono.asInputStream()
-                        .flatMap(inputStream -> ReactiveFileUtils.copyInputStreamToFile(inputStream, file))
+                    return ReactiveFileUtils.copyByteBufFluxToFile(byteBufFlux, file)
                         .flatMap(fileSize -> {
                             statusHandler.call(FileDownloadStatus.DOWNLOADED, uri, file);
                             downloadedHandler.call(uri, file, fileSize);
                             return Mono
                                 .deferContextual(contextView -> {
                                     if (log.isDebugEnabled()) {
-                                        final long durationMillis = currentTimeMillis() - contextView.<Long>get("downloadStart");
+                                        final long durationMillis =
+                                            currentTimeMillis() - contextView.<Long>get("downloadStart");
                                         log.debug("Download of {} took {} at {}",
-                                            uri, formatDuration(durationMillis), transferRate(durationMillis, fileSize));
+                                            uri, formatDuration(durationMillis), transferRate(durationMillis, fileSize)
+                                        );
                                     }
                                     return Mono.just(file);
                                 });
                         });
+
                 })
+                .last()
                 .contextWrite(context -> context.put("downloadStart", currentTimeMillis()))
         );
     }

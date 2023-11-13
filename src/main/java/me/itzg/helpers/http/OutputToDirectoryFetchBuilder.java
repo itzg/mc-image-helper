@@ -7,7 +7,6 @@ import static java.util.Objects.requireNonNull;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -18,6 +17,7 @@ import me.itzg.helpers.files.ReactiveFileUtils;
 import org.jetbrains.annotations.NotNull;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
+import reactor.netty.ByteBufFlux;
 import reactor.netty.http.client.HttpClient;
 import reactor.netty.http.client.HttpClientResponse;
 
@@ -101,9 +101,9 @@ public class OutputToDirectoryFetchBuilder extends FetchBuilderBase<OutputToDire
             .doOnRequest(debugLogRequest(log, "file get fetch"))
             .get()
             .uri(uri())
-            .responseSingle((resp, bodyMono) -> {
+            .response((resp, byteBufFlux) -> {
                 if (notSuccess(resp)) {
-                    return failedRequestMono(resp, bodyMono, "Getting file");
+                    return failedRequestMono(resp, byteBufFlux.aggregate(), "Getting file");
                 }
 
                 final Path outputFile = outputDirectory.resolve(extractFilename(resp));
@@ -111,10 +111,10 @@ public class OutputToDirectoryFetchBuilder extends FetchBuilderBase<OutputToDire
 
                 return skipExisting(resp, outputFile)
                     .flatMap(skip -> skip ? Mono.just(outputFile)
-                        : bodyMono.asInputStream()
-                            .flatMap(inputStream -> copyBodyInputStreamToFile(inputStream, outputFile))
+                        : copyBodyInputStreamToFile(byteBufFlux, outputFile)
                     );
-            });
+            })
+            .last();
     }
 
     private Instant respLastModified(HttpClientResponse resp) {
@@ -202,43 +202,45 @@ public class OutputToDirectoryFetchBuilder extends FetchBuilderBase<OutputToDire
         return alreadyUpToDateMono
             .filter(alreadyUpToDate -> !alreadyUpToDate)
             .flatMap(notUsed -> client
-                    .headersWhen(headers ->
-                        skipUpToDate ?
-                            fileLastModifiedMono
-                                .map(outputLastModified -> headers.set(
-                                    IF_MODIFIED_SINCE,
-                                    httpDateTimeFormatter.format(outputLastModified)
-                                ))
-                                .defaultIfEmpty(headers)
-                            : Mono.just(headers)
-                    )
-                    .followRedirect(true)
-                    .doOnRequest(debugLogRequest(log, "file fetch"))
-                    .doOnRequest((httpClientRequest, connection) -> statusHandler.call(FileDownloadStatus.DOWNLOADING, uri(), outputFile))
-                    .get()
-                    .uri(resourceUrl)
-                    .responseSingle((resp, bodyMono) -> {
-                        if (skipUpToDate && resp.status() == HttpResponseStatus.NOT_MODIFIED) {
-                            log.debug("The file {} is already up to date", outputFile);
-                            statusHandler.call(FileDownloadStatus.SKIP_FILE_UP_TO_DATE, uri(), outputFile);
-                            return Mono.just(outputFile);
-                        }
+                .headersWhen(headers ->
+                    skipUpToDate ?
+                        fileLastModifiedMono
+                            .map(outputLastModified -> headers.set(
+                                IF_MODIFIED_SINCE,
+                                httpDateTimeFormatter.format(outputLastModified)
+                            ))
+                            .defaultIfEmpty(headers)
+                        : Mono.just(headers)
+                )
+                .followRedirect(true)
+                .doOnRequest(debugLogRequest(log, "file fetch"))
+                .doOnRequest(
+                    (httpClientRequest, connection) -> statusHandler.call(FileDownloadStatus.DOWNLOADING, uri(), outputFile))
+                .get()
+                .uri(resourceUrl)
+                .response((resp, byteBufFlux) -> {
+                    if (skipUpToDate && resp.status() == HttpResponseStatus.NOT_MODIFIED) {
+                        log.debug("The file {} is already up to date", outputFile);
+                        statusHandler.call(FileDownloadStatus.SKIP_FILE_UP_TO_DATE, uri(), outputFile);
+                        return Mono.just(outputFile);
+                    }
 
-                        if (notSuccess(resp)) {
-                            return failedRequestMono(resp, bodyMono, "Downloading file");
-                        }
+                    if (notSuccess(resp)) {
+                        return failedRequestMono(resp, byteBufFlux.aggregate(), "Downloading file");
+                    }
 
-                        return bodyMono.asInputStream()
-                            .flatMap(inputStream -> copyBodyInputStreamToFile(inputStream, outputFile));
-                    })
-                    .checkpoint("Fetching file into directory"))
+                    return copyBodyInputStreamToFile(byteBufFlux, outputFile);
+                })
+                .last()
+                .checkpoint("Fetching file into directory")
+            )
             .defaultIfEmpty(outputFile);
     }
 
-    private Mono<Path> copyBodyInputStreamToFile(InputStream inputStream, Path outputFile) {
+    private Mono<Path> copyBodyInputStreamToFile(ByteBufFlux byteBufFlux, Path outputFile) {
         log.trace("Copying response body to file={}", outputFile);
 
-        return ReactiveFileUtils.copyInputStreamToFile(inputStream, outputFile)
+        return ReactiveFileUtils.copyByteBufFluxToFile(byteBufFlux, outputFile)
             .map(fileSize -> {
                 statusHandler.call(FileDownloadStatus.DOWNLOADED, uri(), outputFile);
                 downloadedHandler.call(uri(), outputFile, fileSize);
