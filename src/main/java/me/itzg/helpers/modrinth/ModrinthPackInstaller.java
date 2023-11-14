@@ -25,6 +25,7 @@ import me.itzg.helpers.modrinth.model.Env;
 import me.itzg.helpers.modrinth.model.EnvType;
 import me.itzg.helpers.modrinth.model.ModpackIndex;
 import me.itzg.helpers.quilt.QuiltInstaller;
+import org.jetbrains.annotations.Blocking;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -56,7 +57,7 @@ public class ModrinthPackInstaller {
         try {
             modpackIndex = IoStreams.readFileFromZip(
                 this.zipFile, "modrinth.index.json", in ->
-                ObjectMappers.defaultMapper().readValue(in, ModpackIndex.class)
+                    ObjectMappers.defaultMapper().readValue(in, ModpackIndex.class)
             );
         } catch (IOException e) {
             return Mono.error(
@@ -73,8 +74,8 @@ public class ModrinthPackInstaller {
         if (!Objects.equals("minecraft", modpackIndex.getGame())) {
             return Mono.error(
                 new InvalidParameterException(
-                    "Requested modpack is not for minecraft: " +
-                    modpackIndex.getGame()));
+                    "Requested modpack is not for minecraft: " + modpackIndex.getGame()
+                ));
         }
 
         return processModpackFiles(modpackIndex)
@@ -87,18 +88,14 @@ public class ModrinthPackInstaller {
                     .flatMap(Function.identity())
                     .collect(Collectors.toList())
             )
-            .flatMap(paths -> {
-                try {
+            .flatMap(paths -> Mono.fromCallable(() -> {
                     applyModLoader(sharedFetch, modpackIndex.getDependencies());
-                } catch (IOException e) {
-                    return Mono.error(
-                        new GenericException("Failed to apply mod loader", e));
-                }
 
-                return Mono.just(new Installation()
-                    .setIndex(modpackIndex)
-                    .setFiles(paths));
-            });
+                    return new Installation()
+                        .setIndex(modpackIndex)
+                        .setFiles(paths);
+                }).subscribeOn(Schedulers.boundedElastic())
+            );
     }
 
     private Flux<Path> processModpackFiles(ModpackIndex modpackIndex) {
@@ -177,10 +174,8 @@ public class ModrinthPackInstaller {
         }
     }
 
-    private void applyModLoader(
-        SharedFetch sharedFetch, Map<DependencyId, String> dependencies
-        ) throws IOException
-    {
+    @Blocking
+    private void applyModLoader(SharedFetch sharedFetch, Map<DependencyId, String> dependencies) {
         log.debug("Applying mod loader from dependencies={}", dependencies);
 
         final String minecraftVersion = dependencies.get(DependencyId.minecraft);

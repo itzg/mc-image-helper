@@ -34,6 +34,7 @@ public class ReactiveFileUtils {
             .subscribeOn(Schedulers.boundedElastic());
     }
 
+    @SuppressWarnings("BlockingMethodInNonBlockingContext")
     public static Mono<Long> copyByteBufFluxToFile(ByteBufFlux byteBufFlux, Path file) {
         return Mono.fromCallable(() -> {
                     log.trace("Opening {} for writing", file);
@@ -42,7 +43,6 @@ public class ReactiveFileUtils {
                     );
                 }
             )
-            .subscribeOn(Schedulers.boundedElastic())
             .flatMap(outChannel -> byteBufFlux.asByteBuffer()
                 .flatMap(byteBuffer ->
                     Mono.fromCallable(() -> {
@@ -51,9 +51,7 @@ public class ReactiveFileUtils {
                                 return count;
                             }
                         )
-                        .subscribeOn(Schedulers.boundedElastic())
                 )
-                .publishOn(Schedulers.boundedElastic())
                 .doOnTerminate(() -> {
                     try {
                         log.trace("Closing file for writing: {}", file);
@@ -63,6 +61,7 @@ public class ReactiveFileUtils {
                     }
                 })
                 .collect(Collectors.<Integer>summingLong(value -> value))
+                .subscribeOn(Schedulers.boundedElastic())
             );
     }
 }
