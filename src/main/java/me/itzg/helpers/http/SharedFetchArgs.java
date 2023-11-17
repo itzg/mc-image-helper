@@ -1,9 +1,8 @@
 package me.itzg.helpers.http;
 
+import java.time.Duration;
 import me.itzg.helpers.http.SharedFetch.Options;
 import picocli.CommandLine.Option;
-
-import java.time.Duration;
 
 /**
  * Usage:
@@ -40,6 +39,13 @@ public class SharedFetchArgs {
     )
     public void setConnectionPoolMaxIdleTimeout(Duration timeout) {
         optionsBuilder.maxIdleTimeout(timeout);
+    }
+
+    @Option(names = "--connection-pool-pending-acquire-timeout", defaultValue = "${env:FETCH_CONNECTION_POOL_PENDING_ACQUIRE_TIMEOUT}",
+        paramLabel = "DURATION"
+    )
+    public void setPendingAcquireTimeout(Duration timeout) {
+        optionsBuilder.pendingAcquireTimeout(timeout);
     }
 
     public Options options() {
