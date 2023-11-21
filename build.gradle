@@ -101,7 +101,7 @@ dependencies {
     // for RFC5987 parsing of content-disposition filename*
     // 3.5.x is last of Java8 compatible: https://cxf.apache.org/download.html
     implementation 'org.apache.cxf:cxf-core:[3.5.6,3.6.0)'
-    implementation 'org.jetbrains:annotations:24.0.1'
+    implementation 'org.jetbrains:annotations:24.1.0'
 
     testImplementation 'org.assertj:assertj-core:3.24.2'
     // https://github.com/webcompere/model-assert
