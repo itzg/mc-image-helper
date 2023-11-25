@@ -8,12 +8,14 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.CharsetDetector;
 import me.itzg.helpers.env.Interpolator;
+import me.itzg.helpers.env.Interpolator.Result;
 import me.itzg.helpers.env.MissingVariablesException;
 import me.itzg.helpers.patch.model.PatchDefinition;
 import me.itzg.helpers.patch.model.PatchOperation;
@@ -45,7 +47,7 @@ public class PatchSetProcessor {
     }
 
     private void processPatch(PatchDefinition patch) {
-        final Path filePath = patch.getFile();
+        final Path filePath = resolveFilePath(patch.getFile());
 
         if (Files.isRegularFile(filePath)) {
             final FileFormat fileFormat = resolveFileFormat(patch, filePath);
@@ -77,6 +79,17 @@ public class PatchSetProcessor {
         } else {
             log.warn("{} is not an existing file", filePath);
         }
+    }
+
+    private Path resolveFilePath(String file) {
+        try {
+            final Result<String> fileResult = interpolator.interpolate(file);
+            return Paths.get(fileResult.getContent());
+        } catch (IOException e) {
+            log.warn("Failed to interpolate file name from patch", e);
+            return Paths.get(file);
+        }
+
     }
 
     private FileFormat resolveFileFormat(PatchDefinition patch, Path filePath) {
