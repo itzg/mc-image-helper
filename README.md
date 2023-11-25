@@ -395,6 +395,12 @@ auto-detected sourcing from file list, directories, and URLs
 
 ### patch
 
+Supports the file formats:
+- JSON
+- JSON5
+- Yaml
+- TOML, but processed output is not pretty
+
 ```
 Usage: mc-image-helper patch [-h] [--patch-env-prefix=<envPrefix>] FILE_OR_DIR
       FILE_OR_DIR   Path to a PatchSet json file or directory containing

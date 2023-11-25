@@ -3,10 +3,11 @@ package me.itzg.helpers.patch;
 import com.fasterxml.jackson.core.json.JsonReadFeature;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
+import com.fasterxml.jackson.core.util.Separators;
+import com.fasterxml.jackson.core.util.Separators.Spacing;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.json.JsonMapper;
-
 import java.io.IOException;
 import java.util.Map;
 
@@ -38,7 +39,10 @@ public class Json5FileFormat implements FileFormat {
 
         objectWriter = objectMapper.writer(
                 new DefaultPrettyPrinter()
-                        .withoutSpacesInObjectEntries()
+                    .withSeparators(
+                        Separators.createDefaultInstance()
+                            .withObjectFieldValueSpacing(Spacing.NONE)
+                    )
         );
     }
 
