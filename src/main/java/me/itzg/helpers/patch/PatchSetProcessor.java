@@ -35,7 +35,8 @@ public class PatchSetProcessor {
     private final FileFormat[] fileFormats = new FileFormat[]{
             new JsonFileFormat(),
             new Json5FileFormat(),
-            new YamlFileFormat()
+            new YamlFileFormat(),
+            new TomlFileFormat()
     };
 
     public void process(PatchSet patchSet) {
