@@ -56,6 +56,10 @@ public class ModrinthApiPackFetcher implements ModrinthPackFetcher {
                         project, modpackProjectRef, modLoaderType,
                         gameVersion, defaultVersionType
                     )
+                    .switchIfEmpty(Mono.error(() -> new InvalidParameterException(
+                        String.format("Unable to locate project version for %s, loader=%s, gameVersion=%s, versionType=%s",
+                            modpackProjectRef, modLoaderType, gameVersion, defaultVersionType
+                    ))))
                     .filter(version -> needsInstall(prevManifest, project.getSlug(), version))
                     .flatMap(version ->
                         apiClient.downloadMrPack(ModrinthApiClient.pickVersionFile(version))
