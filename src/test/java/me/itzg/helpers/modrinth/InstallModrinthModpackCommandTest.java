@@ -4,17 +4,26 @@ import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static me.itzg.helpers.modrinth.ModrinthTestHelpers.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
+import java.util.Collections;
+import me.itzg.helpers.errors.ExitCodeMapper;
 import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.modrinth.model.ModpackIndex;
 import me.itzg.helpers.modrinth.model.ModpackIndex.ModpackFile;
+import me.itzg.helpers.modrinth.model.Project;
 import me.itzg.helpers.modrinth.model.Version;
+import me.itzg.helpers.modrinth.model.VersionType;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import picocli.CommandLine;
+import picocli.CommandLine.ExitCode;
 
 @WireMockTest
 public class InstallModrinthModpackCommandTest {
@@ -220,5 +229,45 @@ public class InstallModrinthModpackCommandTest {
         assertThat(commandStatus).isEqualTo(0);
         assertThat(tempDir.resolve(relativeFilePath)).content()
             .isEqualTo(expectedFileData);
+    }
+
+    @Test
+    void errorWhenNoCompatibleVersions(WireMockRuntimeInfo wm, @TempDir Path tempDir) {
+        final ObjectMapper mapper = new ObjectMapper();
+
+        JsonNode responseProject = mapper.valueToTree(
+            new Project()
+                .setSlug(projectName)
+                .setId(projectId)
+                .setTitle("Test"));
+
+        stubFor(get("/v2/project/" + projectName)
+            .willReturn(ok()
+                .withHeader("Content-Type", "application/json")
+                .withJsonBody(responseProject)));
+
+        JsonNode responseVersionList = mapper.valueToTree(Collections.singletonList(
+            new Version()
+                .setId(RandomStringUtils.randomAlphabetic(5))
+                // type is beta, but default requested is release-only
+                .setVersionType(VersionType.beta)
+        ));
+
+        stubFor(get(urlPathMatching("/v2/project/" + projectId + "/version"))
+            .withQueryParam("game_versions", equalTo("[\"1.20.2\"]"))
+            .willReturn(ok()
+                .withHeader("Content-Type", "application/json")
+                .withJsonBody(responseVersionList)));
+
+        final int exitCode = new CommandLine(new InstallModrinthModpackCommand())
+            .setExitCodeExceptionMapper(new ExitCodeMapper())
+            .execute(
+                "--api-base-url", wm.getHttpBaseUrl(),
+                "--project", projectName,
+                "--game-version", "1.20.2",
+                "--output-directory", tempDir.toString()
+            );
+
+        assertThat(exitCode).isEqualTo(ExitCode.USAGE);
     }
 }
