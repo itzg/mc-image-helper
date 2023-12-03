@@ -152,7 +152,7 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
     String missingModsFilename;
 
     private static final Pattern PAGE_URL_PATTERN = Pattern.compile(
-        "https://(www|beta)\\.curseforge\\.com/minecraft/modpacks/(?<slug>.+?)(/files(/(?<fileId>\\d+)?)?)?");
+        "https://(www|beta)\\.curseforge\\.com/minecraft/modpacks/(?<slug>.+?)(/(files|download)(/(?<fileId>\\d+)?)?)?");
 
     @Override
     public Integer call() throws Exception {
