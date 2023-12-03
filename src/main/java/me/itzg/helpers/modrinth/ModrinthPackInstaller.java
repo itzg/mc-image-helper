@@ -4,12 +4,14 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipFile;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidParameterException;
@@ -38,6 +40,9 @@ public class ModrinthPackInstaller {
     private final Path resultsFile;
     private final boolean forceModloaderReinstall;
     private final Options sharedFetchOpts;
+
+    @Setter
+    private List<String> excludeFiles;
 
     public ModrinthPackInstaller(
             ModrinthApiClient apiClient, Options sharedFetchOpts,
@@ -110,6 +115,10 @@ public class ModrinthPackInstaller {
             .publishOn(Schedulers.boundedElastic())
             .flatMap(modpackFile -> {
                 final String modpackFilePath = sanitizeModFilePath(modpackFile.getPath());
+                if (shouldExcludeFile(modpackFilePath)) {
+                    return Mono.empty();
+                }
+
                 final Path outFilePath =
                     this.outputDirectory.resolve(modpackFilePath);
                 try {
@@ -127,6 +136,22 @@ public class ModrinthPackInstaller {
                         log.info("Downloaded {}", modpackFilePath)
                 );
             });
+    }
+
+    private boolean shouldExcludeFile(String modpackFilePath) {
+        if (excludeFiles == null || excludeFiles.isEmpty()) {
+            return false;
+        }
+
+        // to match case-insensitive
+        final String normalized = modpackFilePath.toLowerCase();
+
+        final boolean exclude = excludeFiles.stream()
+            .anyMatch(s -> normalized.contains(s.toLowerCase()));
+        if (exclude) {
+            log.debug("Excluding '{}' as requested", modpackFilePath);
+        }
+        return exclude;
     }
 
     private String sanitizeModFilePath(String path) {
