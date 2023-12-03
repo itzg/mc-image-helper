@@ -9,17 +9,28 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Stream;
 import me.itzg.helpers.http.Fetch;
 import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.http.SharedFetch.Options;
 import me.itzg.helpers.http.SharedFetchArgs;
+import me.itzg.helpers.modrinth.model.DependencyId;
+import me.itzg.helpers.modrinth.model.Env;
+import me.itzg.helpers.modrinth.model.EnvType;
 import me.itzg.helpers.modrinth.model.ModpackIndex;
+import me.itzg.helpers.modrinth.model.ModpackIndex.ModpackFile;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 @WireMockTest
 public class ModrinthPackInstallerTest {
+
     @Test
     void installReturnsTheModpackIndexAndInstalledFiles(
             WireMockRuntimeInfo wm, @TempDir Path tempDir
@@ -125,4 +136,57 @@ public class ModrinthPackInstallerTest {
             assertThat(installedFiles.get(0)).isEqualTo(expectedFilePath);
         }
     }
+
+    @ParameterizedTest
+    @MethodSource("handlesExcludedFiles_args")
+    void handlesExcludedFiles(String modpackFilePath, String exclude, WireMockRuntimeInfo wm, @TempDir Path tempDir) throws IOException {
+        Options fetchOpts = new SharedFetchArgs().options();
+        try (SharedFetch sharedFetch = Fetch.sharedFetch("install-modrinth-modpack", fetchOpts)) {
+            ModrinthApiClient apiClient = new ModrinthApiClient(
+                wm.getHttpBaseUrl(), "install-modrinth-modpack", fetchOpts);
+
+            Path resultsFile = tempDir.resolve("results");
+            Path modpackPath = tempDir.resolve("test.mrpack");
+
+            final HashMap<Env, EnvType> env = new HashMap<>();
+            env.put(Env.client, EnvType.required);
+            // some modpack improperly declare server-required
+            env.put(Env.server, EnvType.required);
+
+            ModpackIndex index = new ModpackIndex()
+                .setName(null)
+                .setGame("minecraft")
+                .setDependencies(new HashMap<>())
+                .setFiles(Collections.singletonList(
+                    new ModpackFile()
+                        .setPath(modpackFilePath)
+                        .setEnv(env)
+                ))
+                .setVersionId(null);
+            index.getDependencies().put(DependencyId.minecraft, "1.20.1");
+
+            Files.write(modpackPath, createModrinthPack(index));
+
+            ModrinthPackInstaller installerUT = new ModrinthPackInstaller(
+                apiClient, fetchOpts, modpackPath, tempDir, resultsFile, false)
+                // Exclude!
+                .setExcludeFiles(
+                    Collections.singletonList(exclude)
+                );
+
+            final Installation installation = installerUT.processModpack(sharedFetch).block();
+
+            assertThat(installation).isNotNull();
+            assertThat(installation.getFiles()).isEmpty();
+        }
+
+    }
+
+    public static Stream<Arguments> handlesExcludedFiles_args() {
+        return Stream.of(
+            Arguments.arguments("mods/client-mod.jar", "client-mod"),
+            Arguments.arguments("mods/ClientMod.jar", "clientmod")
+        );
+    }
+
 }

@@ -75,6 +75,12 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
     )
     List<String> ignoreMissingFiles;
 
+    @Option(names = "--exclude-files",
+        split = McImageHelper.SPLIT_COMMA_NL, splitSynopsisLabel = McImageHelper.SPLIT_SYNOPSIS_COMMA_NL,
+        description = "Files to exclude, such as improperly declared client mods. It will match any part of the file's name/path."
+    )
+    List<String> excludeFiles;
+
     @CommandLine.ArgGroup(exclusive = false)
     SharedFetchArgs sharedFetchArgs = new SharedFetchArgs();
 
@@ -104,6 +110,7 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
                         fetchedPack.getMrPackFile(), this.outputDirectory, this.resultsFile,
                         this.forceModloaderReinstall
                     )
+                        .setExcludeFiles(excludeFiles)
                         .processModpack(sharedFetch)
                         .flatMap(installation -> {
                             if (resultsFile != null) {
