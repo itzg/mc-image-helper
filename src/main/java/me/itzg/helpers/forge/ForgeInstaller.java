@@ -9,6 +9,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -26,6 +28,11 @@ public class ForgeInstaller {
     private static final Pattern RESULT_INFO = Pattern.compile(
         "Exec:\\s+(?<exec>.+)"
             + "|The server installed successfully, you should now be able to run the file (?<universalJar>.+)");
+
+    private static final List<String> entryJarFormats = Arrays.asList(
+        "forge-%s-%s.jar",
+        "forge-%s-%s-shim.jar"
+    );
 
     private final InstallerResolver installerResolver;
 
@@ -200,21 +207,22 @@ public class ForgeInstaller {
                 throw new GenericException("Interrupted waiting for forge installer", e);
             }
 
-            if (Files.exists(installerLog)) {
-                log.debug("Deleting Forge installer log at {}", installerLog);
-                Files.delete(installerLog);
-            }
-
-            // A 1.12.2 style installer that says nothing useful?
+            // A 1.12.2 style installer that doesn't report entry point in logs
+            // >= 1.20.4 where "Exec:" line is no longer included in logs
             if (entryFile == null) {
-                final Path resolved = outputDir.resolve(String.format("forge-%s-%s.jar", minecraftVersion, forgeVersion));
-                if (Files.exists(resolved)) {
+                final Path resolved = findEntryJar(outputDir, minecraftVersion, forgeVersion);
+                if (resolved != null) {
                     entryFile = resolved.toAbsolutePath();
                 }
                 else {
                     throw new GenericException("Unable to locate forge server jar");
                 }
                 log.debug("Discovered entry file: {}", entryFile);
+            }
+
+            if (Files.exists(installerLog)) {
+                log.debug("Deleting Forge installer log at {}", installerLog);
+                Files.delete(installerLog);
             }
 
             final String relativeServerEntry;
@@ -237,6 +245,16 @@ public class ForgeInstaller {
         } catch (IOException e) {
             throw new RuntimeException("Trying to run installer", e);
         }
+    }
+
+    private static Path findEntryJar(Path outputDir, String minecraftVersion, String forgeVersion) {
+        for (final String entryJarFormat : entryJarFormats) {
+            final Path path = outputDir.resolve(String.format(entryJarFormat, minecraftVersion, forgeVersion));
+            if (Files.exists(path)) {
+                return path;
+            }
+        }
+        return null;
     }
 
     private Path resolveInstallerLog(Path outputDir, Path installerJar) {
