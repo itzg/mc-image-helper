@@ -55,6 +55,7 @@ public class NeoForgeInstallerResolver implements InstallerResolver {
             || requestedNeoForgeVersion.equalsIgnoreCase("latest");
 
         final List<VersionPair> results = forgeMetadata.getVersioning().getVersion().stream()
+            .filter(version -> version.indexOf('-') > 0)
             .map(version -> {
                 final int dashPos = version.indexOf('-');
                 return new VersionPair(version.substring(0, dashPos), version.substring(dashPos + 1));
