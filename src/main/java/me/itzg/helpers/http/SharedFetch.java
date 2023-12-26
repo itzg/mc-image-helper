@@ -55,6 +55,7 @@ public class SharedFetch implements AutoCloseable {
             .build();
 
         reactiveClient = HttpClient.create(connectionProvider)
+            .proxyWithSystemProperties()
             .headers(headers -> {
                     headers
                         .set(HttpHeaderNames.USER_AGENT.toString(), userAgent)
