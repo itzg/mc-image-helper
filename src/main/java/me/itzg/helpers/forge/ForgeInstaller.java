@@ -17,6 +17,7 @@ import java.util.regex.Pattern;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
+import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.files.ResultsFileWriter;
 import me.itzg.helpers.json.ObjectMappers;
@@ -55,6 +56,9 @@ public class ForgeInstaller {
         }
 
         final VersionPair resolved = installerResolver.resolve();
+        if (resolved == null) {
+            throw new InvalidParameterException("Unable to find suitable version");
+        }
         log.debug("Resolved installer version={}", resolved);
 
         final boolean needsInstall;
