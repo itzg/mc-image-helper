@@ -31,13 +31,13 @@ public class InstallNeoForgeCommand implements Callable<Integer> {
     );
 
     public static final Pattern ALLOWED_FORGE_VERSION = Pattern.compile(
-        String.join("|", "latest", VERSION_REGEX),
+        String.join("|", "latest", "beta", VERSION_REGEX),
         Pattern.CASE_INSENSITIVE
     );
 
     @Option(names = "--minecraft-version", required = true, paramLabel = "VERSION",
         defaultValue = "latest",
-        description = "'latest', which is the default, or a specific version"
+        description = "'latest', which is the default, or a specific version to narrow NeoForge version selection"
     )
     public void setMinecraftVersion(String minecraftVersion) {
         if (!ALLOWED_MINECRAFT_VERSION.matcher(minecraftVersion).matches()) {
@@ -49,7 +49,7 @@ public class InstallNeoForgeCommand implements Callable<Integer> {
     String minecraftVersion;
 
     @Option(names = "--neoforge-version", required = true, defaultValue = "latest",
-        description = "A specific NeoForge version or to auto-resolve the version provide 'latest'."
+        description = "A specific NeoForge version, 'latest', or 'beta'."
             + " Default value is ${DEFAULT-VALUE}"
     )
     public void setVersion(String version) {
