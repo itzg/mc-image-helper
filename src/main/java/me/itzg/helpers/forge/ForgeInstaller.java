@@ -166,7 +166,9 @@ public class ForgeInstaller {
      *
      */
     private ForgeManifest install(Path installerJar, Path outputDir, String minecraftVersion, String variant, String forgeVersion) {
-        log.info("Running {} installer. This might take a while...", variant);
+        log.info("Running {} {} installer for Minecraft {}. This might take a while...",
+            variant, forgeVersion, minecraftVersion
+        );
 
         try {
             final Process process = new ProcessBuilder(
