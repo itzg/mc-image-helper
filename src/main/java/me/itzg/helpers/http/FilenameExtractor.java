@@ -45,7 +45,7 @@ public class FilenameExtractor {
                 try {
                     return Rfc5987Util.decode(m.group(2), m.group(1));
                 } catch (UnsupportedEncodingException e) {
-                    log.debug("Failed to decode filename* from {}", headerValue);
+                    log.warn("Failed to decode filename* from {}", headerValue);
                     return null;
                 }
             }
