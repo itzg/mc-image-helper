@@ -6,7 +6,6 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
-import me.itzg.helpers.errors.GenericException;
 import org.apache.cxf.attachment.Rfc5987Util;
 import org.apache.hc.client5.http.HttpResponseException;
 import org.apache.hc.core5.http.ClassicHttpResponse;
@@ -15,6 +14,7 @@ import org.apache.hc.core5.http.Header;
 import org.apache.hc.core5.http.HttpStatus;
 import org.apache.hc.core5.http.ProtocolException;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
+import org.jetbrains.annotations.Nullable;
 
 @Slf4j
 public class FilenameExtractor {
@@ -30,7 +30,7 @@ public class FilenameExtractor {
         this.interceptor = Objects.requireNonNull(interceptor, "interceptor is required");
     }
 
-    static String filenameFromContentDisposition(String headerValue) {
+    static @Nullable String filenameFromContentDisposition(String headerValue) {
         if (headerValue == null) {
             return null;
         }
@@ -45,7 +45,8 @@ public class FilenameExtractor {
                 try {
                     return Rfc5987Util.decode(m.group(2), m.group(1));
                 } catch (UnsupportedEncodingException e) {
-                    throw new GenericException("Failed to decode filename* from " + headerValue, e);
+                    log.debug("Failed to decode filename* from {}", headerValue);
+                    return null;
                 }
             }
             else {
@@ -62,7 +63,8 @@ public class FilenameExtractor {
             }
         }
         else {
-            throw new GenericException("Unable to determine filename from header: " + headerValue);
+            log.debug("Unable to determine filename from header: {}", headerValue);
+            return null;
         }
     }
 
