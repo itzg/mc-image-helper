@@ -203,7 +203,8 @@ public class CurseForgeInstaller {
 
         } catch (FailedRequestException e) {
             if (e.getStatusCode() == 403) {
-                throw new InvalidParameterException(String.format("Access to %s is forbidden. Make sure to set %s to a valid API key from %s",
+                throw new InvalidParameterException(String.format("Access to %s is forbidden or rate-limit has been exceeded."
+                        + " Ensure %s is set to a valid API key from %s or allow rate-limit to reset.",
                         apiBaseUrl, API_KEY_VAR, ETERNAL_DEVELOPER_CONSOLE_URL
                 ), e);
             } else {
