@@ -542,7 +542,7 @@ public class CurseForgeInstaller {
             })
             // ...download and possibly unzip world file
             .flatMap(fileRef ->
-                downloadFileFromModpack(context, outputPaths,
+                processFileFromModpack(context, outputPaths,
                     fileRef.getProjectID(), fileRef.getFileID(),
                     excludeIncludeIds.getForceIncludeIds(),
                     context.categoryInfo
@@ -652,7 +652,7 @@ public class CurseForgeInstaller {
     /**
      * Downloads the referenced project-file into the appropriate subdirectory from outputPaths
      */
-    private Mono<PathWithInfo> downloadFileFromModpack(
+    private Mono<PathWithInfo> processFileFromModpack(
         InstallContext context, OutputPaths outputPaths,
         int projectID, int fileID,
         Set<Integer> forceIncludeIds,
@@ -669,18 +669,18 @@ public class CurseForgeInstaller {
                     return Mono.empty();
                 }
 
-                final Path baseDir;
+                final Path outputDir;
                 final boolean isWorld;
                 if (category.getSlug().endsWith("-mods")) {
-                    baseDir = outputPaths.getModsDir();
+                    outputDir = outputPaths.getModsDir();
                     isWorld = false;
                 }
                 else if (category.getSlug().endsWith("-plugins")) {
-                    baseDir = outputPaths.getPluginsDir();
+                    outputDir = outputPaths.getPluginsDir();
                     isWorld = false;
                 }
                 else if (category.getSlug().equals("worlds")) {
-                    baseDir = outputPaths.getWorldsDir();
+                    outputDir = outputPaths.getWorldsDir();
                     isWorld = true;
                 }
                 else {
@@ -703,7 +703,7 @@ public class CurseForgeInstaller {
                         );
 
                         final Mono<ResolveResult> resolvedFileMono =
-                            resolveToOutputFile(context, modInfo, isWorld, baseDir, cfFile);
+                            downloadOrResolveFile(context, modInfo, isWorld, outputDir, cfFile);
 
                         return isWorld ?
                             resolvedFileMono
@@ -734,12 +734,23 @@ public class CurseForgeInstaller {
         boolean downloadNeeded;
     }
 
-    private Mono<ResolveResult> resolveToOutputFile(InstallContext context, CurseForgeMod modInfo, boolean isWorld, Path baseDir, CurseForgeFile cfFile) {
-        final Path outputFile = baseDir.resolve(cfFile.getFileName());
-        if (!isWorld && Files.exists(outputFile)) {
-            log.info("Mod file {} already exists", outputDir.relativize(outputFile));
-            return Mono.just(new ResolveResult(outputFile));
+    /**
+     * @param outputDir the mods, plugins, etc directory to place the mod file
+     */
+    private Mono<ResolveResult> downloadOrResolveFile(InstallContext context, CurseForgeMod modInfo,
+        boolean isWorld, Path outputDir, CurseForgeFile cfFile
+    ) {
+        final Path outputFile = outputDir.resolve(cfFile.getFileName());
+
+        // Will try to locate an existing file by alternate names that browser might create,
+        // but only for non-world files of the modpack
+        final Path locatedFile = !isWorld ? locateFileIn(cfFile.getFileName(), outputDir) : null;
+
+        if (locatedFile != null) {
+            log.info("Mod file {} already exists", locatedFile);
+            return Mono.just(new ResolveResult(locatedFile));
         }
+        // File disallowed for automated downloads?
         else if (cfFile.getDownloadUrl() == null) {
             final Path resolved =
                 isWorld ?
@@ -757,7 +768,7 @@ public class CurseForgeInstaller {
                     .publishOn(Schedulers.boundedElastic())
                     .flatMap(path -> {
                         try {
-                            log.info("Mod file {} obtained from downloads repo", outputDir.relativize(outputFile));
+                            log.info("Mod file {} obtained from downloads repo", this.outputDir.relativize(outputFile));
                             //noinspection BlockingMethodInNonBlockingContext because IntelliJ is confused
                             return Mono.just(Files.copy(resolved, outputFile));
                         } catch (IOException e) {
@@ -769,7 +780,7 @@ public class CurseForgeInstaller {
             }
         }
         else {
-            return context.cfApi.download(cfFile, outputFile, modFileDownloadStatusHandler(outputDir, log))
+            return context.cfApi.download(cfFile, outputFile, modFileDownloadStatusHandler(this.outputDir, log))
                 .map(ResolveResult::new);
         }
     }

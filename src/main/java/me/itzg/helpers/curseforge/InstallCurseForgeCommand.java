@@ -247,12 +247,15 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
     @NotNull
     private static TabularOutput buildTabularOutput(MissingModsException e) {
         final TabularOutput tabOut = new TabularOutput('=', "  ",
-            "Mod", "Filename", "Download page"
-        );
+            "Mod", "Version Name", "Filename", "Download page"
+        )
+            .limitColumnWidth(0, 20)
+            .trimSuffix(1, ".jar");
         for (PathWithInfo info : e.getNeedsDownload()) {
             tabOut.addRow(
                 info.getModInfo().getName(),
                 info.getCurseForgeFile().getDisplayName(),
+                info.getCurseForgeFile().getFileName(),
                 info.getModInfo().getLinks().getWebsiteUrl() + "/files/" + info.getCurseForgeFile().getId()
             );
         }
