@@ -1,0 +1,5 @@
+###
+GET https://maven.neoforged.net/api/maven/versions
+
+###
+GET https://maven.neoforged.net/api/maven/versions/releases/net/neoforged/neoforge
