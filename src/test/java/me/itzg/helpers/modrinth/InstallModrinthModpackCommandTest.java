@@ -10,6 +10,7 @@ import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import me.itzg.helpers.errors.ExitCodeMapper;
@@ -223,6 +224,34 @@ public class InstallModrinthModpackCommandTest {
         InstallModrinthModpackCommand commandUT =
             createInstallModrinthModpackCommand(wm.getHttpBaseUrl(), tempDir,
                 wm.getHttpBaseUrl() + modpackDownloadPath, null, null);
+
+        int commandStatus = commandUT.call();
+
+        assertThat(commandStatus).isEqualTo(0);
+        assertThat(tempDir.resolve(relativeFilePath)).content()
+            .isEqualTo(expectedFileData);
+    }
+
+    @Test
+    void usesLocalModpackFile(
+        WireMockRuntimeInfo wm, @TempDir Path tempDir
+    ) throws IOException, URISyntaxException {
+        String expectedFileData = "some test data";
+        String relativeFilePath = "test_file";
+        ModpackFile testFile = createHostedModpackFile(
+            relativeFilePath, relativeFilePath, expectedFileData, wm.getHttpBaseUrl());
+
+        ModpackIndex index = createBasicModpackIndex();
+        index.getFiles().add(testFile);
+
+        final Path localMrpackFile =
+            Files.write(tempDir.resolve("slug.mrpack"), createModrinthPack(index));
+
+        final String projectRef = localMrpackFile.toString();
+        InstallModrinthModpackCommand commandUT =
+            createInstallModrinthModpackCommand(wm.getHttpBaseUrl(), tempDir,
+                projectRef, null, null
+            );
 
         int commandStatus = commandUT.call();
 

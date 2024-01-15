@@ -1,17 +1,18 @@
 package me.itzg.helpers.modrinth;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import java.net.URI;
 import java.net.URISyntaxException;
-
-import static org.assertj.core.api.Assertions.*;
-
-import org.junit.jupiter.api.Test;
-
+import java.nio.file.Paths;
 import me.itzg.helpers.modrinth.model.VersionType;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 public class ProjectRefTest {
-    private String expectedSlug = "test_project1";
-    private String expectedVersionName = "test_version1";
+    private final String expectedSlug = "test_project1";
+    private final String expectedVersionName = "test_version1";
     private ProjectRef projectRefUT;
 
     @Test
@@ -113,7 +114,7 @@ public class ProjectRefTest {
     }
 
     @Test
-    void ProjectRefURIConstructorPullsProjectSlugFromURI()
+    void constructorPullsProjectSlugFromURI()
         throws URISyntaxException
     {
         URI projectUri = new URI(
@@ -121,5 +122,14 @@ public class ProjectRefTest {
 
         assertThat(new ProjectRef(projectUri, null).getIdOrSlug())
             .isEqualTo(expectedSlug);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"slug.mrpack", "/slug.mrpack", "/abs/slug.mrpack", "rel/slug.mrpack", "slug"})
+    void constructorPullsProjectSlugFromFileURI(String input) {
+        URI projectUri = Paths.get(input).toUri();
+
+        assertThat(new ProjectRef(projectUri, null).getIdOrSlug())
+            .isEqualTo("slug");
     }
 }
