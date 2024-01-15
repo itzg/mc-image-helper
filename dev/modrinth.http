@@ -7,6 +7,10 @@ GET https://api.modrinth.com/v2/project/nerbvival
 ### Nerbvival v5
 GET https://api.modrinth.com/v2/version/ayspYmZQ
 
+### https://modrinth.com/modpack/better-mc-fabric-bmc2/version/v2
+# has a client mod incorrectly published
+GET https://api.modrinth.com/v2/version/8xwR1JNo
+
 ###
 GET https://api.modrinth.com/v2/projects?ids=["female-gender-spigot"]
 
@@ -14,13 +18,14 @@ GET https://api.modrinth.com/v2/projects?ids=["female-gender-spigot"]
 GET https://api.modrinth.com/v2/projects?ids=["fabric-api","cloth-config"]
 
 ###
-GET https://api.modrinth.com/v2/project/cobblemon-fabric/version?loaders=fabric&game_versions=1.19.2
+GET https://api.modrinth.com/v2/project/ae2/version?loaders=fabric&game_versions=1.20.1
 
 ###
 GET https://api.modrinth.com/v2/project/9s6osm5g/version?loaders=%5B%22fabric%22%5D&game_versions=%5B%221.19.2%22%5D
 
 ###
-GET https://api.modrinth.com/v2/project/jDV9a8dQ/version?loaders=["paper","spigot"]&game_versions=["1.20.1"]
+GET https://api.modrinth.com/v2/project/XxWD5pD3/version?loaders=["fabric"]&game_versions=["1.20.1"]
+
 ###
 GET https://api.modrinth.com/v2/project/BITzwT7B/version?loaders=["purpur","paper","spigot"]&game_versions=["1.20.1"]
 
@@ -28,7 +33,7 @@ GET https://api.modrinth.com/v2/project/BITzwT7B/version?loaders=["purpur","pape
 GET https://api.modrinth.com/v2/project/cobblemon-fabric/version
 
 ###
-GET https://api.modrinth.com/v2/version/OTgqK0Zh
+GET https://api.modrinth.com/v2/version/viPgd7Mi
 
 ###
 GET https://cdn.modrinth.com/data/9s6osm5g/versions/o9dFD9SO/cloth-config-8.3.103-fabric.jar

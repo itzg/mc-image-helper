@@ -6,12 +6,41 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import java.util.List;
+import java.util.stream.Stream;
 import me.itzg.helpers.http.SharedFetch.Options;
+import me.itzg.helpers.modrinth.model.Project;
+import me.itzg.helpers.modrinth.model.ServerSide;
 import me.itzg.helpers.modrinth.model.Version;
 import org.junit.jupiter.api.Test;
 
 @WireMockTest
 class ModrinthApiClientTest {
+
+    @Test
+    void getBulkProjectsWithUnknownServerSide(WireMockRuntimeInfo wmInfo) {
+        stubFor(
+            get(urlPathEqualTo("/v2/projects"))
+            .withQueryParam("ids", equalTo("[\"dynmap\"]"))
+            .willReturn(aResponse()
+                .withHeader("Content-Type", "application/json")
+                .withBodyFile("modrinth/project-dynmap-bad-server-side.json")
+            )
+        );
+
+        try (ModrinthApiClient client = new ModrinthApiClient(wmInfo.getHttpBaseUrl(), "modrinth", Options.builder().build())) {
+            final List<ResolvedProject> resp = client.bulkGetProjects(Stream.of(ProjectRef.parse("dynmap:beta")))
+                .block();
+
+            assertThat(resp).isNotEmpty();
+            assertThat(resp).hasSize(1);
+
+            final Project project = resp.get(0).getProject();
+
+            assertThat(project).isNotNull();
+            assertThat(project.getServerSide()).isEqualTo(ServerSide.unknown);
+            assertThat(project.getId()).isEqualTo("fRQREgAc");
+        }
+    }
 
     @Test
     void getVersionsForProject(WireMockRuntimeInfo wmInfo) {
