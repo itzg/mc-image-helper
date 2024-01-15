@@ -1,35 +1,34 @@
 package me.itzg.helpers.modrinth;
 
-import lombok.Getter;
-import lombok.ToString;
-import me.itzg.helpers.modrinth.model.VersionType;
-
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import lombok.Getter;
+import lombok.ToString;
+import me.itzg.helpers.errors.InvalidParameterException;
+import me.itzg.helpers.modrinth.model.VersionType;
 
+@Getter
 @ToString
 public class ProjectRef {
     private static final Pattern VERSIONS = Pattern.compile("[a-zA-Z0-9]{8}");
     private final static Pattern MODPACK_PAGE_URL = Pattern.compile(
         "https://modrinth.com/modpack/(?<slug>.+?)(/version/(?<versionName>.+))?"
     );
-    private final static Pattern HOMEBREW_MRPACK = Pattern.compile(
-        ".+/(?<slug>\\w+?)\\.mrpack"
-    );
 
-    @Getter
     final String idOrSlug;
-    @Getter
+    /**
+     * Either a remote URI or a file URI for a locally provided file
+     */
     final URI projectUri;
-    @Getter
     final VersionType versionType;
-    @Getter
     final String versionId;
-    @Getter
     final String versionName;
 
     public static ProjectRef parse(String projectRef) {
@@ -66,17 +65,27 @@ public class ProjectRef {
 
     public ProjectRef(URI projectUri, String versionId) {
         this.projectUri = projectUri;
-        final Matcher m = HOMEBREW_MRPACK.matcher(projectUri.toString());
-        this.idOrSlug = m.matches() ? m.group("slug") : "boo";
-    
+
+        final String filename = extractFilename(projectUri);
+        this.idOrSlug = filename.endsWith(".mrpack") ?
+            filename.substring(0, filename.length() - ".mrpack".length()) : filename;
+
         this.versionName = null;
         this.versionType = null;
         this.versionId = versionId;
     }
 
+    private String extractFilename(URI uri) {
+        final String path = uri.getPath();
+        final int pos = path.lastIndexOf('/');
+        return path.substring( pos >= 0 ? pos + 1 : 0);
+    }
+
     public static ProjectRef fromPossibleUrl(
             String possibleUrl, String defaultVersion)
     {
+        // First, see if it is a modrinth page URL
+
         final Matcher m = MODPACK_PAGE_URL.matcher(possibleUrl);
         if(m.matches()) {
             String projectSlug = m.group("slug");
@@ -85,9 +94,26 @@ public class ProjectRef {
             return new ProjectRef(projectSlug, projectVersion);
         } else {
             try {
+                // Might be custom URL, local file, or slug
+                // ...try as a (remote or file) URL first
                 return new ProjectRef(
-                    new URL(possibleUrl).toURI(), defaultVersion);
+                    new URL(possibleUrl).toURI(), defaultVersion
+                );
             } catch(MalformedURLException | URISyntaxException e) {
+                // Not a valid URL, so
+                // narrow down if it is a file path by looking at suffix
+                if (possibleUrl.endsWith(".mrpack")) {
+                    final Path path = Paths.get(possibleUrl);
+                    if (!Files.exists(path)) {
+                        throw new InvalidParameterException("Given modrinth project looks like a file, but doesn't exist");
+                    }
+
+                    return new ProjectRef(
+                        path.toUri(),
+                        defaultVersion
+                    );
+                }
+
                 return new ProjectRef(possibleUrl, defaultVersion);
             }
         }
@@ -109,8 +135,12 @@ public class ProjectRef {
         return projectUri != null;
     }
 
+    public boolean isFileUri() {
+        return projectUri != null && projectUri.getScheme().equals("file");
+    }
+
     private boolean isVersionId(String version) {
-        return version == null ? false : VERSIONS.matcher(version).matches();
+        return version != null && VERSIONS.matcher(version).matches();
     }
 
     private VersionType parseVersionType(String version) {

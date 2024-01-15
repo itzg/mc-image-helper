@@ -25,10 +25,12 @@ import reactor.core.scheduler.Schedulers;
 @Slf4j
 public class InstallModrinthModpackCommand implements Callable<Integer> {
     @Option(names = "--project", required = true,
-        description = "One of" +
-            "%n- Project ID or slug" +
-            "%n- Project page URL" +
-            "%n- Project file URL"
+        description = "One of"
+            + "%n- Project ID or slug"
+            + "%n- Project page URL"
+            + "%n- Project file URL"
+            + "%n- Custom URL of a hosted modpack file"
+            + "%n- Local path to a modpack file"
     )
     String modpackProject;
 
@@ -153,7 +155,10 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
     private ModrinthPackFetcher buildModpackFetcher(
             ModrinthApiClient apiClient, ProjectRef projectRef)
     {
-        if(projectRef.hasProjectUri()) {
+        if (projectRef.isFileUri()) {
+            return new FilePackFetcher(projectRef);
+        }
+        else if (projectRef.hasProjectUri()) {
             return new ModrinthHttpPackFetcher(
                 apiClient, outputDirectory, projectRef.getProjectUri());
         } else {
