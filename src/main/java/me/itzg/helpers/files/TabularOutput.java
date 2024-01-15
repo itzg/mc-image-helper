@@ -10,12 +10,16 @@ public class TabularOutput {
     private final String[] headers;
     private final List<String[]> rows = new ArrayList<>();
     private final int[] widths;
+    private final Integer[] widthLimits;
+    private final String[] trimSuffixes;
 
     public TabularOutput(char headerDivider, String columnDivider, String... headers) {
         this.headerDivider = headerDivider;
         this.columnDivider = columnDivider;
         this.headers = headers;
         this.widths = new int[headers.length];
+        this.widthLimits = new Integer[headers.length];
+        this.trimSuffixes = new String[headers.length];
         for (int i = 0; i < headers.length; i++) {
             widths[i] = headers[i].length();
         }
@@ -26,11 +30,29 @@ public class TabularOutput {
             throw new IllegalArgumentException(String.format("Row has %d columns but header has %d", cells.length, headers.length));
         }
 
-        rows.add(cells);
+        final String[] trimmed = trimToWidthLimits(cells);
+        rows.add(trimmed);
 
         for (int i = 0; i < cells.length; i++) {
-            widths[i] = Math.max(widths[i], cells[i].length());
+            widths[i] = Math.max(widths[i], trimmed[i].length());
         }
+    }
+
+    private String[] trimToWidthLimits(String[] cells) {
+        final String[] result = new String[cells.length];
+        for (int i = 0; i < cells.length; i++) {
+            if (widthLimits[i] != null && cells[i].length() > widthLimits[i]) {
+                result[i] = cells[i].substring(0, widthLimits[i]) + "...";
+            }
+            else {
+                result[i] = cells[i];
+            }
+
+            if (trimSuffixes[i] != null && result[i].endsWith(trimSuffixes[i])) {
+                result[i] = result[i].substring(0, result[i].length() - trimSuffixes[i].length());
+            }
+        }
+        return result;
     }
 
     public void output(PrintWriter out) {
@@ -59,5 +81,15 @@ public class TabularOutput {
         for (String[] row : rows) {
             out.printf(format, (Object[]) row);
         }
+    }
+
+    public TabularOutput limitColumnWidth(int colIndex, int maxWidth) {
+        widthLimits[colIndex] = maxWidth;
+        return this;
+    }
+
+    public TabularOutput trimSuffix(int colIndex, String suffix) {
+        trimSuffixes[colIndex] = suffix;
+        return this;
     }
 }

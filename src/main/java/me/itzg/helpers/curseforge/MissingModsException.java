@@ -1,11 +1,10 @@
 package me.itzg.helpers.curseforge;
 
+import java.util.List;
 import lombok.Getter;
 
-import java.util.List;
-
+@Getter
 public class MissingModsException extends RuntimeException {
-    @Getter
     private final List<PathWithInfo> needsDownload;
 
     public MissingModsException(List<PathWithInfo> needsDownload) {
