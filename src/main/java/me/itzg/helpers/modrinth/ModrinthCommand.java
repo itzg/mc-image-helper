@@ -283,6 +283,12 @@ public class ModrinthCommand implements Callable<Integer> {
                     .map(versionFile -> download(project.getProjectType(), versionFile))
                     .flatMap(this::expandIfZip);
             }
+            else {
+                throw new InvalidParameterException(
+                    String.format("Project %s does not have any matching versions for loader %s, game version %s",
+                        projectRef, loader, gameVersion
+                        ));
+            }
         }
         return Stream.empty();
     }
