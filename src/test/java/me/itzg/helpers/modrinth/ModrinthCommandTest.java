@@ -1,7 +1,6 @@
 package me.itzg.helpers.modrinth;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
-import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
@@ -12,9 +11,9 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
+import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
 import java.nio.file.Path;
 import java.util.function.Consumer;
-import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
 import me.itzg.helpers.json.ObjectMappers;
 import me.itzg.helpers.modrinth.ModrinthCommand.DownloadDependencies;
 import org.assertj.core.api.AbstractPathAssert;
@@ -148,6 +147,40 @@ class ModrinthCommandTest {
             verify(0, projectVersionsRequest(requiredDepProjectId));
             verify(0, projectVersionsRequest(optionalDepProjectId));
         }
+    }
+
+    @Test
+    void errorWhenNoApplicableVersion(@TempDir Path tempDir) {
+        stubFor(
+            get(urlPathMatching("/v2/projects"))
+                .withQueryParam("ids", equalTo("[\"geyser\"]"))
+                .willReturn(aResponse()
+                    .withHeader("Content-Type", "application/json")
+                    .withBodyFile("bulk-geyser.json")
+                )
+        );
+        stubFor(
+            get(urlPathMatching("/v2/project/wKkoqHrH/version"))
+                .withQueryParam("loaders", equalTo("[\"fabric\"]"))
+                .withQueryParam("game_versions", equalTo("[\"1.20.4\"]"))
+                .willReturn(aResponse()
+                    .withHeader("Content-Type", "application/json")
+                    .withBodyFile("project-geyser-only-betas.json")
+                )
+        );
+
+        final int exitCode = new CommandLine(
+            new ModrinthCommand()
+        )
+            .execute(
+                "--api-base-url", wm.getRuntimeInfo().getHttpBaseUrl(),
+                "--output-directory", tempDir.toString(),
+                "--game-version", "1.20.4",
+                "--loader", "fabric",
+                "--projects", "geyser"
+            );
+
+        assertThat(exitCode).isNotEqualTo(ExitCode.OK);
     }
 
     @NotNull

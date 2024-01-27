@@ -1,0 +1,842 @@
+[
+  {
+    "game_versions": [
+      "1.20.4"
+    ],
+    "loaders": [
+      "fabric"
+    ],
+    "id": "CeSpw2Km",
+    "project_id": "wKkoqHrH",
+    "author_id": "Yb5ERais",
+    "featured": false,
+    "name": "2.2.1-SNAPSHOT-421",
+    "version_number": "2.2.1-SNAPSHOT-421",
+    "changelog": "A changelog can be found at https://github.com/GeyserMC/Geyser/commits",
+    "changelog_url": null,
+    "date_published": "2024-01-24T21:32:14.376542Z",
+    "downloads": 101,
+    "version_type": "beta",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+      {
+        "hashes": {
+          "sha1": "751f8b259a96be7bba8fc703cd6fa8119716831b",
+          "sha512": "2510fb0e5dfdb12241b3207bc563e6668c3647e52e274c2fff5d52f0c13398d2a064029e50e769ff9617c78ce834e628c48cc7fbd5f039bcd34e0b2fc0eefe4b"
+        },
+        "url": "https://cdn.modrinth.com/data/wKkoqHrH/versions/CeSpw2Km/geyser-fabric-2.2.1-SNAPSHOT%2Bbuild.421.jar",
+        "filename": "geyser-fabric-2.2.1-SNAPSHOT+build.421.jar",
+        "primary": true,
+        "size": 13617167,
+        "file_type": null
+      }
+    ],
+    "dependencies": [
+      {
+        "version_id": null,
+        "project_id": "P7dR8mSH",
+        "file_name": null,
+        "dependency_type": "required"
+      }
+    ]
+  },
+  {
+    "game_versions": [
+      "1.20.4"
+    ],
+    "loaders": [
+      "fabric"
+    ],
+    "id": "tCzwg9vf",
+    "project_id": "wKkoqHrH",
+    "author_id": "Yb5ERais",
+    "featured": false,
+    "name": "2.2.1-SNAPSHOT-420",
+    "version_number": "2.2.1-SNAPSHOT-420",
+    "changelog": "A changelog can be found at https://github.com/GeyserMC/Geyser/commits",
+    "changelog_url": null,
+    "date_published": "2024-01-24T21:24:31.631855Z",
+    "downloads": 2,
+    "version_type": "beta",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+      {
+        "hashes": {
+          "sha512": "918bdc08bcec2d80657060844f31a4953f688b9ff1d31dc3c0bb18e4f33754d76f1d7832d327f2b5091462b02c47f3cc0dd54fbf753c16e4918488a5a71e2892",
+          "sha1": "371c1839b26b1f85cb16d1c085ac616e7229c8e1"
+        },
+        "url": "https://cdn.modrinth.com/data/wKkoqHrH/versions/tCzwg9vf/geyser-fabric-2.2.1-SNAPSHOT%2Bbuild.420.jar",
+        "filename": "geyser-fabric-2.2.1-SNAPSHOT+build.420.jar",
+        "primary": true,
+        "size": 13616331,
+        "file_type": null
+      }
+    ],
+    "dependencies": [
+      {
+        "version_id": null,
+        "project_id": "P7dR8mSH",
+        "file_name": null,
+        "dependency_type": "required"
+      }
+    ]
+  },
+  {
+    "game_versions": [
+      "1.20.4"
+    ],
+    "loaders": [
+      "fabric"
+    ],
+    "id": "7XD9YUuS",
+    "project_id": "wKkoqHrH",
+    "author_id": "Yb5ERais",
+    "featured": false,
+    "name": "2.2.0-SNAPSHOT-419",
+    "version_number": "2.2.0-SNAPSHOT-419",
+    "changelog": "A changelog can be found at https://github.com/GeyserMC/Geyser/commits",
+    "changelog_url": null,
+    "date_published": "2024-01-24T20:22:04.203510Z",
+    "downloads": 3,
+    "version_type": "beta",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+      {
+        "hashes": {
+          "sha1": "65bd504780b4801713d39f6721463d07aa269f77",
+          "sha512": "fb988a0f5bbe887bc1ec9efdad22a81ce384b755504a4ec94cf128e5fdf74be10d69117115a6287cb67e043650b2c4f26a1b22468f6761c7a8d5713973a3f4f2"
+        },
+        "url": "https://cdn.modrinth.com/data/wKkoqHrH/versions/7XD9YUuS/geyser-fabric-2.2.0-SNAPSHOT%2Bbuild.419.jar",
+        "filename": "geyser-fabric-2.2.0-SNAPSHOT+build.419.jar",
+        "primary": true,
+        "size": 13614221,
+        "file_type": null
+      }
+    ],
+    "dependencies": [
+      {
+        "version_id": null,
+        "project_id": "P7dR8mSH",
+        "file_name": null,
+        "dependency_type": "required"
+      }
+    ]
+  },
+  {
+    "game_versions": [
+      "1.20.4"
+    ],
+    "loaders": [
+      "fabric"
+    ],
+    "id": "hnMqV7QV",
+    "project_id": "wKkoqHrH",
+    "author_id": "Yb5ERais",
+    "featured": false,
+    "name": "2.2.0-SNAPSHOT-418",
+    "version_number": "2.2.0-SNAPSHOT-418",
+    "changelog": "A changelog can be found at https://github.com/GeyserMC/Geyser/commits",
+    "changelog_url": null,
+    "date_published": "2024-01-22T23:39:00.490601Z",
+    "downloads": 40,
+    "version_type": "beta",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+      {
+        "hashes": {
+          "sha512": "d741be620d86acfbb42c4bfdccc24c87b7375a3e766aabb8eb2fa278a3b3922d0bcf8ae06b541259f5d6099546f30b4689bca78b1041be8576c4bfe1d216e1d9",
+          "sha1": "29942a205e26c6c1cdfbdf3a056cfaefd3381a34"
+        },
+        "url": "https://cdn.modrinth.com/data/wKkoqHrH/versions/hnMqV7QV/geyser-fabric-2.2.0-SNAPSHOT%2Bbuild.418.jar",
+        "filename": "geyser-fabric-2.2.0-SNAPSHOT+build.418.jar",
+        "primary": true,
+        "size": 13614191,
+        "file_type": null
+      }
+    ],
+    "dependencies": [
+      {
+        "version_id": null,
+        "project_id": "P7dR8mSH",
+        "file_name": null,
+        "dependency_type": "required"
+      }
+    ]
+  },
+  {
+    "game_versions": [
+      "1.20.4"
+    ],
+    "loaders": [
+      "fabric"
+    ],
+    "id": "j577GbLm",
+    "project_id": "wKkoqHrH",
+    "author_id": "Yb5ERais",
+    "featured": false,
+    "name": "2.2.0-SNAPSHOT-417",
+    "version_number": "2.2.0-SNAPSHOT-417",
+    "changelog": "A changelog can be found at https://github.com/GeyserMC/Geyser/commits",
+    "changelog_url": null,
+    "date_published": "2024-01-22T18:25:20.581013Z",
+    "downloads": 12,
+    "version_type": "beta",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+      {
+        "hashes": {
+          "sha512": "f2b48dd301b4b438cfc80b228d5098534239cb4064da9c9a15fc2564b42da3e72b44e0c8677ec6f6bd3f089e7b10cb8e867d61ead86c6bcf3567d973401d92b4",
+          "sha1": "69453a0315f7469629401b536f5130890106cce1"
+        },
+        "url": "https://cdn.modrinth.com/data/wKkoqHrH/versions/j577GbLm/geyser-fabric-2.2.0-SNAPSHOT%2Bbuild.417.jar",
+        "filename": "geyser-fabric-2.2.0-SNAPSHOT+build.417.jar",
+        "primary": true,
+        "size": 13614209,
+        "file_type": null
+      }
+    ],
+    "dependencies": [
+      {
+        "version_id": null,
+        "project_id": "P7dR8mSH",
+        "file_name": null,
+        "dependency_type": "required"
+      }
+    ]
+  },
+  {
+    "game_versions": [
+      "1.20.4"
+    ],
+    "loaders": [
+      "fabric"
+    ],
+    "id": "f2mwWV6L",
+    "project_id": "wKkoqHrH",
+    "author_id": "Yb5ERais",
+    "featured": false,
+    "name": "2.2.0-SNAPSHOT-415",
+    "version_number": "2.2.0-SNAPSHOT-415",
+    "changelog": "A changelog can be found at https://github.com/GeyserMC/Geyser/commits",
+    "changelog_url": null,
+    "date_published": "2024-01-20T11:07:41.903651Z",
+    "downloads": 100,
+    "version_type": "beta",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+      {
+        "hashes": {
+          "sha1": "8c5f78e5d1d02e0bbcba4b46ba5c5e00f3c6e11b",
+          "sha512": "65fd624974c3d4317aa86e961e9e384baa5088b8a6b248350d7fdb2b320be5c2765612e2a1f98f5d8128f8bc89388761ed449547fc68fc43e3a9fcdb0df891a6"
+        },
+        "url": "https://cdn.modrinth.com/data/wKkoqHrH/versions/f2mwWV6L/geyser-fabric-2.2.0-SNAPSHOT%2Bbuild.415.jar",
+        "filename": "geyser-fabric-2.2.0-SNAPSHOT+build.415.jar",
+        "primary": true,
+        "size": 13614048,
+        "file_type": null
+      }
+    ],
+    "dependencies": [
+      {
+        "version_id": null,
+        "project_id": "P7dR8mSH",
+        "file_name": null,
+        "dependency_type": "required"
+      }
+    ]
+  },
+  {
+    "game_versions": [
+      "1.20.4"
+    ],
+    "loaders": [
+      "fabric"
+    ],
+    "id": "2Wr1axtU",
+    "project_id": "wKkoqHrH",
+    "author_id": "Yb5ERais",
+    "featured": false,
+    "name": "2.2.0-SNAPSHOT-414",
+    "version_number": "2.2.0-SNAPSHOT-414",
+    "changelog": "A changelog can be found at https://github.com/GeyserMC/Geyser/commits",
+    "changelog_url": null,
+    "date_published": "2024-01-18T23:23:19.608330Z",
+    "downloads": 54,
+    "version_type": "beta",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+      {
+        "hashes": {
+          "sha1": "30e649895d63132060cc6d3580e85b896527a0b0",
+          "sha512": "dba396838e0da6ebe23d709a97ba9ef1009ddf92ee175ccd4966e5806148b7ed582bfb9fee6faf20380ff658792daa04cd75a3a16472805b9c037fcda2102ff6"
+        },
+        "url": "https://cdn.modrinth.com/data/wKkoqHrH/versions/2Wr1axtU/geyser-fabric-2.2.0-SNAPSHOT%2Bbuild.414.jar",
+        "filename": "geyser-fabric-2.2.0-SNAPSHOT+build.414.jar",
+        "primary": true,
+        "size": 13613979,
+        "file_type": null
+      }
+    ],
+    "dependencies": [
+      {
+        "version_id": null,
+        "project_id": "P7dR8mSH",
+        "file_name": null,
+        "dependency_type": "required"
+      }
+    ]
+  },
+  {
+    "game_versions": [
+      "1.20.4"
+    ],
+    "loaders": [
+      "fabric"
+    ],
+    "id": "ecmeMita",
+    "project_id": "wKkoqHrH",
+    "author_id": "Yb5ERais",
+    "featured": false,
+    "name": "2.2.0-SNAPSHOT-413",
+    "version_number": "2.2.0-SNAPSHOT-413",
+    "changelog": "A changelog can be found at https://github.com/GeyserMC/Geyser/commits",
+    "changelog_url": null,
+    "date_published": "2024-01-17T17:43:12.715839Z",
+    "downloads": 56,
+    "version_type": "beta",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+      {
+        "hashes": {
+          "sha1": "3642cadb8e5dca59292cb8676ae753af74c85786",
+          "sha512": "a83dc5b01ed2f917cb84b7dc59ad34a303d426da53fb4f5d457943d2601da57c26286472d9de60c17d2fee9480a9e013270886e61269f0d4a9398ba713138447"
+        },
+        "url": "https://cdn.modrinth.com/data/wKkoqHrH/versions/ecmeMita/geyser-fabric-2.2.0-SNAPSHOT%2Bbuild.413.jar",
+        "filename": "geyser-fabric-2.2.0-SNAPSHOT+build.413.jar",
+        "primary": true,
+        "size": 13613993,
+        "file_type": null
+      }
+    ],
+    "dependencies": [
+      {
+        "version_id": null,
+        "project_id": "P7dR8mSH",
+        "file_name": null,
+        "dependency_type": "required"
+      }
+    ]
+  },
+  {
+    "game_versions": [
+      "1.20.4"
+    ],
+    "loaders": [
+      "fabric"
+    ],
+    "id": "hnCrxh7G",
+    "project_id": "wKkoqHrH",
+    "author_id": "Yb5ERais",
+    "featured": false,
+    "name": "2.2.0-SNAPSHOT-412",
+    "version_number": "2.2.0-SNAPSHOT-412",
+    "changelog": "A changelog can be found at https://github.com/GeyserMC/Geyser/commits",
+    "changelog_url": null,
+    "date_published": "2024-01-12T14:44:35.146743Z",
+    "downloads": 166,
+    "version_type": "beta",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+      {
+        "hashes": {
+          "sha1": "937d8867d1609aa70bd19f54fe31cfb5538cbd7f",
+          "sha512": "1846083a7219e249edd4305dd4d59900fc43b6e945520222935d786e8af1d4f84ef74b3cf788b3e834b4b0efb9c0d821a52ba02d08b91a5909ef20a3194b6a87"
+        },
+        "url": "https://cdn.modrinth.com/data/wKkoqHrH/versions/hnCrxh7G/geyser-fabric-2.2.0-SNAPSHOT%2Bbuild.412.jar",
+        "filename": "geyser-fabric-2.2.0-SNAPSHOT+build.412.jar",
+        "primary": true,
+        "size": 13606232,
+        "file_type": null
+      }
+    ],
+    "dependencies": [
+      {
+        "version_id": null,
+        "project_id": "P7dR8mSH",
+        "file_name": null,
+        "dependency_type": "required"
+      }
+    ]
+  },
+  {
+    "game_versions": [
+      "1.20.4"
+    ],
+    "loaders": [
+      "fabric"
+    ],
+    "id": "OaBcQzXw",
+    "project_id": "wKkoqHrH",
+    "author_id": "Yb5ERais",
+    "featured": false,
+    "name": "2.2.0-SNAPSHOT-411",
+    "version_number": "2.2.0-SNAPSHOT-411",
+    "changelog": "A changelog can be found at https://github.com/GeyserMC/Geyser/commits",
+    "changelog_url": null,
+    "date_published": "2024-01-04T18:54:32.195487Z",
+    "downloads": 165,
+    "version_type": "beta",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+      {
+        "hashes": {
+          "sha1": "68cb13fb7775094c810eceaec5ad8e98035debe0",
+          "sha512": "3f852b993c82760f59e4e665c04b661a805640060a6772c25a8b1b1c8bcf4fe2117657b127aa9421c94802f2bec2ce921e202b11711a3ed1c8345c48a1d0bfd7"
+        },
+        "url": "https://cdn.modrinth.com/data/wKkoqHrH/versions/OaBcQzXw/geyser-fabric-2.2.0-SNAPSHOT%2Bbuild.411.jar",
+        "filename": "geyser-fabric-2.2.0-SNAPSHOT+build.411.jar",
+        "primary": true,
+        "size": 13606224,
+        "file_type": null
+      }
+    ],
+    "dependencies": [
+      {
+        "version_id": null,
+        "project_id": "P7dR8mSH",
+        "file_name": null,
+        "dependency_type": "required"
+      }
+    ]
+  },
+  {
+    "game_versions": [
+      "1.20.4"
+    ],
+    "loaders": [
+      "fabric"
+    ],
+    "id": "qkubeexe",
+    "project_id": "wKkoqHrH",
+    "author_id": "Yb5ERais",
+    "featured": false,
+    "name": "2.2.0-SNAPSHOT-410",
+    "version_number": "2.2.0-SNAPSHOT-410",
+    "changelog": "A changelog can be found at https://github.com/GeyserMC/Geyser/commits",
+    "changelog_url": null,
+    "date_published": "2023-12-31T01:29:41.324048Z",
+    "downloads": 90,
+    "version_type": "beta",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+      {
+        "hashes": {
+          "sha512": "24625fb96c2a40623a4e4529bf28bdc8a0488d536179f94401729c30cca69994d54df17e9430ec89ca8a7e6a565300e8a319fbc25a29ddeeb646c9d084350604",
+          "sha1": "959b0c1f6cac7b67f784e1015c0f6d569ed263a7"
+        },
+        "url": "https://cdn.modrinth.com/data/wKkoqHrH/versions/qkubeexe/geyser-fabric-2.2.0-SNAPSHOT%2Bbuild.410.jar",
+        "filename": "geyser-fabric-2.2.0-SNAPSHOT+build.410.jar",
+        "primary": true,
+        "size": 13606133,
+        "file_type": null
+      }
+    ],
+    "dependencies": [
+      {
+        "version_id": null,
+        "project_id": "P7dR8mSH",
+        "file_name": null,
+        "dependency_type": "required"
+      }
+    ]
+  },
+  {
+    "game_versions": [
+      "1.20.4"
+    ],
+    "loaders": [
+      "fabric"
+    ],
+    "id": "9Z0RbBHK",
+    "project_id": "wKkoqHrH",
+    "author_id": "Yb5ERais",
+    "featured": false,
+    "name": "2.2.0-SNAPSHOT-409",
+    "version_number": "2.2.0-SNAPSHOT-409",
+    "changelog": "A changelog can be found at https://github.com/GeyserMC/Geyser/commits",
+    "changelog_url": null,
+    "date_published": "2023-12-25T19:48:12.074450Z",
+    "downloads": 170,
+    "version_type": "beta",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+      {
+        "hashes": {
+          "sha1": "fea73685c82b1d2b4bff232c54739844fb0b966a",
+          "sha512": "f2105ea798718e76789af42e747333c1bb42e1d27d7a5807b83a561ab560f766153686aae0a150a1ac0cf081484b5d5086fea14f3494970a133f719de14bfefd"
+        },
+        "url": "https://cdn.modrinth.com/data/wKkoqHrH/versions/9Z0RbBHK/geyser-fabric-2.2.0-SNAPSHOT%2Bbuild.409.jar",
+        "filename": "geyser-fabric-2.2.0-SNAPSHOT+build.409.jar",
+        "primary": true,
+        "size": 13606064,
+        "file_type": null
+      }
+    ],
+    "dependencies": [
+      {
+        "version_id": null,
+        "project_id": "P7dR8mSH",
+        "file_name": null,
+        "dependency_type": "required"
+      }
+    ]
+  },
+  {
+    "game_versions": [
+      "1.20.4"
+    ],
+    "loaders": [
+      "fabric"
+    ],
+    "id": "RlqYWydp",
+    "project_id": "wKkoqHrH",
+    "author_id": "Yb5ERais",
+    "featured": false,
+    "name": "2.2.0-SNAPSHOT-408",
+    "version_number": "2.2.0-SNAPSHOT-408",
+    "changelog": "A changelog can be found at https://github.com/GeyserMC/Geyser/commits",
+    "changelog_url": null,
+    "date_published": "2023-12-24T02:09:59.740744Z",
+    "downloads": 56,
+    "version_type": "beta",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+      {
+        "hashes": {
+          "sha512": "f3ef464d03895b071f8d501b47d27fa0d2f8791c555aedec13c0b5ecf2868673dde608f3091b52ef86184045a4543ab10392bcd5ef307d44086a931237228c8b",
+          "sha1": "70837e523c6f53e5601140573a236e61fc5a125c"
+        },
+        "url": "https://cdn.modrinth.com/data/wKkoqHrH/versions/RlqYWydp/geyser-fabric-2.2.0-SNAPSHOT%2Bbuild.408.jar",
+        "filename": "geyser-fabric-2.2.0-SNAPSHOT+build.408.jar",
+        "primary": true,
+        "size": 13606064,
+        "file_type": null
+      }
+    ],
+    "dependencies": [
+      {
+        "version_id": null,
+        "project_id": "P7dR8mSH",
+        "file_name": null,
+        "dependency_type": "required"
+      }
+    ]
+  },
+  {
+    "game_versions": [
+      "1.20.4"
+    ],
+    "loaders": [
+      "fabric"
+    ],
+    "id": "WMP7Kk2S",
+    "project_id": "wKkoqHrH",
+    "author_id": "Yb5ERais",
+    "featured": false,
+    "name": "2.2.0-SNAPSHOT-407",
+    "version_number": "2.2.0-SNAPSHOT-407",
+    "changelog": "A changelog can be found at https://github.com/GeyserMC/Geyser/commits",
+    "changelog_url": null,
+    "date_published": "2023-12-20T22:52:50.736147Z",
+    "downloads": 106,
+    "version_type": "beta",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+      {
+        "hashes": {
+          "sha1": "392ef2d5dc1530c381e36aa453465c00dd32c29d",
+          "sha512": "602db0f102b1dc4d8cb37344ebbacdbf2d3c8eb6d08dd117f0ba4ddf934dfd85a9629a678256c3913a3b52cf7ae0b90573501d940b05dbabec8b2233d42a195c"
+        },
+        "url": "https://cdn.modrinth.com/data/wKkoqHrH/versions/WMP7Kk2S/geyser-fabric-2.2.0-SNAPSHOT%2Bbuild.407.jar",
+        "filename": "geyser-fabric-2.2.0-SNAPSHOT+build.407.jar",
+        "primary": true,
+        "size": 13605884,
+        "file_type": null
+      }
+    ],
+    "dependencies": [
+      {
+        "version_id": null,
+        "project_id": "P7dR8mSH",
+        "file_name": null,
+        "dependency_type": "required"
+      }
+    ]
+  },
+  {
+    "game_versions": [
+      "1.20.4"
+    ],
+    "loaders": [
+      "fabric"
+    ],
+    "id": "iJBTdBuT",
+    "project_id": "wKkoqHrH",
+    "author_id": "Yb5ERais",
+    "featured": false,
+    "name": "2.2.0-SNAPSHOT-406",
+    "version_number": "2.2.0-SNAPSHOT-406",
+    "changelog": "A changelog can be found at https://github.com/GeyserMC/Geyser/commits",
+    "changelog_url": null,
+    "date_published": "2023-12-20T17:04:03.922091Z",
+    "downloads": 18,
+    "version_type": "beta",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+      {
+        "hashes": {
+          "sha1": "df0ed74360b95ff3de8fbe6520852999d65b40fd",
+          "sha512": "a39e12036aae56d1ba645eb934c1dabf6e85c1f9f7ba9aca0bd8b8a1725b428dd3c1ccf3026d17800fdcd608d8def3f2264a428fbb464b9afd952114e46047e3"
+        },
+        "url": "https://cdn.modrinth.com/data/wKkoqHrH/versions/iJBTdBuT/geyser-fabric-2.2.0-SNAPSHOT%2Bbuild.406.jar",
+        "filename": "geyser-fabric-2.2.0-SNAPSHOT+build.406.jar",
+        "primary": true,
+        "size": 13599953,
+        "file_type": null
+      }
+    ],
+    "dependencies": [
+      {
+        "version_id": null,
+        "project_id": "P7dR8mSH",
+        "file_name": null,
+        "dependency_type": "required"
+      }
+    ]
+  },
+  {
+    "game_versions": [
+      "1.20.4"
+    ],
+    "loaders": [
+      "fabric"
+    ],
+    "id": "SsoQev3o",
+    "project_id": "wKkoqHrH",
+    "author_id": "Yb5ERais",
+    "featured": false,
+    "name": "2.2.0-SNAPSHOT-405",
+    "version_number": "2.2.0-SNAPSHOT-405",
+    "changelog": "A changelog can be found at https://github.com/GeyserMC/Geyser/commits",
+    "changelog_url": null,
+    "date_published": "2023-12-20T15:40:35.338937Z",
+    "downloads": 7,
+    "version_type": "beta",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+      {
+        "hashes": {
+          "sha1": "13990ac627dec54743047d43c48912aaa1636852",
+          "sha512": "c30a264bfaf38f77567a0082e03290c7f8cf3dcb850993cb71e65e7517548351bb29ac0425a9b1398be5a1bb9f8f025c9c132d4c785c0e3cf8b87071e957904c"
+        },
+        "url": "https://cdn.modrinth.com/data/wKkoqHrH/versions/SsoQev3o/geyser-fabric-2.2.0-SNAPSHOT%2Bbuild.405.jar",
+        "filename": "geyser-fabric-2.2.0-SNAPSHOT+build.405.jar",
+        "primary": true,
+        "size": 13599957,
+        "file_type": null
+      }
+    ],
+    "dependencies": [
+      {
+        "version_id": null,
+        "project_id": "P7dR8mSH",
+        "file_name": null,
+        "dependency_type": "required"
+      }
+    ]
+  },
+  {
+    "game_versions": [
+      "1.20.4"
+    ],
+    "loaders": [
+      "fabric"
+    ],
+    "id": "pyJsinIF",
+    "project_id": "wKkoqHrH",
+    "author_id": "Yb5ERais",
+    "featured": false,
+    "name": "2.2.0-SNAPSHOT-404",
+    "version_number": "2.2.0-SNAPSHOT-404",
+    "changelog": "A changelog can be found at https://github.com/GeyserMC/Geyser/commits",
+    "changelog_url": null,
+    "date_published": "2023-12-19T08:01:37.932781Z",
+    "downloads": 33,
+    "version_type": "beta",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+      {
+        "hashes": {
+          "sha1": "6bd2b607f5a5dfef94359a76c3d1f4fa30ad3d20",
+          "sha512": "e03bbc2a129440f57fcd9151cc03f8cb59adb1529675771d745d1f629f1ed32cdfe48de77aab3e65ff029aab8448568863b33d1ef62b0532ea9ccabe33f60e45"
+        },
+        "url": "https://cdn.modrinth.com/data/wKkoqHrH/versions/pyJsinIF/geyser-fabric-2.2.0-SNAPSHOT%2Bbuild.404.jar",
+        "filename": "geyser-fabric-2.2.0-SNAPSHOT+build.404.jar",
+        "primary": true,
+        "size": 13599960,
+        "file_type": null
+      }
+    ],
+    "dependencies": [
+      {
+        "version_id": null,
+        "project_id": "P7dR8mSH",
+        "file_name": null,
+        "dependency_type": "required"
+      }
+    ]
+  },
+  {
+    "game_versions": [
+      "1.20.4"
+    ],
+    "loaders": [
+      "fabric"
+    ],
+    "id": "7gmaiwsf",
+    "project_id": "wKkoqHrH",
+    "author_id": "Yb5ERais",
+    "featured": false,
+    "name": "2.2.0-SNAPSHOT-403",
+    "version_number": "2.2.0-SNAPSHOT-403",
+    "changelog": "A changelog can be found at https://github.com/GeyserMC/Geyser/commits",
+    "changelog_url": null,
+    "date_published": "2023-12-16T22:47:34.524738Z",
+    "downloads": 49,
+    "version_type": "beta",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+      {
+        "hashes": {
+          "sha512": "c826139834102ac20f9fdce96af8a1a4b7ddb61d0ff00eacfd6035b239fff46796b5888a1dd5c108b9e6ab3e0cfc9bece93152dcfcc9b619d86048fb14931964",
+          "sha1": "24291de6a968d2a7b6b625e47a03f62ea4a9bc29"
+        },
+        "url": "https://cdn.modrinth.com/data/wKkoqHrH/versions/7gmaiwsf/geyser-fabric-2.2.0-SNAPSHOT%2Bbuild.403.jar",
+        "filename": "geyser-fabric-2.2.0-SNAPSHOT+build.403.jar",
+        "primary": true,
+        "size": 13542707,
+        "file_type": null
+      }
+    ],
+    "dependencies": [
+      {
+        "version_id": null,
+        "project_id": "P7dR8mSH",
+        "file_name": null,
+        "dependency_type": "required"
+      }
+    ]
+  },
+  {
+    "game_versions": [
+      "1.20.4"
+    ],
+    "loaders": [
+      "fabric"
+    ],
+    "id": "ujgeUEYK",
+    "project_id": "wKkoqHrH",
+    "author_id": "Yb5ERais",
+    "featured": false,
+    "name": "2.2.0-SNAPSHOT-402",
+    "version_number": "2.2.0-SNAPSHOT-402",
+    "changelog": "A changelog can be found at https://github.com/GeyserMC/Geyser/commits",
+    "changelog_url": null,
+    "date_published": "2023-12-15T05:35:20.235744Z",
+    "downloads": 41,
+    "version_type": "beta",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+      {
+        "hashes": {
+          "sha1": "e1f34ac74cf78e8c831008223a0a34b502712ee2",
+          "sha512": "c78044f1e2d7e1757c147942ed5e1248ca3cea315bc85ee0a2f843de98fc6f1a7273146ce6170b7fb8090cf4444dd0590ac425eb2e773d2c8bbde442ef0e49a8"
+        },
+        "url": "https://cdn.modrinth.com/data/wKkoqHrH/versions/ujgeUEYK/geyser-fabric-2.2.0-SNAPSHOT%2Bbuild.402.jar",
+        "filename": "geyser-fabric-2.2.0-SNAPSHOT+build.402.jar",
+        "primary": true,
+        "size": 13542644,
+        "file_type": null
+      }
+    ],
+    "dependencies": [
+      {
+        "version_id": null,
+        "project_id": "P7dR8mSH",
+        "file_name": null,
+        "dependency_type": "required"
+      }
+    ]
+  },
+  {
+    "game_versions": [
+      "1.20.4"
+    ],
+    "loaders": [
+      "fabric"
+    ],
+    "id": "xqeFi2YH",
+    "project_id": "wKkoqHrH",
+    "author_id": "Yb5ERais",
+    "featured": false,
+    "name": "2.2.0-SNAPSHOT-401",
+    "version_number": "2.2.0-SNAPSHOT-401",
+    "changelog": "A changelog can be found at https://github.com/GeyserMC/Geyser/commits",
+    "changelog_url": null,
+    "date_published": "2023-12-15T02:38:24.872598Z",
+    "downloads": 31,
+    "version_type": "beta",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+      {
+        "hashes": {
+          "sha1": "8a5070d0a4661b7760d9e6f0ce4527a989adb864",
+          "sha512": "6f4f334163ccefd243e264949d57c9618b0313b0534338b9948f50df1e6142119faf6cf4028073e716c58d6f3514132c9a37056e17dc5f1be1fdf216302575bc"
+        },
+        "url": "https://cdn.modrinth.com/data/wKkoqHrH/versions/xqeFi2YH/geyser-fabric-2.2.0-SNAPSHOT%2Bbuild.401.jar",
+        "filename": "geyser-fabric-2.2.0-SNAPSHOT+build.401.jar",
+        "primary": true,
+        "size": 13542663,
+        "file_type": null
+      }
+    ],
+    "dependencies": [
+      {
+        "version_id": null,
+        "project_id": "P7dR8mSH",
+        "file_name": null,
+        "dependency_type": "required"
+      }
+    ]
+  }
+]
