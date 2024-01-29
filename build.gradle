@@ -95,7 +95,7 @@ dependencies {
     // https://github.com/mbknor/mbknor-jackson-jsonSchema
     implementation 'com.kjetland:mbknor-jackson-jsonschema_2.13:1.0.39'
     implementation 'com.jayway.jsonpath:json-path:2.9.0'
-    implementation 'org.apache.httpcomponents.client5:httpclient5:5.3'
+    implementation 'org.apache.httpcomponents.client5:httpclient5:5.3.1'
     implementation 'io.projectreactor.netty:reactor-netty-http:1.1.15'
     implementation 'org.apache.maven:maven-artifact:3.9.6'
     implementation 'commons-codec:commons-codec:1.16.0'
@@ -104,7 +104,7 @@ dependencies {
     implementation 'org.apache.cxf:cxf-core:[3.5.6,3.6.0)'
     implementation 'org.jetbrains:annotations:24.1.0'
 
-    testImplementation 'org.assertj:assertj-core:3.25.1'
+    testImplementation 'org.assertj:assertj-core:3.25.2'
     // https://github.com/webcompere/model-assert
     // for json assertions
     testImplementation 'uk.org.webcompere:model-assert:1.0.2'
