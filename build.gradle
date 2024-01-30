@@ -109,7 +109,7 @@ dependencies {
     // for json assertions
     testImplementation 'uk.org.webcompere:model-assert:1.0.2'
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.1'
-    testImplementation 'org.mockito:mockito-junit-jupiter:5.9.0'
+    testImplementation 'org.mockito:mockito-junit-jupiter:5.10.0'
     // would like to transition these to wiremock
     testImplementation 'org.mock-server:mockserver-junit-jupiter:5.15.0'
     // https://github.com/wiremock/wiremock/releases/tag/3.0.0 drops support for Java 8
