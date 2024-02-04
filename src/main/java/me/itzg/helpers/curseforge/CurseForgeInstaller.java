@@ -108,6 +108,9 @@ public class CurseForgeInstaller {
     @Getter @Setter
     private List<String> overridesExclusions;
 
+    @Getter @Setter
+    private boolean forceModloaderReinstall;
+
     /**
      * @throws MissingModsException if any mods need to be manually downloaded
      */
@@ -879,7 +882,8 @@ public class CurseForgeInstaller {
 
     private void prepareFabric(String minecraftVersion, String loaderVersion) {
         final FabricLauncherInstaller installer = new FabricLauncherInstaller(outputDir)
-            .setResultsFile(resultsFile);
+            .setResultsFile(resultsFile)
+            .setForceReinstall(forceModloaderReinstall);
         installer.installUsingVersions(minecraftVersion, loaderVersion, null);
     }
 
@@ -889,7 +893,7 @@ public class CurseForgeInstaller {
                 minecraftVersion, forgeVersion
             )
         )
-            .install(outputDir, resultsFile, false, "Forge");
+            .install(outputDir, resultsFile, forceModloaderReinstall, "Forge");
     }
 
     private MinecraftModpackManifest extractModpackManifest(Path modpackZip) throws IOException {
