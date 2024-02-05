@@ -36,9 +36,11 @@ public class FabricLauncherInstaller {
     @Setter
     private Path resultsFile;
 
-    @Getter
-    @Setter
+    @Getter @Setter
     private String fabricMetaBaseUrl = "https://meta.fabricmc.net";
+
+    @Getter @Setter
+    private boolean forceReinstall;
 
     public void installUsingVersions(
         @NonNull String minecraftVersion,
@@ -86,6 +88,7 @@ public class FabricLauncherInstaller {
 
         final boolean needsInstall =
             prevManifest == null
+                || forceReinstall
                 || prevManifest.getOrigin() == null
                 || !prevManifest.getOrigin().equals(expectedVersions)
                 || !Manifests.allFilesPresent(outputDir, prevManifest);

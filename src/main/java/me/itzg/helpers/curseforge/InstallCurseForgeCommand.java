@@ -123,6 +123,9 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
     @Option(names = "--force-synchronize")
     boolean forceSynchronize;
 
+    @Option(names = "--force-reinstall-modloader")
+    boolean forceReinstallModloader;
+
     @Option(names = "--set-level-from",
         description = "When WORLD_FILE, a world file included the modpack will be unzipped into a folder under 'saves' and referenced as 'LEVEL' in the results file."
             + "\nWhen OVERRIDES and the overrides contains a world save directory (contains level.dat), then that directory will be referenced as 'LEVEL' in the results file."
@@ -190,6 +193,7 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
         final CurseForgeInstaller installer = new CurseForgeInstaller(outputDirectory, resultsFile)
             .setExcludeIncludes(excludeIncludes)
             .setForceSynchronize(forceSynchronize)
+            .setForceReinstallModloader(forceReinstallModloader)
             .setLevelFrom(levelFrom)
             .setOverridesSkipExisting(overridesSkipExisting)
             .setOverridesExclusions(overridesExclusions)
