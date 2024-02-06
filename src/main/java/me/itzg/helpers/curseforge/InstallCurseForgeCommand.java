@@ -260,7 +260,7 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
                 info.getModInfo().getName(),
                 info.getCurseForgeFile().getDisplayName(),
                 info.getCurseForgeFile().getFileName(),
-                info.getModInfo().getLinks().getWebsiteUrl() + "/files/" + info.getCurseForgeFile().getId()
+                info.getModInfo().getLinks().getWebsiteUrl() + "/download/" + info.getCurseForgeFile().getId()
             );
         }
         return tabOut;
