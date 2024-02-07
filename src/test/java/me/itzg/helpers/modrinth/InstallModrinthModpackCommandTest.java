@@ -15,6 +15,8 @@ import java.nio.file.Path;
 import java.util.Collections;
 import me.itzg.helpers.errors.ExitCodeMapper;
 import me.itzg.helpers.files.Manifests;
+import me.itzg.helpers.http.SharedFetch;
+import me.itzg.helpers.modrinth.ModrinthPackInstaller.ModloaderPreparer;
 import me.itzg.helpers.modrinth.model.DependencyId;
 import me.itzg.helpers.modrinth.model.ModpackIndex;
 import me.itzg.helpers.modrinth.model.ModpackIndex.ModpackFile;
@@ -24,6 +26,7 @@ import me.itzg.helpers.modrinth.model.VersionType;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.mockito.Mockito;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
 
@@ -37,10 +40,19 @@ public class InstallModrinthModpackCommandTest {
 
     static InstallModrinthModpackCommand createInstallModrinthModpackCommand(
         String baseUrl, Path outputDir, String projectName, String versionId,
-        ModpackLoader loader)
-    {
-        InstallModrinthModpackCommand commandUT =
-            new InstallModrinthModpackCommand();
+        ModpackLoader loader, ModloaderPreparer mockForgePreparer
+    ) {
+        final InstallModrinthModpackCommand commandUT =
+            new InstallModrinthModpackCommand()
+                // so that the modloader prepare can be injected with a mock
+                .setInstallerFactory((apiClient, mrPackFile) ->
+                    new ModrinthPackInstaller(
+                        apiClient,
+                        SharedFetch.Options.builder().build(),
+                        mrPackFile, outputDir, null, false
+                    )
+                        .modifyModLoaderPreparer(DependencyId.forge, mockForgePreparer)
+                );
         commandUT.baseUrl = baseUrl;
         commandUT.outputDirectory = outputDir;
         commandUT.modpackProject = projectName;
@@ -60,22 +72,28 @@ public class InstallModrinthModpackCommandTest {
         ModpackFile testFile = createHostedModpackFile(
             relativeFilePath, relativeFilePath, expectedFileData, wm.getHttpBaseUrl());
 
-        ModpackIndex index = createBasicModpackIndex(DependencyId.forge, "1.20.1");
+        ModpackIndex index = createBasicModpackIndex(DependencyId.forge, "111");
         index.getFiles().add(testFile);
 
         stubModrinthModpackApi(
             wm, projectName, projectId, projectVersion,
             createModrinthPack(index));
 
+        final ModloaderPreparer mockPreparer = Mockito.mock(ModloaderPreparer.class);
+
         InstallModrinthModpackCommand commandUT =
             createInstallModrinthModpackCommand(wm.getHttpBaseUrl(), tempDir,
-                projectName, projectVersionId, ModpackLoader.forge);
+                projectName, projectVersionId, ModpackLoader.forge, mockPreparer
+            );
 
         int commandStatus = commandUT.call();
 
         assertThat(commandStatus).isEqualTo(0);
         assertThat(tempDir.resolve(relativeFilePath)).content()
             .isEqualTo(expectedFileData);
+
+        Mockito.verify(mockPreparer, Mockito.times(1))
+            .prepare(Mockito.any(), Mockito.eq(MINECRAFT_VERSION), Mockito.eq("111"));
     }
 
     @Test
@@ -87,7 +105,7 @@ public class InstallModrinthModpackCommandTest {
         ModpackFile testFile = createHostedModpackFile(
             relativeFilePath, relativeFilePath, expectedFileData, wm.getHttpBaseUrl());
 
-        ModpackIndex index = createBasicModpackIndex(DependencyId.forge, "1.20.1");
+        ModpackIndex index = createBasicModpackIndex(DependencyId.forge, "111");
         index.getFiles().add(testFile);
 
         String projectVersionNumber = "1.6.1";
@@ -97,9 +115,11 @@ public class InstallModrinthModpackCommandTest {
             createModrinthPack(index)
         );
 
+        final ModloaderPreparer mockPreparer = Mockito.mock(ModloaderPreparer.class);
+
         InstallModrinthModpackCommand commandUT =
             createInstallModrinthModpackCommand(wm.getHttpBaseUrl(), tempDir,
-                projectName, projectVersionNumber, null
+                projectName, projectVersionNumber, null, mockPreparer
             );
 
         assertThat(
@@ -130,21 +150,27 @@ public class InstallModrinthModpackCommandTest {
         assertThat(manifestAfterReinstall.getTimestamp())
             .isNotNull()
             .isEqualTo(manifest.getTimestamp());
+
+        Mockito.verify(mockPreparer, Mockito.times(1))
+            .prepare(Mockito.any(), Mockito.eq("1.20.1"), Mockito.eq("111"));
     }
 
     @Test
     void createsModrinthModpackManifestForModpackInstallation(
                 WireMockRuntimeInfo wm, @TempDir Path tempDir
         ) throws IOException {
-        ModpackIndex index = createBasicModpackIndex(DependencyId.forge, "1.20.1");
+        ModpackIndex index = createBasicModpackIndex(DependencyId.forge, "111");
 
         stubModrinthModpackApi(
             wm, projectName, projectId, projectVersion,
             createModrinthPack(index));
 
+        final ModloaderPreparer mockPreparer = Mockito.mock(ModloaderPreparer.class);
+
         InstallModrinthModpackCommand commandUT =
             createInstallModrinthModpackCommand(wm.getHttpBaseUrl(), tempDir,
-                projectName, projectVersionId, ModpackLoader.forge);
+                projectName, projectVersionId, ModpackLoader.forge, mockPreparer
+            );
 
         int commandStatus = commandUT.call();
 
@@ -162,6 +188,9 @@ public class InstallModrinthModpackCommandTest {
             .isEqualTo(0);
         assertThat(installedManifest.getDependencies())
             .isEqualTo(index.getDependencies());
+
+        Mockito.verify(mockPreparer, Mockito.times(1))
+            .prepare(Mockito.any(), Mockito.eq(MINECRAFT_VERSION), Mockito.eq("111"));
     }
 
     @Test
@@ -174,15 +203,18 @@ public class InstallModrinthModpackCommandTest {
         ModpackFile testFile = createHostedModpackFile(
             relativeFilePath, relativeFilePath, expectedFileData, wm.getHttpBaseUrl());
 
-        ModpackIndex index = createBasicModpackIndex(DependencyId.forge, "1.20.1");
+        ModpackIndex index = createBasicModpackIndex(DependencyId.forge, "111");
         index.getFiles().add(testFile);
 
         stubModrinthModpackApi(
             wm, projectName, projectId, projectVersion,
             createModrinthPack(index));
 
+        final ModloaderPreparer mockPreparer = Mockito.mock(ModloaderPreparer.class);
+
         createInstallModrinthModpackCommand(wm.getHttpBaseUrl(), tempDir,
-            projectName, projectVersionId, ModpackLoader.forge)
+            projectName, projectVersionId, ModpackLoader.forge, mockPreparer
+        )
             .call();
 
         String newProjectVersionId = "1234abcd";
@@ -196,11 +228,15 @@ public class InstallModrinthModpackCommandTest {
 
         int commandStatus =
             createInstallModrinthModpackCommand(wm.getHttpBaseUrl(), tempDir,
-                projectName, newProjectVersionId, ModpackLoader.forge)
+                projectName, newProjectVersionId, ModpackLoader.forge, mockPreparer
+            )
                 .call();
 
         assertThat(commandStatus).isEqualTo(0);
         assertThat(tempDir.resolve(relativeFilePath)).doesNotExist();
+
+        Mockito.verify(mockPreparer, Mockito.times(2))
+            .prepare(Mockito.any(), Mockito.eq(MINECRAFT_VERSION), Mockito.eq("111"));
     }
 
     @Test
@@ -214,7 +250,7 @@ public class InstallModrinthModpackCommandTest {
         ModpackFile testFile = createHostedModpackFile(
             relativeFilePath, relativeFilePath, expectedFileData, wm.getHttpBaseUrl());
 
-        ModpackIndex index = createBasicModpackIndex(DependencyId.forge, "1.20.1");
+        ModpackIndex index = createBasicModpackIndex(DependencyId.forge, "111");
         index.getFiles().add(testFile);
 
         stubFor(get(modpackDownloadPath)
@@ -222,15 +258,21 @@ public class InstallModrinthModpackCommandTest {
             .withHeader("Content-Type", "application/x-modrinth-modpack+zip")
             .withBody(createModrinthPack(index))));
 
+        final ModloaderPreparer mockPreparer = Mockito.mock(ModloaderPreparer.class);
+
         InstallModrinthModpackCommand commandUT =
             createInstallModrinthModpackCommand(wm.getHttpBaseUrl(), tempDir,
-                wm.getHttpBaseUrl() + modpackDownloadPath, null, null);
+                wm.getHttpBaseUrl() + modpackDownloadPath, null, null, mockPreparer
+            );
 
         int commandStatus = commandUT.call();
 
         assertThat(commandStatus).isEqualTo(0);
         assertThat(tempDir.resolve(relativeFilePath)).content()
             .isEqualTo(expectedFileData);
+
+        Mockito.verify(mockPreparer, Mockito.times(1))
+            .prepare(Mockito.any(), Mockito.eq(MINECRAFT_VERSION), Mockito.eq("111"));
     }
 
     @Test
@@ -242,16 +284,19 @@ public class InstallModrinthModpackCommandTest {
         ModpackFile testFile = createHostedModpackFile(
             relativeFilePath, relativeFilePath, expectedFileData, wm.getHttpBaseUrl());
 
-        ModpackIndex index = createBasicModpackIndex(DependencyId.forge, "1.20.1");
+        ModpackIndex index = createBasicModpackIndex(DependencyId.forge, "111");
         index.getFiles().add(testFile);
 
         final Path localMrpackFile =
             Files.write(tempDir.resolve("slug.mrpack"), createModrinthPack(index));
 
+        final ModloaderPreparer mockPreparer = Mockito.mock(ModloaderPreparer.class);
+
         final String projectRef = localMrpackFile.toString();
         InstallModrinthModpackCommand commandUT =
             createInstallModrinthModpackCommand(wm.getHttpBaseUrl(), tempDir,
-                projectRef, null, null
+                projectRef, null, null,
+                mockPreparer
             );
 
         int commandStatus = commandUT.call();
@@ -259,6 +304,9 @@ public class InstallModrinthModpackCommandTest {
         assertThat(commandStatus).isEqualTo(0);
         assertThat(tempDir.resolve(relativeFilePath)).content()
             .isEqualTo(expectedFileData);
+
+        Mockito.verify(mockPreparer, Mockito.times(1))
+            .prepare(Mockito.any(), Mockito.eq(MINECRAFT_VERSION), Mockito.eq("111"));
     }
 
     @Test
