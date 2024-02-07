@@ -71,7 +71,7 @@ class ModrinthTestHelpers {
             .withBody(expectedData)));
     }
 
-    static ModpackIndex createBasicModpackIndex() {
+    static ModpackIndex createBasicModpackIndex(DependencyId modLoaderId, String modLoaderVersion) {
         ModpackIndex index = new ModpackIndex()
             .setName(null)
             .setGame("minecraft")
@@ -79,6 +79,7 @@ class ModrinthTestHelpers {
             .setFiles(new ArrayList<>())
             .setVersionId(null);
         index.getDependencies().put(DependencyId.minecraft, "1.20.1");
+        index.getDependencies().put(modLoaderId, modLoaderVersion);
 
         return index;
     }

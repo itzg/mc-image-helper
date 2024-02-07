@@ -4,6 +4,9 @@ GET https://api.modrinth.com/v2/project/cobblemon-fabric
 ###
 GET https://api.modrinth.com/v2/project/nerbvival
 
+###
+GET https://api.modrinth.com/v2/project/datacraft
+
 ### Nerbvival v5
 GET https://api.modrinth.com/v2/version/ayspYmZQ
 
@@ -19,6 +22,9 @@ GET https://api.modrinth.com/v2/projects?ids=["fabric-api","cloth-config"]
 
 ###
 GET https://api.modrinth.com/v2/project/ae2/version?loaders=fabric&game_versions=1.20.1
+
+###
+GET https://api.modrinth.com/v2/project/datacraft/version?loaders=neoforge&game_versions=1.20.1
 
 ###
 GET https://api.modrinth.com/v2/project/9s6osm5g/version?loaders=%5B%22fabric%22%5D&game_versions=%5B%221.19.2%22%5D

@@ -15,6 +15,7 @@ import java.nio.file.Path;
 import java.util.Collections;
 import me.itzg.helpers.errors.ExitCodeMapper;
 import me.itzg.helpers.files.Manifests;
+import me.itzg.helpers.modrinth.model.DependencyId;
 import me.itzg.helpers.modrinth.model.ModpackIndex;
 import me.itzg.helpers.modrinth.model.ModpackIndex.ModpackFile;
 import me.itzg.helpers.modrinth.model.Project;
@@ -59,7 +60,7 @@ public class InstallModrinthModpackCommandTest {
         ModpackFile testFile = createHostedModpackFile(
             relativeFilePath, relativeFilePath, expectedFileData, wm.getHttpBaseUrl());
 
-        ModpackIndex index = createBasicModpackIndex();
+        ModpackIndex index = createBasicModpackIndex(DependencyId.forge, "1.20.1");
         index.getFiles().add(testFile);
 
         stubModrinthModpackApi(
@@ -86,7 +87,7 @@ public class InstallModrinthModpackCommandTest {
         ModpackFile testFile = createHostedModpackFile(
             relativeFilePath, relativeFilePath, expectedFileData, wm.getHttpBaseUrl());
 
-        ModpackIndex index = createBasicModpackIndex();
+        ModpackIndex index = createBasicModpackIndex(DependencyId.forge, "1.20.1");
         index.getFiles().add(testFile);
 
         String projectVersionNumber = "1.6.1";
@@ -135,7 +136,7 @@ public class InstallModrinthModpackCommandTest {
     void createsModrinthModpackManifestForModpackInstallation(
                 WireMockRuntimeInfo wm, @TempDir Path tempDir
         ) throws IOException {
-        ModpackIndex index = createBasicModpackIndex();
+        ModpackIndex index = createBasicModpackIndex(DependencyId.forge, "1.20.1");
 
         stubModrinthModpackApi(
             wm, projectName, projectId, projectVersion,
@@ -173,7 +174,7 @@ public class InstallModrinthModpackCommandTest {
         ModpackFile testFile = createHostedModpackFile(
             relativeFilePath, relativeFilePath, expectedFileData, wm.getHttpBaseUrl());
 
-        ModpackIndex index = createBasicModpackIndex();
+        ModpackIndex index = createBasicModpackIndex(DependencyId.forge, "1.20.1");
         index.getFiles().add(testFile);
 
         stubModrinthModpackApi(
@@ -213,7 +214,7 @@ public class InstallModrinthModpackCommandTest {
         ModpackFile testFile = createHostedModpackFile(
             relativeFilePath, relativeFilePath, expectedFileData, wm.getHttpBaseUrl());
 
-        ModpackIndex index = createBasicModpackIndex();
+        ModpackIndex index = createBasicModpackIndex(DependencyId.forge, "1.20.1");
         index.getFiles().add(testFile);
 
         stubFor(get(modpackDownloadPath)
@@ -241,7 +242,7 @@ public class InstallModrinthModpackCommandTest {
         ModpackFile testFile = createHostedModpackFile(
             relativeFilePath, relativeFilePath, expectedFileData, wm.getHttpBaseUrl());
 
-        ModpackIndex index = createBasicModpackIndex();
+        ModpackIndex index = createBasicModpackIndex(DependencyId.forge, "1.20.1");
         index.getFiles().add(testFile);
 
         final Path localMrpackFile =

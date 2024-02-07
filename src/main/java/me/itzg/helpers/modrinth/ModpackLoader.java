@@ -6,7 +6,8 @@ package me.itzg.helpers.modrinth;
 public enum ModpackLoader {
     fabric,
     forge,
-    quilt;
+    quilt,
+    neoforge;
 
     public Loader asLoader() {
         return Loader.valueOf(this.name());

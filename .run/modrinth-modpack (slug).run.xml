@@ -5,7 +5,7 @@
     </envs>
     <option name="MAIN_CLASS_NAME" value="me.itzg.helpers.McImageHelper" />
     <module name="mc-image-helper.main" />
-    <option name="PROGRAM_PARAMETERS" value="install-modrinth-modpack --project=p87Jiw2q --version=1.6.1 --output-directory=tmp\modrinth-modpack --loader=forge --results-file=tmp\modrinth-modpack\.results.env --ignore-missing-files=Licensing.md" />
+    <option name="PROGRAM_PARAMETERS" value="install-modrinth-modpack --project=datacraft --output-directory=$USER_HOME$/tmp/modrinth-modpack" />
     <extension name="coverage">
       <pattern>
         <option name="PATTERN" value="me.itzg.helpers.env.*" />
