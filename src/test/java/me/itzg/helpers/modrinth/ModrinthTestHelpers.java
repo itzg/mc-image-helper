@@ -21,7 +21,9 @@ import me.itzg.helpers.modrinth.model.Version;
 import me.itzg.helpers.modrinth.model.VersionFile;
 
 class ModrinthTestHelpers {
+
     static final ObjectMapper mapper = new ObjectMapper();
+    public static final String MINECRAFT_VERSION = "1.20.1";
 
     static Version createModrinthProjectVersion(String versionId) {
         return new Version()
@@ -71,14 +73,15 @@ class ModrinthTestHelpers {
             .withBody(expectedData)));
     }
 
-    static ModpackIndex createBasicModpackIndex() {
+    static ModpackIndex createBasicModpackIndex(DependencyId modLoaderId, String modLoaderVersion) {
         ModpackIndex index = new ModpackIndex()
             .setName(null)
             .setGame("minecraft")
             .setDependencies(new HashMap<>())
             .setFiles(new ArrayList<>())
             .setVersionId(null);
-        index.getDependencies().put(DependencyId.minecraft, "1.20.1");
+        index.getDependencies().put(DependencyId.minecraft, MINECRAFT_VERSION);
+        index.getDependencies().put(modLoaderId, modLoaderVersion);
 
         return index;
     }

@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.Callable;
+import lombok.AccessLevel;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.McImageHelper;
 import me.itzg.helpers.files.Manifests;
@@ -12,6 +14,7 @@ import me.itzg.helpers.http.Fetch;
 import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.http.SharedFetchArgs;
 import me.itzg.helpers.modrinth.model.VersionType;
+import org.jetbrains.annotations.VisibleForTesting;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.Option;
@@ -107,11 +110,7 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
             newManifest = buildModpackFetcher(apiClient, projectRef)
                 .fetchModpack(prevManifest)
                 .flatMap(fetchedPack ->
-                    new ModrinthPackInstaller(
-                        apiClient, this.sharedFetchArgs.options(),
-                        fetchedPack.getMrPackFile(), this.outputDirectory, this.resultsFile,
-                        this.forceModloaderReinstall
-                    )
+                    installerFactory.create(apiClient, fetchedPack.getMrPackFile())
                         .setExcludeFiles(excludeFiles)
                         .processModpack(sharedFetch)
                         .flatMap(installation -> {
@@ -140,6 +139,22 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
 
         return ExitCode.OK;
     }
+
+    @VisibleForTesting
+    @FunctionalInterface
+    interface ModrinthModpackInstallerFactory {
+
+        ModrinthPackInstaller create(ModrinthApiClient apiClient, Path mrPackFile);
+    }
+
+    @VisibleForTesting
+    @Setter(AccessLevel.PACKAGE)
+    private ModrinthModpackInstallerFactory installerFactory = (apiClient, mrPackFile) ->
+        new ModrinthPackInstaller(
+            apiClient, this.sharedFetchArgs.options(),
+            mrPackFile, this.outputDirectory, this.resultsFile,
+            this.forceModloaderReinstall
+        );
 
     private Mono<Installation> processResultsFile(FetchedPack fetchedPack, Installation installation) {
         return Mono.fromCallable(() -> {

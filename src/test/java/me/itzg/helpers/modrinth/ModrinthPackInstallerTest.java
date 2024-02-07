@@ -2,6 +2,7 @@ package me.itzg.helpers.modrinth;
 
 import static me.itzg.helpers.modrinth.ModrinthTestHelpers.*;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.verify;
 
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
@@ -17,6 +18,7 @@ import me.itzg.helpers.http.Fetch;
 import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.http.SharedFetch.Options;
 import me.itzg.helpers.http.SharedFetchArgs;
+import me.itzg.helpers.modrinth.ModrinthPackInstaller.ModloaderPreparer;
 import me.itzg.helpers.modrinth.model.DependencyId;
 import me.itzg.helpers.modrinth.model.Env;
 import me.itzg.helpers.modrinth.model.EnvType;
@@ -27,6 +29,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.Mockito;
 
 @WireMockTest
 public class ModrinthPackInstallerTest {
@@ -36,6 +39,8 @@ public class ModrinthPackInstallerTest {
             WireMockRuntimeInfo wm, @TempDir Path tempDir
         ) throws IOException
     {
+        final ModloaderPreparer mockPreparer = Mockito.mock(ModloaderPreparer.class);
+
         Options fetchOptions = new SharedFetchArgs().options();
         ModpackIndex expectedIndex;
         Installation actualInstallation;
@@ -46,12 +51,13 @@ public class ModrinthPackInstallerTest {
             Path modpackPath = tempDir.resolve("test.mrpack");
             Path resultsFile = tempDir.resolve("results");
 
-            expectedIndex = createBasicModpackIndex();
+            expectedIndex = createBasicModpackIndex(DependencyId.forge, "111");
 
             Files.write(modpackPath, createModrinthPack(expectedIndex));
 
             ModrinthPackInstaller installerUT = new ModrinthPackInstaller(
-                apiClient, fetchOptions, modpackPath, tempDir, resultsFile, false);
+                apiClient, fetchOptions, modpackPath, tempDir, resultsFile, false)
+                .modifyModLoaderPreparer(DependencyId.forge, mockPreparer);
 
             actualInstallation = installerUT.processModpack(sharedFetch).block();
         }
@@ -60,6 +66,58 @@ public class ModrinthPackInstallerTest {
         assertThat(actualInstallation.getIndex()).isNotNull();
         assertThat(actualInstallation.getIndex()).isEqualTo(expectedIndex);
         assertThat(actualInstallation.getFiles().size()).isEqualTo(0);
+
+        verify(mockPreparer)
+            .prepare(Mockito.any(), Mockito.eq("1.20.1"), Mockito.eq("111"));
+    }
+
+    public static Stream<Arguments> usesSpecificModLoader_args() {
+        return Stream.of(
+            Arguments.arguments(DependencyId.forge, "111"),
+            Arguments.arguments(DependencyId.neoforge, "222"),
+            Arguments.arguments(DependencyId.fabricLoader, "333"),
+            Arguments.arguments(DependencyId.quiltLoader, "444")
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("usesSpecificModLoader_args")
+    void usesSpecificModLoader(
+            DependencyId modLoaderId, String modLoaderVersion,
+            WireMockRuntimeInfo wm, @TempDir Path tempDir
+        ) throws IOException
+    {
+        final ModloaderPreparer mockPreparer = Mockito.mock(ModloaderPreparer.class);
+
+        Options fetchOptions = new SharedFetchArgs().options();
+        ModpackIndex expectedIndex;
+        Installation actualInstallation;
+        try (SharedFetch sharedFetch = Fetch.sharedFetch("install-modrinth-modpack", fetchOptions)) {
+            ModrinthApiClient apiClient = new ModrinthApiClient(
+                wm.getHttpBaseUrl(), sharedFetch);
+
+            Path modpackPath = tempDir.resolve("test.mrpack");
+            Path resultsFile = tempDir.resolve("results");
+
+            expectedIndex = createBasicModpackIndex(
+                modLoaderId, modLoaderVersion);
+
+            Files.write(modpackPath, createModrinthPack(expectedIndex));
+
+            ModrinthPackInstaller installerUT = new ModrinthPackInstaller(
+                apiClient, fetchOptions, modpackPath, tempDir, resultsFile, false)
+                .modifyModLoaderPreparer(modLoaderId, mockPreparer);
+
+            actualInstallation = installerUT.processModpack(sharedFetch).block();
+        }
+
+        assertThat(actualInstallation).isNotNull();
+        assertThat(actualInstallation.getIndex()).isNotNull();
+        assertThat(actualInstallation.getIndex()).isEqualTo(expectedIndex);
+        assertThat(actualInstallation.getFiles().size()).isEqualTo(0);
+
+        verify(mockPreparer)
+            .prepare(Mockito.any(), Mockito.eq("1.20.1"), Mockito.eq(modLoaderVersion));
     }
 
     @Test
@@ -67,6 +125,8 @@ public class ModrinthPackInstallerTest {
             WireMockRuntimeInfo wm, @TempDir Path tempDir
         ) throws IOException, URISyntaxException
     {
+        final ModloaderPreparer mockPreparer = Mockito.mock(ModloaderPreparer.class);
+
         Options fetchOpts = new SharedFetchArgs().options();
         try (SharedFetch sharedFetch = Fetch.sharedFetch("install-modrinth-modpack", fetchOpts)) {
             ModrinthApiClient apiClient = new ModrinthApiClient(
@@ -78,14 +138,15 @@ public class ModrinthPackInstallerTest {
             Path resultsFile = tempDir.resolve("results");
             Path modpackPath = tempDir.resolve("test.mrpack");
 
-            ModpackIndex index = createBasicModpackIndex();
+            ModpackIndex index = createBasicModpackIndex(DependencyId.forge, "111");
             index.getFiles().add(createHostedModpackFile(
                 relativeFilePath, relativeFilePath, expectedFileData, wm.getHttpBaseUrl()));
 
             Files.write(modpackPath, createModrinthPack(index));
 
             ModrinthPackInstaller installerUT = new ModrinthPackInstaller(
-                apiClient, fetchOpts, modpackPath, tempDir, resultsFile, false);
+                apiClient, fetchOpts, modpackPath, tempDir, resultsFile, false)
+                .modifyModLoaderPreparer(DependencyId.forge, mockPreparer);
 
             final Installation installation = installerUT.processModpack(sharedFetch).block();
 
@@ -97,6 +158,9 @@ public class ModrinthPackInstallerTest {
                 .isEqualTo(expectedFileData);
             assertThat(installedFiles.size()).isEqualTo(1);
             assertThat(installedFiles.get(0)).isEqualTo(expectedFilePath);
+
+            verify(mockPreparer)
+                .prepare(Mockito.any(), Mockito.eq("1.20.1"), Mockito.eq("111"));
         }
     }
 
@@ -105,6 +169,8 @@ public class ModrinthPackInstallerTest {
             WireMockRuntimeInfo wm, @TempDir Path tempDir
         ) throws IOException, URISyntaxException
     {
+        final ModloaderPreparer mockPreparer = Mockito.mock(ModloaderPreparer.class);
+
         Options fetchOpts = new SharedFetchArgs().options();
         try (SharedFetch sharedFetch = Fetch.sharedFetch("install-modrinth-modpack", fetchOpts)) {
             ModrinthApiClient apiClient = new ModrinthApiClient(
@@ -115,14 +181,15 @@ public class ModrinthPackInstallerTest {
             Path resultsFile = tempDir.resolve("results");
             Path modpackPath = tempDir.resolve("test.mrpack");
 
-            ModpackIndex index = createBasicModpackIndex();
+            ModpackIndex index = createBasicModpackIndex(DependencyId.forge, "111");
             index.getFiles().add(createHostedModpackFile(
                 "mods\\mod.jar", "mods/mod.jar", expectedFileData, wm.getHttpBaseUrl()));
 
             Files.write(modpackPath, createModrinthPack(index));
 
             ModrinthPackInstaller installerUT = new ModrinthPackInstaller(
-                apiClient, fetchOpts, modpackPath, tempDir, resultsFile, false);
+                apiClient, fetchOpts, modpackPath, tempDir, resultsFile, false)
+                .modifyModLoaderPreparer(DependencyId.forge, mockPreparer);
 
             final Installation installation = installerUT.processModpack(sharedFetch).block();
 
@@ -134,12 +201,16 @@ public class ModrinthPackInstallerTest {
                 .isEqualTo(expectedFileData);
             assertThat(installedFiles.size()).isEqualTo(1);
             assertThat(installedFiles.get(0)).isEqualTo(expectedFilePath);
+
+            verify(mockPreparer)
+                .prepare(Mockito.any(), Mockito.eq("1.20.1"), Mockito.eq("111"));
         }
     }
 
     @ParameterizedTest
     @MethodSource("handlesExcludedFiles_args")
     void handlesExcludedFiles(String modpackFilePath, String exclude, WireMockRuntimeInfo wm, @TempDir Path tempDir) throws IOException {
+        final ModloaderPreparer mockPreparer = Mockito.mock(ModloaderPreparer.class);
         Options fetchOpts = new SharedFetchArgs().options();
         try (SharedFetch sharedFetch = Fetch.sharedFetch("install-modrinth-modpack", fetchOpts)) {
             ModrinthApiClient apiClient = new ModrinthApiClient(
@@ -164,6 +235,7 @@ public class ModrinthPackInstallerTest {
                 ))
                 .setVersionId(null);
             index.getDependencies().put(DependencyId.minecraft, "1.20.1");
+            index.getDependencies().put(DependencyId.forge, "111");
 
             Files.write(modpackPath, createModrinthPack(index));
 
@@ -172,12 +244,16 @@ public class ModrinthPackInstallerTest {
                 // Exclude!
                 .setExcludeFiles(
                     Collections.singletonList(exclude)
-                );
+                )
+                .modifyModLoaderPreparer(DependencyId.forge, mockPreparer);
 
             final Installation installation = installerUT.processModpack(sharedFetch).block();
 
             assertThat(installation).isNotNull();
             assertThat(installation.getFiles()).isEmpty();
+
+            verify(mockPreparer)
+                .prepare(Mockito.any(), Mockito.eq("1.20.1"), Mockito.eq("111"));
         }
 
     }

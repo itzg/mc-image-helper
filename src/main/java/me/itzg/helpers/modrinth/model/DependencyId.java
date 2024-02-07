@@ -8,5 +8,6 @@ public enum DependencyId {
     @JsonProperty("fabric-loader")
     fabricLoader,
     @JsonProperty("quilt-loader")
-    quiltLoader
+    quiltLoader,
+    neoforge
 }

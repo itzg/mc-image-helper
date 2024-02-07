@@ -4,8 +4,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -19,6 +21,7 @@ import me.itzg.helpers.fabric.FabricLauncherInstaller;
 import me.itzg.helpers.files.IoStreams;
 import me.itzg.helpers.forge.ForgeInstaller;
 import me.itzg.helpers.forge.ForgeInstallerResolver;
+import me.itzg.helpers.forge.NeoForgeInstallerResolver;
 import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.http.SharedFetch.Options;
 import me.itzg.helpers.json.ObjectMappers;
@@ -28,6 +31,7 @@ import me.itzg.helpers.modrinth.model.EnvType;
 import me.itzg.helpers.modrinth.model.ModpackIndex;
 import me.itzg.helpers.quilt.QuiltInstaller;
 import org.jetbrains.annotations.Blocking;
+import org.jetbrains.annotations.VisibleForTesting;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -43,6 +47,20 @@ public class ModrinthPackInstaller {
 
     @Setter
     private List<String> excludeFiles;
+
+    @FunctionalInterface
+    interface ModloaderPreparer {
+
+        void prepare(SharedFetch sharedFetch, String minecraftVersion, String version);
+    }
+
+    private final Map<DependencyId, ModloaderPreparer> modloaderPreparers = new HashMap<>();
+    {
+        modloaderPreparers.put(DependencyId.forge, this::prepareForge);
+        modloaderPreparers.put(DependencyId.neoforge, this::prepareNeoForge);
+        modloaderPreparers.put(DependencyId.fabricLoader, this::prepareFabric);
+        modloaderPreparers.put(DependencyId.quiltLoader, this::prepareQuilt);
+    }
 
     public ModrinthPackInstaller(
             ModrinthApiClient apiClient, Options sharedFetchOpts,
@@ -209,44 +227,68 @@ public class ModrinthPackInstaller {
                 "Modpack dependencies missing minecraft version: " + dependencies);
         }
 
-        final String forgeVersion = dependencies.get(DependencyId.forge);
-        if (forgeVersion != null) {
-            new ForgeInstaller(
-                new ForgeInstallerResolver(sharedFetch, minecraftVersion, forgeVersion)
-            )
-                .install(
-                    this.outputDirectory,
-                    this.resultsFile,
-                    this.forceModloaderReinstall,
-                    "Forge"
-                );
-            return;
-        }
-
-        final String fabricVersion = dependencies.get(DependencyId.fabricLoader);
-        if (fabricVersion != null) {
-            new FabricLauncherInstaller(this.outputDirectory)
-                .setResultsFile(this.resultsFile)
-                .installUsingVersions(
-                    minecraftVersion,
-                    fabricVersion,
-                    null
-                );
-            return;
-        }
-
-        final String quiltVersion = dependencies.get(DependencyId.quiltLoader);
-        if (quiltVersion != null) {
-            try (QuiltInstaller installer =
-                new QuiltInstaller(QuiltInstaller.DEFAULT_REPO_URL,
-                    this.sharedFetchOpts,
-                    this.outputDirectory,
-                    minecraftVersion)
-                .setResultsFile(this.resultsFile)) {
-
-                installer.installWithVersion(null, quiltVersion);
+        for (final Entry<DependencyId, ModloaderPreparer> entry : modloaderPreparers.entrySet()) {
+            final String version = dependencies.get(entry.getKey());
+            if (version != null) {
+                entry.getValue().prepare(sharedFetch, minecraftVersion, version);
+                return;
             }
         }
+
+        throw new GenericException("Unsupported or missing modloader in dependencies: " + dependencies);
+    }
+
+    private void prepareQuilt(SharedFetch sharedFetch, String minecraftVersion, String quiltVersion) {
+        try (QuiltInstaller installer =
+            new QuiltInstaller(QuiltInstaller.DEFAULT_REPO_URL,
+                this.sharedFetchOpts,
+                this.outputDirectory,
+                minecraftVersion
+            )
+            .setResultsFile(this.resultsFile)) {
+
+            installer.installWithVersion(null, quiltVersion);
+        }
+    }
+
+    @VisibleForTesting
+    ModrinthPackInstaller modifyModLoaderPreparer(DependencyId modLoaderId, ModloaderPreparer preparer) {
+        modloaderPreparers.put(modLoaderId, preparer);
+        return this;
+    }
+
+    private void prepareFabric(SharedFetch sharedFetch, String minecraftVersion, String fabricVersion) {
+        new FabricLauncherInstaller(this.outputDirectory)
+            .setResultsFile(this.resultsFile)
+            .installUsingVersions(
+                minecraftVersion,
+                fabricVersion,
+                null
+            );
+    }
+
+    private void prepareForge(SharedFetch sharedFetch, String minecraftVersion, String version) {
+        new ForgeInstaller(
+            new ForgeInstallerResolver(sharedFetch, minecraftVersion, version)
+        )
+            .install(
+                this.outputDirectory,
+                this.resultsFile,
+                this.forceModloaderReinstall,
+                "Forge"
+            );
+    }
+
+    private void prepareNeoForge(SharedFetch sharedFetch, String minecraftVersion, String version) {
+        new ForgeInstaller(
+            new NeoForgeInstallerResolver(sharedFetch, minecraftVersion, version)
+        )
+            .install(
+                this.outputDirectory,
+                this.resultsFile,
+                this.forceModloaderReinstall,
+                "NeoForge"
+            );
     }
 
 }
