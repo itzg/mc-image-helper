@@ -42,6 +42,7 @@ class ManageUsersCommandTest {
             )
                 .execute(
                     "--mojang-api-base-url", wmInfo.getHttpBaseUrl(),
+                    "--user-api-provider", "mojang",
                     "--type", "JAVA_WHITELIST",
                     "--output-directory", tempDir.toString(),
                     "user1", "user2"
@@ -86,6 +87,7 @@ class ManageUsersCommandTest {
             )
                 .execute(
                     "--mojang-api-base-url", wmInfo.getHttpBaseUrl(),
+                    "--user-api-provider", "mojang",
                     "--type", "JAVA_WHITELIST",
                     "--output-directory", tempDir.toString(),
                     "user1", "user2"
@@ -131,6 +133,7 @@ class ManageUsersCommandTest {
             )
                 .execute(
                     "--mojang-api-base-url", wmInfo.getHttpBaseUrl(),
+                    "--user-api-provider", "mojang",
                     "--type", "JAVA_WHITELIST",
                     "--output-directory", tempDir.toString()
                 );
@@ -164,6 +167,7 @@ class ManageUsersCommandTest {
             )
                 .execute(
                     "--mojang-api-base-url", wmInfo.getHttpBaseUrl(),
+                    "--user-api-provider", "mojang",
                     "--type", "JAVA_WHITELIST",
                     "--output-directory", tempDir.toString(),
                     "user1"
@@ -205,6 +209,7 @@ class ManageUsersCommandTest {
             )
                 .execute(
                     "--mojang-api-base-url", wmInfo.getHttpBaseUrl(),
+                    "--user-api-provider", "mojang",
                     "--type", "JAVA_WHITELIST",
                     "--output-directory", tempDir.toString(),
                     "user1"
@@ -246,6 +251,7 @@ class ManageUsersCommandTest {
             )
                 .execute(
                     "--mojang-api-base-url", wmInfo.getHttpBaseUrl(),
+                    "--user-api-provider", "mojang",
                     "--type", "JAVA_WHITELIST",
                     "--output-directory", tempDir.toString(),
                     "--existing", "MERGE",
@@ -292,6 +298,7 @@ class ManageUsersCommandTest {
             )
                 .execute(
                     "--mojang-api-base-url", wmInfo.getHttpBaseUrl(),
+                    "--user-api-provider", "mojang",
                     "--type", "JAVA_WHITELIST",
                     "--output-directory", tempDir.toString(),
                     "--existing", "SKIP",
@@ -324,6 +331,7 @@ class ManageUsersCommandTest {
             )
                 .execute(
                     "--mojang-api-base-url", wmInfo.getHttpBaseUrl(),
+                    "--user-api-provider", "mojang",
                     "--type", "JAVA_WHITELIST",
                     "--output-directory", tempDir.toString(),
                     USER1_UUID, USER2_ID
@@ -368,6 +376,7 @@ class ManageUsersCommandTest {
             )
                 .execute(
                     "--mojang-api-base-url", wmInfo.getHttpBaseUrl(),
+                    "--user-api-provider", "mojang",
                     "--type", "JAVA_WHITELIST",
                     "--output-directory", tempDir.toString(),
                     // mix of ID and UUIDs
@@ -471,8 +480,9 @@ class ManageUsersCommandTest {
 
     @Nested
     public class ops {
-        @Test
-        void givenNames(WireMockRuntimeInfo wmInfo) {
+        @ParameterizedTest
+        @EnumSource(UserApiProvider.class)
+        void givenNames(UserApiProvider apiProvider, WireMockRuntimeInfo wmInfo) {
             setupUserStubs();
 
             final int exitCode = new CommandLine(
@@ -480,6 +490,8 @@ class ManageUsersCommandTest {
             )
                 .execute(
                     "--mojang-api-base-url", wmInfo.getHttpBaseUrl(),
+                    "--playerdb-api-base-url", wmInfo.getHttpBaseUrl(),
+                    "--user-api-provider", apiProvider.name(),
                     "--type", "JAVA_OPS",
                     "--output-directory", tempDir.toString(),
                     "user1", "user2"
@@ -507,8 +519,9 @@ class ManageUsersCommandTest {
                 );
         }
 
-        @Test
-        void givenNamesWithExtraSpace(WireMockRuntimeInfo wmInfo) {
+        @ParameterizedTest
+        @EnumSource(UserApiProvider.class)
+        void givenNamesWithExtraSpace(UserApiProvider apiProvider, WireMockRuntimeInfo wmInfo) {
             setupUserStubs();
 
             final int exitCode = new CommandLine(
@@ -516,6 +529,8 @@ class ManageUsersCommandTest {
             )
                 .execute(
                     "--mojang-api-base-url", wmInfo.getHttpBaseUrl(),
+                    "--playerdb-api-base-url", wmInfo.getHttpBaseUrl(),
+                    "--user-api-provider", apiProvider.name(),
                     "--type", "JAVA_OPS",
                     "--output-directory", tempDir.toString(),
                     " user1"
@@ -558,6 +573,7 @@ class ManageUsersCommandTest {
             )
                 .execute(
                     "--mojang-api-base-url", wmInfo.getHttpBaseUrl(),
+                    "--user-api-provider", "mojang",
                     "--type", "JAVA_OPS",
                     "--output-directory", tempDir.toString(),
                     "user1", "user2"
@@ -607,6 +623,7 @@ class ManageUsersCommandTest {
             )
                 .execute(
                     "--mojang-api-base-url", wmInfo.getHttpBaseUrl(),
+                    "--user-api-provider", "mojang",
                     "--type", type.name(),
                     "--output-directory", tempDir.toString(),
                     "--input-is-file",
@@ -642,6 +659,7 @@ class ManageUsersCommandTest {
             )
                 .execute(
                     "--mojang-api-base-url", wmInfo.getHttpBaseUrl(),
+                    "--user-api-provider", "mojang",
                     "--type", type.name(),
                     "--output-directory", tempDir.toString(),
                     "--input-is-file",
@@ -674,6 +692,7 @@ class ManageUsersCommandTest {
             )
                 .execute(
                     "--mojang-api-base-url", wmInfo.getHttpBaseUrl(),
+                    "--user-api-provider", "mojang",
                     "--type", type.name(),
                     "--output-directory", tempDir.toString(),
                     "--input-is-file",
@@ -703,6 +722,7 @@ class ManageUsersCommandTest {
             )
                 .execute(
                     "--mojang-api-base-url", wmInfo.getHttpBaseUrl(),
+                    "--user-api-provider", "mojang",
                     "--type", type.name(),
                     "--output-directory", tempDir.toString(),
                     "--input-is-file",
@@ -720,23 +740,59 @@ class ManageUsersCommandTest {
     }
 
     private static void setupUserStubs() {
-        stubFor(get("/users/profiles/minecraft/user1")
+        stubMojangUser("user1", USER1_ID);
+        stubMojangUser("user2", USER2_ID);
+
+        stubPlayerdbUser("user1", USER1_UUID, USER1_ID);
+        stubPlayerdbUser("user2", USER2_UUID, USER2_ID);
+    }
+
+    private static void stubMojangUser(String username, String id) {
+        stubFor(get("/users/profiles/minecraft/"
+            + username)
             .willReturn(
                 aResponse()
                     .withHeader("Content-Type", "application/json")
                     .withBody("{\n"
-                        + "  \"id\": \"" + USER1_ID + "\",\n"
-                        + "  \"name\": \"user1\"\n"
+                        + "  \"id\": \"" + id + "\",\n"
+                        + "  \"name\": \""
+                        + username
+                        + "\"\n"
                         + "}")
             )
         );
-        stubFor(get("/users/profiles/minecraft/user2")
+    }
+
+    private static void stubPlayerdbUser(String username, String uuid, String id) {
+        stubFor(get("/api/player/minecraft/"
+            + username)
             .willReturn(
                 aResponse()
+                    .withTransformers("response-template")
                     .withHeader("Content-Type", "application/json")
                     .withBody("{\n"
-                        + "  \"id\": \"" + USER2_ID + "\",\n"
-                        + "  \"name\": \"user2\"\n"
+                        + "  \"code\": \"player.found\",\n"
+                        + "  \"message\": \"Successfully found player by given ID.\",\n"
+                        + "  \"data\": {\n"
+                        + "    \"player\": {\n"
+                        + "      \"meta\": {\n"
+                        + "        \"cached_at\": 1707337378\n"
+                        + "      },\n"
+                        + "      \"username\": \"" + username + "\",\n"
+                        + "      \"id\": \"" + uuid + "\",\n"
+                        + "      \"raw_id\": \"" + id + "\",\n"
+                        + "      \"properties\": [\n"
+                        + "        {\n"
+                        + "          \"name\": \"textures\",\n"
+                        + "          \"value\": \"ewogICJ0aW1lc3RhbXAiIDogMTcwNzI5NjczMDM3NywKICAicHJvZmlsZUlkIiA6ICIwNTkxMDMwODIyOWQ0NmJiYTQ2NmU1NTc0ZGJhNDkwYyIsCiAgInByb2ZpbGVOYW1lIiA6ICJVc2VyMSIsCiAgInRleHR1cmVzIiA6IHsKICAgICJTS0lOIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS9kOThkZGM5ZjM3NDA4YmNjMTk5YTNhYzA2Mzc3NGU1ODcwZjc3Y2NjYjJkNGMwODRmMjc3YTkxYTM3ZDU1YzIyIgogICAgfQogIH0KfQ==\"\n"
+                        + "        }\n"
+                        + "      ],\n"
+                        + "      \"name_history\": [\n"
+                        + "\n"
+                        + "      ]\n"
+                        + "    }\n"
+                        + "  },\n"
+                        + "  \"success\": true\n"
                         + "}")
             )
         );
