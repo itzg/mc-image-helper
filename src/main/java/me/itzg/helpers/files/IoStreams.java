@@ -3,8 +3,8 @@ package me.itzg.helpers.files;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
-import java.util.zip.ZipFile;
-import me.itzg.helpers.errors.GenericException;
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -22,18 +22,16 @@ public class IoStreams {
      */
     @Nullable
     public static <T> T readFileFromZip(Path zipFile, String entryName, EntryReader<T> entryReader) throws IOException {
-        try (ZipFile zipFileReader = new ZipFile(zipFile.toFile())) {
-            return zipFileReader.stream()
-                .filter(zipEntry -> zipEntry.getName().equals(entryName))
-                .findFirst()
-                .map(zipEntry -> {
-                    try {
-                        return entryReader.read(zipFileReader.getInputStream(zipEntry));
-                    } catch (IOException e) {
-                        throw new GenericException("Getting entry input stream from zip file", e);
-                    }
-                })
-                .orElse(null);
+        try (ZipFile zip = new ZipFile(zipFile)) {
+            final ZipArchiveEntry entry = zip.getEntry(entryName);
+            if (entry != null) {
+                try (InputStream entryStream = zip.getInputStream(entry)) {
+                    return entryReader.read(entryStream);
+                }
+            }
+            else {
+                return null;
+            }
         }
     }
 }

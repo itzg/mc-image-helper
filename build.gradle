@@ -104,6 +104,10 @@ dependencies {
     implementation 'org.apache.cxf:cxf-core:[3.5.6,3.6.0)'
     implementation 'org.jetbrains:annotations:24.1.0'
 
+    // https://commons.apache.org/proper/commons-compress/zip.html
+    // For IMPLODE compression used by some CurseForge modpacks
+    implementation 'org.apache.commons:commons-compress:1.25.0'
+
     testImplementation 'org.assertj:assertj-core:3.25.3'
     // https://github.com/webcompere/model-assert
     // for json assertions

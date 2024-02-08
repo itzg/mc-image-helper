@@ -1,15 +1,17 @@
 package me.itzg.helpers.curseforge;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.List;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.files.AntPathMatcher;
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipFile;
 
 @Slf4j
 public class OverridesFromZipApplier implements OverridesApplier {
@@ -58,9 +60,12 @@ public class OverridesFromZipApplier implements OverridesApplier {
         final int overridesPrefixLen = overridesDirPrefix.length();
 
         final List<Path> overrides = new ArrayList<>();
-        try (ZipInputStream zip = new ZipInputStream(Files.newInputStream(modpackZip))) {
-            ZipEntry entry;
-            while ((entry = zip.getNextEntry()) != null) {
+        try (ZipFile zip = new ZipFile(modpackZip)) {
+
+            final Enumeration<ZipArchiveEntry> entries = zip.getEntries();
+            while (entries.hasMoreElements()) {
+                final ZipArchiveEntry entry = entries.nextElement();
+
                 if (entry.getName().startsWith(overridesDirPrefix)) {
                     if (!entry.isDirectory()) {
                         if (log.isTraceEnabled()) {
@@ -90,7 +95,9 @@ public class OverridesFromZipApplier implements OverridesApplier {
                             log.trace("Applying override {}", subpath);
                             // zip files don't always list the directories before the files, so just create-as-needed
                             Files.createDirectories(outPath.getParent());
-                            Files.copy(zip, outPath, StandardCopyOption.REPLACE_EXISTING);
+                            try (InputStream entryStream = zip.getInputStream(entry)) {
+                                Files.copy(entryStream, outPath, StandardCopyOption.REPLACE_EXISTING);
+                            }
                         }
                         else {
                             log.trace("Skipping override={} since the file already existed", subpath);
@@ -115,15 +122,17 @@ public class OverridesFromZipApplier implements OverridesApplier {
      * @return if present, the subpath to a world/level directory with the overrides prefix removed otherwise null
      */
     private String findLevelEntryInOverrides(Path modpackZip, String overridesDir) throws IOException {
-        try (ZipInputStream zip = new ZipInputStream(Files.newInputStream(modpackZip))) {
-            ZipEntry entry;
-            while ((entry = zip.getNextEntry()) != null) {
+        try (ZipFile zipFile = new ZipFile(modpackZip)) {
+            final Enumeration<ZipArchiveEntry> entries = zipFile.getEntries();
+            while (entries.hasMoreElements()) {
+                final ZipArchiveEntry entry = entries.nextElement();
                 final String name = entry.getName();
                 if (!entry.isDirectory() && name.startsWith(overridesDir + "/") && name.endsWith(LEVEL_DAT_SUFFIX)) {
                     return name.substring(overridesDir.length() + 1, name.length() - LEVEL_DAT_SUFFIX_LEN);
                 }
             }
         }
+
         return null;
     }
 
