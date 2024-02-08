@@ -15,19 +15,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidParameterException;
-import me.itzg.helpers.http.FailedRequestException;
 import me.itzg.helpers.http.Fetch;
 import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.http.SharedFetchArgs;
-import me.itzg.helpers.http.UriBuilder;
 import me.itzg.helpers.http.Uris;
 import me.itzg.helpers.json.ObjectMappers;
-import me.itzg.helpers.users.ext.MojangProfile;
 import me.itzg.helpers.users.model.JavaOp;
 import me.itzg.helpers.users.model.JavaUser;
 import org.apache.maven.artifact.versioning.ComparableVersion;
@@ -41,8 +36,6 @@ import picocli.CommandLine.Parameters;
 @Slf4j
 public class ManageUsersCommand implements Callable<Integer> {
 
-    private static final Pattern ID_OR_UUID = Pattern.compile("(?<nonDashed>[a-f0-9]{32})"
-        + "|(?<dashed>[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})");
     private static final TypeReference<List<JavaOp>> LIST_OF_JAVA_OP = new TypeReference<List<JavaOp>>() {
     };
     private static final TypeReference<List<JavaUser>> LIST_OF_JAVA_USER = new TypeReference<List<JavaUser>>() {
@@ -69,8 +62,16 @@ public class ManageUsersCommand implements Callable<Integer> {
     @Option(names = {"-f", "--input-is-file"})
     boolean inputIsFile;
 
-    @Option(names = "--mojang-api-base-url", defaultValue = "${env:MOJANG_API_BASE_URL:-https://api.mojang.com/}")
+    @Option(names = "--mojang-api-base-url", defaultValue = "${env:MOJANG_API_BASE_URL:-https://api.mojang.com}")
     String mojangApiBaseUrl;
+
+    @Option(names = "--playerdb-api-base-url", defaultValue = "${env:PLAYERDB_API_BASE_URL:-https://playerdb.co}")
+    String playerdbApiBaseUrl;
+
+    @Option(names = "--user-api-provider", defaultValue = "${env:USER_API_PROVIDER:-playerdb}",
+        description = "Allowed: ${COMPLETION-CANDIDATES}"
+    )
+    UserApiProvider userApiProvider;
 
     @ArgGroup(exclusive = false)
     SharedFetchArgs sharedFetchArgs = new SharedFetchArgs();
@@ -150,8 +151,7 @@ public class ManageUsersCommand implements Callable<Integer> {
         return false;
     }
 
-    private List<? extends JavaUser> reconcile(SharedFetch sharedFetch, List<String> inputs, List<? extends JavaUser> existing)
-        throws IOException {
+    private List<? extends JavaUser> reconcile(SharedFetch sharedFetch, List<String> inputs, List<? extends JavaUser> existing) {
 
         final List<JavaUser> reconciled;
         if (existingFileBehavior == ExistingFileBehavior.MERGE) {
@@ -196,92 +196,65 @@ public class ManageUsersCommand implements Callable<Integer> {
         return false;
     }
 
-    private JavaUser resolveJavaUserId(SharedFetch sharedFetch, List<? extends JavaUser> existing, String input)
-        throws IOException {
-        final Matcher uuidMatcher = ID_OR_UUID.matcher(input);
-        if (uuidMatcher.matches()) {
-            final String dashed = uuidMatcher.group("dashed");
-            final String uuid = dashed != null ? dashed :
-                addDashesToId(uuidMatcher.group("nonDashed"));
+    private JavaUser resolveJavaUserId(SharedFetch sharedFetch, List<? extends JavaUser> existing, String input) {
 
-            for (final JavaUser existingUser : existing) {
-                if (existingUser.getUuid().equalsIgnoreCase(uuid)) {
-                    log.debug("Resolved '{}' from existing user entry by UUID: {}", input, existingUser);
-                    return existingUser;
-                }
-            }
-
-            log.debug("Resolved '{}' into new user entry", input);
-            return JavaUser.builder()
-                .uuid(uuid)
-                // username needs to be present, but content doesn't matter
-                .name("")
-                .build();
-        }
-
-        // ...or username
-        for (final JavaUser existingUser : existing) {
-            if (existingUser.getName().equalsIgnoreCase(input)) {
-                log.debug("Resolved '{}' from existing user entry by name: {}", input, existingUser);
-                return existingUser;
-            }
-        }
-
-        final Path userCacheFile = outputDirectory.resolve("usercache.json");
-        if (Files.exists(userCacheFile)) {
-            final List<JavaUser> userCache = objectMapper.readValue(userCacheFile.toFile(), LIST_OF_JAVA_USER);
-            for (final JavaUser existingUser : userCache) {
-                if (existingUser.getName().equalsIgnoreCase(input)) {
-                    log.debug("Resolved '{}' from user cache by name: {}", input, existingUser);
-                    return existingUser;
-                }
-            }
-        }
-
-        return resolveUserFromApi(sharedFetch, input);
-    }
-
-    private JavaUser resolveUserFromApi(SharedFetch sharedFetch, String input) {
-        log.debug("Resolving user={} from Mojang API at {}", input, mojangApiBaseUrl);
-        final UriBuilder uriBuilder = UriBuilder.withBaseUrl(mojangApiBaseUrl);
-        final MojangProfile profile = sharedFetch.fetch(
-                uriBuilder.resolve("/users/profiles/minecraft/{username}", input)
-            )
-            .toObject(MojangProfile.class)
-            .assemble()
-            .onErrorMap(e -> {
-                if (e instanceof FailedRequestException) {
-                    if (((FailedRequestException) e).getStatusCode() == 404) {
-                        return new InvalidParameterException("Could not resolve username from Mojang: " + input);
+        return UuidQuirks.ifIdOrUuid(input)
+            .map(uuid -> {
+                for (final JavaUser existingUser : existing) {
+                    if (existingUser.getUuid().equalsIgnoreCase(uuid)) {
+                        log.debug("Resolved '{}' from existing user entry by UUID: {}", input, existingUser);
+                        return existingUser;
                     }
                 }
-                return e;
+
+                log.debug("Resolved '{}' into new user entry", input);
+                return JavaUser.builder()
+                    .uuid(uuid)
+                    // username needs to be present, but content doesn't matter
+                    .name("")
+                    .build();
+
             })
-            .block();
+            .orElseGet(() -> {
 
-        if (profile == null) {
-            throw new GenericException("Profile was not available from Mojang for " + input);
-        }
+                // ...or username
+                for (final JavaUser existingUser : existing) {
+                    if (existingUser.getName().equalsIgnoreCase(input)) {
+                        log.debug("Resolved '{}' from existing user entry by name: {}", input, existingUser);
+                        return existingUser;
+                    }
+                }
 
-        log.debug("Resolved '{}' from Mojang profile lookup: {}", input, profile);
-        return JavaUser.builder()
-            .name(profile.getName())
-            .uuid(addDashesToId(profile.getId()))
-            .build();
-    }
+                final Path userCacheFile = outputDirectory.resolve("usercache.json");
+                if (Files.exists(userCacheFile)) {
+                    try {
+                        final List<JavaUser> userCache = objectMapper.readValue(userCacheFile.toFile(), LIST_OF_JAVA_USER);
+                        for (final JavaUser existingUser : userCache) {
+                            if (existingUser.getName().equalsIgnoreCase(input)) {
+                                log.debug("Resolved '{}' from user cache by name: {}", input, existingUser);
+                                return existingUser;
+                            }
+                        }
+                    } catch (IOException e) {
+                        log.error("Failed to parse usercache.json", e);
+                    }
+                }
 
-    private static String addDashesToId(String nonDashed) {
-        if (nonDashed.length() != 32) {
-            throw new IllegalArgumentException("Input needs to be 32 characters: " + nonDashed);
-        }
+                final UserApi userApi;
+                switch (userApiProvider) {
+                    case mojang:
+                        userApi = new MojangUserApi(sharedFetch, mojangApiBaseUrl);
+                        break;
+                    case playerdb:
+                        userApi = new PlayerdbUserApi(sharedFetch, playerdbApiBaseUrl);
+                        break;
+                    default:
+                        throw new GenericException("User API provider was not specified");
+                }
+                return userApi.resolveUser(input);
 
-        return String.join("-",
-            nonDashed.substring(0, 8),
-            nonDashed.substring(8, 12),
-            nonDashed.substring(12, 16),
-            nonDashed.substring(16, 20),
-            nonDashed.substring(20, 32)
-        );
+            });
+
     }
 
     private List<? extends JavaUser> loadExistingJavaJson(Path userFile) throws IOException {
@@ -311,8 +284,7 @@ public class ManageUsersCommand implements Callable<Integer> {
 
     private void verifyNotUuids(List<String> inputs) {
         for (final String input : inputs) {
-            final Matcher m = ID_OR_UUID.matcher(input);
-            if (m.matches()) {
+            if (UuidQuirks.isIdOrUuid(input)) {
                 throw new InvalidParameterException("UUID cannot be provided: " + input);
             }
         }
