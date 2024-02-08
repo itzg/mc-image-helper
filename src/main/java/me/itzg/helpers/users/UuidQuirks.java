@@ -30,18 +30,17 @@ public class UuidQuirks {
         return ID_OR_UUID.matcher(input).matches();
     }
 
-    @FunctionalInterface
-    public interface UuidHandler<T> {
-
-        T handle(String uuid);
-    }
-
-    public static <T> Optional<T> ifIdOrUuid(String input, UuidHandler<T> handler) {
+    /**
+     *
+     * @param input ID (no dashes), UUID, or something else, like a username
+     * @return if input is a valid ID/UUID, populated and normalized UUID string
+     */
+    public static Optional<String> ifIdOrUuid(String input) {
         final Matcher uuidMatcher = UuidQuirks.ID_OR_UUID.matcher(input);
         if (uuidMatcher.matches()) {
             final String uuid = UuidQuirks.normalizeToUuid(uuidMatcher);
 
-            return Optional.of(handler.handle(uuid));
+            return Optional.of(uuid);
         }
         else {
             return Optional.empty();

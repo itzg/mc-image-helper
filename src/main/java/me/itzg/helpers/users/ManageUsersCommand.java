@@ -198,7 +198,8 @@ public class ManageUsersCommand implements Callable<Integer> {
 
     private JavaUser resolveJavaUserId(SharedFetch sharedFetch, List<? extends JavaUser> existing, String input) {
 
-        return UuidQuirks.ifIdOrUuid(input, uuid -> {
+        return UuidQuirks.ifIdOrUuid(input)
+            .map(uuid -> {
                 for (final JavaUser existingUser : existing) {
                     if (existingUser.getUuid().equalsIgnoreCase(uuid)) {
                         log.debug("Resolved '{}' from existing user entry by UUID: {}", input, existingUser);
