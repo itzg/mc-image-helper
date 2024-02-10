@@ -14,6 +14,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import me.itzg.helpers.McImageHelper;
 import me.itzg.helpers.files.ResultsFileWriter;
 import me.itzg.helpers.files.TabularOutput;
 import me.itzg.helpers.http.PathOrUri;
@@ -126,6 +127,12 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
     @Option(names = "--force-reinstall-modloader")
     boolean forceReinstallModloader;
 
+    @Option(names = "--ignore-missing-files",
+        split = McImageHelper.SPLIT_COMMA_NL, splitSynopsisLabel = McImageHelper.SPLIT_SYNOPSIS_COMMA_NL,
+        description = "These files will be ignored when evaluating if the modpack is up to date"
+    )
+    List<String> ignoreMissingFiles;
+
     @Option(names = "--set-level-from",
         description = "When WORLD_FILE, a world file included the modpack will be unzipped into a folder under 'saves' and referenced as 'LEVEL' in the results file."
             + "\nWhen OVERRIDES and the overrides contains a world save directory (contains level.dat), then that directory will be referenced as 'LEVEL' in the results file."
@@ -194,6 +201,7 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
             .setExcludeIncludes(excludeIncludes)
             .setForceSynchronize(forceSynchronize)
             .setForceReinstallModloader(forceReinstallModloader)
+            .setIgnoreMissingFiles(ignoreMissingFiles)
             .setLevelFrom(levelFrom)
             .setOverridesSkipExisting(overridesSkipExisting)
             .setOverridesExclusions(overridesExclusions)

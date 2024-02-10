@@ -111,6 +111,9 @@ public class CurseForgeInstaller {
     @Getter @Setter
     private boolean forceReinstallModloader;
 
+    @Getter @Setter
+    private List<String> ignoreMissingFiles;
+
     /**
      * @throws MissingModsException if any mods need to be manually downloaded
      */
@@ -251,12 +254,11 @@ public class CurseForgeInstaller {
         final int pseudoModId = Math.abs(modpackName.hashCode());
         final int pseudoFileId = Math.abs(hashModpackFileReferences(modpackManifest.getFiles()));
 
-        if (matchesPreviousInstall(context, pseudoModId, pseudoFileId)
-        ) {
+        if (matchesPreviousInstall(context, pseudoModId, pseudoFileId)) {
             if (forceSynchronize) {
                 log.info("Requested force synchronize of {}", modpackName);
             }
-            else if (Manifests.allFilesPresent(outputDir, context.prevInstallManifest)) {
+            else if (Manifests.allFilesPresent(outputDir, context.prevInstallManifest, ignoreMissingFiles)) {
                 log.info("Requested CurseForge modpack {} is already installed", modpackName);
 
                 finalizeExistingInstallation(context.prevInstallManifest);
@@ -264,7 +266,9 @@ public class CurseForgeInstaller {
                 return;
             }
             else {
-                log.warn("Some files from modpack file {} were missing. Proceeding with a re-install", modpackName);
+                log.warn("Re-installing due to missing files from modpack: {}",
+                    Manifests.missingFiles(outputDir, context.prevInstallManifest)
+                );
             }
         }
 
@@ -320,7 +324,7 @@ public class CurseForgeInstaller {
             if (forceSynchronize) {
                 log.info("Requested force synchronize of {}", modFile.getDisplayName());
             }
-            else if (Manifests.allFilesPresent(outputDir, context.prevInstallManifest)) {
+            else if (Manifests.allFilesPresent(outputDir, context.prevInstallManifest, ignoreMissingFiles)) {
                 log.info("Requested CurseForge modpack {} is already installed for {}",
                     modFile.getDisplayName(), mod.getName()
                 );
@@ -330,7 +334,9 @@ public class CurseForgeInstaller {
                 return;
             }
             else {
-                log.warn("Some files from modpack file {} were missing. Proceeding with a re-install", modFile.getFileName());
+                log.warn("Re-installing due to missing files from modpack: {}",
+                    Manifests.missingFiles(outputDir, context.prevInstallManifest)
+                );
             }
         }
 
@@ -348,7 +354,7 @@ public class CurseForgeInstaller {
             }
         }
         else {
-            modpackZip = context.cfApi.downloadTemp(modFile, "zip",
+            modpackZip = context.cfApi.downloadTemp(modFile, ".zip",
                     (status, uri, file) ->
                         log.debug("Modpack file retrieval: status={} uri={} file={}", status, uri, file)
                 )

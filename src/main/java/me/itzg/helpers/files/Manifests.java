@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.json.ObjectMappers;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
 @Slf4j
@@ -96,6 +97,12 @@ public class Manifests {
             .collect(Collectors.toList());
     }
 
+    public static List<String> missingFiles(Path basePath, BaseManifest manifest) {
+        return manifest.getFiles().stream()
+            .filter(p -> !Files.exists(basePath.resolve(p)))
+            .collect(Collectors.toList());
+    }
+
     public static boolean allFilesPresent(Path basePath, BaseManifest manifest) {
         return allFilesPresent(basePath, manifest, null);
     }
@@ -103,7 +110,7 @@ public class Manifests {
     /**
      * @param ignoreMissingFiles relative paths of files to ignore if they're missing
      */
-    public static boolean allFilesPresent(Path basePath, BaseManifest manifest, List<String> ignoreMissingFiles) {
+    public static boolean allFilesPresent(Path basePath, BaseManifest manifest, @Nullable List<String> ignoreMissingFiles) {
         return manifest.getFiles().stream()
             .allMatch(p ->
                     (ignoreMissingFiles != null && ignoreMissingFiles.contains(p))
