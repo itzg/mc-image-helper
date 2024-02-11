@@ -21,6 +21,7 @@ import me.itzg.helpers.find.FindCommand;
 import me.itzg.helpers.forge.InstallForgeCommand;
 import me.itzg.helpers.forge.InstallNeoForgeCommand;
 import me.itzg.helpers.get.GetCommand;
+import me.itzg.helpers.github.GithubCommands;
 import me.itzg.helpers.modrinth.InstallModrinthModpackCommand;
 import me.itzg.helpers.modrinth.ModrinthCommand;
 import me.itzg.helpers.mvn.MavenDownloadCommand;
@@ -59,6 +60,7 @@ import picocli.CommandLine.Option;
         CurseForgeFilesCommand.class,
         FindCommand.class,
         GetCommand.class,
+        GithubCommands.class,
         HashCommand.class,
         InstallCurseForgeCommand.class,
         InstallFabricLoaderCommand.class,
