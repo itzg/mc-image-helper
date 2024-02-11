@@ -1,0 +1,13 @@
+{
+  "name": "app v1.3.0",
+  "assets": [
+    {
+      "name": "app-1.3.0-sources.jar",
+      "browser_download_url": "{{request.baseUrl}}/invalid.jar"
+    },
+    {
+      "name": "app-1.3.0.jar",
+      "browser_download_url": "{{request.baseUrl}}/download/{{parameters.filename}}"
+    }
+  ]
+}
