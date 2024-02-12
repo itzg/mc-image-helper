@@ -7,6 +7,7 @@ public enum Loader {
     fabric("mods", null),
     quilt("mods", fabric),
     forge("mods", null),
+    neoforge("mods", forge),
     bukkit("plugins", null),
     spigot("plugins", null),
     paper("plugins", spigot),

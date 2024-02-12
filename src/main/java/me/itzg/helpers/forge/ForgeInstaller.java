@@ -113,7 +113,8 @@ public class ForgeInstaller {
             try {
                 populateResultsFile(
                     resultsFile, (newManifest != null ? newManifest : prevManifest).getServerEntry(),
-                    resolved.minecraft
+                    resolved.minecraft,
+                    variant
                 );
             } catch (IOException e) {
                 throw new RuntimeException("Failed to populate results file", e);
@@ -151,14 +152,14 @@ public class ForgeInstaller {
         return Manifests.load(outputDir, variant, ForgeManifest.class);
     }
 
-    private void populateResultsFile(Path resultsFile, String serverEntry, String minecraftVersion) throws IOException {
+    private void populateResultsFile(Path resultsFile, String serverEntry, String minecraftVersion, String variant) throws IOException {
         log.debug("Populating results file {}", resultsFile);
 
         try (ResultsFileWriter results = new ResultsFileWriter(resultsFile)) {
             results.write("SERVER", serverEntry);
             results.write("FAMILY", "FORGE");
             results.writeVersion(minecraftVersion);
-            results.writeType("FORGE");
+            results.writeType(variant.toUpperCase());
         }
     }
 
