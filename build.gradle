@@ -98,7 +98,7 @@ dependencies {
     implementation 'org.apache.httpcomponents.client5:httpclient5:5.3.1'
     implementation 'io.projectreactor.netty:reactor-netty-http:1.1.15'
     implementation 'org.apache.maven:maven-artifact:3.9.6'
-    implementation 'commons-codec:commons-codec:1.16.0'
+    implementation 'commons-codec:commons-codec:1.16.1'
     // for RFC5987 parsing of content-disposition filename*
     // 3.5.x is last of Java8 compatible: https://cxf.apache.org/download.html
     implementation 'org.apache.cxf:cxf-core:[3.5.6,3.6.0)'
