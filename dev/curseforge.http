@@ -15,7 +15,11 @@ GET https://api.curseforge.com/v1/mods/search?gameId=432&slug=projekt-arcturus&c
 x-api-key: {{cfApiKey}}
 
 ###
-GET https://api.curseforge.com/v1/mods/644077/files/4772539
+GET https://api.curseforge.com/v1/mods/search?gameId=432&slug=lazy-ae2&classId=6
+x-api-key: {{cfApiKey}}
+
+###
+GET https://api.curseforge.com/v1/mods/322347/files/3254160
 x-api-key: {{cfApiKey}}
 
 ###
