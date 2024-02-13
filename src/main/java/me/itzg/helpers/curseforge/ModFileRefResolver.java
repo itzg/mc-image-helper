@@ -114,6 +114,9 @@ public class ModFileRefResolver {
                     && (
                     // only mods require a specific mod loader, plugins are not that specific
                     !Objects.equals(category, CurseForgeApiClient.CATEGORY_MC_MODS)
+                        // mod publisher didn't specifify a modloader...will just have to assume it's the type we need
+                        || fileIndex.getModLoader() == null
+                        // but normally make sure it matches
                         || fileIndex.getModLoader().equals(modLoaderType))
                     && (fileMatcherStr == null || fileIndex.getFilename().contains(fileMatcherStr))
             )
