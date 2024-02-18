@@ -255,4 +255,39 @@ class OutputToDirectoryFetchBuilderTest {
             .exists()
             .content().isEqualTo(body);
     }
+
+    /**
+     * Sonatype Nexus only provides the options "attachment" and "inline" for the content-disposition header.
+     * To accommodate this, make sure that these invalid header values do not cause a total failure of the download.
+     */
+    @Test
+    void tolerateInvalidContentDispositionFileName(WireMockRuntimeInfo wm, @TempDir Path tempDir) throws IOException {
+        stubFor(
+            head(WireMock.urlPathEqualTo("/actual.txt"))
+                .willReturn(
+                    ok().withHeader("content-disposition", "attachment")
+                )
+                .willReturn(
+                    ok().withHeader("content-disposition", "inline")
+                )
+        );
+        stubFor(
+            get("/actual.txt")
+                .willReturn(
+                    ok("content of actual.txt")
+                )
+        );
+
+        final Path result = fetch(URI.create(wm.getHttpBaseUrl() + "/actual.txt"))
+            .toDirectory(tempDir)
+            .execute();
+
+        // resolves to actual file name because of invalid content-disposition
+        final Path expectedFile = tempDir.resolve("actual.txt");
+
+        assertThat(result)
+            .isEqualTo(expectedFile)
+            .exists()
+            .hasContent("content of actual.txt");
+    }
 }
