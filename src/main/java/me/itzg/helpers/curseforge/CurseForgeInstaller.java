@@ -40,6 +40,7 @@ import me.itzg.helpers.curseforge.model.MinecraftModpackManifest;
 import me.itzg.helpers.curseforge.model.ModLoader;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidParameterException;
+import me.itzg.helpers.errors.RateLimitException;
 import me.itzg.helpers.fabric.FabricLauncherInstaller;
 import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.files.ResultsFileWriter;
@@ -70,10 +71,12 @@ public class CurseForgeInstaller {
     private final Path outputDir;
     private final Path resultsFile;
 
-    @Getter @Setter
+    @Getter
+    @Setter
     private String apiBaseUrl = "https://api.curseforge.com";
 
-    @Getter @Setter
+    @Getter
+    @Setter
     private String apiKey;
 
     @Getter
@@ -157,7 +160,7 @@ public class CurseForgeInstaller {
 
             processModpackManifest(context, modpackManifest,
                 () -> new Result(Collections.emptyList(), null)
-                );
+            );
         });
     }
 
@@ -183,14 +186,15 @@ public class CurseForgeInstaller {
         if (apiKey == null || apiKey.isEmpty()) {
             if (manifest != null) {
                 log.warn("API key is not set, so will re-use previous modpack installation of {}",
-                    manifest.getSlug() != null ? manifest.getSlug() : "Project ID "+manifest.getModId());
+                    manifest.getSlug() != null ? manifest.getSlug() : "Project ID " + manifest.getModId()
+                );
                 log.warn("Obtain an API key from " + ETERNAL_DEVELOPER_CONSOLE_URL
-                    + " and set the environment variable "+ API_KEY_VAR +" in order to restore full functionality.");
+                    + " and set the environment variable " + API_KEY_VAR + " in order to restore full functionality.");
                 return;
             }
             else {
                 throw new InvalidParameterException("API key is not set. Obtain an API key from " + ETERNAL_DEVELOPER_CONSOLE_URL
-                    + " and set the environment variable "+ API_KEY_VAR);
+                    + " and set the environment variable " + API_KEY_VAR);
             }
         }
 
@@ -209,11 +213,19 @@ public class CurseForgeInstaller {
 
         } catch (FailedRequestException e) {
             if (e.getStatusCode() == 403) {
-                throw new InvalidParameterException(String.format("Access to %s is forbidden or rate-limit has been exceeded."
-                        + " Ensure %s is set to a valid API key from %s or allow rate-limit to reset.",
+                log.debug("Failed request details: {}", e.toString());
+
+                if (e.getBody().contains("There might be too much traffic")) {
+                    throw new RateLimitException(null, String.format("Access to %s has been rate-limited.", apiBaseUrl), e);
+                }
+                else {
+                    throw new InvalidParameterException(String.format("Access to %s is forbidden or rate-limit has been exceeded."
+                            + " Ensure %s is set to a valid API key from %s or allow rate-limit to reset.",
                         apiBaseUrl, API_KEY_VAR, ETERNAL_DEVELOPER_CONSOLE_URL
-                ), e);
-            } else {
+                    ), e);
+                }
+            }
+            else {
                 throw e;
             }
         }
@@ -229,13 +241,14 @@ public class CurseForgeInstaller {
     }
 
     interface InstallationEntryPoint {
+
         void install(InstallContext context) throws IOException;
     }
 
     private void installByRetrievingModpackZip(InstallContext context, String fileMatcher, Integer fileId) throws IOException {
         final CurseForgeMod curseForgeMod = context.cfApi.searchMod(context.slug,
-            context.categoryInfo.getClassIdForSlug(CurseForgeApiClient.CATEGORY_MODPACKS)
-        )
+                context.categoryInfo.getClassIdForSlug(CurseForgeApiClient.CATEGORY_MODPACKS)
+            )
             .block();
 
         resolveModpackFileAndProcess(context, curseForgeMod, fileId, fileMatcher);
@@ -273,12 +286,14 @@ public class CurseForgeInstaller {
         }
 
         log.info("Installing modpack '{}' version {} from provided modpack zip",
-            modpackName, modpackVersion);
+            modpackName, modpackVersion
+        );
 
         final ModPackResults results = processModpack(context, modpackManifest, overridesApplier);
 
         finalizeResults(context, results,
-            pseudoModId, pseudoFileId, results.getName());
+            pseudoModId, pseudoFileId, results.getName()
+        );
     }
 
     private static boolean matchesPreviousInstall(InstallContext context, int modId, int fileId) {
@@ -362,7 +377,8 @@ public class CurseForgeInstaller {
         }
 
         log.info("Processing modpack '{}' ({}) @ {}:{}", modFile.getDisplayName(),
-            mod.getSlug(), modFile.getModId(), modFile.getId());
+            mod.getSlug(), modFile.getModId(), modFile.getId()
+        );
 
         if (modpackZip == null) {
             throw new GenericException("Download of modpack zip was empty");
@@ -448,7 +464,8 @@ public class CurseForgeInstaller {
     /**
      * @throws MissingModsException if any mods need to be manually downloaded
      */
-    private void finalizeResults(InstallContext context, ModPackResults results, int modId, int fileId, String displayName) throws IOException {
+    private void finalizeResults(InstallContext context, ModPackResults results, int modId, int fileId, String displayName)
+        throws IOException {
         final CurseForgeManifest newManifest = CurseForgeManifest.builder()
             .modpackName(results.getName())
             .modpackVersion(results.getVersion())
@@ -535,7 +552,7 @@ public class CurseForgeInstaller {
 
                 log.debug("Evaluating projectId={} with exclude={} and forceInclude={}",
                     projectID, exclude, forceInclude
-                    );
+                );
 
                 return Mono.just(forceInclude || !exclude)
                     .flatMap(proceed -> proceed ? Mono.just(true)
@@ -543,11 +560,11 @@ public class CurseForgeInstaller {
                             .map(mod -> {
                                 log.info("Excluding mod file '{}' ({}) due to configuration",
                                     mod.getName(), mod.getSlug()
-                                    );
+                                );
                                 // and filter away
                                 return false;
                             })
-                        );
+                    );
             })
             // ...download and possibly unzip world file
             .flatMap(fileRef ->
@@ -567,7 +584,9 @@ public class CurseForgeInstaller {
         return buildResults(modpackManifest, modLoader, modFiles, overridesResult);
     }
 
-    private ModPackResults buildResults(MinecraftModpackManifest modpackManifest, ModLoader modLoader, List<PathWithInfo> modFiles, Result overridesResult) {
+    private ModPackResults buildResults(MinecraftModpackManifest modpackManifest, ModLoader modLoader,
+        List<PathWithInfo> modFiles, Result overridesResult
+    ) {
         return new ModPackResults()
             .setName(modpackManifest.getName())
             .setVersion(modpackManifest.getVersion())
@@ -722,15 +741,15 @@ public class CurseForgeInstaller {
                                             .setDownloadNeeded(resolveResult.downloadNeeded)
                                             .setModInfo(modInfo)
                                             .setCurseForgeFile(cfFile)
-                                    : extractWorldZip(modInfo, resolveResult.path, outputPaths.getWorldsDir())
+                                        : extractWorldZip(modInfo, resolveResult.path, outputPaths.getWorldsDir())
                                 )
                             : resolvedFileMono
-                            .map(resolveResult ->
-                                new PathWithInfo(resolveResult.path)
-                                    .setDownloadNeeded(resolveResult.downloadNeeded)
-                                    .setModInfo(modInfo)
-                                    .setCurseForgeFile(cfFile)
-                            );
+                                .map(resolveResult ->
+                                    new PathWithInfo(resolveResult.path)
+                                        .setDownloadNeeded(resolveResult.downloadNeeded)
+                                        .setModInfo(modInfo)
+                                        .setCurseForgeFile(cfFile)
+                                );
                     });
             })
             .checkpoint(String.format("Downloading file from modpack %d:%d", projectID, fileID));
@@ -738,6 +757,7 @@ public class CurseForgeInstaller {
 
     @RequiredArgsConstructor
     static class ResolveResult {
+
         final Path path;
         @Setter
         boolean downloadNeeded;
@@ -815,7 +835,7 @@ public class CurseForgeInstaller {
                 ZipEntry nextEntry = zipInputStream.getNextEntry();
 
                 if (nextEntry == null || !nextEntry.isDirectory()) {
-                    throw new GenericException("Expected top-level directory in world zip "+zipPath);
+                    throw new GenericException("Expected top-level directory in world zip " + zipPath);
                 }
 
                 // Will replace top diretory with slug name

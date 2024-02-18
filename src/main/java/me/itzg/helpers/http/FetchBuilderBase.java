@@ -192,7 +192,7 @@ public class FetchBuilderBase<SELF extends FetchBuilderBase<SELF>> {
     protected  <R> Mono<R> failedRequestMono(HttpClientResponse resp, ByteBufMono bodyMono, String description) {
         return (bodyMono != null ? bodyMono.asString() : Mono.just(""))
             .defaultIfEmpty("")
-            .flatMap(body -> Mono.error(new FailedRequestException(resp.status(), uri(), body, description)));
+            .flatMap(body -> Mono.error(new FailedRequestException(resp.status(), uri(), body, description, resp.responseHeaders())));
     }
 
     protected static boolean notSuccess(HttpClientResponse resp) {

@@ -1,11 +1,18 @@
 package me.itzg.helpers.github;
 
+import static io.netty.handler.codec.http.HttpResponseStatus.FORBIDDEN;
+import static io.netty.handler.codec.http.HttpResponseStatus.TOO_MANY_REQUESTS;
+
+import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import java.net.URI;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import me.itzg.helpers.errors.RateLimitException;
 import me.itzg.helpers.github.model.Asset;
 import me.itzg.helpers.github.model.Release;
 import me.itzg.helpers.http.FailedRequestException;
@@ -34,9 +41,25 @@ public class GithubClient {
             .acceptContentTypes(Collections.singletonList("application/vnd.github+json"))
             .toObject(Release.class)
             .assemble()
-            .onErrorResume(throwable -> throwable instanceof FailedRequestException && ((FailedRequestException) throwable).getStatusCode() == 404,
-                throwable -> Mono.empty()
-            )
+            .onErrorResume(throwable -> {
+                if (throwable instanceof FailedRequestException) {
+                    final FailedRequestException fre = (FailedRequestException) throwable;
+                    if (fre.getStatusCode() == HttpResponseStatus.NOT_FOUND.code()) {
+                        return Mono.empty();
+                    }
+
+                    if ((fre.getStatusCode() == FORBIDDEN.code() || fre.getStatusCode() == TOO_MANY_REQUESTS.code())) {
+                        final HttpHeaders headers = fre.getHeaders();
+                        final String resetTimeStr = headers.get("x-ratelimit-reset");
+                        if (resetTimeStr != null) {
+                            return Mono.error(new RateLimitException(Instant.ofEpochSecond(Long.parseLong(resetTimeStr)),
+                                "Rate-limit exceeded", fre
+                                ));
+                        }
+                    }
+                }
+                return Mono.error(throwable);
+            })
             .flatMap(release -> {
                 if (log.isDebugEnabled()) {
                     log.debug("Assets in latest release '{}': {}",
