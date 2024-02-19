@@ -106,7 +106,7 @@ dependencies {
 
     // https://commons.apache.org/proper/commons-compress/zip.html
     // For IMPLODE compression used by some CurseForge modpacks
-    implementation 'org.apache.commons:commons-compress:1.25.0'
+    implementation 'org.apache.commons:commons-compress:1.26.0'
 
     testImplementation 'org.assertj:assertj-core:3.25.3'
     // https://github.com/webcompere/model-assert
