@@ -22,7 +22,7 @@ public class IoStreams {
      */
     @Nullable
     public static <T> T readFileFromZip(Path zipFile, String entryName, EntryReader<T> entryReader) throws IOException {
-        try (ZipFile zip = new ZipFile(zipFile)) {
+        try (ZipFile zip = ZipFile.builder().setPath(zipFile).get()) {
             final ZipArchiveEntry entry = zip.getEntry(entryName);
             if (entry != null) {
                 try (InputStream entryStream = zip.getInputStream(entry)) {
