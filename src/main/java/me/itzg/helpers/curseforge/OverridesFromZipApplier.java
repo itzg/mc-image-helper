@@ -60,7 +60,7 @@ public class OverridesFromZipApplier implements OverridesApplier {
         final int overridesPrefixLen = overridesDirPrefix.length();
 
         final List<Path> overrides = new ArrayList<>();
-        try (ZipFile zip = new ZipFile(modpackZip)) {
+        try (ZipFile zip = ZipFile.builder().setPath(modpackZip).get()) {
 
             final Enumeration<ZipArchiveEntry> entries = zip.getEntries();
             while (entries.hasMoreElements()) {
@@ -122,7 +122,7 @@ public class OverridesFromZipApplier implements OverridesApplier {
      * @return if present, the subpath to a world/level directory with the overrides prefix removed otherwise null
      */
     private String findLevelEntryInOverrides(Path modpackZip, String overridesDir) throws IOException {
-        try (ZipFile zipFile = new ZipFile(modpackZip)) {
+        try (ZipFile zipFile = ZipFile.builder().setPath(modpackZip).get()) {
             final Enumeration<ZipArchiveEntry> entries = zipFile.getEntries();
             while (entries.hasMoreElements()) {
                 final ZipArchiveEntry entry = entries.nextElement();

@@ -8,6 +8,7 @@ import static me.itzg.helpers.singles.MoreCollections.safeStreamFrom;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -51,6 +52,8 @@ import me.itzg.helpers.http.Fetch;
 import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.http.Uris;
 import me.itzg.helpers.json.ObjectMappers;
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipFile;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -923,19 +926,17 @@ public class CurseForgeInstaller {
     }
 
     private MinecraftModpackManifest extractModpackManifest(Path modpackZip) throws IOException {
-        try (ZipInputStream zip = new ZipInputStream(Files.newInputStream(modpackZip))) {
-            ZipEntry entry;
-            while ((entry = zip.getNextEntry()) != null) {
-                if (entry.getName().equals("manifest.json")) {
-                    return ObjectMappers.defaultMapper()
-                        .readValue(zip, MinecraftModpackManifest.class);
+        try (ZipFile zipFile = ZipFile.builder().setPath(modpackZip).get()) {
+            final ZipArchiveEntry entry = zipFile.getEntry("manifest.json");
+            if (entry != null) {
+                try (InputStream in = zipFile.getInputStream(entry)) {
+                    return ObjectMappers.defaultMapper().readValue(in, MinecraftModpackManifest.class);
                 }
             }
-
-            throw new InvalidParameterException(
-                "Modpack file is missing a manifest. Make sure to reference a client modpack file."
-            );
         }
+        throw new InvalidParameterException(
+            "Modpack file is missing a manifest. Make sure to reference a client modpack file."
+        );
     }
 
 }
