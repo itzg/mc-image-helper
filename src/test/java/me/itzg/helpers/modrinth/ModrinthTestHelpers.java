@@ -9,6 +9,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -87,6 +89,10 @@ class ModrinthTestHelpers {
     }
 
     static byte[] createModrinthPack(ModpackIndex index) throws IOException {
+        return createModrinthPack(index, null, null);
+    }
+
+    static byte[] createModrinthPack(ModpackIndex index, String overridesDestDir, Path overrideSourceDir, Path... overrideFiles) throws IOException {
         ByteArrayOutputStream zipBytesOutputStream =
             new ByteArrayOutputStream();
 
@@ -95,6 +101,20 @@ class ModrinthTestHelpers {
         zipOutputStream.putNextEntry(new ZipEntry("modrinth.index.json"));
         zipOutputStream.write(mapper.writeValueAsBytes(index));
         zipOutputStream.closeEntry();
+
+        if (overridesDestDir != null && overrideSourceDir != null) {
+            for (final Path overrideFile : overrideFiles) {
+                final Path relPath = overrideSourceDir.relativize(overrideFile);
+
+                zipOutputStream.putNextEntry(new ZipEntry(overridesDestDir + "/" +
+                    // normalize Windows paths
+                    relPath.toString().replace('\\', '/')
+                ));
+                Files.copy(overrideFile, zipOutputStream);
+                zipOutputStream.closeEntry();
+            }
+        }
+
         zipOutputStream.close();
 
         byte[] zipBytes = zipBytesOutputStream.toByteArray();

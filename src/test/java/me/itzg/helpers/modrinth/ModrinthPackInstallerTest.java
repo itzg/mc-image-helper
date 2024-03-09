@@ -29,6 +29,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 
 @WireMockTest
@@ -250,6 +251,101 @@ public class ModrinthPackInstallerTest {
             final Installation installation = installerUT.processModpack(sharedFetch).block();
 
             assertThat(installation).isNotNull();
+            assertThat(installation.getFiles()).isEmpty();
+
+            verify(mockPreparer)
+                .prepare(Mockito.any(), Mockito.eq("1.20.1"), Mockito.eq("111"));
+        }
+
+    }
+
+    @Test
+    void handlesOverrides(WireMockRuntimeInfo wm, @TempDir Path tempDir) throws IOException {
+        final ModloaderPreparer mockPreparer = Mockito.mock(ModloaderPreparer.class);
+        Options fetchOpts = new SharedFetchArgs().options();
+        ModpackIndex expectedIndex;
+
+        try (SharedFetch sharedFetch = Fetch.sharedFetch("install-modrinth-modpack", fetchOpts)) {
+            ModrinthApiClient apiClient = new ModrinthApiClient(
+                wm.getHttpBaseUrl(), "install-modrinth-modpack", fetchOpts);
+
+            Path resultsFile = tempDir.resolve("results");
+            Path modpackPath = tempDir.resolve("test.mrpack");
+
+            final HashMap<Env, EnvType> env = new HashMap<>();
+            env.put(Env.client, EnvType.required);
+            // some modpack improperly declare server-required
+            env.put(Env.server, EnvType.required);
+
+            expectedIndex = createBasicModpackIndex(DependencyId.forge, "111");
+
+            final Path src = tempDir.resolve("src");
+            final Path extraDir =
+                Files.createDirectories(src.resolve("extra"));
+            final Path fileToExclude = Files.write(extraDir.resolve("file.txt"), Collections.singletonList("line1"));
+
+            Files.write(modpackPath, createModrinthPack(expectedIndex, "overrides", src, fileToExclude));
+
+            ModrinthPackInstaller installerUT = new ModrinthPackInstaller(
+                apiClient, fetchOpts, modpackPath, tempDir, resultsFile, false)
+                .modifyModLoaderPreparer(DependencyId.forge, mockPreparer);
+
+            final Installation installation = installerUT.processModpack(sharedFetch).block();
+
+            assertThat(installation).isNotNull();
+            assertThat(installation.getIndex()).isEqualTo(expectedIndex);
+            assertThat(installation.getFiles()).hasSize(1);
+            assertThat(installation.getFiles().get(0))
+                .isEqualTo(tempDir.resolve("extra").resolve("file.txt"));
+
+            verify(mockPreparer)
+                .prepare(Mockito.any(), Mockito.eq("1.20.1"), Mockito.eq("111"));
+        }
+
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+        "extra/file.txt",
+        "extra/*.txt",
+        "**/*.txt",
+        "extra/**"
+    })
+    void handlesExcludedFiles(String exclusion, WireMockRuntimeInfo wm, @TempDir Path tempDir) throws IOException {
+        final ModloaderPreparer mockPreparer = Mockito.mock(ModloaderPreparer.class);
+        Options fetchOpts = new SharedFetchArgs().options();
+        ModpackIndex expectedIndex;
+
+        try (SharedFetch sharedFetch = Fetch.sharedFetch("install-modrinth-modpack", fetchOpts)) {
+            ModrinthApiClient apiClient = new ModrinthApiClient(
+                wm.getHttpBaseUrl(), "install-modrinth-modpack", fetchOpts);
+
+            Path resultsFile = tempDir.resolve("results");
+            Path modpackPath = tempDir.resolve("test.mrpack");
+
+            final HashMap<Env, EnvType> env = new HashMap<>();
+            env.put(Env.client, EnvType.required);
+            // some modpack improperly declare server-required
+            env.put(Env.server, EnvType.required);
+
+            expectedIndex = createBasicModpackIndex(DependencyId.forge, "111");
+
+            final Path extraDir = Files.createDirectory(tempDir.resolve("extra"));
+            final Path fileToExclude = Files.write(extraDir.resolve("file.txt"), Collections.singletonList("line1"));
+
+            Files.write(modpackPath, createModrinthPack(expectedIndex, "overrides", tempDir, fileToExclude));
+
+            ModrinthPackInstaller installerUT = new ModrinthPackInstaller(
+                apiClient, fetchOpts, modpackPath, tempDir, resultsFile, false)
+                .setOverridesExclusions(
+                    Collections.singletonList(exclusion)
+                )
+                .modifyModLoaderPreparer(DependencyId.forge, mockPreparer);
+
+            final Installation installation = installerUT.processModpack(sharedFetch).block();
+
+            assertThat(installation).isNotNull();
+            assertThat(installation.getIndex()).isEqualTo(expectedIndex);
             assertThat(installation.getFiles()).isEmpty();
 
             verify(mockPreparer)

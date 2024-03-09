@@ -128,7 +128,7 @@ public class ModFileRefResolver {
                 .orElseGet(() -> apiClient.getModFileInfo(mod.getId(), fileIndex.getFileId()))
             )
             .orElseGet(() -> Mono.error(
-                new InvalidParameterException("Unable to find matching file for reference: " + ref))
+                new InvalidParameterException("Unable to find match in latest files for " + ref))
             );
     }
 

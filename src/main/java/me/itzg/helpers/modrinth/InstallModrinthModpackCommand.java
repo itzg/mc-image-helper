@@ -86,6 +86,15 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
     )
     List<String> excludeFiles;
 
+    @Option(names = "--overrides-exclusions",
+        split = "\n|,", splitSynopsisLabel = "NL or ,",
+        description = "Excludes files from the overrides that match these ant-style patterns\n"
+            + "*  : matches any non-slash characters\n"
+            + "** : matches any characters\n"
+            + "?  : matches one character"
+    )
+    List<String> overridesExclusions;
+
     @CommandLine.ArgGroup(exclusive = false)
     SharedFetchArgs sharedFetchArgs = new SharedFetchArgs();
 
@@ -112,6 +121,7 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
                 .flatMap(fetchedPack ->
                     installerFactory.create(apiClient, fetchedPack.getMrPackFile())
                         .setExcludeFiles(excludeFiles)
+                        .setOverridesExclusions(overridesExclusions)
                         .processModpack(sharedFetch)
                         .flatMap(installation -> {
                             if (resultsFile != null) {

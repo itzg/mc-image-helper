@@ -18,6 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.fabric.FabricLauncherInstaller;
+import me.itzg.helpers.files.AntPathMatcher;
 import me.itzg.helpers.files.IoStreams;
 import me.itzg.helpers.forge.ForgeInstaller;
 import me.itzg.helpers.forge.ForgeInstallerResolver;
@@ -48,6 +49,8 @@ public class ModrinthPackInstaller {
     @Setter
     private List<String> excludeFiles;
 
+    private AntPathMatcher overridesExclusions;
+
     @FunctionalInterface
     interface ModloaderPreparer {
 
@@ -73,6 +76,11 @@ public class ModrinthPackInstaller {
         this.outputDirectory = outputDirectory;
         this.resultsFile = resultsFile;
         this.forceModloaderReinstall = forceModloaderReinstall;
+    }
+
+    public ModrinthPackInstaller setOverridesExclusions(List<String> overridesExclusions) {
+        this.overridesExclusions = new AntPathMatcher(overridesExclusions);
+        return this;
     }
 
     public Mono<Installation> processModpack(SharedFetch sharedFetch) {
@@ -194,20 +202,28 @@ public class ModrinthPackInstaller {
                             && entry.getName().startsWith(prefix)
                         )
                         .map(entry -> {
-                            final Path outFile = outputDirectory.resolve(
-                                entry.getName().substring(prefix.length())
-                            );
+                            final String subpath = entry.getName().substring(prefix.length());
+                            if (overridesExclusions != null && overridesExclusions.matches(subpath)) {
+                                log.debug("Excluding file from overrides: {}", subpath);
+                                return null;
+                            }
+
+                            final Path outFile = outputDirectory.resolve(subpath);
 
                             try {
                                 Files.createDirectories(outFile.getParent());
+
+                                log.debug("Copying from overrides: {}", subpath);
                                 Files.copy(zipFileReader.getInputStream(entry), outFile, StandardCopyOption.REPLACE_EXISTING);
+
                                 return outFile;
                             } catch (IOException e) {
                                 throw new GenericException(
                                     String.format("Failed to extract %s from overrides", entry.getName()), e
                                 );
                             }
-                        });
+                        })
+                        .filter(Objects::nonNull);
                 })
                 // need to eager load the stream while the zip file is open
                 .collect(Collectors.toList())
