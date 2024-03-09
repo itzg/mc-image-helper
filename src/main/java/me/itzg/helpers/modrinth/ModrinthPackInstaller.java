@@ -213,7 +213,7 @@ public class ModrinthPackInstaller {
                             try {
                                 Files.createDirectories(outFile.getParent());
 
-                                log.debug("Copying from overrides: {}", subpath);
+                                log.trace("Copying from overrides: {}", subpath);
                                 Files.copy(zipFileReader.getInputStream(entry), outFile, StandardCopyOption.REPLACE_EXISTING);
 
                                 return outFile;
