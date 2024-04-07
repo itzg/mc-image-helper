@@ -45,6 +45,7 @@ public class CurseForgeApiClient implements AutoCloseable {
 
     private final SharedFetch preparedFetch;
     private final UriBuilder uriBuilder;
+    private final UriBuilder downloadFallbackUriBuilder;
     private final String gameId;
 
     private final ConcurrentHashMap<Integer, CurseForgeMod> cachedMods = new ConcurrentHashMap<>();
@@ -60,6 +61,12 @@ public class CurseForgeApiClient implements AutoCloseable {
                 .withHeader(API_KEY_HEADER, apiKey.trim())
         );
         this.uriBuilder = UriBuilder.withBaseUrl(apiBaseUrl);
+        this.downloadFallbackUriBuilder = UriBuilder.withBaseUrl(
+            // Hardcoded conditional swap out of URL here helps mitigate the "manual download"
+            // challenge for those mods with a null download URL in their metadata.
+            apiBaseUrl.equals("https://api.curseforge.com") ?
+                "https://www.curseforge.com/api" : apiBaseUrl
+        );
         this.gameId = gameId;
     }
 
@@ -216,7 +223,12 @@ public class CurseForgeApiClient implements AutoCloseable {
 
     public Mono<Path> download(CurseForgeFile cfFile, Path outputFile, FileDownloadStatusHandler handler) {
         return preparedFetch.fetch(
-                normalizeDownloadUrl(cfFile.getDownloadUrl())
+                cfFile.getDownloadUrl() != null ?
+                    normalizeDownloadUrl(cfFile.getDownloadUrl())
+                    : downloadFallbackUriBuilder.resolve(
+                        "/v1/mods/{modId}/files/{fileId}/download",
+                        cfFile.getModId(), cfFile.getId()
+                    )
             )
             .toFile(outputFile)
             .skipExisting(true)
