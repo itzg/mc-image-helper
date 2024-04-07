@@ -782,37 +782,46 @@ public class CurseForgeInstaller {
             log.info("Mod file {} already exists", locatedFile);
             return Mono.just(new ResolveResult(locatedFile));
         }
-        // File disallowed for automated downloads?
-        else if (cfFile.getDownloadUrl() == null) {
-            final Path resolved =
-                isWorld ?
-                    locateWorldZipInRepo(cfFile.getFileName())
-                    : locateModInRepo(cfFile.getFileName());
-            if (resolved == null) {
-                log.warn("The authors of the mod '{}' have disallowed project distribution. " +
-                        "Manually download the file '{}' from {} and supply via downloads repo or separately.",
-                    modInfo.getName(), cfFile.getDisplayName(), modInfo.getLinks().getWebsiteUrl()
-                );
-                return Mono.just(new ResolveResult(outputFile).setDownloadNeeded(true));
-            }
-            else {
-                return Mono.just(resolved)
-                    .publishOn(Schedulers.boundedElastic())
-                    .flatMap(path -> {
-                        try {
-                            log.info("Mod file {} obtained from downloads repo", this.outputDir.relativize(outputFile));
-                            //noinspection BlockingMethodInNonBlockingContext because IntelliJ is confused
-                            return Mono.just(Files.copy(resolved, outputFile));
-                        } catch (IOException e) {
-                            return Mono.error(new GenericException("Failed to copy file from downloads repo", e));
-                        }
-
-                    })
-                    .map(ResolveResult::new);
-            }
-        }
         else {
             return context.cfApi.download(cfFile, outputFile, modFileDownloadStatusHandler(this.outputDir, log))
+                .map(ResolveResult::new)
+                .onErrorResume(
+                    e -> e instanceof FailedRequestException
+                        && ((FailedRequestException) e).getStatusCode() == 404,
+                    failedRequestException -> handleFileNeedingManualDownload(modInfo, isWorld, cfFile, outputFile)
+                );
+        }
+    }
+
+    private Mono<ResolveResult> handleFileNeedingManualDownload(CurseForgeMod modInfo, boolean isWorld, CurseForgeFile cfFile,
+        Path outputFile
+    ) {
+        final Path resolved =
+            isWorld ?
+                locateWorldZipInRepo(cfFile.getFileName())
+                : locateModInRepo(cfFile.getFileName());
+        if (resolved == null) {
+            log.warn("The authors of the mod '{}' have disallowed project distribution. " +
+                    "Manually download the file '{}' from {} and supply via downloads repo or separately.",
+                modInfo.getName(), cfFile.getDisplayName(), modInfo.getLinks().getWebsiteUrl()
+            );
+            return Mono.just(new ResolveResult(outputFile).setDownloadNeeded(true));
+        }
+        else {
+            return Mono.just(resolved)
+                .publishOn(Schedulers.boundedElastic())
+                .flatMap(path -> {
+                    try {
+                        log.info("Mod file {} obtained from downloads repo",
+                            this.outputDir.relativize(outputFile)
+                        );
+                        //noinspection BlockingMethodInNonBlockingContext because IntelliJ is confused
+                        return Mono.just(Files.copy(resolved, outputFile));
+                    } catch (IOException e) {
+                        return Mono.error(new GenericException("Failed to copy file from downloads repo", e));
+                    }
+
+                })
                 .map(ResolveResult::new);
         }
     }
