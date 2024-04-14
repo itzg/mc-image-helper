@@ -49,6 +49,9 @@ public class ModrinthPackInstaller {
     @Setter
     private List<String> excludeFiles;
 
+    @Setter
+    private List<String> forceIncludeFiles;
+
     private AntPathMatcher overridesExclusions;
 
     @FunctionalInterface
@@ -109,7 +112,7 @@ public class ModrinthPackInstaller {
                 ));
         }
 
-        return processModpackFiles(modpackIndex)
+        return processModFiles(modpackIndex)
             .collectList()
             .map(modFiles ->
                 Stream.of(
@@ -129,21 +132,14 @@ public class ModrinthPackInstaller {
             );
     }
 
-    private Flux<Path> processModpackFiles(ModpackIndex modpackIndex) {
-        return Flux.fromStream(modpackIndex.getFiles().stream()
-                .filter(modpackFile ->
-                    // env is optional
-                    modpackFile.getEnv() == null
-                        || modpackFile.getEnv()
-                            .get(Env.server) != EnvType.unsupported
-                )
+    private Flux<Path> processModFiles(ModpackIndex modpackIndex) {
+        return Flux.fromStream(
+            modpackIndex.getFiles().stream()
+                .filter(this::includeModFile)
             )
             .publishOn(Schedulers.boundedElastic())
             .flatMap(modpackFile -> {
                 final String modpackFilePath = sanitizeModFilePath(modpackFile.getPath());
-                if (shouldExcludeFile(modpackFilePath)) {
-                    return Mono.empty();
-                }
 
                 final Path outFilePath =
                     this.outputDirectory.resolve(modpackFilePath);
@@ -164,18 +160,44 @@ public class ModrinthPackInstaller {
             });
     }
 
-    private boolean shouldExcludeFile(String modpackFilePath) {
+    private boolean includeModFile(ModpackIndex.ModpackFile modFile) {
+        return (
+            // env is optional
+            modFile.getEnv() == null
+            || modFile.getEnv().get(Env.server) != EnvType.unsupported
+            || shouldForceIncludeFile(modFile.getPath())
+        )
+            && !shouldExcludeFile(modFile.getPath());
+    }
+
+    private boolean shouldForceIncludeFile(String modPath) {
+        if (forceIncludeFiles == null || forceIncludeFiles.isEmpty()) {
+            return false;
+        }
+
+        final String normalized = sanitizeModFilePath(modPath).toLowerCase();
+
+        final boolean include = forceIncludeFiles.stream()
+            .anyMatch(s -> s.toLowerCase().contains(normalized));
+        if (include) {
+            log.debug("Force including '{}' as requested", modPath);
+        }
+
+        return include;
+    }
+
+    private boolean shouldExcludeFile(String modPath) {
         if (excludeFiles == null || excludeFiles.isEmpty()) {
             return false;
         }
 
         // to match case-insensitive
-        final String normalized = modpackFilePath.toLowerCase();
+        final String normalized = sanitizeModFilePath(modPath).toLowerCase();
 
         final boolean exclude = excludeFiles.stream()
             .anyMatch(s -> normalized.contains(s.toLowerCase()));
         if (exclude) {
-            log.debug("Excluding '{}' as requested", modpackFilePath);
+            log.debug("Excluding '{}' as requested", modPath);
         }
         return exclude;
     }
