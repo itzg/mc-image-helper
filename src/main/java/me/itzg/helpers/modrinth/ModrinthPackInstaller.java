@@ -178,7 +178,7 @@ public class ModrinthPackInstaller {
         final String normalized = sanitizeModFilePath(modPath).toLowerCase();
 
         final boolean include = forceIncludeFiles.stream()
-            .anyMatch(s -> s.toLowerCase().contains(normalized));
+            .anyMatch(s -> normalized.contains(s.toLowerCase()));
         if (include) {
             log.debug("Force including '{}' as requested", modPath);
         }
