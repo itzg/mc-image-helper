@@ -86,6 +86,12 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
     )
     List<String> excludeFiles;
 
+    @Option(names = "--force-include-files",
+        split = McImageHelper.SPLIT_COMMA_NL, splitSynopsisLabel = McImageHelper.SPLIT_SYNOPSIS_COMMA_NL,
+        description = "Files to force include that were marked as non-server mods. It will match any part of the file's name/path."
+    )
+    List<String> forceIncludeFiles;
+
     @Option(names = "--overrides-exclusions",
         split = "\n|,", splitSynopsisLabel = "NL or ,",
         description = "Excludes files from the overrides that match these ant-style patterns\n"
@@ -121,6 +127,7 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
                 .flatMap(fetchedPack ->
                     installerFactory.create(apiClient, fetchedPack.getMrPackFile())
                         .setExcludeFiles(excludeFiles)
+                        .setForceIncludeFiles(forceIncludeFiles)
                         .setOverridesExclusions(overridesExclusions)
                         .processModpack(sharedFetch)
                         .flatMap(installation -> {
