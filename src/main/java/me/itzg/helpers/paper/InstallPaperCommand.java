@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
 import java.util.Collections;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -36,6 +37,7 @@ import reactor.core.scheduler.Schedulers;
 @Slf4j
 public class InstallPaperCommand implements Callable<Integer> {
 
+    public static final String VERSION_METADATA_NAME = "version.json";
     @ArgGroup
     Inputs inputs = new Inputs();
 
@@ -164,11 +166,12 @@ public class InstallPaperCommand implements Callable<Integer> {
                 .flatMap(serverJar -> {
                     final String version;
                     try {
-                        version = extractVersionFromJar(serverJar);
+                        version = Optional.ofNullable(extractVersionFromJar(serverJar))
+                                .orElseGet(() -> {
+                                    log.warn("Version metadata {} was missing from server jar: {}", VERSION_METADATA_NAME, serverJar);
+                                    return "custom";
+                                });
 
-                        if (version == null) {
-                            return Mono.error(new GenericException("Version metadata was not available from custom server jar"));
-                        }
                     } catch (IOException e) {
                         return Mono.error(new GenericException("Failed to extract version from custom server jar", e));
                     }
@@ -188,7 +191,7 @@ public class InstallPaperCommand implements Callable<Integer> {
     }
 
     private String extractVersionFromJar(Path serverJar) throws IOException {
-        final VersionMeta versionMeta = IoStreams.readFileFromZip(serverJar, "version.json", in ->
+        final VersionMeta versionMeta = IoStreams.readFileFromZip(serverJar, VERSION_METADATA_NAME, in ->
             ObjectMappers.defaultMapper().readValue(in, VersionMeta.class)
         );
         if (versionMeta == null) {
