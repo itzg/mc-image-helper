@@ -199,7 +199,12 @@ public class CurseForgeFilesCommand implements Callable<Integer> {
             oldManifest.getEntries().stream()
                 .collect(Collectors.toMap(
                     FileEntry::getIds,
-                    fileEntry -> fileEntry
+                    fileEntry -> fileEntry,
+                    // merge by picking first
+                    (t, t2) -> {
+                        log.warn("Duplicate files detected in previous manifest: {} vs {}", t, t2);
+                        return t;
+                    }
                 ))
             : Collections.emptyMap();
     }

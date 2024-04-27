@@ -144,7 +144,7 @@ public class Manifests {
         }
     }
 
-    private static Path buildManifestPath(Path outputDir, String id) {
+    public static Path buildManifestPath(Path outputDir, String id) {
         return outputDir.resolve(String.format(
             ".%s-manifest%s", id, SUFFIX
         ));
