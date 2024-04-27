@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
 import java.util.Collections;
-import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -163,31 +162,43 @@ public class InstallPaperCommand implements Callable<Integer> {
                 .handleStatus(Fetch.loggingDownloadStatusHandler(log))
                 .assemble()
                 .publishOn(Schedulers.boundedElastic())
-                .flatMap(serverJar -> {
-                    final String version;
-                    try {
-                        version = Optional.ofNullable(extractVersionFromJar(serverJar))
-                                .orElseGet(() -> {
-                                    log.warn("Version metadata {} was missing from server jar: {}", VERSION_METADATA_NAME, serverJar);
-                                    return "custom";
-                                });
-
-                    } catch (IOException e) {
-                        return Mono.error(new GenericException("Failed to extract version from custom server jar", e));
-                    }
-                    return Mono.just(Result.builder()
-                        .serverJar(serverJar)
-                        .newManifest(
-                            PaperManifest.builder()
-                                .customDownloadUrl(downloadUrl)
-                                .files(Collections.singleton(Manifests.relativize(outputDirectory, serverJar)))
-                                .build()
-                        )
-                        .version(version)
-                        .build());
-                })
+                .flatMap(serverJar -> processDownloadedJar(downloadUrl, serverJar))
                 .block();
         }
+    }
+
+    private Mono<Result> processDownloadedJar(URI downloadUrl, Path serverJar) {
+        final String version;
+        try {
+            final String versionFromJar = extractVersionFromJar(serverJar);
+            if (versionFromJar != null) {
+                version = versionFromJar;
+            }
+            else {
+                log.warn("Version metadata {} was missing from server jar: {}", VERSION_METADATA_NAME, serverJar);
+                final String fromEnv = System.getenv("VERSION");
+                if (fromEnv != null) {
+                    version = fromEnv;
+                }
+                else {
+                    throw new GenericException("Set environment variable 'VERSION' due to missing version metadata");
+                }
+
+            }
+        } catch (IOException e) {
+            return Mono.error(new GenericException("Failed to extract version from custom server jar", e));
+        }
+
+        return Mono.just(Result.builder()
+            .serverJar(serverJar)
+            .newManifest(
+                PaperManifest.builder()
+                    .customDownloadUrl(downloadUrl)
+                    .files(Collections.singleton(Manifests.relativize(outputDirectory, serverJar)))
+                    .build()
+            )
+            .version(version)
+            .build());
     }
 
     private String extractVersionFromJar(Path serverJar) throws IOException {
