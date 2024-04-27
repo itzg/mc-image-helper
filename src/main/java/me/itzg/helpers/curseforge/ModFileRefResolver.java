@@ -66,6 +66,7 @@ public class ModFileRefResolver {
     @NotNull
     private static Flux<String> expandFileListings(List<String> modFileRefs) {
         return Flux.fromStream(modFileRefs.stream()
+                .distinct()
                 // handle @-file containing refs
                 .flatMap(ref -> {
                     if (ref.startsWith("@")) {
