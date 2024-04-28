@@ -36,7 +36,6 @@ import reactor.core.scheduler.Schedulers;
 @Slf4j
 public class InstallPaperCommand implements Callable<Integer> {
 
-    public static final String VERSION_METADATA_NAME = "version.json";
     @ArgGroup
     Inputs inputs = new Inputs();
 
@@ -162,47 +161,34 @@ public class InstallPaperCommand implements Callable<Integer> {
                 .handleStatus(Fetch.loggingDownloadStatusHandler(log))
                 .assemble()
                 .publishOn(Schedulers.boundedElastic())
-                .flatMap(serverJar -> processDownloadedJar(downloadUrl, serverJar))
+                .flatMap(serverJar -> {
+                    final String version;
+                    try {
+                        version = extractVersionFromJar(serverJar);
+
+                        if (version == null) {
+                            return Mono.error(new GenericException("Version metadata was not available from custom server jar"));
+                        }
+                    } catch (IOException e) {
+                        return Mono.error(new GenericException("Failed to extract version from custom server jar", e));
+                    }
+                    return Mono.just(Result.builder()
+                        .serverJar(serverJar)
+                        .newManifest(
+                            PaperManifest.builder()
+                                .customDownloadUrl(downloadUrl)
+                                .files(Collections.singleton(Manifests.relativize(outputDirectory, serverJar)))
+                                .build()
+                        )
+                        .version(version)
+                        .build());
+                })
                 .block();
         }
     }
 
-    private Mono<Result> processDownloadedJar(URI downloadUrl, Path serverJar) {
-        final String version;
-        try {
-            final String versionFromJar = extractVersionFromJar(serverJar);
-            if (versionFromJar != null) {
-                version = versionFromJar;
-            }
-            else {
-                log.warn("Version metadata {} was missing from server jar: {}", VERSION_METADATA_NAME, serverJar);
-                final String fromEnv = System.getenv("VERSION");
-                if (fromEnv != null) {
-                    version = fromEnv;
-                }
-                else {
-                    throw new GenericException("Set environment variable 'VERSION' due to missing version metadata");
-                }
-
-            }
-        } catch (IOException e) {
-            return Mono.error(new GenericException("Failed to extract version from custom server jar", e));
-        }
-
-        return Mono.just(Result.builder()
-            .serverJar(serverJar)
-            .newManifest(
-                PaperManifest.builder()
-                    .customDownloadUrl(downloadUrl)
-                    .files(Collections.singleton(Manifests.relativize(outputDirectory, serverJar)))
-                    .build()
-            )
-            .version(version)
-            .build());
-    }
-
     private String extractVersionFromJar(Path serverJar) throws IOException {
-        final VersionMeta versionMeta = IoStreams.readFileFromZip(serverJar, VERSION_METADATA_NAME, in ->
+        final VersionMeta versionMeta = IoStreams.readFileFromZip(serverJar, "version.json", in ->
             ObjectMappers.defaultMapper().readValue(in, VersionMeta.class)
         );
         if (versionMeta == null) {
