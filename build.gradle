@@ -78,7 +78,7 @@ repositories {
 }
 
 dependencies {
-    def picocliVersion = '4.7.5'
+    def picocliVersion = '4.7.6'
 
     implementation(platform('com.fasterxml.jackson:jackson-bom:2.17.1'))
     // 1.4.+ requires Java 11 and we are stuck on 8
