@@ -12,6 +12,9 @@ import me.itzg.helpers.paper.model.ProjectInfo;
 import me.itzg.helpers.paper.model.VersionInfo;
 import reactor.core.publisher.Mono;
 
+/**
+ * <a href="https://api.papermc.io/docs/swagger-ui/index.html?configUrl=/openapi/swagger-config">Downloads API</a>
+ */
 public class PaperDownloadsClient implements AutoCloseable{
 
     private final UriBuilder uriBuilder;

@@ -10,11 +10,10 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import me.itzg.helpers.McImageHelper;
+import me.itzg.helpers.curseforge.ModpacksPageUrlParser.Parsed;
 import me.itzg.helpers.files.ResultsFileWriter;
 import me.itzg.helpers.files.TabularOutput;
 import me.itzg.helpers.http.PathOrUri;
@@ -161,27 +160,15 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
     @Option(names = "--missing-mods-filename", defaultValue = "MODS_NEED_DOWNLOAD.txt")
     String missingModsFilename;
 
-    private static final Pattern PAGE_URL_PATTERN = Pattern.compile(
-        "https://(www|beta)\\.curseforge\\.com/minecraft/modpacks/(?<slug>.+?)(/(files|download)(/(?<fileId>\\d+)?)?)?");
-
     @Override
     public Integer call() throws Exception {
         // https://www.curseforge.com/minecraft/modpacks/all-the-mods-8/files
         // https://www.curseforge.com/minecraft/modpacks/all-the-mods-8/files/4248390
 
         if (pageUrl != null) {
-            final Matcher m = PAGE_URL_PATTERN.matcher(pageUrl);
-            if (m.matches()) {
-                slug = m.group("slug");
-                final String fileIdStr = m.group("fileId");
-                if (fileIdStr != null) {
-                    fileId = Integer.parseInt(fileIdStr);
-                }
-            }
-            else {
-                System.err.println("Unexpected URL structure: "+pageUrl);
-                return ExitCode.USAGE;
-            }
+            final Parsed parsed = ModpacksPageUrlParser.parse(pageUrl);
+            slug = parsed.getSlug();
+            fileId = parsed.getFileId();
         }
 
         if (slug == null) {
