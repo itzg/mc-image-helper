@@ -12,9 +12,12 @@ import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import me.itzg.helpers.TestLoggingAppender;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
 
@@ -221,5 +224,50 @@ class GetCommandTest {
         // command for "accept all certs".
         // See https://wiremock.org/docs/https/#common-https-issues
         assertThat(err).contains("unable to find valid certification path to requested target");
+    }
+
+    @Test
+    void failWhenSuppliedTempDirDoesntExist() throws Exception {
+        final String stderr = tapSystemErrNormalized(() -> {
+
+            final int status =
+                new CommandLine(new GetCommand())
+                    .execute(
+                        "--use-temp-dir",
+                        "non-existent-temp-directory",
+                        "-o",
+                        "unused.out",
+                        "http://unused"
+                    );
+
+            assertThat(status).isEqualTo(ExitCode.USAGE);
+        });
+
+        assertThat(stderr)
+            .contains("The supplied temporary directory does not exist");
+    }
+
+    @Test
+    void failWhenSuppliedTempDirIsAFile(@TempDir Path tempDir) throws Exception {
+        final Path expectedFile = tempDir.resolve("isafile");
+        Files.createFile(expectedFile);
+
+        final String stderr = tapSystemErrNormalized(() -> {
+
+            final int status =
+                new CommandLine(new GetCommand())
+                    .execute(
+                        "--use-temp-dir",
+                        expectedFile.toString(),
+                        "-o",
+                        "unused.out",
+                        "http://unused"
+                    );
+
+            assertThat(status).isEqualTo(ExitCode.USAGE);
+        });
+
+        assertThat(stderr)
+            .contains("The supplied temporary directory does not exist");
     }
 }

@@ -134,6 +134,11 @@ public class GetCommand implements Callable<Integer> {
     @Option(names = "--retry-delay", description = "in seconds", defaultValue = "2")
     int retryDelay;
 
+    @Option(names = {"--use-temp-dir"},
+        description = "Specifies the name of a directory to use for downloading to a temporary file, before it is copied to the final destination",
+        paramLabel = "DIR")
+    Path tempDir;
+
     @Parameters(split = OPTION_SPLIT_COMMAS, paramLabel = "URI",
         description = "The URI of the resource to retrieve. When the output is a directory,"
             + " more than one URI can be requested.",
@@ -157,6 +162,10 @@ public class GetCommand implements Callable<Integer> {
         }
         if (uris == null || uris.isEmpty()) {
             throw new ParameterException(spec.commandLine(), "No URIs were given");
+        }
+
+        if (tempDir != null && !Files.isDirectory(tempDir)) {
+            throw new ParameterException(spec.commandLine(), "The supplied temporary directory does not exist");
         }
 
         final LatchingUrisInterceptor interceptor = new LatchingUrisInterceptor();
@@ -209,8 +218,9 @@ public class GetCommand implements Callable<Integer> {
                         stdout.println(outputFile);
                     }
                 } else {
+                    final Path saveToFile = getSaveToFile();
                     final Path file = fetch(uris.get(0))
-                        .toFile(outputFile)
+                        .toFile(saveToFile)
                         .skipUpToDate(skipUpToDate)
                         .acceptContentTypes(acceptContentTypes)
                         .handleDownloaded((uri, f, contentSizeBytes) -> {
@@ -219,6 +229,9 @@ public class GetCommand implements Callable<Integer> {
                             }
                         })
                         .execute();
+                    if (tempDir != null) {
+                        Files.move(saveToFile, outputFile);
+                    }
                     if (this.outputFilename) {
                         stdout.println(file);
                     }
@@ -477,5 +490,8 @@ public class GetCommand implements Callable<Integer> {
         );
     }
 
+    private Path getSaveToFile() {
+        return tempDir == null ? outputFile : tempDir.resolve(outputFile.getFileName());
+    }
 
 }
