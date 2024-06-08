@@ -13,6 +13,7 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -57,6 +58,7 @@ import org.apache.commons.compress.archivers.zip.ZipFile;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
+import reactor.util.retry.Retry;
 
 @RequiredArgsConstructor
 @Slf4j
@@ -70,6 +72,8 @@ public class CurseForgeInstaller {
     public static final String REPO_SUBDIR_MODPACKS = "modpacks";
     public static final String REPO_SUBDIR_MODS = "mods";
     public static final String REPO_SUBDIR_WORLDS = "worlds";
+    private static final Duration BAD_FILE_DELAY = Duration.ofSeconds(5);
+    public static final int BAD_FILE_ATTEMPTS = 3;
 
     private final Path outputDir;
     private final Path resultsFile;
@@ -734,7 +738,21 @@ public class CurseForgeInstaller {
                         );
 
                         final Mono<ResolveResult> resolvedFileMono =
-                            downloadOrResolveFile(context, modInfo, isWorld, outputDir, cfFile);
+                            Mono.defer(() ->
+                                    downloadOrResolveFile(context, modInfo, isWorld, outputDir, cfFile)
+                                )
+                                // retry the deferred part above if one of the expected failure cases
+                                .retryWhen(
+                                    Retry.fixedDelay(BAD_FILE_ATTEMPTS, BAD_FILE_DELAY)
+                                        .filter(throwable ->
+                                            throwable instanceof FileHashInvalidException ||
+                                            throwable instanceof FailedRequestException
+                                        )
+                                        .doBeforeRetry(retrySignal ->
+                                            log.warn("Retrying to download {} @ {}:{}",
+                                            cfFile.getFileName(), projectID, fileID)
+                                        )
+                                );
 
                         return isWorld ?
                             resolvedFileMono
@@ -780,10 +798,12 @@ public class CurseForgeInstaller {
 
         if (locatedFile != null) {
             log.info("Mod file {} already exists", locatedFile);
-            return Mono.just(new ResolveResult(locatedFile));
+            return FileHashVerifier.verify(locatedFile, cfFile.getHashes())
+                .map(ResolveResult::new);
         }
         else {
             return context.cfApi.download(cfFile, outputFile, modFileDownloadStatusHandler(this.outputDir, log))
+                .flatMap(path -> FileHashVerifier.verify(path, cfFile.getHashes()))
                 .map(ResolveResult::new)
                 .onErrorResume(
                     e -> e instanceof FailedRequestException
