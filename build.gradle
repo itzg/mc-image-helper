@@ -97,7 +97,7 @@ dependencies {
     implementation 'com.jayway.jsonpath:json-path:2.9.0'
     implementation 'org.apache.httpcomponents.client5:httpclient5:5.3.1'
     implementation 'io.projectreactor.netty:reactor-netty-http:1.1.19'
-    implementation 'org.apache.maven:maven-artifact:3.9.6'
+    implementation 'org.apache.maven:maven-artifact:3.9.7'
     implementation 'commons-codec:commons-codec:1.17.0'
     // for RFC5987 parsing of content-disposition filename*
     // 3.5.x is last of Java8 compatible: https://cxf.apache.org/download.html
@@ -106,7 +106,7 @@ dependencies {
 
     // https://commons.apache.org/proper/commons-compress/zip.html
     // For IMPLODE compression used by some CurseForge modpacks
-    implementation 'org.apache.commons:commons-compress:1.26.1'
+    implementation 'org.apache.commons:commons-compress:1.26.2'
 
     testImplementation 'org.assertj:assertj-core:3.26.0'
     // https://github.com/webcompere/model-assert
