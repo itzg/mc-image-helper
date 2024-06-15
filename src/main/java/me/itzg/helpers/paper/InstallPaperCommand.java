@@ -16,12 +16,15 @@ import me.itzg.helpers.files.IoStreams;
 import me.itzg.helpers.files.ManifestException;
 import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.files.ResultsFileWriter;
+import me.itzg.helpers.http.FailedRequestException;
 import me.itzg.helpers.http.Fetch;
 import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.http.SharedFetchArgs;
 import me.itzg.helpers.json.ObjectMappers;
+import me.itzg.helpers.paper.model.ReleaseChannel;
 import me.itzg.helpers.paper.model.VersionMeta;
 import me.itzg.helpers.sync.MultiCopyManifest;
+import org.jetbrains.annotations.NotNull;
 import picocli.CommandLine;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
@@ -73,6 +76,9 @@ public class InstallPaperCommand implements Callable<Integer> {
 
             @Option(names = "--build")
             Integer build;
+
+            @Option(names = "--channel", defaultValue = "default")
+            ReleaseChannel channel;
         }
     }
 
@@ -106,9 +112,11 @@ public class InstallPaperCommand implements Callable<Integer> {
                 result = downloadCustom(inputs.downloadUrl);
             }
             else {
-                result = useCoordinates(client, inputs.coordinates.project,
-                    inputs.coordinates.version, inputs.coordinates.build
-                );
+                result = downloadUsingCoordinates(client, inputs.coordinates.project,
+                    inputs.coordinates.version, inputs.coordinates.build,
+                    inputs.coordinates.channel
+                )
+                    .block();
             }
         }
 
@@ -126,30 +134,60 @@ public class InstallPaperCommand implements Callable<Integer> {
         return ExitCode.OK;
     }
 
-    private Result useCoordinates(PaperDownloadsClient client, String project, String version, Integer build) {
-        return resolveVersion(client, project, version)
-            .flatMap(v -> resolveBuild(client, project, v, build)
-                .flatMap(b -> {
-                    log.info("Resolved {} to version {} build {}", project, v, b);
+    private Mono<Result> downloadUsingCoordinates(PaperDownloadsClient client, String project,
+        String version, Integer build, ReleaseChannel channel
+    ) {
+        if (isSpecificVersion(version)) {
+            if (build != null) {
+                return download(client, project, version, build)
+                    .onErrorMap(
+                        FailedRequestException::isNotFound,
+                        throwable -> new InvalidParameterException(
+                                String.format("Requested version %s, build %d is not available", version, build))
+                    );
+            }
+            else {
+                return client.getLatestBuild(project, version, channel)
+                    .onErrorMap(
+                        FailedRequestException::isNotFound,
+                        throwable -> new InvalidParameterException(
+                            String.format("Requested version %s is not available", version))
+                    )
+                    .switchIfEmpty(Mono.error(() -> new InvalidParameterException(
+                        String.format("No build found for version %s with channel %s", version, channel)
+                    )))
+                    .flatMap(resolvedBuild -> download(client, project, version, resolvedBuild));
+            }
+        }
+        else {
+            return client.getLatestVersionBuild(project, channel)
+                .switchIfEmpty(
+                    Mono.error(() -> new InvalidParameterException("No build found with channel " + channel))
+                )
+                .flatMap(resolved -> download(client, project, resolved.getVersion(), resolved.getBuild()));
+        }
+    }
 
-                    return client.download(project, v, b, outputDirectory, Fetch.loggingDownloadStatusHandler(log))
-                        .map(serverJar ->
-                            Result.builder()
-                                .newManifest(
-                                    PaperManifest.builder()
-                                        .project(project)
-                                        .minecraftVersion(v)
-                                        .build(b)
-                                        .files(Collections.singleton(Manifests.relativize(outputDirectory, serverJar)))
-                                        .build()
-                                )
-                                .serverJar(serverJar)
-                                .version(v)
-                                .build()
-                        );
-                })
-            )
-            .block();
+    private static boolean isSpecificVersion(String version) {
+        return version != null && !version.equalsIgnoreCase("latest");
+    }
+
+    private @NotNull Mono<Result> download(PaperDownloadsClient client, String project, String v, Integer b) {
+        return client.download(project, v, b, outputDirectory, Fetch.loggingDownloadStatusHandler(log))
+            .map(serverJar ->
+                Result.builder()
+                    .newManifest(
+                        PaperManifest.builder()
+                            .project(project)
+                            .minecraftVersion(v)
+                            .build(b)
+                            .files(Collections.singleton(Manifests.relativize(outputDirectory, serverJar)))
+                            .build()
+                    )
+                    .serverJar(serverJar)
+                    .version(v)
+                    .build()
+            );
     }
 
     private Result downloadCustom(URI downloadUrl) {
@@ -217,29 +255,4 @@ public class InstallPaperCommand implements Callable<Integer> {
         }
     }
 
-    private Mono<String> resolveVersion(PaperDownloadsClient client, String project, String version) {
-        if (version.equals("latest")) {
-            return client.getLatestProjectVersion(project);
-        }
-        return client.hasVersion(project, version)
-            .flatMap(exists -> exists ? Mono.just(version) : Mono.error(() -> new InvalidParameterException(
-                String.format("Version %s does not exist for the project %s",
-                    version, project
-                ))));
-    }
-
-    private Mono<Integer> resolveBuild(PaperDownloadsClient client, String project, String version, Integer build) {
-        if (build == null) {
-            return client.getLatestBuild(project, version);
-        }
-        else {
-            return client.hasBuild(project, version, build)
-                .flatMap(exists -> exists ? Mono.just(build) : Mono.error(() ->
-                    new InvalidParameterException(String.format("Build %d does not exist for project %s version %s",
-                        build, project, version
-                    )
-                    )
-                ));
-        }
-    }
 }

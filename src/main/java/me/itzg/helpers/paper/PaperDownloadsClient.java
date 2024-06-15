@@ -1,6 +1,13 @@
 package me.itzg.helpers.paper;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import lombok.Data;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.http.Fetch;
 import me.itzg.helpers.http.FileDownloadStatusHandler;
@@ -9,12 +16,14 @@ import me.itzg.helpers.http.UriBuilder;
 import me.itzg.helpers.paper.model.BuildInfo;
 import me.itzg.helpers.paper.model.BuildInfo.DownloadInfo;
 import me.itzg.helpers.paper.model.ProjectInfo;
-import me.itzg.helpers.paper.model.VersionInfo;
+import me.itzg.helpers.paper.model.ReleaseChannel;
+import me.itzg.helpers.paper.model.VersionBuilds;
 import reactor.core.publisher.Mono;
 
 /**
  * <a href="https://api.papermc.io/docs/swagger-ui/index.html?configUrl=/openapi/swagger-config">Downloads API</a>
  */
+@Slf4j
 public class PaperDownloadsClient implements AutoCloseable{
 
     private final UriBuilder uriBuilder;
@@ -25,46 +34,55 @@ public class PaperDownloadsClient implements AutoCloseable{
         sharedFetch = Fetch.sharedFetch("install-paper", options);
     }
 
-    public Mono<String> getLatestProjectVersion(String project) {
+    private static <T> Iterable<T> reverse(List<T> versions) {
+        final ArrayList<T> result = new ArrayList<>(versions);
+        Collections.reverse(result);
+        return result;
+    }
+
+    @Data
+    @RequiredArgsConstructor
+    public static class VersionBuild {
+        final String version;
+        final int build;
+    }
+
+    public Mono<VersionBuild> getLatestVersionBuild(String project, ReleaseChannel channel) {
         return sharedFetch.fetch(
                 uriBuilder.resolve("/v2/projects/{project}", project)
             )
             .toObject(ProjectInfo.class)
             .assemble()
-            .map(projectInfo -> projectInfo.getVersions().get(projectInfo.getVersions().size() - 1));
-    }
-
-    public Mono<Boolean> hasVersion(String project, String version) {
-        return sharedFetch.fetch(
-                uriBuilder.resolve("/v2/projects/{project}", project)
+            .flatMapIterable(projectInfo -> reverse(projectInfo.getVersions()))
+            .concatMap(v ->
+                    getLatestBuild(project, v, channel)
+                        .map(build -> new VersionBuild(v, build)),
+                1
             )
-            .toObject(ProjectInfo.class)
-            .assemble()
-            .map(projectInfo -> projectInfo.getVersions().contains(version));
+            .next();
     }
 
-    public Mono<Integer> getLatestBuild(String project, String version) {
+    public Mono<Integer> getLatestBuild(String project, String version, ReleaseChannel channel) {
+        log.debug("Retrieving latest build for project={}, version={}", project, version);
+
         return sharedFetch.fetch(
-            uriBuilder.resolve("/v2/projects/{project}/versions/{version}",
+            uriBuilder.resolve("/v2/projects/{project}/versions/{version}/builds",
                 project, version
                 )
         )
-            .toObject(VersionInfo.class)
+            .toObject(VersionBuilds.class)
             .assemble()
-            .map(
-                versionInfo -> versionInfo.getBuilds().get(versionInfo.getBuilds().size()-1)
+            .flatMap(
+                versionBuilds ->
+                    Mono.justOrEmpty(
+                    versionBuilds.getBuilds().stream()
+                        // sort by build ID desc
+                        .sorted(Comparator.comparingInt(BuildInfo::getBuild).reversed())
+                        .filter(buildInfo -> buildInfo.getChannel() == channel)
+                        .map(BuildInfo::getBuild)
+                        .findFirst()
+                    )
             );
-    }
-
-    public Mono<Boolean> hasBuild(String project, String version, int build) {
-        return sharedFetch.fetch(
-                uriBuilder.resolve("/v2/projects/{project}/versions/{version}",
-                    project, version
-                )
-            )
-            .toObject(VersionInfo.class)
-            .assemble()
-            .map(versionInfo -> versionInfo.getBuilds().contains(build));
     }
 
     public Mono<Path> download(String project, String version, int build, Path outputDirectory,
