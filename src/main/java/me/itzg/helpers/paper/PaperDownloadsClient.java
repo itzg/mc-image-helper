@@ -63,7 +63,7 @@ public class PaperDownloadsClient implements AutoCloseable{
     }
 
     public Mono<Integer> getLatestBuild(String project, String version, ReleaseChannel channel) {
-        log.info("Retrieving latest build for project={}, version={}", project, version);
+        log.debug("Retrieving latest build for project={}, version={}", project, version);
 
         return sharedFetch.fetch(
             uriBuilder.resolve("/v2/projects/{project}/versions/{version}/builds",
