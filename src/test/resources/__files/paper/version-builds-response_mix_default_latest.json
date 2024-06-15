@@ -1,0 +1,2264 @@
+{
+  "project_id": "paper",
+  "project_name": "Paper",
+  "version": "1.20.6",
+  "builds": [
+    {
+      "build": 23,
+      "time": "2024-04-29T22:26:16.128Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "44ee092878a4a561fd565aa72cb5f2006ee64701",
+          "summary": "1.20.6 (#10623)",
+          "message": "1.20.6 (#10623)\n\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-23.jar",
+          "sha256": "2f0cb274440da51d0145d63e9988c2566eb7401c69b625196595a768c5fa809c"
+        }
+      }
+    },
+    {
+      "build": 24,
+      "time": "2024-04-29T22:43:03.291Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "812ccb96a480cc6518ba5ddde11e12c22691c061",
+          "summary": "fix spawnChunkRadius gamerule resetting",
+          "message": "fix spawnChunkRadius gamerule resetting\n\nFixes #10622\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-24.jar",
+          "sha256": "8ce8bb1d297e39e4fbad85f88129654aba1a78d644ea4e9a8c3566b2e9a3967e"
+        }
+      }
+    },
+    {
+      "build": 25,
+      "time": "2024-04-30T01:57:07.711Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "25e44bc63b467c19fe63ad6edfd8981d127f7f44",
+          "summary": "fix dumpitem command nbt format",
+          "message": "fix dumpitem command nbt format\n\nuse the snbt visitor instead of plain string\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-25.jar",
+          "sha256": "f919955c60370cc6d2e84659e830cd89fdf7c165874b3bf25b3588a22d797309"
+        }
+      }
+    },
+    {
+      "build": 26,
+      "time": "2024-04-30T08:29:20.727Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "3fdd0948b7713541a80d1755719ee210311a3850",
+          "summary": "Fix sealed package check in BytecodeModifyingURLClassLoader (#10627)",
+          "message": "Fix sealed package check in BytecodeModifyingURLClassLoader (#10627)\n\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-26.jar",
+          "sha256": "db3698672ba714ea164b20d9100be1626656a15509a0bb5617f53f3163d921f5"
+        }
+      }
+    },
+    {
+      "build": 27,
+      "time": "2024-04-30T09:21:18.093Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "937a67a65172aa7ed2efafd536bbf7cfab2e3489",
+          "summary": "Add initial size cap to component map",
+          "message": "Add initial size cap to component map\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-27.jar",
+          "sha256": "0c58caf298f34f5e663826cd90bc746c4538de359f6e7ec7f30e08ce889fe9ad"
+        }
+      }
+    },
+    {
+      "build": 28,
+      "time": "2024-04-30T17:38:25.167Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "8c058f88a645081abdc604d022a9c0bed5f2f61e",
+          "summary": "Update paperweight to 1.6.3 (#10626)",
+          "message": "Update paperweight to 1.6.3 (#10626)\n\n"
+        },
+        {
+          "commit": "4ea67abd46ecbfb501ed2e0f13d494635972bfa0",
+          "summary": "[ci skip] Remove trailing comma in projects action",
+          "message": "[ci skip] Remove trailing comma in projects action\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-28.jar",
+          "sha256": "1f63fd90f449623be3c7e281b1d358ba5c178d41e30241c8ff64d23988d5b8c5"
+        }
+      }
+    },
+    {
+      "build": 29,
+      "time": "2024-04-30T23:51:08.249Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "fa6013d83b0c6b8e92f79772825e35c38c3114ec",
+          "summary": "Fixes beds not exploding in the nether",
+          "message": "Fixes beds not exploding in the nether\n\nAlso correctly marks the captured BlockState as \"unplaced\"\nFixes #10629\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-29.jar",
+          "sha256": "961832f4ecd955944d4c68401de433d474ac7e0b7fdd111a22bc3d8c89b922ee"
+        }
+      }
+    },
+    {
+      "build": 30,
+      "time": "2024-05-01T00:01:24.563Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "3e0eb4a1baa5df5847f69982c78814bf9757cb97",
+          "summary": "Updated Upstream (CraftBukkit) (#10624)",
+          "message": "Updated Upstream (CraftBukkit) (#10624)\n\nUpstream has released updates that appear to apply and compile correctly.\r\nThis update has not been tested by PaperMC and as with ANY update, please do your own testing\r\n\r\nCraftBukkit Changes:\r\n666f091c6 SPIGOT-7649: Allow /setworldspawn command in all worlds again"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-30.jar",
+          "sha256": "de31ee1d37dcf87af26b95b96201d5cf1503beff6ddd39478285c9570bbbad87"
+        }
+      }
+    },
+    {
+      "build": 31,
+      "time": "2024-05-01T10:12:13.687Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "4cfd9e25fad4ab9a40452acb090467249c19d105",
+          "summary": "Expose canReach to mob pathfinding API (#10636)",
+          "message": "Expose canReach to mob pathfinding API (#10636)\n\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-31.jar",
+          "sha256": "c8caec5f2de95996e28774c3c58311e9dd252894c24f71cede2042e0292f5105"
+        }
+      }
+    },
+    {
+      "build": 32,
+      "time": "2024-05-01T10:22:03.437Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "b8c454c2ba204af066685d2a5c4dcdd65299050d",
+          "summary": "Add damage check for mending (#10631)",
+          "message": "Add damage check for mending (#10631)\n\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-32.jar",
+          "sha256": "eed5c9db5f2910230d383cf80a4b571762be0d545a5eac0451b0512d5b2e2752"
+        }
+      }
+    },
+    {
+      "build": 33,
+      "time": "2024-05-01T16:52:11.431Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "310b47bb964520799a71986294407ee7a9090467",
+          "summary": "Update Java version references, add note on var usages",
+          "message": "Update Java version references, add note on var usages\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-33.jar",
+          "sha256": "9e2baff6ec36f5ad38f714f5535d6969be5b10aed90b1033d840bb5982784dd0"
+        }
+      }
+    },
+    {
+      "build": 34,
+      "time": "2024-05-01T17:21:33.207Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "544ce20e01820151d1984aecf3d9a7199071fb06",
+          "summary": "Expose #hasColor to leather armor (#10638)",
+          "message": "Expose #hasColor to leather armor (#10638)\n\n"
+        },
+        {
+          "commit": "18c201b838697a2c7ad0a106106adb54f03b661d",
+          "summary": "Add EquipmentSlot#getOppositeHand (#10632)",
+          "message": "Add EquipmentSlot#getOppositeHand (#10632)\n\n"
+        },
+        {
+          "commit": "faa7aa266a50bce345e2fda6e4a99ba6e4368bde",
+          "summary": "Add GameMode#isInvulnerable (#10633)",
+          "message": "Add GameMode#isInvulnerable (#10633)\n\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-34.jar",
+          "sha256": "fa7cb37f6998354b3d6039ac28b1dcb83c45cc2ba9494f42cc17c21abb369f74"
+        }
+      }
+    },
+    {
+      "build": 35,
+      "time": "2024-05-02T09:01:58.312Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "59fe7ccc3b067676e5c8b85ccfac915c493f54d9",
+          "summary": "default save-empty-scoreboard-teams to vanilla",
+          "message": "default save-empty-scoreboard-teams to vanilla\n\nThe primary environmental factor which caused this feature to be implemented\nis no longer much of a factor within the community\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-35.jar",
+          "sha256": "a5f90153307ffc4c60822fd75827dcb0e5ec6c6ade9091b5e26ac98c82eea93a"
+        }
+      }
+    },
+    {
+      "build": 36,
+      "time": "2024-05-02T18:30:42.602Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "0db72ac19e735d398e85b2152d5a32317bb03dc8",
+          "summary": "Fix can_place_on conversion and size check for item containers",
+          "message": "Fix can_place_on conversion and size check for item containers\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-36.jar",
+          "sha256": "42f987f672327e71bab2295166c323a749c1ca5e04e1d42a4c5b242aad202446"
+        }
+      }
+    },
+    {
+      "build": 37,
+      "time": "2024-05-04T11:06:51.845Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "156675c773bf09679ed7b163b6c9b46f0ccb8070",
+          "summary": "Fix lodestone compass target conversion",
+          "message": "Fix lodestone compass target conversion\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-37.jar",
+          "sha256": "664c9dfce584590411020486dd9fd12284c2b13a9450b3cd3727f0b048872601"
+        }
+      }
+    },
+    {
+      "build": 38,
+      "time": "2024-05-04T18:31:33.670Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "5632210f10e520ce70a647b2b2bd45efde4d039b",
+          "summary": "add RegistryAccess for managing registries (#10154)",
+          "message": "add RegistryAccess for managing registries (#10154)\n\n* add RegistryAccess for managing registries\r\n\r\n* add missing types to key data generator\r\n\r\n* fix some stuff\r\n\r\n* Add RegistryKeys for all other non-server-backed registries\r\n\r\n* fix tests\r\n\r\n* remove Experimental annotations"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-38.jar",
+          "sha256": "db31288ffd5ace90a525d23c47e1910c2b80cca2245d8803967fdce980aa560b"
+        }
+      }
+    },
+    {
+      "build": 39,
+      "time": "2024-05-04T20:58:12.773Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "6fcca46674f7ebbc261bd63339fbdcba21ab5133",
+          "summary": "Add missing step in V3818",
+          "message": "Add missing step in V3818\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-39.jar",
+          "sha256": "084215885f5bbf53b73f471bb4e8eacf4d7925ab4896472b5ae773780420e3ac"
+        }
+      }
+    },
+    {
+      "build": 40,
+      "time": "2024-05-05T05:58:34.915Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "7401313e16a03156f1ab09fc5eeee44ae431692a",
+          "summary": "fix shear drops for wolf and bogged",
+          "message": "fix shear drops for wolf and bogged\n\nFixes #10661\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-40.jar",
+          "sha256": "59cddb54db367c09f7031c2897d49176a8d1e3a4d13fff15b9b3a2c6c9efaaf8"
+        }
+      }
+    },
+    {
+      "build": 41,
+      "time": "2024-05-05T09:47:13.176Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "7ae2c671c67588491508b6f07b1b30d4b8a6e650",
+          "summary": "Keep components using single items in creative (#10664)",
+          "message": "Keep components using single items in creative (#10664)\n\nThe craftbukkit implementation stores the old and new data patch of an\r\nitem during ItemStack#useOn(UseOnContext) to properly cancel events via\r\ncomparison and change detection of the component patch.\r\n\r\nHowever, it uses #getComponentsPatch to fetch the new stack component\r\npatch, which always yields an empty patch set if an itemstack is\r\nconsidered empty by the game.\r\nAs the restoration of an itemstack's count to its previous state is\r\nhandled after the entire ItemStack#useOn method, items used in creative\r\nmode temporarily have a count of zero, which causes craftbukkit to\r\nconsider their new component patch as EMPTY even tho said item may have\r\ndata.\r\nThe new patch is applied and, after useOn completes, the count is reset\r\nif the player is in creative mode, leading to lost data.\r\n\r\nThis commit fixes said inconsistency by directly accessing the\r\ncomponents of the item via components#asPatch, storing the proper\r\ncomponent patch even for an item that temporarily has a count of zero."
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-41.jar",
+          "sha256": "dfd0363d5ee3b3317a876f5fae39be79dd7cae21f2f7e7a3e581ad5509634a21"
+        }
+      }
+    },
+    {
+      "build": 42,
+      "time": "2024-05-05T16:08:56.484Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "b13c7dbe36144298d4bb6aace24b8e128ec167c0",
+          "summary": "Add missing experimental field and annotations (#10653)",
+          "message": "Add missing experimental field and annotations (#10653)\n\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-42.jar",
+          "sha256": "9cb526ba5c1d6fa5a99ad22bc4e3ce503ba7011f1780e01314baa5fe33185712"
+        }
+      }
+    },
+    {
+      "build": 43,
+      "time": "2024-05-05T16:21:55.764Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "9d8d38d13714433271fa9ed17485bc1578629b9e",
+          "summary": "Updated Upstream (CraftBukkit) (#10646)",
+          "message": "Updated Upstream (CraftBukkit) (#10646)\n\nUpstream has released updates that appear to apply and compile correctly.\r\nThis update has not been tested by PaperMC and as with ANY update, please do your own testing\r\n\r\nCraftBukkit Changes:\r\n66fd94322 SPIGOT-7652: Remove remap for SPELL_MOB_AMBIENT which no longer exists\r\necfa4f973 SPIGOT-7654: ItemStack#isSimilar does not work with empty BlockStateMeta\r\n4460ecc49 SPIGOT-7655: ItemMeta#addItemFlags(ItemFlag.HIDE_ATTRIBUTES) not working when no attribute modifiers set\r\n5d84f48a4 SPIGOT-7653: Update ApiVersion.CURRENT with latest version and include tests"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-43.jar",
+          "sha256": "9d69a76da9b222c04a46a844968b02cb862e1d1b2721db13ae279b5943629764"
+        }
+      }
+    },
+    {
+      "build": 44,
+      "time": "2024-05-05T16:47:46.045Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "0e43d3c103206ed5bc72bde68ec3129329de9c5a",
+          "summary": "Added API to get player's proxy address (#10400)",
+          "message": "Added API to get player's proxy address (#10400)\n\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-44.jar",
+          "sha256": "92c0e14d7f06ab6150bcea87edde85fa3a1309a77620bee08c11cc2b00c6db29"
+        }
+      }
+    },
+    {
+      "build": 45,
+      "time": "2024-05-05T16:53:53.307Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "54c5ecb4e46a79c232645a438a989145fa61cad6",
+          "summary": "Add missing SpigotConfig logCommands check (#10659)",
+          "message": "Add missing SpigotConfig logCommands check (#10659)\n\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-45.jar",
+          "sha256": "580b944195ce38695648bee8e5b6b3d7caebc76179caf2fed51115f6ef7c3303"
+        }
+      }
+    },
+    {
+      "build": 46,
+      "time": "2024-05-05T17:01:08.677Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "716dfd869822a2694fcc2e097ebe404862660853",
+          "summary": "Fix EntityLoadCrossbowEvent (#10645)",
+          "message": "Fix EntityLoadCrossbowEvent (#10645)\n\n* fix\r\n\r\n* hehe"
+        },
+        {
+          "commit": "816ea9ecd548eb75e7e01f8e6364b6b26fac1d56",
+          "summary": "[ci skip] Update old particle reference in javadoc (#10652)",
+          "message": "[ci skip] Update old particle reference in javadoc (#10652)\n\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-46.jar",
+          "sha256": "0271a137e4a3af3abffe4ef7c27a13b8a346143a60de8aef8361e0bd6e719d31"
+        }
+      }
+    },
+    {
+      "build": 47,
+      "time": "2024-05-05T17:16:43.055Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "21d91ce634481f58a8e94f6c02651dbaaeb4408f",
+          "summary": "Prevent profile lookups when unnecessary (#10651)",
+          "message": "Prevent profile lookups when unnecessary (#10651)\n\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-47.jar",
+          "sha256": "7fcfd8a5f6f38577efcb26d9bded47185b45f1b1a8b2d16eca3fafc0698ccc23"
+        }
+      }
+    },
+    {
+      "build": 48,
+      "time": "2024-05-05T18:06:00.958Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "2a6a5fef59ad3bb664393332c0496055ffbbcd76",
+          "summary": "Add a way to check whether the chest is blocked (#10635)",
+          "message": "Add a way to check whether the chest is blocked (#10635)\n\n* More Chest Block API\r\n\r\n* rebased and slight logic fixes\r\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-48.jar",
+          "sha256": "a52251b02fb046c6ae2afe9d7596afdf3b56f94464cfec003db18915e1276544"
+        }
+      }
+    },
+    {
+      "build": 49,
+      "time": "2024-05-05T20:04:01.478Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "ac3a5471c8dcdc1d0431025781da1d524895c47a",
+          "summary": "Fix BlockStateMeta (#10647)",
+          "message": "Fix BlockStateMeta (#10647)\n\n* Fixes CraftMetaBlockState block entity data components\r\n\r\n* rebase and merge into general item meta fix\r\n\r\n* Add javadoc notice\r\n\r\n* Update message\r\n\r\n---------\r\n\r\nCo-authored-by: Bjarne Koll <lynxplay101@gmail.com>"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-49.jar",
+          "sha256": "c2284b23a82c3487139edb2cf05e5a00272f8cc5ccb6c2c6498031f09c67f00d"
+        }
+      }
+    },
+    {
+      "build": 50,
+      "time": "2024-05-07T12:41:33.115Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "9e51f949417553240efe35719e5173edfd5a8dc1",
+          "summary": "Fix ping event always receiving protocol version 0 (#10671)",
+          "message": "Fix ping event always receiving protocol version 0 (#10671)\n\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-50.jar",
+          "sha256": "577da68b5b9ab3ff80c6389470568150d2f17678fc6d28f6edf5bb571b653de2"
+        }
+      }
+    },
+    {
+      "build": 51,
+      "time": "2024-05-07T12:58:00.855Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "89ad61fd00b04db4bbd6124944d0a33c74e53ad9",
+          "summary": "Fix hopper pull event being skipped after the first call (#10667)",
+          "message": "Fix hopper pull event being skipped after the first call (#10667)\n\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-51.jar",
+          "sha256": "dea0dd26f3aee4bede6ed6b79fb0dd79ff5351fe43894daab3e4d9ca689dc53a"
+        }
+      }
+    },
+    {
+      "build": 52,
+      "time": "2024-05-08T01:26:52.737Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "eee55d019fe80372c2e08ccd1d0a94c066cda926",
+          "summary": "Correctly compare holders in BeaconMenu (#10673)",
+          "message": "Correctly compare holders in BeaconMenu (#10673)\n\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-52.jar",
+          "sha256": "027c50078a0d7d27f1afab88b39ce67976bcbeb208a63132814ed10523441ef1"
+        }
+      }
+    },
+    {
+      "build": 53,
+      "time": "2024-05-08T15:03:20.310Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "5729b294eef2ffde690f73c5b14a64a31f301084",
+          "summary": "Update Adventure to 4.17.0 Release",
+          "message": "Update Adventure to 4.17.0 Release\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-53.jar",
+          "sha256": "5ff172cc43fedef8914a2d40e9896d8d5f83304564975e7b10283bb56b67c7ef"
+        }
+      }
+    },
+    {
+      "build": 54,
+      "time": "2024-05-09T13:19:53.982Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "f2512b12385961f8ca1f69efebe5ed0e00c0caa8",
+          "summary": "Print data component type on encoding error",
+          "message": "Print data component type on encoding error\n"
+        },
+        {
+          "commit": "ab2a85a35f8749bbb59132cf0d203213c9ef10f3",
+          "summary": "[ci skip] Clarify var entry in contributing file",
+          "message": "[ci skip] Clarify var entry in contributing file\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-54.jar",
+          "sha256": "2a67ad4c59dbff601448ecb2fb8e3aaa20e84924e8f5bfa6d65518e2cabe8776"
+        }
+      }
+    },
+    {
+      "build": 55,
+      "time": "2024-05-10T00:27:09.645Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "1b67e023851f406c68789fd5f187cebdac04ce65",
+          "summary": "Fix entity tracker desync when new players are added to the tracker",
+          "message": "Fix entity tracker desync when new players are added to the tracker\n\nThe delta position packet instructs the client to update\nthe entity position by a position difference. However, this position\ndifference is relative to the last position in the entity tracker\nstate, not the last position which has been sent to the player. As\na result, if the last position the player has recorded is different\nthan the one stored in the entity tracker (which occurs when a new\nplayer is added to an existing entity tracker state) then the sent\nposition difference will cause a position desync for the client.\n\nWe can resolve this problem by either tracking the last position\nsent per-player, or by simply resetting the last sent position\nin the entity tracker state every time a new player is added.\nResetting the last sent position every time a new player is\nadded to the tracker is just easier to do, so that is what\nthis patch does.\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-55.jar",
+          "sha256": "dc771e5fb6c31f72b04a001e0b4ced775837b4973d3a5b3545a288a9a938f535"
+        }
+      }
+    },
+    {
+      "build": 56,
+      "time": "2024-05-10T06:19:05.955Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "cc29d2b7d594795b23573d8136c0266f680037bf",
+          "summary": "Invalidate PathTypeCache when pathfinding updates are disabled",
+          "message": "Invalidate PathTypeCache when pathfinding updates are disabled\n\nThe configuration should not allow the cache to break. Additionally,\ninvalidating the cache is cheap and as such there is no gain to avoid\ninvalidating it.\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-56.jar",
+          "sha256": "7b9f510b89486a8230ee4ebefdb143c5d1d98bb182a0e33bcdd27d82fec04b72"
+        }
+      }
+    },
+    {
+      "build": 57,
+      "time": "2024-05-10T06:57:12.455Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "b56e92f3d4c263486210e7a082a98b301b181eef",
+          "summary": "Fix chunk data version check not running in chunk system",
+          "message": "Fix chunk data version check not running in chunk system\n\nThe old read() method should just redirect to the new\nchunk system method, however due to an error in moving\nthe chunk system patch around the data version check was\nleft in the old (UNUSED) read() method.\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-57.jar",
+          "sha256": "d2e072f8d62d41219667b6028a3895c7b50499d3c707c473e5e9bd03134aa05a"
+        }
+      }
+    },
+    {
+      "build": 58,
+      "time": "2024-05-10T07:44:55.465Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "8748ae16aca495c0b6bfdc0c72e47ea64e4e6475",
+          "summary": "Use MCDataConverter instead of raw convert call for cmd converter",
+          "message": "Use MCDataConverter instead of raw convert call for cmd converter\n\nMCDataConverter uses the breakpoint system, which for future\nupdates may be neccesary (probably not).\n\nAlso, add the 1.20.6 version field.\n"
+        },
+        {
+          "commit": "2df1dace32990fbc0d63caa0552b931e88aff4b2",
+          "summary": "Fix DataConverter ConverterParticleToNBT.parseProperties",
+          "message": "Fix DataConverter ConverterParticleToNBT.parseProperties\n\n- The old code was using `StringReader.peek()` in a place where it meant to be `StringReader.skip()`.\n- The vanilla code allows a trailing comma, but only if there is no whitespace between it and the closing bracket, which is a bit weird. I think that's a bug and it shouldn't allow trailing commas, but if you disagree then only the first issue needs to be fixed.\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-58.jar",
+          "sha256": "e7b01eacd4e339d48d0312a16db60c805dff2b8413d8d31de122d933df5965e0"
+        }
+      }
+    },
+    {
+      "build": 59,
+      "time": "2024-05-10T11:04:00.913Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "7f1a154d1585d7e0e57b191f42eff96bfe109c0b",
+          "summary": "Add validation to player profile and properties (#10680)",
+          "message": "Add validation to player profile and properties (#10680)\n\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-59.jar",
+          "sha256": "da601993da81ac5a3165c7ac4dd0bf189988bdb3c9f687c10aec62ec65cf554e"
+        }
+      }
+    },
+    {
+      "build": 60,
+      "time": "2024-05-10T11:11:18.746Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "4fd58a1b8fcb4e044b87a4d4af2f20da53fdb3b3",
+          "summary": "Add conversion for summon command",
+          "message": "Add conversion for summon command\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-60.jar",
+          "sha256": "9de4b3c593e7beedbfdfcdf2f317761817d23c765fca89400acbb288ae2e1d04"
+        }
+      }
+    },
+    {
+      "build": 61,
+      "time": "2024-05-10T19:15:03.893Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "39532a1f8cde8f511e8ebd9211b78477d1aaf0e5",
+          "summary": "Fix stacks losing empty attr modifiers",
+          "message": "Fix stacks losing empty attr modifiers\n\nFixes #10686\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-61.jar",
+          "sha256": "99b8320423cadcc479b6505929ca533ba4985e02a8a9bf1a7f152907a6ea4681"
+        }
+      }
+    },
+    {
+      "build": 62,
+      "time": "2024-05-11T00:31:58.070Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "cdb6ba8ef1fc609289e813fa1dcbe62ac610ed0d",
+          "summary": "Fix keepalive time interval (#10690)",
+          "message": "Fix keepalive time interval (#10690)\n\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-62.jar",
+          "sha256": "7d3f3ca687955eeb543579a3530ff0a69c1b7bf8666b4e47db0a660e3ef56221"
+        }
+      }
+    },
+    {
+      "build": 64,
+      "time": "2024-05-11T16:23:47.488Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "6c02dbcfa137f40418fc56a0a85721b1fa0242ff",
+          "summary": "handle recent ItemMeta changes in serialization logic",
+          "message": "handle recent ItemMeta changes in serialization logic\n"
+        },
+        {
+          "commit": "a61d58d4679e1219f97fbc6a62d9d1186f56eba1",
+          "summary": "adjust ItemMeta to distinguish null and empty modifiers",
+          "message": "adjust ItemMeta to distinguish null and empty modifiers\n\nFixes #10686 (again)\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-64.jar",
+          "sha256": "58230b36717e202399192beadc81c50955cce2976c810dcf948dec6dcbdf6468"
+        }
+      }
+    },
+    {
+      "build": 65,
+      "time": "2024-05-11T20:43:03.396Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "b98d20a8ac9c21789d532652df86638a202093c7",
+          "summary": "Brigadier Command Support (#8235)",
+          "message": "Brigadier Command Support (#8235)\n\nAdds the ability for plugins to register their own brigadier commands \r\n\r\n---------\r\n\r\nCo-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>\r\nCo-authored-by: Jason Penilla <11360596+jpenilla@users.noreply.github.com>\r\nCo-authored-by: Bjarne Koll <lynxplay101@gmail.com>"
+        },
+        {
+          "commit": "447f9a1e16f2273c656f4dc95f1ea838319d0fff",
+          "summary": "[ci skip] Fix paperclip PR label",
+          "message": "[ci skip] Fix paperclip PR label\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-65.jar",
+          "sha256": "c698465e4613f276d51197b5896cdbfeb506e4921324e172318c8a20a7d2b459"
+        }
+      }
+    },
+    {
+      "build": 66,
+      "time": "2024-05-11T20:54:15.773Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-66.jar",
+          "sha256": "501428763d247db25577964a4cd56a3a1dc907f07c41d9375071fdf67955ea66"
+        }
+      }
+    },
+    {
+      "build": 67,
+      "time": "2024-05-11T22:02:05.793Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "ac554ad46dabb20bbfee5f3b576baa53485b2ac7",
+          "summary": "Updated Upstream (Bukkit/CraftBukkit) (#10691)",
+          "message": "Updated Upstream (Bukkit/CraftBukkit) (#10691)\n\nUpdated Upstream (Bukkit/CraftBukkit)\r\n\r\nUpstream has released updates that appear to apply and compile correctly.\r\nThis update has not been tested by PaperMC and as with ANY update, please do your own testing\r\n\r\nBukkit Changes:\r\nfa99e752 PR-1007: Add ItemMeta#getAsComponentString()\r\n94a91782 Fix copy-pasted BlockType.Typed documentation\r\n9b34ac8c Largely restore deprecated PotionData API\r\n51a6449b PR-1008: Deprecate ITEMS_TOOLS, removed in 1.20.5\r\n702d15fe Fix Javadoc reference\r\n42f6cdf4 PR-919: Add internal ItemType and BlockType, delegate Material methods to them\r\n237bb37b SPIGOT-1166, SPIGOT-7647: Expose Damager BlockState in EntityDamageByBlockEvent\r\n035ea146 SPIGOT-6993: Allow #setVelocity to change the speed of a fireball and add a note to #setDirection about it\r\n8c7880fb PR-1004: Improve field rename handling and centralize conversion between bukkit and string more\r\n87c90e93 SPIGOT-7650: Add DamageSource for EntityDeathEvent and PlayerDeathEvent\r\n\r\nCraftBukkit Changes:\r\n4af0f22e8 SPIGOT-7664: Item meta should prevail over block states\r\nc2ccc46ec SPIGOT-7666: Fix access to llama and horse special slot\r\n124ac66d7 SPIGOT-7665: Fix ThrownPotion#getEffects() implementation only bringing custom effects\r\n66f1f439a Restore null page behaviour of signed books even though not strictly allowed by API\r\n6118e5398 Fix regression listening to minecraft:brand custom payloads\r\nc1a26b366 Fix unnecessary and potential not thread-safe chat visibility check\r\n12360a7ec Remove unused imports\r\n147b098b4 PR-1397: Add ItemMeta#getAsComponentString()\r\n428aefe0e Largely restore deprecated PotionData API\r\nafe5b5ee9 PR-1275: Add internal ItemType and BlockType, delegate Material methods to them\r\n8afeafa7d SPIGOT-1166, SPIGOT-7647: Expose Damager BlockState in EntityDamageByBlockEvent\r\n4e7d749d4 SPIGOT-6993: Allow #setVelocity to change the speed of a fireball and add a note to #setDirection about it\r\n441880757 Support both entity_data and bucket_entity_data on axolotl/fish buckets\r\n0e22fdd1e Fix custom direct BlockState being not correctly set in DamageSource\r\nf2182ed47 SPIGOT-7659: TropicalFishBucketMeta should use BUCKET_ENTITY_DATA\r\n2a6207fe1 PR-1393: Improve field rename handling and centralize conversion between bukkit and string more\r\nc024a5039 SPIGOT-7650: Add DamageSource for EntityDeathEvent and PlayerDeathEvent\r\n741b84480 PR-1390: Improve internal handling of damage sources\r\n0364df4e1 SPIGOT-7657: Error when loading angry entities"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-67.jar",
+          "sha256": "1c1dceac3da8540aa08890df94f8d0929605864042f210a8dd7d4dee330f8261"
+        }
+      }
+    },
+    {
+      "build": 68,
+      "time": "2024-05-11T22:23:25.099Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "711f82e01e44d8d86b47040aaa8ce33130b2f194",
+          "summary": "Fix signed book page serialization (#10696)",
+          "message": "Fix signed book page serialization (#10696)\n\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-68.jar",
+          "sha256": "2ab53018597d344b3f327085b02d03d267a8f3b8f804d0584c3fe9364d79bdc3"
+        }
+      }
+    },
+    {
+      "build": 69,
+      "time": "2024-05-12T06:53:45.787Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "7e48f66c05dcc85f8533c96b29fc90b87be65a66",
+          "summary": "Properly pass requirement on namespaced redirects (#10701)",
+          "message": "Properly pass requirement on namespaced redirects (#10701)\n\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-69.jar",
+          "sha256": "9dd9dd74f11952ca89ab2851c73576c11fb67599aefbd34905d55c915033bbbd"
+        }
+      }
+    },
+    {
+      "build": 70,
+      "time": "2024-05-12T15:50:17.780Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "f041f48458e6d81a54895e988867c0b738922d4d",
+          "summary": "Prevent infinite recursion on cyclic brig redirect (#10705)",
+          "message": "Prevent infinite recursion on cyclic brig redirect (#10705)\n\nPrevent infinite recursion when declaring a cyclic relation between\r\ncommand nodes via child nodes redirecting to an nth parent by marking a\r\ncommand node as unwrapped before unwrapping its children."
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-70.jar",
+          "sha256": "bd3991c4bf47d8e52d20d70960097ce12a7013adf4da2af04d25a7e312c29187"
+        }
+      }
+    },
+    {
+      "build": 71,
+      "time": "2024-05-12T20:56:30.144Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "11c39637de9eb0b14aee8d3b4a4bdc9799b7d13d",
+          "summary": "Improve Recipe validation (#10707)",
+          "message": "Improve Recipe validation (#10707)\n\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-71.jar",
+          "sha256": "4734c1787e8ee9274cfebcb4e97cc4dc4c1bc51ad2ed9c85c7ac37f2a309efb6"
+        }
+      }
+    },
+    {
+      "build": 72,
+      "time": "2024-05-13T04:59:01.004Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "0688f212f534f7ef8d9146b595f38e4c2b2eba42",
+          "summary": "Better way to keep paper datapack enabled",
+          "message": "Better way to keep paper datapack enabled\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-72.jar",
+          "sha256": "b4ebd2ae2f536e3d98bb5faf09c613d37acf9a4bbe4d342ab572d6e8e25b486a"
+        }
+      }
+    },
+    {
+      "build": 73,
+      "time": "2024-05-13T13:27:01.481Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "218d33ccb16a423c19c2040751a846c0314654ac",
+          "summary": "fix creating complex recipes that have air results",
+          "message": "fix creating complex recipes that have air results\n\nFixes #10715\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-73.jar",
+          "sha256": "c43fb276de8e1108888b40725bf3095eb8e8870117e890f3aa3975fc9430dd5b"
+        }
+      }
+    },
+    {
+      "build": 74,
+      "time": "2024-05-13T17:43:30.748Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "fa8a407072c320564c39d32d2d221550c3e6d5b6",
+          "summary": "Remove Adventure snapshot repo from dev bundle (#10716)",
+          "message": "Remove Adventure snapshot repo from dev bundle (#10716)\n\n* Remove Adventure snapshot repo\r\n\r\n* do not remove trailing comma"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-74.jar",
+          "sha256": "4c878c2af4356c27ebbffdf871bc2833455cf668f781ec0747d726e276e405ad"
+        }
+      }
+    },
+    {
+      "build": 75,
+      "time": "2024-05-13T21:49:01.746Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "bebcc9cc933bd13a841844c250dcb83bd132a8e7",
+          "summary": "Make exception during command conversion non-fatal",
+          "message": "Make exception during command conversion non-fatal\n\nInstead of allowing chunks to fail to convert completely,\nsimply log the exception and the offending command. Command\nconversion failure should never result in chunk data deletion,\nas commands are not critical chunk data.\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-75.jar",
+          "sha256": "02ae71394e7589e2e2198530d8faacb22b8f649f058ca6543943130f231b8ef0"
+        }
+      }
+    },
+    {
+      "build": 76,
+      "time": "2024-05-13T23:07:52.153Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "2faa3b2f44c962ce7413e8e3d71e32786851d556",
+          "summary": "Correctly copy alias requirements in command upgrader",
+          "message": "Correctly copy alias requirements in command upgrader\n\nFixes NPE when converting namespaced commands.\n\nSince the brigadier command api, more aliased commands\n(namespaced variants) are registered in the vanilla dispatcher,\nwhich made this issue more apparent.\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-76.jar",
+          "sha256": "6f94712546fc52c649a5f20a3d867db7acb85df293324a0b85657151b8b172bb"
+        }
+      }
+    },
+    {
+      "build": 77,
+      "time": "2024-05-13T23:19:22.469Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-77.jar",
+          "sha256": "41c5670b0f977316c996e4a2e7b47613e85cb2e21ab7c15e0da1195d1e084c3c"
+        }
+      }
+    },
+    {
+      "build": 78,
+      "time": "2024-05-14T06:08:03.786Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "3fc93581bb876e8149b2ca423375a98f5ca12d27",
+          "summary": "Show stacktrace when modifyItemStack fails",
+          "message": "Show stacktrace when modifyItemStack fails\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-78.jar",
+          "sha256": "577177b9c8eaf785387b3744016b768977b866450c4ae0df0fd22a4ac33616ca"
+        }
+      }
+    },
+    {
+      "build": 79,
+      "time": "2024-05-16T00:17:36.944Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "f17519338bc589c045e0b32bfc37e048b23544d5",
+          "summary": "Expose server build information (#10729)",
+          "message": "Expose server build information (#10729)\n\n* Expose server build information\r\n\r\n* squash patches\r\n\r\n* final tweaks\r\n\r\n---------\r\n\r\nCo-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>\r\nCo-authored-by: masmc05 <masmc05@gmail.com>"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-79.jar",
+          "sha256": "8e4227533b273f6ec1024257fbf8c3e5eb3ed33d1f03e07b4c78a8fe130862a2"
+        }
+      }
+    },
+    {
+      "build": 80,
+      "time": "2024-05-17T21:39:03.441Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "d8d59e0cdeda3f7e9da337b6d489f306fc5e76c9",
+          "summary": "Fix NPE sending resource pack without prompt",
+          "message": "Fix NPE sending resource pack without prompt\n\nFixes KyoriPowered/adventure#1075\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-80.jar",
+          "sha256": "0fb4d203c1a459a646157f61f18a2a999de179617c39414bbb22fbc95005fd50"
+        }
+      }
+    },
+    {
+      "build": 81,
+      "time": "2024-05-17T21:47:41.072Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "5a9afbee65c40eea131bd3174d68ed3df6db3d9e",
+          "summary": "Fixes issues in the suppress dismount cancellation patch (#10735)",
+          "message": "Fixes issues in the suppress dismount cancellation patch (#10735)\n\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-81.jar",
+          "sha256": "e91de54667a0799ed4786e40b0d38f4b6d2a4dcbbdd418e64cb70afddeef1f90"
+        }
+      }
+    },
+    {
+      "build": 82,
+      "time": "2024-05-18T20:27:21.105Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "0ad09de75bfb1db2a84bb760cdee09b06d609bb3",
+          "summary": "Make PaperSimplePluginClassLoader show class which is not found",
+          "message": "Make PaperSimplePluginClassLoader show class which is not found\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-82.jar",
+          "sha256": "c18be2957e2ac348b9398b711894a295b5a6aea6c7a9a7bf9e39035ffde7b770"
+        }
+      }
+    },
+    {
+      "build": 83,
+      "time": "2024-05-20T00:25:46.787Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "b3b340617e38bf428b5c18f7b497f914f54c22ef",
+          "summary": "fix CompassMeta not being correct (#10737)",
+          "message": "fix CompassMeta not being correct (#10737)\n\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-83.jar",
+          "sha256": "cc02efaf5cb7d121b65793fe1adab9a8a8332a1dea50899455bb4bc649efc196"
+        }
+      }
+    },
+    {
+      "build": 84,
+      "time": "2024-05-20T00:54:19.467Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "591521e697a619d5d81323c5488b154e3cd14ba3",
+          "summary": "Check for more correct profile validation (#10730)",
+          "message": "Check for more correct profile validation (#10730)\n\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-84.jar",
+          "sha256": "e9af04a37a24edf05400ecdf96d9d2f8cde020acca5e69878ce1de19767dfc65"
+        }
+      }
+    },
+    {
+      "build": 85,
+      "time": "2024-05-20T14:31:00.192Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "7d2e5c33ead3f4040597b2200f00fbd0e5b1e502",
+          "summary": "Add an 'empty' RecipeChoice for certain ingredient slots (#10710)",
+          "message": "Add an 'empty' RecipeChoice for certain ingredient slots (#10710)\n\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-85.jar",
+          "sha256": "784fe3193469ff9e18f9edbec7d0201f1547032fffe3cf9939ca5afa43d3d7e1"
+        }
+      }
+    },
+    {
+      "build": 86,
+      "time": "2024-05-20T18:25:01.615Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "9bf48555241dc03246c67258fe66eaf6c7a4a044",
+          "summary": "Add a better warning message than \"Server performance will be affected\" for CommandRegisteredEvent use (#10754)",
+          "message": "Add a better warning message than \"Server performance will be affected\" for CommandRegisteredEvent use (#10754)\n\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-86.jar",
+          "sha256": "fdbc96d807a9cd24fc5533b1f05d27d4b103861a530ce142b8707bbde6e9d56c"
+        }
+      }
+    },
+    {
+      "build": 88,
+      "time": "2024-05-21T15:54:33.436Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "980cff9f298032f8670b20368851b8a7316a44d7",
+          "summary": "Fix compile",
+          "message": "Fix compile\n"
+        },
+        {
+          "commit": "66cb880754c72ea79f9abde4128fefa6d89a13ca",
+          "summary": "Remove ThreadedWorldUpgrader patch",
+          "message": "Remove ThreadedWorldUpgrader patch\n\nThe patch does not implement Vanilla forceUpgrade behavior.\nSpecifically, poi/entity conversion and regionfile recreation.\n\nThe Vanilla force upgrader is also no longer broken by CB, so the\nbug fixes from this patch are not relevant anymore.\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-88.jar",
+          "sha256": "7f7ca7e09d30bec927798c4c550cfed1afda1e3318b5e6daac95c017870069b5"
+        }
+      }
+    },
+    {
+      "build": 89,
+      "time": "2024-05-22T14:27:19.052Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "d3ffa62b7f2f2c3b067e1900c7e567b6a1cea623",
+          "summary": "fix default item attributes",
+          "message": "fix default item attributes\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-89.jar",
+          "sha256": "2574490efc414de3f297646f3fed205f9ee7db4ca8cad6d9031314e928aa3fdf"
+        }
+      }
+    },
+    {
+      "build": 90,
+      "time": "2024-05-22T17:32:39.012Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "b14958485d88cdf2ba5e1ea4a7bc3171ba9a7de3",
+          "summary": "Always show command exception stack traces in logs (#10766)",
+          "message": "Always show command exception stack traces in logs (#10766)\n\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-90.jar",
+          "sha256": "5d141c14ed9b9f0d0ef1076d0a94c10eb834fa18d9c3cf523d0a4a11b5ecbdef"
+        }
+      }
+    },
+    {
+      "build": 91,
+      "time": "2024-05-23T17:49:27.298Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "3de408ee3e433f3f2d1afc3a9bca2941bac300dc",
+          "summary": "Fix equipment slot and group API (#10767)",
+          "message": "Fix equipment slot and group API (#10767)\n\n"
+        },
+        {
+          "commit": "a9201d4a7daceede594c5b8453b50a86dd12306c",
+          "summary": "[ci skip] Move logic in our patches to ItemType/BlockType (#10772)",
+          "message": "[ci skip] Move logic in our patches to ItemType/BlockType (#10772)\n\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-91.jar",
+          "sha256": "c744f80ea85e765506936b32d0e61f6703ff4ba0ce8280c65f62752dd10ab3aa"
+        }
+      }
+    },
+    {
+      "build": 92,
+      "time": "2024-05-23T17:59:03.701Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "d408381c77967194b62bd7ed4035c83e33b852c4",
+          "summary": "Print CommandRegisteredEvent deprecation warnings again (#10756)",
+          "message": "Print CommandRegisteredEvent deprecation warnings again (#10756)\n\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-92.jar",
+          "sha256": "7f75b3e3faf6ad0e15c4e4eab0dd8f59f340e09b49ba4715a257418331b4f00f"
+        }
+      }
+    },
+    {
+      "build": 93,
+      "time": "2024-05-23T18:53:00.381Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "6de7a1f0522fd74d907185fa86696996acca9cbe",
+          "summary": "Improve default item attributes API (#10765)",
+          "message": "Improve default item attributes API (#10765)\n\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-93.jar",
+          "sha256": "0d46a9e81e9f99a14c82493e1a75c26d4245193ad4bf88288f4754b6628a7f75"
+        }
+      }
+    },
+    {
+      "build": 94,
+      "time": "2024-05-23T19:57:09.330Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "2a90732677f1e3a6aab16ae039ede5f65d411b8b",
+          "summary": "Remove incorrect logic for Fireball#setVelocity (#10764)",
+          "message": "Remove incorrect logic for Fireball#setVelocity (#10764)\n\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-94.jar",
+          "sha256": "0bc77de6a3b344bb56985d494fa0401aef8f56bf4bb72f7835a2c1e07351a938"
+        }
+      }
+    },
+    {
+      "build": 95,
+      "time": "2024-05-23T20:21:32.638Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "5e7b65a9a9c0c9f51679933447bfad543fc1e11d",
+          "summary": "Allow using PluginLoader classpath API from Bukkit plugins (#10758)",
+          "message": "Allow using PluginLoader classpath API from Bukkit plugins (#10758)\n\nAllows using the PluginLoader API without any of the other changes imposed by switching to a paper-plugin.yml.\r\n\r\nUsed by setting paper-plugin-loader in plugin.yml to the class name of your PluginLoader.\r\n\r\nAlso allows skipping the libraries field by setting paper-skip-libraries to true (by default both libraries and jars provided by the PluginLoader are added to the classpath)."
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-95.jar",
+          "sha256": "8b1305be864b81977e3121b1b3fe7e3504ade7d15502d34bc2d09a77005650e9"
+        }
+      }
+    },
+    {
+      "build": 96,
+      "time": "2024-05-24T14:31:00.715Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "3004717b0e993ec4ec8a15e8e59f3f7677211769",
+          "summary": "Do not re-wrap vanilla goals (#10751)",
+          "message": "Do not re-wrap vanilla goals (#10751)\n\nThere is no need to rewrap vanilla goals when they're being reregistered,\r\nthis breaks some expectations around behavior outside of general\r\nwasting of resources.\r\n\r\nResolves: #10743 "
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-96.jar",
+          "sha256": "c1a8d3677b93d6f87da555834d71fb9ffa93b7918b5bd89c14db9f4d1b9d8524"
+        }
+      }
+    },
+    {
+      "build": 97,
+      "time": "2024-05-24T18:03:39.238Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "377733d44c0f1d476cada93ebae2478a1c495b23",
+          "summary": "Use getter/setter on Mob for equipment drop chances (#10780)",
+          "message": "Use getter/setter on Mob for equipment drop chances (#10780)\n\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-97.jar",
+          "sha256": "d4b7dfbf88f5fea307d610a83179e105eb30c78cd37ea839742ec9583fda4a6f"
+        }
+      }
+    },
+    {
+      "build": 98,
+      "time": "2024-05-25T22:12:59.996Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "dff591d2929b0cfece0370f07961dc91903a796b",
+          "summary": "Allow to define new map cursor types (#10782)",
+          "message": "Allow to define new map cursor types (#10782)\n\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-98.jar",
+          "sha256": "5824fc8540cd0b4113d29eecb8ed7d3c20417e410d39b20297767a40fee7a57c"
+        }
+      }
+    },
+    {
+      "build": 99,
+      "time": "2024-05-25T23:09:09.429Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "535dca56c2c64e92f2c2e1affbf58638326dd1d4",
+          "summary": "Fix a few issues with ItemMeta (#10740)",
+          "message": "Fix a few issues with ItemMeta (#10740)\n\n"
+        },
+        {
+          "commit": "4fd3ac00b48da387653a8f3085c37a246fa47514",
+          "summary": "[ci skip] Update Player#getListeningPluginChannels Jdoc (#10778)",
+          "message": "[ci skip] Update Player#getListeningPluginChannels Jdoc (#10778)\n\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-99.jar",
+          "sha256": "e3c8b4eee7052839f2a1f78b2122e7ff3fbbe6aaac1e50c867265752e159936b"
+        }
+      }
+    },
+    {
+      "build": 100,
+      "time": "2024-05-25T23:46:24.682Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "26e90b9ffb811625a52e3819b667b08959f6b940",
+          "summary": "Fix CraftMetaBlockState for data components (#10731)",
+          "message": "Fix CraftMetaBlockState for data components (#10731)\n\nThis will go on forever..."
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-100.jar",
+          "sha256": "2cf2148bf396316e0de62a1f8ca2fced9766f70d597981f8f303fbdfbd1b55ec"
+        }
+      }
+    },
+    {
+      "build": 101,
+      "time": "2024-05-25T23:55:05.730Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "f0bd0cca8f7c423f78b84ff9cbb323b698062767",
+          "summary": "Expose anvil cost in the API (#10682)",
+          "message": "Expose anvil cost in the API (#10682)\n\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-101.jar",
+          "sha256": "068537f39b98f606b696e23cf595537267d322c6e9eba50a1cf394eb9f4b6460"
+        }
+      }
+    },
+    {
+      "build": 102,
+      "time": "2024-05-26T03:03:36.285Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "41bee55b53b6a446c391b01bce79c9e0440200ef",
+          "summary": "Fix NPE for color-related metas",
+          "message": "Fix NPE for color-related metas\n\nFixes #10789\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-102.jar",
+          "sha256": "49db14e0152388ae3b69465f5b06a363cf9f346804edcb7690e9e8361c412ebe"
+        }
+      }
+    },
+    {
+      "build": 103,
+      "time": "2024-05-26T05:45:08.021Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "4e10fadfdc8f854feeabf916c23a71e21fb0b29f",
+          "summary": "reset meta block state on BlockStateMeta#setBlockState",
+          "message": "reset meta block state on BlockStateMeta#setBlockState\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-103.jar",
+          "sha256": "399cc5e7935906ca1ce8d6ff39d22af7a25641cef202a07717e87e574e86de5d"
+        }
+      }
+    },
+    {
+      "build": 104,
+      "time": "2024-05-26T18:07:23.246Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "a7ae966530f113fef4dadce5e12e2ff892c70364",
+          "summary": "readd itemstack data sanitization (#10454)",
+          "message": "readd itemstack data sanitization (#10454)\n\n* readd itemstack data sanitization\r\n\r\n* use autocloseable"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-104.jar",
+          "sha256": "a8be20d478bd47b96105f45743f038c75bf7828b8ce39ed85c7d8c7a8f06b700"
+        }
+      }
+    },
+    {
+      "build": 105,
+      "time": "2024-05-26T18:19:05.984Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "ca50b87947e0aca6017a7d4b242d892b930ae2c2",
+          "summary": "Clear firework item properly (#10793)",
+          "message": "Clear firework item properly (#10793)\n\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-105.jar",
+          "sha256": "34603c36f501424a98f4c0e76b0e3dacde0ef5e2698e06866ee1857a8ddefc67"
+        }
+      }
+    },
+    {
+      "build": 106,
+      "time": "2024-05-26T20:01:46.929Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "9774a52d110f29e4be956d1aad7bb4c99b50d21d",
+          "summary": "fix and cleanup loot table patches (#10100)",
+          "message": "fix and cleanup loot table patches (#10100)\n\n* fix and cleanup loot table patches\r\n\r\n* fixes"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-106.jar",
+          "sha256": "bdbc088c26247a3d628eab598b6bd6215e4747838931a1f87a139d6070e7d90a"
+        }
+      }
+    },
+    {
+      "build": 107,
+      "time": "2024-05-26T20:44:14.208Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "ac4ee06c0131ec551c474a43ea23aa0357e2e8c1",
+          "summary": "Fix integer overflow for lag compensating eating check (#10797)",
+          "message": "Fix integer overflow for lag compensating eating check (#10797)\n\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-107.jar",
+          "sha256": "8b9cb0be2e471f156472b6473164a3e1d96db9718122d5313bf964645e7fb2d0"
+        }
+      }
+    },
+    {
+      "build": 108,
+      "time": "2024-05-26T20:56:54.245Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "6649a171dc155c04c5dadd55027d9a6356527c15",
+          "summary": "Fix BlockStateMeta equals (#10795)",
+          "message": "Fix BlockStateMeta equals (#10795)\n\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-108.jar",
+          "sha256": "f76d117b33f1ab1b3161c7c172914c1d0dbf91339b932226f4367610130ee124"
+        }
+      }
+    },
+    {
+      "build": 109,
+      "time": "2024-05-26T21:05:25.783Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "1b8cdc6d827d761474f5589a7ff3f75c87ef9005",
+          "summary": "Extend Player Interact cancellation to cover Jigsaw blocks (#10719)",
+          "message": "Extend Player Interact cancellation to cover Jigsaw blocks (#10719)\n\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-109.jar",
+          "sha256": "f40e59457f6c5f3820a6fba0dfa5c1b33fa586a223ab431ebe44277bba5a4ad9"
+        }
+      }
+    },
+    {
+      "build": 110,
+      "time": "2024-05-26T21:40:21.651Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "841ab4134df90a166a22396d1dc5841bcc38e35f",
+          "summary": "Fix more item desync when an event is cancelled (#10654)",
+          "message": "Fix more item desync when an event is cancelled (#10654)\n\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-110.jar",
+          "sha256": "b8c48586079d7b5d4f62fe361f202362fce88a777c98b7f31b549a1846b9d701"
+        }
+      }
+    },
+    {
+      "build": 111,
+      "time": "2024-05-26T21:51:54.692Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "b0e3ca43b8a2ccd9978ad42aa6f9f58b4d8f46f5",
+          "summary": "Prevent NPE if hooked entity was cleared (#10712)",
+          "message": "Prevent NPE if hooked entity was cleared (#10712)\n\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-111.jar",
+          "sha256": "2d90a6ba86e28595d8aa7f730732d18fcd93237552a1962d492d231548e936fb"
+        }
+      }
+    },
+    {
+      "build": 112,
+      "time": "2024-05-26T22:20:00.589Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "347bbe389786d5cdae7cd1c6ec32cacba2a9aac7",
+          "summary": "Fix Cancelling BlockPlaceEvent calling onRemove (#10773)",
+          "message": "Fix Cancelling BlockPlaceEvent calling onRemove (#10773)\n\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-112.jar",
+          "sha256": "87168532364d63cf39afabd6ba570d304534efce7ca8a6394946d8a1b02ada47"
+        }
+      }
+    },
+    {
+      "build": 113,
+      "time": "2024-05-27T17:42:44.250Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "23fe1166d4fa24ec81243f79e8dbb01dee4ab948",
+          "summary": "Fix missing debug trace",
+          "message": "Fix missing debug trace\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-113.jar",
+          "sha256": "d9dff67d9417d4e5a77f30cd25249f0b1ca89d6b3ac647b08804288819a58172"
+        }
+      }
+    },
+    {
+      "build": 114,
+      "time": "2024-05-28T09:53:41.668Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "b0c9b9c4d875cb191e552dc7f410cd34c7d9fdcb",
+          "summary": "Only remove worldgen block entity on changed block (#10794)",
+          "message": "Only remove worldgen block entity on changed block (#10794)\n\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-114.jar",
+          "sha256": "92b827fe3d6c20c25e5b9758705a72bdee98fbf10d2b9de4b4ad9b64aa1d69a8"
+        }
+      }
+    },
+    {
+      "build": 115,
+      "time": "2024-05-28T14:57:20.120Z",
+      "channel": "default",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "9d6f2cced75c1a433c508ab531a61872bce73854",
+          "summary": "[ci skip] Rebuild patches (#10803)",
+          "message": "[ci skip] Rebuild patches (#10803)\n\n"
+        },
+        {
+          "commit": "9c917fef08358a8c68e82c04abe0fe0ca707bec1",
+          "summary": "[ci skip] Clean up paperclip build-pr workflow (#10802)",
+          "message": "[ci skip] Clean up paperclip build-pr workflow (#10802)\n\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-115.jar",
+          "sha256": "cbafa94b5026a042b35b80b23fe12c960d6485bed944566bd875516ff8575fa7"
+        }
+      }
+    },
+    {
+      "build": 116,
+      "time": "2024-05-29T18:32:56.536Z",
+      "channel": "default",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "84f6e6e0b1a88ca749446ec33608cf13fa82ebf7",
+          "summary": "Fix max temper API for llama (#10823)",
+          "message": "Fix max temper API for llama (#10823)\n\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-116.jar",
+          "sha256": "3278031e3298340bb0dbef336d4e9193fb6a9c66a80c367fce0a06561d71c148"
+        }
+      }
+    },
+    {
+      "build": 117,
+      "time": "2024-05-29T18:43:03.249Z",
+      "channel": "default",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "716b868b085a384ec514e978c3f0a367659ced78",
+          "summary": "Use RegistryOps for loadAdvancement (#10799)",
+          "message": "Use RegistryOps for loadAdvancement (#10799)\n\n"
+        },
+        {
+          "commit": "672c07728f6f247df34e866a77a47b457c7d1ed9",
+          "summary": "handle BODY slot for non-mobs (#10822)",
+          "message": "handle BODY slot for non-mobs (#10822)\n\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-117.jar",
+          "sha256": "3e051d86a3e0daba21947374d43c06323cbb0f00a5fbf9a1f551f8afa2a5224f"
+        }
+      }
+    },
+    {
+      "build": 118,
+      "time": "2024-05-29T18:59:46.827Z",
+      "channel": "default",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "d9e659a61864b18469d0e06f3f8fc01a97e2d3e7",
+          "summary": "Allow firework effects with no colors (#10814)",
+          "message": "Allow firework effects with no colors (#10814)\n\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-118.jar",
+          "sha256": "2af206abbf252efb294ed6526a6847297e24b02ae7b0aa0820343dc74a2f6308"
+        }
+      }
+    },
+    {
+      "build": 119,
+      "time": "2024-05-29T19:33:14.507Z",
+      "channel": "default",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "7e2b682e54966af262b70f85b2ceffa4966e54d6",
+          "summary": "Fix skipping custom block entity tag (#10812)",
+          "message": "Fix skipping custom block entity tag (#10812)\n\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-119.jar",
+          "sha256": "da7419a4ad288c0bbef1076f2e61cf10cd92fe29b68766e7ef07abafd0cad2f0"
+        }
+      }
+    },
+    {
+      "build": 120,
+      "time": "2024-05-29T20:00:10.345Z",
+      "channel": "default",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "ed85aac53cfd93d29fa24e6071dbdddd0e49624b",
+          "summary": "Flatten namespaced vanilla command alias redirects (#10821)",
+          "message": "Flatten namespaced vanilla command alias redirects (#10821)\n\nThe brigadier command dispatcher is not capable of executing commands\r\nthat redirect more than one.\r\nThe exemplary alias 'minecraft:tp' may hence not redirect to 'tp' it\r\ninstead has to redirect to 'teleport' as 'tp' itself is merely a\r\nredirect."
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-120.jar",
+          "sha256": "e6a086943d9bb6ea4f8a0469121d44faeb4c97e778c0e744de76e8fc7dba627d"
+        }
+      }
+    },
+    {
+      "build": 121,
+      "time": "2024-05-29T21:10:06.116Z",
+      "channel": "default",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "a31dc90741ed9c121a13a3c124c9ebf5bafd0da7",
+          "summary": "Several fixes and new api for experience merging/stacking (#9242)",
+          "message": "Several fixes and new api for experience merging/stacking (#9242)\n\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-121.jar",
+          "sha256": "97314c4b07133d5cf19e307ebe4dd8ce0f561721b203a9e211f1c5d3dca8314a"
+        }
+      }
+    },
+    {
+      "build": 122,
+      "time": "2024-05-29T21:20:44.555Z",
+      "channel": "default",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "efd91e52a670a1e1bae5ad09cdffac35484c1ee2",
+          "summary": "Add registry-related argument types (#10770)",
+          "message": "Add registry-related argument types (#10770)\n\n* Add registry-related argument types\r\n\r\n* fix tests"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-122.jar",
+          "sha256": "2b32be89dca06890c17f657881a4525d2f39a32c88d306f8776e24e4cd9d80c3"
+        }
+      }
+    },
+    {
+      "build": 123,
+      "time": "2024-05-29T21:58:51.256Z",
+      "channel": "default",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "27d2ed84f43e7637e85f15d880fbad022038413e",
+          "summary": "Extend fishing API (#10634)",
+          "message": "Extend fishing API (#10634)\n\nAdds a missing fishing state when the fish is lured and fires an event for it.\r\nAlso adds a way to control the fish swimming time towards the bobber."
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-123.jar",
+          "sha256": "3d0fc9fd5c399bbcad7de692f6cd777dac92d96bf29b70f6fe464f03eac41b6d"
+        }
+      }
+    },
+    {
+      "build": 124,
+      "time": "2024-05-29T22:07:23.914Z",
+      "channel": "default",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "0fcf3e347f671ce6bdc9699cbe4c34567562dd2b",
+          "summary": "Deprecate InvAction#HOTBAR_MOVE_AND_READD (#10784)",
+          "message": "Deprecate InvAction#HOTBAR_MOVE_AND_READD (#10784)\n\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-124.jar",
+          "sha256": "aa5e83231421658d37cbccbd535e48a469eb5d4ddf9e17839520b45bfa7aac36"
+        }
+      }
+    },
+    {
+      "build": 125,
+      "time": "2024-05-30T18:17:13.210Z",
+      "channel": "default",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "8e6554a80a1efefa48adb1f7733554e528fb45f5",
+          "summary": "Fix sending disconnect packet in phases where it doesn't exist",
+          "message": "Fix sending disconnect packet in phases where it doesn't exist\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-125.jar",
+          "sha256": "2ae013b27b2d5be7177603ddb6ec7a5e5074f3a4bf6a2501bd9fa5b36eafd9d5"
+        }
+      }
+    },
+    {
+      "build": 126,
+      "time": "2024-05-30T18:41:04.353Z",
+      "channel": "default",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "06e69c8991b8c5022a319e4415ebd7822b5d1fb8",
+          "summary": "Use CommandSourceStack in AsyncPlayerSendCommandsEvent (#10826)",
+          "message": "Use CommandSourceStack in AsyncPlayerSendCommandsEvent (#10826)\n\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-126.jar",
+          "sha256": "d8fefe735a8134d349ec8c1183b8a392dfeeae23b0d0c9ee51a80327e44429b4"
+        }
+      }
+    },
+    {
+      "build": 127,
+      "time": "2024-05-30T20:31:32.457Z",
+      "channel": "default",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "a47e11d464d84aca537687748aafe32c08567801",
+          "summary": "fix knockback events (#10831)",
+          "message": "fix knockback events (#10831)\n\n* fix knockback events\r\n\r\n* squash\r\n\r\n* handle cancelled event for explosions"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-127.jar",
+          "sha256": "f432a75f74acb721befd08109b153c4b8454f22af0ddcb697eef25e90556f26e"
+        }
+      }
+    },
+    {
+      "build": 128,
+      "time": "2024-05-30T20:43:50.779Z",
+      "channel": "default",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "3181470ad7d372d2a799c3dcdb61e9392969abe4",
+          "summary": "Add entity heal API (#10267)",
+          "message": "Add entity heal API (#10267)\n\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-128.jar",
+          "sha256": "90cf0845a1148c79e694f5c7fbe84f889ef5f9e2ae2db68f2d2a498723f3d710"
+        }
+      }
+    },
+    {
+      "build": 129,
+      "time": "2024-05-31T15:55:42.042Z",
+      "channel": "default",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "0513374b1f3410c2dd630f169a0cdf64a349500e",
+          "summary": "Fire TabCompleteEvent for legacy commands (#10834)",
+          "message": "Fire TabCompleteEvent for legacy commands (#10834)\n\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-129.jar",
+          "sha256": "15da2ed448fdcb3a7a6aa8e69726dad27c83c3f24b6e6609a04f6efc365139bf"
+        }
+      }
+    },
+    {
+      "build": 130,
+      "time": "2024-06-01T14:35:21.537Z",
+      "channel": "default",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "5d8e53d78d0089894c9552b95b7b8ad9dcc8cb6f",
+          "summary": "Fix CommandSourceStack#bypassSelectorPermissions (#10837)",
+          "message": "Fix CommandSourceStack#bypassSelectorPermissions (#10837)\n\nThe previous implementation would throw a command exception if the\nCommandSourceStack had its bypassSelectorPermissions flag set to true,\nwhich is the incorrect behaviour.\n\nInstead, it should only throw an exception if the flag is set to false\nand all its other checks \"fail\" too."
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-130.jar",
+          "sha256": "803bd42701210e86b8cc9e384b414d85246615747d3ebff513fc02f76860154f"
+        }
+      }
+    },
+    {
+      "build": 131,
+      "time": "2024-06-02T22:29:55.820Z",
+      "channel": "default",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "ac647513b2330e4c58f7c511ed79b1ad5d262be6",
+          "summary": "Use RegistryOps in the correct places (#10843)",
+          "message": "Use RegistryOps in the correct places (#10843)\n\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-131.jar",
+          "sha256": "a3d14719bb02bc2f109805b956a74a05ae5c03977d8d3317f57818a1424507af"
+        }
+      }
+    },
+    {
+      "build": 132,
+      "time": "2024-06-03T17:29:49.923Z",
+      "channel": "default",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "54fbd0cf0cdc9c2356a108ce5b51ea93e95fa3ac",
+          "summary": "clarify what getEntityId actually returns (#10839)",
+          "message": "clarify what getEntityId actually returns (#10839)\n\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-132.jar",
+          "sha256": "5ae196399d850c6ad57167ca5856b16448ff3b9674729a0624b68a867cbc8aab"
+        }
+      }
+    },
+    {
+      "build": 133,
+      "time": "2024-06-03T17:47:10.946Z",
+      "channel": "default",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "b8f2101c3699763fc04e7a312f9b70539cbb873e",
+          "summary": "Only assign blockstate data if super ctor did not (#10841)",
+          "message": "Only assign blockstate data if super ctor did not (#10841)\n\nThe CraftBlockStateMeta constructor CraftBlockStateMeta(Map) invokes its\r\nparent constructor, which itself invokes deserializeInternal, which is\r\nimplemented on CraftBlockStateMeta to read the components and block\r\nentity tag from the passed map.\r\n\r\nField initialization happens after the call to the super constructor,\r\nmeaning the current code overwrites the parsed internal data with the\r\nEMPTY defaults.\r\n\r\nThis is prevented by moving the initialization into its own code block\r\nthat can null check the fields prior to defaulting their value to EMPTY."
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-133.jar",
+          "sha256": "63dc5aa27d76a800d9968e05a2b11d7e5a36b6bb94f73771689ba9a3e830724e"
+        }
+      }
+    },
+    {
+      "build": 134,
+      "time": "2024-06-03T20:43:22.452Z",
+      "channel": "default",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "4f13be937eda5ee18010b271474a91894348e3e4",
+          "summary": "Do not perform chunk existance check for I/O scheduling",
+          "message": "Do not perform chunk existance check for I/O scheduling\n\nIn order to check if a chunk exists, the RegionFile lock\n(if the RegionFile is opened) will be acquired. However,\nthe RegionFile may be performing I/O operations, in which\ncase will stall the acquire operation.\n\nTo ensure that threads scheduling loads do not incur a stall,\nwe can avoid this check entirely - the RegionFile I/O\nthread(s) will eventually perform the exist check itself.\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-134.jar",
+          "sha256": "73553d799ab1911aa8b72e86e57c3b687c123a939251b7dd0428de8bb3802918"
+        }
+      }
+    },
+    {
+      "build": 135,
+      "time": "2024-06-04T19:52:37.734Z",
+      "channel": "default",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "79c1ce184486847c614250e4e2025fd95a61cde5",
+          "summary": "Add since to deprecated for removals (#10848)",
+          "message": "Add since to deprecated for removals (#10848)\n\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-135.jar",
+          "sha256": "47b197a51afc83ea1ea469271bec86a782c1a22b50a9a4040a8dc81cd5bfd7ac"
+        }
+      }
+    },
+    {
+      "build": 136,
+      "time": "2024-06-04T20:35:38.844Z",
+      "channel": "default",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "88d76d9fe5e8980ca83a6eb2c530d33eda9725c8",
+          "summary": "Make Bogged implement Shearable (#10844)",
+          "message": "Make Bogged implement Shearable (#10844)\n\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-136.jar",
+          "sha256": "a47976eeeb0f1b18fff53219cedeeaaad5d716c8acd1bc40380e2c1253bb8f53"
+        }
+      }
+    },
+    {
+      "build": 137,
+      "time": "2024-06-04T21:06:35.498Z",
+      "channel": "default",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "bd5867a96f792f0eb32c1d249bb4bbc1d8338d14",
+          "summary": "Handle alpha channel from potion_contents component (#10808)",
+          "message": "Handle alpha channel from potion_contents component (#10808)\n\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-137.jar",
+          "sha256": "afd0a6132727104e0fa411dbce168b6a6b773f291048ed09fae5ede9f22a5759"
+        }
+      }
+    },
+    {
+      "build": 138,
+      "time": "2024-06-10T06:34:47.127Z",
+      "channel": "default",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "906df69f05d0779906377abb809bfec9fc3c3546",
+          "summary": "Prevent internal NPE on ItemStack#damage (#10836)",
+          "message": "Prevent internal NPE on ItemStack#damage (#10836)\n\nItemStack#damage internally uses ItemStack#hurtAndBreak, which\r\npreviously would call a Consumer in case the item broke.\r\nSince 1.20.5 the break game event logic however resides in said method\r\nand was using the equipment slot passed, which is null in the case of\r\nthe API ItemStack#damage method.\r\n\r\nThis commit prevents the NPE by first null checking the slot.\r\nAddittionally, hurtAndBreak also now checks if the player has infinite\r\nmaterials, e.g. is in creative mode, to prevent damaging the item.\r\n\r\nAs such as filter is undesirable for API calls, this commit also skips\r\nthis logic in case of an API invocation."
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-138.jar",
+          "sha256": "98d508ee207647d892af77348af873939b218fec81e9bfd946a295c9c4dee34b"
+        }
+      }
+    },
+    {
+      "build": 139,
+      "time": "2024-06-13T14:57:58.245Z",
+      "channel": "default",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "79e2cb620ef03539390d97940824b38b707918f5",
+          "summary": "Update upstream (Bukkit/CraftBukkit/Spigot) (#10875)",
+          "message": "Update upstream (Bukkit/CraftBukkit/Spigot) (#10875)\n\nUpstream has released updates that appear to apply and compile correctly.\r\nThis update has not been tested by PaperMC and as with ANY update, please do your own testing\r\n\r\nBukkit Changes:\r\n376e37db SPIGOT-7677: Update which entities are marked as spawnable\r\n06c4add3 SPIGOT-7737: Add separate TreeType.MEGA_PINE\r\n19b7caaa SPIGOT-7731: Spawn eggs cannot have damage\r\ne585297e PR-1022: Add force option to Player#spawnParticle\r\nd26e0094 PR-1018: Add methods to get players seeing specific chunks\r\n8df1ed18 PR-978: Add Material#isCompostable and Material#getCompostChance\r\n4b9b59c7 SPIGOT-7676: Enforce locale parameter in toLowerCase and toUpperCase method calls and always use root locale\r\n8d1e700a PR-1020: Cast instead of using #typed when getting BlockType and ItemType to better work with testing / mocks\r\nfa28607a PR-1016: Fix incorrect assumption of Fireball having constant speed\r\n4c6c8586 PR-1015: Add a tool component to ItemMeta\r\n6f6b2123 PR-1014: Add PotionEffectTypeCategory to distinguish between beneficial and harmful effects\r\nf511cfe1 PR-1013, SPIGOT-4288, SPIGOT-6202: Add material rerouting in preparation for the switch to ItemType and BlockType\r\ndef44cbf SPIGOT-7669: Fix typo in ProjectileHitEvent#getHitBlockFace documentation\r\n53fa4f72 PR-1011: Throw an exception if a RecipeChoice is ever supplied air\r\n\r\nCraftBukkit Changes:\r\nee95e171a SPIGOT-7737: Add separate TreeType.MEGA_PINE\r\n0dae4c62c Fix spawn egg equality check and copy constructor\r\nab59e847c Fix spawn eggs with no entity creating invalid stacks and disconnect creative clients\r\n3b6093b28 SPIGOT-7736: Creative spawn egg use loses components\r\nc6b4d5a87 SPIGOT-7731: Spawn eggs cannot have damage\r\n340ccd57f SPIGOT-7735: Fix serialization of player heads with note block sound\r\nfd2f41834 SPIGOT-7734: Can't register a custom advancement using unsafe()\r\n02456e2a5 PR-1413: Add force option to Player#spawnParticle\r\n6a61f38b2 SPIGOT-7680: Per-world weather command\r\n58c41cebb PR-1409: Add methods to get players seeing specific chunks\r\n16c976797 PR-1412: Fix shipwreck loot tables not being set for BlockTransformers\r\n7189ba636 PR-1360: Add Material#isCompostable and Material#getCompostChance\r\n900384556 SPIGOT-7676: Enforce locale parameter in toLowerCase and toUpperCase method calls and always use root locale\r\nbdb40c5f1 Increase outdated build delay\r\nd6607c7dd SPIGOT-7675: Fix FoodComponent config deserialization\r\nb148ed332 PR-1406: Fix incorrect assumption of Fireball having constant speed\r\n3ec31ca75 PR-1405: Add a tool component to ItemMeta\r\n5d7d675b9 PR-1404: Add PotionEffectTypeCategory to distinguish between beneficial and harmful effects\r\n960827981 PR-1403, SPIGOT-4288, SPIGOT-6202: Add material rerouting in preparation for the switch to ItemType and BlockType\r\n94e44ec93 PR-1401: Add a config option to accept old keys in registry get calls\r\na43701920 PR-1402: Fix ChunkSnapshot#isSectionEmpty() is always false\r\n87d0a3368 SPIGOT-7668: Move NONE Registry updater to FieldRename to avoid some class loader issues\r\n2ea1e7ac2 PR-1399: Fix regression preventing positive .setDamage value from causing knockback for 0 damage events\r\nba2d49d21 Increase outdated build delay\r\n\r\nSpigot Changes:\r\nfcd94e21 Rebuild patches\r\n342f4939 SPIGOT-7661: Add experimental unload-frozen-chunks option"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-139.jar",
+          "sha256": "3ef77600243c45edd3770e6d6c17714313b495579fb84e23e2d88d8ab20de758"
+        }
+      }
+    },
+    {
+      "build": 140,
+      "time": "2024-06-14T11:55:18.963Z",
+      "channel": "default",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "9e7f6c3f7e6c0017ac440023518e48cca7550163",
+          "summary": "Fixup and deprecate player profiles in ping event (#10880)",
+          "message": "Fixup and deprecate player profiles in ping event (#10880)\n\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "paper-1.20.6-140.jar",
+          "sha256": "393c5a7860f7500d6dcc6a3c2654fd6714cddd196c7f7f098173a0f558da5e78"
+        }
+      }
+    }
+  ]
+}

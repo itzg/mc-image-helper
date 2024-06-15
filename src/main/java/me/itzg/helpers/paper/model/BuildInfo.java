@@ -8,6 +8,8 @@ import lombok.Data;
 @Data
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class BuildInfo {
+    int build;
+    ReleaseChannel channel;
     Map<String, DownloadInfo> downloads;
 
     @Data
