@@ -26,7 +26,8 @@ class NeoForgeInstallerResolverTest {
             arguments("1.20.3", "beta", "1.20.3", "20.3.8-beta"),
             arguments("latest", "20.2.85-beta", "1.20.2", "20.2.85-beta"),
             arguments("latest", "20.2.88", "1.20.2", "20.2.88"),
-            arguments("1.20.1", "latest", "1.20.1", "47.1.84")
+            arguments("1.20.1", "latest", "1.20.1", "47.1.84"),
+            arguments("1.21", "beta", "1.21", "21.0.42-beta")
         );
     }
 

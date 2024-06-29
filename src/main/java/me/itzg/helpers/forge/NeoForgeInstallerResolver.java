@@ -108,7 +108,10 @@ public class NeoForgeInstallerResolver implements InstallerResolver {
                 else {
                     if (minecraftVersion != null) {
                         // minor.patch of minecraft version != major.minor of neoforge version
-                        if (!(minecraftVersion[1].equals(parts[0]) && minecraftVersion[2].equals(parts[1]))) {
+                        final String minor = minecraftVersion[1];
+                        final String patch = minecraftVersion.length > 2 ? minecraftVersion[2] : "0";
+
+                        if (!(minor.equals(parts[0]) && patch.equals(parts[1]))) {
                             return false;
                         }
                     }
@@ -134,8 +137,9 @@ public class NeoForgeInstallerResolver implements InstallerResolver {
     private static String deriveMinecraftVersion(String result) {
         final String[] resolvedParts = splitNeoforgeVersion(result);
 
-        return String.join(".",
-            "1", resolvedParts[0], resolvedParts[1]
+        // Minecraft versions never end with ".0"...they just leave it off
+        return resolvedParts[1].equals("0") ? String.join(".", "1", resolvedParts[0])
+                : String.join(".", "1", resolvedParts[0], resolvedParts[1]
         );
     }
 
@@ -147,8 +151,8 @@ public class NeoForgeInstallerResolver implements InstallerResolver {
     @NotNull
     private String[] splitMinecraftVersion() {
         final String[] parts = requestedMinecraftVersion.split("\\.", 3);
-        if (parts.length < 3) {
-            throw new GenericException("Expected at least three parts to Minecraft version: " + requestedMinecraftVersion);
+        if (parts.length < 2) {
+            throw new GenericException("Expected at least two parts to Minecraft version: " + requestedMinecraftVersion);
         }
         return parts;
     }
