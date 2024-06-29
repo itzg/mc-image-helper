@@ -147,6 +147,9 @@
       <version>20.2.88</version>
       <version>20.4.61-beta</version>
       <version>20.4.62-beta</version>
+      <version>20.6.119</version>
+      <version>21.0.41-beta</version>
+      <version>21.0.42-beta</version>
     </versions>
     <lastUpdated>20231228145256</lastUpdated>
   </versioning>
