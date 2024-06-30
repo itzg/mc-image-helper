@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
 import java.util.Collections;
+import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -38,6 +39,9 @@ import reactor.core.scheduler.Schedulers;
 @Command(name = "install-paper", description = "Installs selected PaperMC")
 @Slf4j
 public class InstallPaperCommand implements Callable<Integer> {
+
+    @Option(names = "--check-updates", description = "Check for updates and exit with status code 0 when available")
+    boolean requestCheckUpdates;
 
     @ArgGroup
     Inputs inputs = new Inputs();
@@ -109,15 +113,28 @@ public class InstallPaperCommand implements Callable<Integer> {
         final Result result;
         try (PaperDownloadsClient client = new PaperDownloadsClient(baseUrl, sharedFetchArgs.options())) {
             if (inputs.downloadUrl != null) {
+                if (requestCheckUpdates) {
+                    throw new InvalidParameterException("Cannot check for updates with custom input");
+                }
                 result = downloadCustom(inputs.downloadUrl);
             }
             else {
+                if (requestCheckUpdates) {
+                    return checkForUpdates(client, oldManifest,
+                        inputs.coordinates.project, inputs.coordinates.version, inputs.coordinates.build,
+                        inputs.coordinates.channel);
+                }
+
                 result = downloadUsingCoordinates(client, inputs.coordinates.project,
                     inputs.coordinates.version, inputs.coordinates.build,
                     inputs.coordinates.channel
                 )
                     .block();
             }
+        }
+
+        if (result == null) {
+            throw new GenericException("Result from download was absent");
         }
 
         if (resultsFile != null) {
@@ -132,6 +149,85 @@ public class InstallPaperCommand implements Callable<Integer> {
         Manifests.save(outputDirectory, PaperManifest.ID, result.newManifest);
 
         return ExitCode.OK;
+    }
+
+    private Integer checkForUpdates(PaperDownloadsClient client, PaperManifest oldManifest,
+        String project, String version, Integer build,
+        ReleaseChannel channel
+    ) {
+        if (oldManifest != null && oldManifest.getCustomDownloadUrl() != null) {
+            log.info("Using custom download URL before");
+            return ExitCode.OK;
+        }
+
+        if (isSpecificVersion(version)) {
+            if (build != null) {
+                if (oldManifest == null) {
+                    return logVersion(project, version, build);
+                }
+                if (mismatchingVersions(oldManifest, project, version, build)) {
+                    return logMismatch("requested", oldManifest, project, version, build);
+                }
+            }
+            else {
+                return client.getLatestBuild(project, version, channel)
+                    .map(resolvedBuild -> {
+                        if (oldManifest == null) {
+                            return logVersion(project, version, resolvedBuild);
+                        }
+                        if (mismatchingVersions(oldManifest, project, version, resolvedBuild)) {
+                            return logMismatch("resolved", oldManifest, project, version, resolvedBuild);
+                        }
+                        else {
+                            return ExitCode.SOFTWARE;
+                        }
+                    })
+                    .switchIfEmpty(Mono.error(() -> new InvalidParameterException(
+                        String.format("No build found for version %s with channel %s", version, channel)
+                    )))
+                    .block();
+            }
+        }
+        else {
+            return client.getLatestVersionBuild(project, channel)
+                .map(versionBuild -> {
+                    if (oldManifest == null) {
+                        return logVersion(project, versionBuild.getVersion(), versionBuild.getBuild());
+                    }
+                    if (mismatchingVersions(oldManifest, project, versionBuild.getVersion(), versionBuild.getBuild())) {
+                        return logMismatch("resolved", oldManifest, project, versionBuild.getVersion(), versionBuild.getBuild());
+                    }
+                    else {
+                        return ExitCode.SOFTWARE;
+                    }
+                })
+                .switchIfEmpty(
+                    Mono.error(() -> new InvalidParameterException("No build found with channel " + channel))
+                )
+                .block();
+        }
+        return ExitCode.SOFTWARE;
+    }
+
+    private Integer logVersion(String project, String version, Integer build) {
+        log.info("No previous installation. Would install {} version={} build={}",
+            project, version, build);
+        return ExitCode.OK;
+    }
+
+    private static int logMismatch(String inputType, PaperManifest oldManifest, String project, String version, Integer build) {
+        log.info("Currently installed {} version={} build={}, {} {} version={} build={}",
+            oldManifest.getProject(), oldManifest.getMinecraftVersion(), oldManifest.getBuild(),
+            inputType,
+            project, version, build
+        );
+        return ExitCode.OK;
+    }
+
+    private static boolean mismatchingVersions(PaperManifest oldManifest, String project, String version, Integer build) {
+        return !Objects.equals(oldManifest.getProject(), project)
+            && !Objects.equals(oldManifest.getMinecraftVersion(), version)
+            && !Objects.equals(oldManifest.getBuild(), build);
     }
 
     private Mono<Result> downloadUsingCoordinates(PaperDownloadsClient client, String project,
