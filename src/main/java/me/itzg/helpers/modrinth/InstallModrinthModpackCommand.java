@@ -8,11 +8,15 @@ import lombok.AccessLevel;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.McImageHelper;
+import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.files.ResultsFileWriter;
 import me.itzg.helpers.http.Fetch;
+import me.itzg.helpers.http.PathOrUri;
+import me.itzg.helpers.http.PathOrUriConverter;
 import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.http.SharedFetchArgs;
+import me.itzg.helpers.json.ObjectMappers;
 import me.itzg.helpers.modrinth.model.VersionType;
 import org.jetbrains.annotations.VisibleForTesting;
 import picocli.CommandLine;
@@ -101,6 +105,13 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
     )
     List<String> overridesExclusions;
 
+    @Option(names = "--default-exclude-includes", paramLabel = "FILE|URI",
+        description = "A JSON file that contains global and per modpack exclude/include declarations. "
+            + "See README for schema.",
+        converter = PathOrUriConverter.class
+    )
+    PathOrUri defaultExcludeIncludes;
+
     @CommandLine.ArgGroup(exclusive = false)
     SharedFetchArgs sharedFetchArgs = new SharedFetchArgs();
 
@@ -125,9 +136,14 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
             newManifest = buildModpackFetcher(apiClient, projectRef)
                 .fetchModpack(prevManifest)
                 .flatMap(fetchedPack ->
-                    installerFactory.create(apiClient, fetchedPack.getMrPackFile())
-                        .setExcludeFiles(excludeFiles)
-                        .setForceIncludeFiles(forceIncludeFiles)
+                    installerFactory.create(
+                            apiClient,
+                            fetchedPack.getMrPackFile(),
+                            createFileInclusionCalculator(
+                                fetchedPack.getProjectSlug(),
+                                sharedFetch
+                            )
+                        )
                         .setOverridesExclusions(overridesExclusions)
                         .processModpack(sharedFetch)
                         .flatMap(installation -> {
@@ -157,20 +173,50 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
         return ExitCode.OK;
     }
 
+    private FileInclusionCalculator createFileInclusionCalculator(
+        String projectSlug,
+        SharedFetch sharedFetch
+    ) {
+
+        final ExcludeIncludesContent excludeIncludesContent;
+        if (defaultExcludeIncludes == null) {
+            excludeIncludesContent = null;
+        }
+        else if (defaultExcludeIncludes.getPath() != null) {
+            try {
+                excludeIncludesContent = ObjectMappers.defaultMapper()
+                    .readValue(defaultExcludeIncludes.getPath().toFile(), ExcludeIncludesContent.class);
+            } catch (IOException e) {
+                throw new GenericException("Failed to read exclude/include file", e);
+            }
+        }
+        else {
+            excludeIncludesContent = sharedFetch.fetch(defaultExcludeIncludes.getUri())
+                .toObject(ExcludeIncludesContent.class)
+                .acceptContentTypes(null)
+                .execute();
+        }
+
+        return new FileInclusionCalculator(projectSlug, excludeFiles, forceIncludeFiles, excludeIncludesContent);
+    }
+
     @VisibleForTesting
     @FunctionalInterface
     interface ModrinthModpackInstallerFactory {
 
-        ModrinthPackInstaller create(ModrinthApiClient apiClient, Path mrPackFile);
+        ModrinthPackInstaller create(ModrinthApiClient apiClient, Path mrPackFile,
+            FileInclusionCalculator fileInclusionCalculator
+            );
     }
 
     @VisibleForTesting
     @Setter(AccessLevel.PACKAGE)
-    private ModrinthModpackInstallerFactory installerFactory = (apiClient, mrPackFile) ->
+    private ModrinthModpackInstallerFactory installerFactory = (apiClient, mrPackFile, fileInclusionCalculator) ->
         new ModrinthPackInstaller(
             apiClient, this.sharedFetchArgs.options(),
             mrPackFile, this.outputDirectory, this.resultsFile,
-            this.forceModloaderReinstall
+            this.forceModloaderReinstall,
+            fileInclusionCalculator
         );
 
     private Mono<Installation> processResultsFile(FetchedPack fetchedPack, Installation installation) {

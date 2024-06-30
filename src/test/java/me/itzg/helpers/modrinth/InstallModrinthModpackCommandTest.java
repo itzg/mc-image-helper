@@ -45,11 +45,12 @@ public class InstallModrinthModpackCommandTest {
         final InstallModrinthModpackCommand commandUT =
             new InstallModrinthModpackCommand()
                 // so that the modloader prepare can be injected with a mock
-                .setInstallerFactory((apiClient, mrPackFile) ->
+                .setInstallerFactory((apiClient, mrPackFile, fileInclusionCalculator) ->
                     new ModrinthPackInstaller(
                         apiClient,
                         SharedFetch.Options.builder().build(),
-                        mrPackFile, outputDir, null, false
+                        mrPackFile, outputDir, null, false,
+                        fileInclusionCalculator
                     )
                         .modifyModLoaderPreparer(DependencyId.forge, mockForgePreparer)
                 );
