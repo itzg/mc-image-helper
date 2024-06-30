@@ -13,7 +13,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipFile;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidParameterException;
@@ -27,8 +26,6 @@ import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.http.SharedFetch.Options;
 import me.itzg.helpers.json.ObjectMappers;
 import me.itzg.helpers.modrinth.model.DependencyId;
-import me.itzg.helpers.modrinth.model.Env;
-import me.itzg.helpers.modrinth.model.EnvType;
 import me.itzg.helpers.modrinth.model.ModpackIndex;
 import me.itzg.helpers.quilt.QuiltInstaller;
 import org.jetbrains.annotations.Blocking;
@@ -44,13 +41,8 @@ public class ModrinthPackInstaller {
     private final Path outputDirectory;
     private final Path resultsFile;
     private final boolean forceModloaderReinstall;
+    private final FileInclusionCalculator fileInclusionCalculator;
     private final Options sharedFetchOpts;
-
-    @Setter
-    private List<String> excludeFiles;
-
-    @Setter
-    private List<String> forceIncludeFiles;
 
     private AntPathMatcher overridesExclusions;
 
@@ -71,7 +63,8 @@ public class ModrinthPackInstaller {
     public ModrinthPackInstaller(
             ModrinthApiClient apiClient, Options sharedFetchOpts,
             Path zipFile, Path outputDirectory, Path resultsFile,
-            boolean forceModloaderReinstall)
+            boolean forceModloaderReinstall,
+            FileInclusionCalculator fileInclusionCalculator)
     {
         this.apiClient = apiClient;
         this.sharedFetchOpts = sharedFetchOpts;
@@ -79,6 +72,7 @@ public class ModrinthPackInstaller {
         this.outputDirectory = outputDirectory;
         this.resultsFile = resultsFile;
         this.forceModloaderReinstall = forceModloaderReinstall;
+        this.fileInclusionCalculator = fileInclusionCalculator;
     }
 
     public ModrinthPackInstaller setOverridesExclusions(List<String> overridesExclusions) {
@@ -135,11 +129,11 @@ public class ModrinthPackInstaller {
     private Flux<Path> processModFiles(ModpackIndex modpackIndex) {
         return Flux.fromStream(
             modpackIndex.getFiles().stream()
-                .filter(this::includeModFile)
+                .filter(fileInclusionCalculator::includeModFile)
             )
             .publishOn(Schedulers.boundedElastic())
             .flatMap(modpackFile -> {
-                final String modpackFilePath = sanitizeModFilePath(modpackFile.getPath());
+                final String modpackFilePath = FileInclusionCalculator.sanitizeModFilePath(modpackFile.getPath());
 
                 final Path outFilePath =
                     this.outputDirectory.resolve(modpackFilePath);
@@ -158,59 +152,6 @@ public class ModrinthPackInstaller {
                         log.info("Downloaded {}", modpackFilePath)
                 );
             });
-    }
-
-    private boolean includeModFile(ModpackIndex.ModpackFile modFile) {
-        return (
-            // env is optional
-            modFile.getEnv() == null
-            || modFile.getEnv().get(Env.server) != EnvType.unsupported
-            || shouldForceIncludeFile(modFile.getPath())
-        )
-            && !shouldExcludeFile(modFile.getPath());
-    }
-
-    private boolean shouldForceIncludeFile(String modPath) {
-        if (forceIncludeFiles == null || forceIncludeFiles.isEmpty()) {
-            return false;
-        }
-
-        final String normalized = sanitizeModFilePath(modPath).toLowerCase();
-
-        final boolean include = forceIncludeFiles.stream()
-            .anyMatch(s -> normalized.contains(s.toLowerCase()));
-        if (include) {
-            log.debug("Force including '{}' as requested", modPath);
-        }
-
-        return include;
-    }
-
-    private boolean shouldExcludeFile(String modPath) {
-        if (excludeFiles == null || excludeFiles.isEmpty()) {
-            return false;
-        }
-
-        // to match case-insensitive
-        final String normalized = sanitizeModFilePath(modPath).toLowerCase();
-
-        final boolean exclude = excludeFiles.stream()
-            .anyMatch(s -> normalized.contains(s.toLowerCase()));
-        if (exclude) {
-            log.debug("Excluding '{}' as requested", modPath);
-        }
-        return exclude;
-    }
-
-    private String sanitizeModFilePath(String path) {
-        // Using only backslash delimiters and not forward slashes?
-        // (mixed usage will assume backslashes were purposeful)
-        if (path.contains("\\") && !path.contains("/")) {
-            return path.replace("\\", "/");
-        }
-        else {
-            return path;
-        }
     }
 
     @SuppressWarnings("SameParameterValue")

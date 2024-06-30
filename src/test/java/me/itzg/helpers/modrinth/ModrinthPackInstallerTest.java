@@ -12,6 +12,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Stream;
 import me.itzg.helpers.http.Fetch;
@@ -57,7 +58,9 @@ public class ModrinthPackInstallerTest {
             Files.write(modpackPath, createModrinthPack(expectedIndex));
 
             ModrinthPackInstaller installerUT = new ModrinthPackInstaller(
-                apiClient, fetchOptions, modpackPath, tempDir, resultsFile, false)
+                apiClient, fetchOptions, modpackPath, tempDir, resultsFile, false,
+                FileInclusionCalculator.empty()
+            )
                 .modifyModLoaderPreparer(DependencyId.forge, mockPreparer);
 
             actualInstallation = installerUT.processModpack(sharedFetch).block();
@@ -106,7 +109,9 @@ public class ModrinthPackInstallerTest {
             Files.write(modpackPath, createModrinthPack(expectedIndex));
 
             ModrinthPackInstaller installerUT = new ModrinthPackInstaller(
-                apiClient, fetchOptions, modpackPath, tempDir, resultsFile, false)
+                apiClient, fetchOptions, modpackPath, tempDir, resultsFile, false,
+                FileInclusionCalculator.empty()
+            )
                 .modifyModLoaderPreparer(modLoaderId, mockPreparer);
 
             actualInstallation = installerUT.processModpack(sharedFetch).block();
@@ -146,7 +151,9 @@ public class ModrinthPackInstallerTest {
             Files.write(modpackPath, createModrinthPack(index));
 
             ModrinthPackInstaller installerUT = new ModrinthPackInstaller(
-                apiClient, fetchOpts, modpackPath, tempDir, resultsFile, false)
+                apiClient, fetchOpts, modpackPath, tempDir, resultsFile, false,
+                FileInclusionCalculator.empty()
+            )
                 .modifyModLoaderPreparer(DependencyId.forge, mockPreparer);
 
             final Installation installation = installerUT.processModpack(sharedFetch).block();
@@ -189,7 +196,9 @@ public class ModrinthPackInstallerTest {
             Files.write(modpackPath, createModrinthPack(index));
 
             ModrinthPackInstaller installerUT = new ModrinthPackInstaller(
-                apiClient, fetchOpts, modpackPath, tempDir, resultsFile, false)
+                apiClient, fetchOpts, modpackPath, tempDir, resultsFile, false,
+                FileInclusionCalculator.empty()
+            )
                 .modifyModLoaderPreparer(DependencyId.forge, mockPreparer);
 
             final Installation installation = installerUT.processModpack(sharedFetch).block();
@@ -210,7 +219,9 @@ public class ModrinthPackInstallerTest {
 
     @ParameterizedTest
     @MethodSource("handlesExcludedFiles_args")
-    void handlesExcludedFiles(String modpackFilePath, String exclude, WireMockRuntimeInfo wm, @TempDir Path tempDir) throws IOException {
+    void handlesExcludedFiles(String modpackFilePath, String exclude, boolean usingExcludeIncludeFile,
+        WireMockRuntimeInfo wm, @TempDir Path tempDir
+    ) throws IOException {
         final ModloaderPreparer mockPreparer = Mockito.mock(ModloaderPreparer.class);
         Options fetchOpts = new SharedFetchArgs().options();
         try (SharedFetch sharedFetch = Fetch.sharedFetch("install-modrinth-modpack", fetchOpts)) {
@@ -240,12 +251,25 @@ public class ModrinthPackInstallerTest {
 
             Files.write(modpackPath, createModrinthPack(index));
 
+            final FileInclusionCalculator fileInclusionCalculator;
+            if (usingExcludeIncludeFile) {
+                fileInclusionCalculator = new FileInclusionCalculator(null, null, null,
+                    new ExcludeIncludesContent()
+                        .setGlobalExcludes(new HashSet<>(Collections.singletonList(exclude)))
+                );
+            }
+            else {
+                fileInclusionCalculator = new FileInclusionCalculator(null,
+                    // Exclude!
+                    Collections.singletonList(exclude),
+                    null, null
+                );
+            }
+
             ModrinthPackInstaller installerUT = new ModrinthPackInstaller(
-                apiClient, fetchOpts, modpackPath, tempDir, resultsFile, false)
-                // Exclude!
-                .setExcludeFiles(
-                    Collections.singletonList(exclude)
-                )
+                apiClient, fetchOpts, modpackPath, tempDir, resultsFile, false,
+                fileInclusionCalculator
+            )
                 .modifyModLoaderPreparer(DependencyId.forge, mockPreparer);
 
             final Installation installation = installerUT.processModpack(sharedFetch).block();
@@ -272,11 +296,6 @@ public class ModrinthPackInstallerTest {
             Path resultsFile = tempDir.resolve("results");
             Path modpackPath = tempDir.resolve("test.mrpack");
 
-            final HashMap<Env, EnvType> env = new HashMap<>();
-            env.put(Env.client, EnvType.required);
-            // some modpack improperly declare server-required
-            env.put(Env.server, EnvType.required);
-
             expectedIndex = createBasicModpackIndex(DependencyId.forge, "111");
 
             final Path src = tempDir.resolve("src");
@@ -287,7 +306,9 @@ public class ModrinthPackInstallerTest {
             Files.write(modpackPath, createModrinthPack(expectedIndex, "overrides", src, fileToExclude));
 
             ModrinthPackInstaller installerUT = new ModrinthPackInstaller(
-                apiClient, fetchOpts, modpackPath, tempDir, resultsFile, false)
+                apiClient, fetchOpts, modpackPath, tempDir, resultsFile, false,
+                FileInclusionCalculator.empty()
+            )
                 .modifyModLoaderPreparer(DependencyId.forge, mockPreparer);
 
             final Installation installation = installerUT.processModpack(sharedFetch).block();
@@ -311,7 +332,7 @@ public class ModrinthPackInstallerTest {
         "**/*.txt",
         "extra/**"
     })
-    void handlesExcludedFiles(String exclusion, WireMockRuntimeInfo wm, @TempDir Path tempDir) throws IOException {
+    void handlesOverrideExcludedFiles(String exclusion, WireMockRuntimeInfo wm, @TempDir Path tempDir) throws IOException {
         final ModloaderPreparer mockPreparer = Mockito.mock(ModloaderPreparer.class);
         Options fetchOpts = new SharedFetchArgs().options();
         ModpackIndex expectedIndex;
@@ -323,11 +344,6 @@ public class ModrinthPackInstallerTest {
             Path resultsFile = tempDir.resolve("results");
             Path modpackPath = tempDir.resolve("test.mrpack");
 
-            final HashMap<Env, EnvType> env = new HashMap<>();
-            env.put(Env.client, EnvType.required);
-            // some modpack improperly declare server-required
-            env.put(Env.server, EnvType.required);
-
             expectedIndex = createBasicModpackIndex(DependencyId.forge, "111");
 
             final Path extraDir = Files.createDirectory(tempDir.resolve("extra"));
@@ -336,7 +352,9 @@ public class ModrinthPackInstallerTest {
             Files.write(modpackPath, createModrinthPack(expectedIndex, "overrides", tempDir, fileToExclude));
 
             ModrinthPackInstaller installerUT = new ModrinthPackInstaller(
-                apiClient, fetchOpts, modpackPath, tempDir, resultsFile, false)
+                apiClient, fetchOpts, modpackPath, tempDir, resultsFile, false,
+                FileInclusionCalculator.empty()
+            )
                 .setOverridesExclusions(
                     Collections.singletonList(exclusion)
                 )
@@ -356,8 +374,10 @@ public class ModrinthPackInstallerTest {
 
     public static Stream<Arguments> handlesExcludedFiles_args() {
         return Stream.of(
-            Arguments.arguments("mods/client-mod.jar", "client-mod"),
-            Arguments.arguments("mods/ClientMod.jar", "clientmod")
+            Arguments.arguments("mods/client-mod.jar", "client-mod", false),
+            Arguments.arguments("mods/ClientMod.jar", "clientmod", false),
+            Arguments.arguments("mods/client-mod.jar", "client-mod", true),
+            Arguments.arguments("mods/ClientMod.jar", "clientmod", true)
         );
     }
 
