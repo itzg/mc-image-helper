@@ -48,6 +48,7 @@ import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.files.ResultsFileWriter;
 import me.itzg.helpers.forge.ForgeInstaller;
 import me.itzg.helpers.forge.ForgeInstallerResolver;
+import me.itzg.helpers.forge.NeoForgeInstallerResolver;
 import me.itzg.helpers.http.FailedRequestException;
 import me.itzg.helpers.http.Fetch;
 import me.itzg.helpers.http.SharedFetch;
@@ -931,9 +932,16 @@ public class CurseForgeInstaller {
                     prepareForge(sharedFetch, minecraftVersion, parts[1]);
                     break;
 
+                case "neoforge":
+                    prepareNeoForge(sharedFetch, minecraftVersion, parts[1]);
+                    break;
+
                 case "fabric":
                     prepareFabric(minecraftVersion, parts[1]);
                     break;
+
+                default:
+                    throw new InvalidParameterException(String.format("ModLoader %s is not yet supported", parts[0]));
             }
         }
     }
@@ -945,13 +953,22 @@ public class CurseForgeInstaller {
         installer.installUsingVersions(minecraftVersion, loaderVersion, null);
     }
 
-    private void prepareForge(SharedFetch sharedFetch, String minecraftVersion, String forgeVersion) {
+    private void prepareForge(SharedFetch sharedFetch, String minecraftVersion, String loaderVersion) {
         new ForgeInstaller(
             new ForgeInstallerResolver(sharedFetch,
-                minecraftVersion, forgeVersion
+                minecraftVersion, loaderVersion
             )
         )
             .install(outputDir, resultsFile, forceReinstallModloader, "Forge");
+    }
+
+    private void prepareNeoForge(SharedFetch sharedFetch, String minecraftVersion, String loaderVersion) {
+        new ForgeInstaller(
+            new NeoForgeInstallerResolver(sharedFetch,
+                minecraftVersion, loaderVersion
+            )
+        )
+            .install(outputDir, resultsFile, forceReinstallModloader, "NeoForge");
     }
 
     private MinecraftModpackManifest extractModpackManifest(Path modpackZip) throws IOException {
