@@ -218,18 +218,19 @@ public class CurseForgeApiClient implements AutoCloseable {
                 }
                 return e;
             })
-            .map(GetModFileResponse::getData);
+            .map(GetModFileResponse::getData)
+            .checkpoint();
     }
 
     public Mono<Path> download(CurseForgeFile cfFile, Path outputFile, FileDownloadStatusHandler handler) {
-        return preparedFetch.fetch(
-                cfFile.getDownloadUrl() != null ?
-                    normalizeDownloadUrl(cfFile.getDownloadUrl())
-                    : downloadFallbackUriBuilder.resolve(
-                        "/v1/mods/{modId}/files/{fileId}/download",
-                        cfFile.getModId(), cfFile.getId()
-                    )
-            )
+        final URI uriToDownload = cfFile.getDownloadUrl() != null ?
+            normalizeDownloadUrl(cfFile.getDownloadUrl())
+            : downloadFallbackUriBuilder.resolve(
+                "/v1/mods/{modId}/files/{fileId}/download",
+                cfFile.getModId(), cfFile.getId()
+            );
+        log.trace("Downloading cfFile={} from normalizedUrl={}", cfFile, uriToDownload);
+        return preparedFetch.fetch(uriToDownload)
             .toFile(outputFile)
             .skipExisting(true)
             .handleStatus(handler)

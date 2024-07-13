@@ -5,6 +5,7 @@ import java.nio.file.Path;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.curseforge.model.FileHash;
 import me.itzg.helpers.curseforge.model.HashAlgo;
@@ -24,6 +25,10 @@ public class FileHashVerifier {
     }
 
     public static Mono<Path> verify(Path file, List<FileHash> hashes) {
+        if (hashes.isEmpty()) {
+            return Mono.just(file);
+        }
+
         for (final FileHash hash : hashes) {
             final ChecksumAlgo checksumAlgo = algos.get(hash.getAlgo());
             if (checksumAlgo != null) {
@@ -42,6 +47,10 @@ public class FileHashVerifier {
             }
         }
 
-        return Mono.error(new IllegalArgumentException("Unable to find compatible checksum algorithm"));
+        return Mono.error(new IllegalArgumentException("Unable to find compatible checksum algorithm from " +
+            hashes.stream()
+                .map(FileHash::getAlgo)
+                .collect(Collectors.toList())
+            ));
     }
 }
