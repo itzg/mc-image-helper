@@ -12,6 +12,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
+import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.json.ObjectMappers;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -90,9 +91,16 @@ public class Manifests {
     public static List<String> relativizeAll(Path basePath, Stream<Path> pathStream) {
         return pathStream
             .filter(Objects::nonNull)
-            .map(p ->
-                basePath.relativize(p)
-                .toString()
+            .map(p -> {
+                    try {
+                        return basePath.relativize(p)
+                            .toString();
+                    } catch (IllegalArgumentException e) {
+                        throw new GenericException(String.format("Failed to relative %s against %s", p, basePath),
+                            e
+                        );
+                    }
+                }
             )
             .collect(Collectors.toList());
     }
