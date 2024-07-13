@@ -56,6 +56,7 @@ import me.itzg.helpers.http.Uris;
 import me.itzg.helpers.json.ObjectMappers;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -800,10 +801,9 @@ public class CurseForgeInstaller {
 
         // Will try to locate an existing file by alternate names that browser might create,
         // but only for non-world files of the modpack
-        final Path locatedFile = !isWorld ? locateFileIn(cfFile.getFileName(),
-            outputDir,
-            downloadsRepo
-        ) : null;
+        final Path locatedFile = !isWorld ?
+            locateFileIn(cfFile.getFileName(), outputDir)
+            : null;
 
         if (locatedFile != null) {
             log.info("Mod file {} already exists", locatedFile);
@@ -811,6 +811,11 @@ public class CurseForgeInstaller {
                 .map(ResolveResult::new);
         }
         else {
+            final Path fileInRepo = locateModInRepo(cfFile.getFileName());
+            if (fileInRepo != null) {
+                return copyFromDownloadsRepo(outputFile, fileInRepo);
+            }
+
             return context.cfApi.download(cfFile, outputFile, modFileDownloadStatusHandler(this.outputDir, log))
                 .flatMap(path -> FileHashVerifier.verify(path, cfFile.getHashes()))
                 .map(ResolveResult::new)
@@ -837,22 +842,20 @@ public class CurseForgeInstaller {
             return Mono.just(new ResolveResult(outputFile).setDownloadNeeded(true));
         }
         else {
-            return Mono.just(resolved)
-                .publishOn(Schedulers.boundedElastic())
-                .flatMap(path -> {
-                    try {
-                        log.info("Mod file {} obtained from downloads repo",
-                            this.outputDir.relativize(outputFile)
-                        );
-                        //noinspection BlockingMethodInNonBlockingContext because IntelliJ is confused
-                        return Mono.just(Files.copy(resolved, outputFile));
-                    } catch (IOException e) {
-                        return Mono.error(new GenericException("Failed to copy file from downloads repo", e));
-                    }
-
-                })
-                .map(ResolveResult::new);
+            return copyFromDownloadsRepo(outputFile, resolved);
         }
+    }
+
+    private @NotNull Mono<ResolveResult> copyFromDownloadsRepo(Path outputFile, Path resolved) {
+        return
+            Mono.fromCallable(() -> {
+                    log.info("Mod file {} obtained from downloads repo",
+                        this.outputDir.relativize(outputFile)
+                    );
+                    return Files.copy(resolved, outputFile);
+                })
+                .subscribeOn(Schedulers.boundedElastic())
+                .map(ResolveResult::new);
     }
 
     private PathWithInfo extractWorldZip(CurseForgeMod modInfo, Path zipPath, Path worldsDir) {
