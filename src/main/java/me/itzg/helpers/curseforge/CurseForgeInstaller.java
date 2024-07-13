@@ -56,6 +56,7 @@ import me.itzg.helpers.http.Uris;
 import me.itzg.helpers.json.ObjectMappers;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
+import org.jetbrains.annotations.Nullable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -435,17 +436,19 @@ public class CurseForgeInstaller {
         return locateFileIn(fileName, downloadsRepo, downloadsRepo.resolve(REPO_SUBDIR_WORLDS));
     }
 
-    private static Path locateFileIn(String fileName, Path... dirs) {
+    private static Path locateFileIn(String fileName, @Nullable Path... dirs) {
         for (Path dir : dirs) {
-            final Path resolved = dir.resolve(fileName);
-            if (Files.exists(resolved)) {
-                return resolved;
-            }
+            if (dir != null) {
+                final Path resolved = dir.resolve(fileName);
+                if (Files.exists(resolved)) {
+                    return resolved;
+                }
 
-            // When downloading, the browser may replace spaces with +'s
-            final Path altResolved = dir.resolve(fileName.replace(' ', '+'));
-            if (Files.exists(altResolved)) {
-                return altResolved;
+                // When downloading, the browser may replace spaces with +'s
+                final Path altResolved = dir.resolve(fileName.replace(' ', '+'));
+                if (Files.exists(altResolved)) {
+                    return altResolved;
+                }
             }
         }
         return null;
@@ -581,6 +584,7 @@ public class CurseForgeInstaller {
                     excludeIncludeIds.getForceIncludeIds(),
                     context.categoryInfo
                 )
+                    .checkpoint()
             )
             .collectList()
             .block();
@@ -741,6 +745,7 @@ public class CurseForgeInstaller {
                         final Mono<ResolveResult> resolvedFileMono =
                             Mono.defer(() ->
                                     downloadOrResolveFile(context, modInfo, isWorld, outputDir, cfFile)
+                                        .checkpoint()
                                 )
                                 // retry the deferred part above if one of the expected failure cases
                                 .retryWhen(
@@ -795,7 +800,10 @@ public class CurseForgeInstaller {
 
         // Will try to locate an existing file by alternate names that browser might create,
         // but only for non-world files of the modpack
-        final Path locatedFile = !isWorld ? locateFileIn(cfFile.getFileName(), outputDir) : null;
+        final Path locatedFile = !isWorld ? locateFileIn(cfFile.getFileName(),
+            outputDir,
+            downloadsRepo
+        ) : null;
 
         if (locatedFile != null) {
             log.info("Mod file {} already exists", locatedFile);
