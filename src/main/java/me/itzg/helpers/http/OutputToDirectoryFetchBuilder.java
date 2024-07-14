@@ -69,6 +69,7 @@ public class OutputToDirectoryFetchBuilder extends FetchBuilderBase<OutputToDire
     public Mono<Path> assemble() {
         return useReactiveClient(client ->
             client
+                .headers(this::applyHeaders)
                 .followRedirect(true)
                 .doOnRequest(debugLogRequest(log, "file head fetch"))
                 .head()
@@ -202,6 +203,7 @@ public class OutputToDirectoryFetchBuilder extends FetchBuilderBase<OutputToDire
         return alreadyUpToDateMono
             .filter(alreadyUpToDate -> !alreadyUpToDate)
             .flatMap(notUsed -> client
+                .headers(this::applyHeaders)
                 .headersWhen(headers ->
                     skipUpToDate ?
                         fileLastModifiedMono

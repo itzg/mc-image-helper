@@ -1,7 +1,6 @@
 package me.itzg.helpers.http;
 
-import static io.netty.handler.codec.http.HttpHeaderNames.ACCEPT;
-import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
+import static io.netty.handler.codec.http.HttpHeaderNames.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.handler.codec.http.HttpHeaderNames;
@@ -9,9 +8,11 @@ import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpStatusClass;
 import io.netty.handler.codec.http.HttpUtil;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -238,6 +239,15 @@ public class FetchBuilderBase<SELF extends FetchBuilderBase<SELF>> {
             headers.set(
                 ACCEPT.toString(),
                 contentTypes
+            );
+        }
+
+        final String rawUserInfo = state.uri.getRawUserInfo();
+        if (rawUserInfo != null) {
+            headers.set(
+                AUTHORIZATION.toString(),
+                "Basic " +
+                    Base64.getEncoder().encodeToString(rawUserInfo.getBytes(StandardCharsets.UTF_8))
             );
         }
 
