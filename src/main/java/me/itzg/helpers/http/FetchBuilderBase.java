@@ -63,7 +63,8 @@ public class FetchBuilderBase<SELF extends FetchBuilderBase<SELF>> {
                 try {
                     this.uri = new URI(
                         encoded.getScheme(),
-                        encoded.getRawUserInfo().replaceFirst(":.*", ":***"),
+                        // just show first letter of username for sanity confirmation
+                        encoded.getRawUserInfo().charAt(0) + "***:***",
                         encoded.getHost(),
                         encoded.getPort(),
                         encoded.getPath(),
