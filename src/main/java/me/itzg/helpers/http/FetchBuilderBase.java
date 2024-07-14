@@ -8,6 +8,7 @@ import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpStatusClass;
 import io.netty.handler.codec.http.HttpUtil;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.ZoneId;
@@ -47,6 +48,7 @@ public class FetchBuilderBase<SELF extends FetchBuilderBase<SELF>> {
     static protected class State {
         private final SharedFetch sharedFetch;
         private final URI uri;
+        private final String userInfo;
         public String userAgentCommand;
         private Set<String> acceptContentTypes;
         private final Map<String, String> requestHeaders = new HashMap<>();
@@ -54,7 +56,28 @@ public class FetchBuilderBase<SELF extends FetchBuilderBase<SELF>> {
         State(URI uri, SharedFetch sharedFetch) {
             // Netty seems to half-way URL encode paths that have unicode,
             // so instead we'll pre-"encode" the URI
-            this.uri = URI.create(uri.toASCIIString());
+            final URI encoded = URI.create(uri.toASCIIString());
+
+            if (uri.getRawUserInfo() != null) {
+                this.userInfo = uri.getRawUserInfo();
+                try {
+                    this.uri = new URI(
+                        encoded.getScheme(),
+                        encoded.getRawUserInfo().replaceFirst(":.*", ":***"),
+                        encoded.getHost(),
+                        encoded.getPort(),
+                        encoded.getPath(),
+                        encoded.getQuery(),
+                        encoded.getFragment()
+                    );
+                } catch (URISyntaxException e) {
+                    throw new GenericException("Failed to redact user info", e);
+                }
+            }
+            else {
+                this.userInfo = null;
+                this.uri = encoded;
+            }
             this.sharedFetch = sharedFetch;
         }
     }
@@ -242,12 +265,13 @@ public class FetchBuilderBase<SELF extends FetchBuilderBase<SELF>> {
             );
         }
 
-        final String rawUserInfo = state.uri.getRawUserInfo();
-        if (rawUserInfo != null) {
+        if (state.userInfo != null) {
             headers.set(
                 AUTHORIZATION.toString(),
                 "Basic " +
-                    Base64.getEncoder().encodeToString(rawUserInfo.getBytes(StandardCharsets.UTF_8))
+                    Base64.getEncoder().encodeToString(
+                        state.userInfo.getBytes(StandardCharsets.UTF_8)
+                    )
             );
         }
 
