@@ -96,7 +96,7 @@ dependencies {
     implementation 'com.kjetland:mbknor-jackson-jsonschema_2.13:1.0.39'
     implementation 'com.jayway.jsonpath:json-path:2.9.0'
     implementation 'org.apache.httpcomponents.client5:httpclient5:5.3.1'
-    implementation 'io.projectreactor.netty:reactor-netty-http:1.1.20'
+    implementation 'io.projectreactor.netty:reactor-netty-http:1.1.21'
     implementation 'org.apache.maven:maven-artifact:3.9.8'
     implementation 'commons-codec:commons-codec:1.17.0'
     // for RFC5987 parsing of content-disposition filename*
@@ -108,10 +108,10 @@ dependencies {
     // For IMPLODE compression used by some CurseForge modpacks
     implementation 'org.apache.commons:commons-compress:1.26.2'
 
-    testImplementation 'org.assertj:assertj-core:3.26.0'
+    testImplementation 'org.assertj:assertj-core:3.26.3'
     // https://github.com/webcompere/model-assert
     // for json assertions
-    testImplementation 'uk.org.webcompere:model-assert:1.0.2'
+    testImplementation 'uk.org.webcompere:model-assert:1.0.3'
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.3'
     testImplementation 'org.mockito:mockito-junit-jupiter:5.12.0'
     // would like to transition these to wiremock
