@@ -235,7 +235,7 @@ public class ModrinthCommand implements Callable<Integer> {
             return fetch(URI.create(versionFile.getUrl()))
                 .userAgentCommand("modrinth")
                 .toFile(outPath)
-                .skipExisting(true)
+                .skipUpToDate(true)
                 .execute();
         } catch (IOException e) {
             throw new RuntimeException("Downloading mod file", e);
