@@ -4,11 +4,13 @@ import com.fasterxml.jackson.databind.exc.InvalidTypeIdException;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
@@ -250,7 +252,8 @@ public class InstallPaperCommand implements Callable<Integer> {
                             String.format("Requested version %s is not available", version))
                     )
                     .switchIfEmpty(Mono.error(() -> new InvalidParameterException(
-                        String.format("No build found for version %s with channel %s", version, channel)
+                        String.format("No build found for version %s with channel '%s'. Perhaps try with a different channel: %s",
+                            version, channel, channelsExcept(channel))
                     )))
                     .flatMap(resolvedBuild -> download(client, project, version, resolvedBuild));
             }
@@ -258,10 +261,20 @@ public class InstallPaperCommand implements Callable<Integer> {
         else {
             return client.getLatestVersionBuild(project, channel)
                 .switchIfEmpty(
-                    Mono.error(() -> new InvalidParameterException("No build found with channel " + channel))
+                    Mono.error(() -> new InvalidParameterException(
+                        String.format("No build found with channel '%s'. Perhaps try a different channel: %s",
+                            channel, channelsExcept(channel)
+                        )))
                 )
                 .flatMap(resolved -> download(client, project, resolved.getVersion(), resolved.getBuild()));
         }
+    }
+
+    private String channelsExcept(ReleaseChannel channel) {
+        return Arrays.stream(ReleaseChannel.values())
+            .filter(c -> !Objects.equals(c, channel))
+            .map(ReleaseChannel::toString)
+            .collect(Collectors.joining(", "));
     }
 
     private static boolean isSpecificVersion(String version) {
