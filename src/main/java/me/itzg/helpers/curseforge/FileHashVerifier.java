@@ -24,6 +24,10 @@ public class FileHashVerifier {
         algos.put(HashAlgo.Sha1, ChecksumAlgo.SHA1);
     }
 
+    /**
+     * @return Mono.error with {@link FileHashInvalidException}
+     * or {@link IllegalArgumentException} when compatible checksum algorithm can't be found
+     */
     public static Mono<Path> verify(Path file, List<FileHash> hashes) {
         if (hashes.isEmpty()) {
             return Mono.just(file);
