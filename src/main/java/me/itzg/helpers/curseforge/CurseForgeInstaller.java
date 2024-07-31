@@ -807,7 +807,7 @@ public class CurseForgeInstaller {
 
         if (locatedFile != null) {
             log.info("Mod file {} already exists", locatedFile);
-            return FileHashVerifier.verify(locatedFile, cfFile.getHashes())
+            return verifyHash(cfFile, locatedFile)
                 .map(ResolveResult::new);
         }
         else {
@@ -817,7 +817,7 @@ public class CurseForgeInstaller {
             }
 
             return context.cfApi.download(cfFile, outputFile, modFileDownloadStatusHandler(this.outputDir, log))
-                .flatMap(path -> FileHashVerifier.verify(path, cfFile.getHashes()))
+                .flatMap(path -> verifyHash(cfFile, path))
                 .map(ResolveResult::new)
                 .onErrorResume(
                     e -> e instanceof FailedRequestException
@@ -825,6 +825,16 @@ public class CurseForgeInstaller {
                     failedRequestException -> handleFileNeedingManualDownload(modInfo, isWorld, cfFile, outputFile)
                 );
         }
+    }
+
+    private static Mono<Path> verifyHash(CurseForgeFile cfFile, Path path) {
+        return FileHashVerifier.verify(path, cfFile.getHashes())
+            .onErrorResume(IllegalArgumentException.class::isInstance,
+                e -> {
+                    log.warn("Unable to process hash for mod {}: {}", cfFile, e.getMessage());
+                    return Mono.just(path);
+                }
+            );
     }
 
     private Mono<ResolveResult> handleFileNeedingManualDownload(CurseForgeMod modInfo, boolean isWorld, CurseForgeFile cfFile,
