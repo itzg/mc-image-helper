@@ -315,7 +315,7 @@ public class ManageUsersCommand implements Callable<Integer> {
         else {
             final Path inputFile = Paths.get(filePathUrl);
 
-            if (!Files.isSameFile(inputFile, outputFile)) {
+            if (!Files.exists(outputFile) || !Files.isSameFile(inputFile, outputFile)) {
                 log.debug("Copying from {} to {}", filePathUrl, outputFile);
                 Files.copy(inputFile, outputFile, StandardCopyOption.REPLACE_EXISTING);
             }
