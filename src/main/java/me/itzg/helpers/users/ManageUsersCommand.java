@@ -313,9 +313,16 @@ public class ManageUsersCommand implements Callable<Integer> {
             }
         }
         else {
-            log.debug("Copying from {} to {}", filePathUrl, outputFile);
+            final Path inputFile = Paths.get(filePathUrl);
 
-            Files.copy(Paths.get(filePathUrl), outputFile, StandardCopyOption.REPLACE_EXISTING);
+            if (!Files.isSameFile(inputFile, outputFile)) {
+                log.debug("Copying from {} to {}", filePathUrl, outputFile);
+                Files.copy(inputFile, outputFile, StandardCopyOption.REPLACE_EXISTING);
+            }
+            else {
+                log.warn("Attempting to synchronize input {} file onto itself: {}",
+                    type, outputFile);
+            }
         }
     }
 

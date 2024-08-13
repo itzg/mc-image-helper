@@ -737,6 +737,28 @@ class ManageUsersCommandTest {
 
             assertThat(expectedFile).hasContent(sourceContent);
         }
+
+        @Test
+        void handlesSameInputFileAsOutput(WireMockRuntimeInfo wmInfo) throws IOException {
+            @Language("JSON") final String sourceContent = "[{\"name\": \"testing\", \"uuid\": \"dec16109-30d4-4425-bcc1-5222255eb6b0\"}]";
+
+            final Path inputFile = Files.write(tempDir.resolve("ops.json"),
+                Collections.singletonList(sourceContent));
+
+            final int exitCode = new CommandLine(
+                new ManageUsersCommand()
+            )
+                .execute(
+                    "--mojang-api-base-url", wmInfo.getHttpBaseUrl(),
+                    "--user-api-provider", "mojang",
+                    "--type", Type.JAVA_OPS.name(),
+                    "--output-directory", tempDir.toString(),
+                    "--input-is-file",
+                    inputFile.toString()
+                );
+
+            assertThat(exitCode).isEqualTo(ExitCode.OK);
+        }
     }
 
     private static void setupUserStubs() {
