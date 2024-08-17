@@ -20,6 +20,7 @@ import me.itzg.helpers.curseforge.model.Category;
 import me.itzg.helpers.curseforge.model.CurseForgeFile;
 import me.itzg.helpers.curseforge.model.CurseForgeMod;
 import me.itzg.helpers.curseforge.model.FileDependency;
+import me.itzg.helpers.curseforge.model.FileRelationType;
 import me.itzg.helpers.curseforge.model.ModLoaderType;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidParameterException;
@@ -34,6 +35,8 @@ import picocli.CommandLine.Parameters;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
+import reactor.util.function.Tuple2;
+import reactor.util.function.Tuples;
 
 @Command(name = "curseforge-files", description = "Download and manage individual mod/plugin files from CurseForge")
 @Slf4j
@@ -168,29 +171,68 @@ public class CurseForgeFilesCommand implements Callable<Integer> {
 
                     return Flux.fromIterable(modFiles)
                         .flatMap(modFile -> {
-                            for (final FileDependency dependency : modFile.getDependencies()) {
-                                if (!requestedModIds.contains(dependency.getModId())) {
-                                    log.warn("The mod file {} depends on mod project ID {}, but that is not listed",
-                                        modFile.getDisplayName(), dependency.getModId()
-                                    );
-                                }
-                            }
+
+                            final Mono<FileEntry> retrieval;
                             final ModFileIds modFileIds = idsFrom(modFile);
                             final FileEntry entry = previousFiles.get(modFileIds);
                             if (entry != null
                                 && Files.exists(outputDir.resolve(entry.getFilePath()))
                             ) {
                                 log.debug("Mod file {} already exists at {}", modFile.getFileName(), entry.getFilePath());
-                                return Mono.just(entry);
+                                retrieval = Mono.just(entry);
                             }
                             else {
-                                return retrieveModFile(apiClient, categoryInfo, modFile)
+                                retrieval = retrieveModFile(apiClient, categoryInfo, modFile)
                                     .map(path -> new FileEntry(modFileIds, outputDir.relativize(path).toString()));
                             }
+
+                            return reportMissingDependencies(apiClient, modFile, requestedModIds)
+                                .then(retrieval);
                         });
                 }
             )
             .collectList();
+    }
+
+    /**
+     *
+     * @return flux of missing, required dependencies
+     */
+    private static Flux<Tuple2<CurseForgeMod, FileDependency>> reportMissingDependencies(CurseForgeApiClient apiClient,
+        CurseForgeFile modFile, Set<Integer> requestedModIds
+    ) {
+        return Flux.fromIterable(modFile.getDependencies())
+            .mapNotNull(dependency -> {
+                if (!requestedModIds.contains(dependency.getModId())) {
+                    switch (dependency.getRelationType()) {
+                        case RequiredDependency:
+                        case OptionalDependency:
+                            return dependency;
+                        default:
+                            return null;
+                    }
+                }
+                else {
+                    return null;
+                }
+            })
+            .flatMap(dependency ->
+                apiClient.getModInfo(dependency.getModId())
+                    .map(curseForgeMod -> Tuples.of(curseForgeMod, dependency))
+            )
+            .doOnNext(missingDep -> {
+                    if (missingDep.getT2().getRelationType() == FileRelationType.RequiredDependency) {
+                        log.warn("The mod file '{}' depends on mod project '{}' at {}, but it is not listed",
+                            modFile.getDisplayName(), missingDep.getT1().getName(), missingDep.getT1().getLinks().getWebsiteUrl()
+                        );
+                    }
+                    else if (missingDep.getT2().getRelationType() == FileRelationType.OptionalDependency) {
+                        log.debug("The mod file '{}' optionally depends on mod project '{}', but it is not listed",
+                            modFile.getDisplayName(), missingDep.getT1().getName()
+                        );
+                    }
+            })
+            .filter(missingDep -> missingDep.getT2().getRelationType() == FileRelationType.RequiredDependency);
     }
 
     @NotNull
