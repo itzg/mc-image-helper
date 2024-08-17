@@ -1,0 +1,24 @@
+{
+  "name" : "v1_mods_31043",
+  "request" : {
+    "url" : "/v1/mods/31043",
+    "method" : "GET"
+  },
+  "response" : {
+    "status" : 200,
+    "jsonBody" : {
+      "data": {
+        "name": "WorldEdit for Bukkit",
+        "links": {
+          "websiteUrl": "https://www.curseforge.com/minecraft/bukkit-plugins/worldedit",
+          "wikiUrl": "https://worldedit.enginehub.org/en/latest/",
+          "issuesUrl": "https://github.com/EngineHub/WorldEdit/issues",
+          "sourceUrl": "https://github.com/EngineHub/WorldEdit"
+        }
+      }
+    },
+    "headers" : {
+      "Content-Type" : "application/json; charset=utf-8"
+    }
+  }
+}
