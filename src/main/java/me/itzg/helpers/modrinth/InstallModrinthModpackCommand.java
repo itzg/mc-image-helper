@@ -9,6 +9,7 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.McImageHelper;
 import me.itzg.helpers.errors.GenericException;
+import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.files.ResultsFileWriter;
 import me.itzg.helpers.http.Fetch;
@@ -135,6 +136,9 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
 
             newManifest = buildModpackFetcher(apiClient, projectRef)
                 .fetchModpack(prevManifest)
+                .onErrorMap(throwable -> throwable instanceof NoApplicableVersionsException || throwable instanceof NoFilesAvailableException,
+                    throwable -> new InvalidParameterException(throwable.getMessage(), throwable)
+                )
                 .flatMap(fetchedPack ->
                     installerFactory.create(
                             apiClient,
