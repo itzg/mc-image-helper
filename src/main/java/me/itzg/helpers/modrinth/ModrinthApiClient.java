@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.http.Fetch;
@@ -30,6 +31,7 @@ import org.jetbrains.annotations.Nullable;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
+@Slf4j
 public class ModrinthApiClient implements AutoCloseable {
 
     private final UriBuilder uriBuilder;
@@ -136,12 +138,12 @@ public class ModrinthApiClient implements AutoCloseable {
         }
         if (projectRef.hasVersionType()) {
             return getVersionsForProject(project.getId(), loader, gameVersion)
-                .mapNotNull(versions -> pickVersion(versions, projectRef.getVersionType()));
+                .mapNotNull(versions -> pickVersion(project, versions, projectRef.getVersionType()));
         } else if (projectRef.hasVersionId()) {
             return getVersionFromId(projectRef.getVersionId());
         } else {
             return getVersionsForProject(project.getId(), loader, gameVersion)
-                    .mapNotNull(versions -> pickVersion(versions, defaultVersionType));
+                    .mapNotNull(versions -> pickVersion(project, versions, defaultVersionType));
         }
     }
 
@@ -181,10 +183,9 @@ public class ModrinthApiClient implements AutoCloseable {
             .toObjectList(Version.class)
             .assemble()
             .flatMap(versions ->
-                versions.isEmpty() ? Mono.error(new InvalidParameterException(
-                    String.format("No files are available for the project %s for loader %s and Minecraft version %s",
-                        projectIdOrSlug, loader, gameVersion
-                        )))
+                versions.isEmpty() ?
+                    getProject(projectIdOrSlug)
+                        .flatMap(project -> Mono.error(new NoFilesAvailableException(project, loader, gameVersion)))
                     : Mono.just(versions)
                 );
     }
@@ -213,11 +214,14 @@ public class ModrinthApiClient implements AutoCloseable {
             .assemble();
     }
 
-    private Version pickVersion(List<Version> versions, VersionType versionType) {
+    private Version pickVersion(Project project, List<Version> versions, VersionType versionType) {
         for (final Version version : versions) {
             if (version.getVersionType().sufficientFor(versionType)) {
                 return version;
             }
+        }
+        if (!versions.isEmpty()) {
+            throw new NoApplicableVersionsException(project, versions, versionType);
         }
         return null;
     }

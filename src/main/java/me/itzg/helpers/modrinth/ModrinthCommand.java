@@ -23,8 +23,8 @@ import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.files.Manifests;
+import me.itzg.helpers.http.Fetch;
 import me.itzg.helpers.http.SharedFetchArgs;
-import me.itzg.helpers.http.Uris;
 import me.itzg.helpers.json.ObjectMappers;
 import me.itzg.helpers.modrinth.model.DependencyType;
 import me.itzg.helpers.modrinth.model.Project;
@@ -109,6 +109,7 @@ public class ModrinthCommand implements Callable<Integer> {
             return
                 modrinthApiClient.bulkGetProjects(
                     projects.stream()
+                        .filter(s -> !s.trim().isEmpty())
                         .map(ProjectRef::parse)
                 )
                 .defaultIfEmpty(Collections.emptyList())
@@ -148,31 +149,28 @@ public class ModrinthCommand implements Callable<Integer> {
             .filter(dep -> projectsProcessed.add(dep.getProjectId()))
             .flatMap(dep -> {
                 projectsProcessed.add(dep.getProjectId());
-                try {
-                    final Version depVersion;
-                    if (dep.getVersionId() == null) {
-                        log.debug("Fetching versions of dep={} and picking", dep);
-                        depVersion = pickVersion(
-                            getVersionsForProject(modrinthApiClient, dep.getProjectId())
-                        );
-                    }
-                    else {
-                        log.debug("Fetching version for dep={}", dep);
-                        depVersion = getVersion(dep.getVersionId());
-                    }
-                    if (depVersion != null) {
-                        log.debug("Resolved version={} for dep={}", depVersion.getVersionNumber(), dep);
-                        return Stream.concat(
-                                Stream.of(depVersion),
-                                expandDependencies(modrinthApiClient, depVersion)
-                            )
-                            .peek(expandedVer -> log.debug("Expanded dependency={} into version={}", dep, expandedVer));
-                    }
-                    else {
-                        return Stream.empty();
-                    }
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
+                final Version depVersion;
+                if (dep.getVersionId() == null) {
+                    log.debug("Fetching versions of dep={} and picking", dep);
+                    depVersion = pickVersion(
+                        getVersionsForProject(modrinthApiClient, dep.getProjectId())
+                    );
+                }
+                else {
+                    log.debug("Fetching version for dep={}", dep);
+                    depVersion = modrinthApiClient.getVersionFromId(dep.getVersionId())
+                        .block();
+                }
+                if (depVersion != null) {
+                    log.debug("Resolved version={} for dep={}", depVersion.getVersionNumber(), dep);
+                    return Stream.concat(
+                            Stream.of(depVersion),
+                            expandDependencies(modrinthApiClient, depVersion)
+                        )
+                        .peek(expandedVer -> log.debug("Expanded dependency={} into version={}", dep, expandedVer));
+                }
+                else {
+                    return Stream.empty();
                 }
             });
 
@@ -190,15 +188,6 @@ public class ModrinthCommand implements Callable<Integer> {
         );
     }
 
-    private Version getVersion(String versionId) throws IOException {
-        return fetch(Uris.populateToUri(
-            baseUrl + "/v2/version/{id}", versionId
-        ))
-            .userAgentCommand("modrinth")
-            .toObject(Version.class)
-            .execute();
-    }
-
     private Version pickVersion(List<Version> versions) {
         return this.pickVersion(versions, defaultVersionType);
     }
@@ -213,13 +202,6 @@ public class ModrinthCommand implements Callable<Integer> {
     }
 
     private Path download(ProjectType projectType, VersionFile versionFile) {
-        if (log.isDebugEnabled()) {
-            log.debug("Downloading {}", versionFile);
-        }
-        else {
-            log.info("Downloading {}", versionFile.getFilename());
-        }
-
         if (projectType != ProjectType.mod) {
             throw new InvalidParameterException("Only mod project types can be downloaded for now");
         }
@@ -236,6 +218,7 @@ public class ModrinthCommand implements Callable<Integer> {
                 .userAgentCommand("modrinth")
                 .toFile(outPath)
                 .skipUpToDate(true)
+                .handleStatus(Fetch.loggingDownloadStatusHandler(log))
                 .execute();
         } catch (IOException e) {
             throw new RuntimeException("Downloading mod file", e);
@@ -253,22 +236,20 @@ public class ModrinthCommand implements Callable<Integer> {
         return versions;
     }
 
-    private Version getVersionFromId(String versionId) {
-        return fetch(Uris.populateToUri(
-            baseUrl + "/v2/version/{id}",
-            versionId
-        ))
-            .userAgentCommand("modrinth")
-            .toObject(Version.class)
-            .execute();
-    }
-
 
     private Stream<Path> processProject(ModrinthApiClient modrinthApiClient, ProjectRef projectRef, Project project) {
         log.debug("Starting with projectRef={}", projectRef);
 
         if (projectsProcessed.add(project.getId())) {
-            final Version version = resolveProjectVersion(modrinthApiClient, project, projectRef);
+            final Version version;
+            try {
+                version = modrinthApiClient.resolveProjectVersion(
+                        project, projectRef, loader, gameVersion, defaultVersionType
+                    )
+                    .block();
+            } catch (NoApplicableVersionsException | NoFilesAvailableException e) {
+                throw new InvalidParameterException(e.getMessage(), e);
+            }
 
             if (version != null) {
                 if (version.getFiles().isEmpty()) {
@@ -287,29 +268,10 @@ public class ModrinthCommand implements Callable<Integer> {
                 throw new InvalidParameterException(
                     String.format("Project %s does not have any matching versions for loader %s, game version %s",
                         projectRef, loader, gameVersion
-                        ));
+                    ));
             }
         }
         return Stream.empty();
-    }
-
-    private Version resolveProjectVersion(ModrinthApiClient modrinthApiClient, Project project, ProjectRef projectRef) {
-        if (projectRef.hasVersionType()) {
-            return pickVersion(getVersionsForProject(modrinthApiClient, project.getId()), projectRef.getVersionType());
-        }
-        else if (projectRef.hasVersionId()) {
-            return getVersionFromId(projectRef.getVersionId());
-        }
-        else {
-            final List<Version> versions = getVersionsForProject(modrinthApiClient, project.getId());
-            if (versions.isEmpty()) {
-                throw new InvalidParameterException(
-                    String.format("No files are available for the project '%s' (%s) for %s loader and Minecraft version %s",
-                        project.getTitle(), project.getSlug(), loader, gameVersion
-                    ));
-            }
-            return pickVersion(versions);
-        }
     }
 
     /**

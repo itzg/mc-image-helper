@@ -1,0 +1,45 @@
+[
+  {
+    "game_versions": [
+      "1.21",
+      "1.21.1"
+    ],
+    "loaders": [
+      "fabric"
+    ],
+    "id": "dPliWter",
+    "project_id": "fALzjamp",
+    "author_id": "nfBsvT1J",
+    "featured": false,
+    "name": "Chunky 1.4.16",
+    "version_number": "1.4.16",
+    "changelog": "",
+    "changelog_url": null,
+    "date_published": "2024-06-17T06:00:13.853652Z",
+    "downloads": 134137,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+      {
+        "hashes": {
+          "sha512": "7e862f4db563bbb5cfa8bc0c260c9a97b7662f28d0f8405355c33d7b4100ce05378b39ed37c5d75d2919a40c244a3011bb4ba63f9d53f10d50b11b32656ea395",
+          "sha1": "2b68d2bd507cd9f45fdd637ba32e8a47de6bda35"
+        },
+        "url": "https://cdn.modrinth.com/data/fALzjamp/versions/dPliWter/Chunky-1.4.16.jar",
+        "filename": "Chunky-1.4.16.jar",
+        "primary": true,
+        "size": 343847,
+        "file_type": null
+      }
+    ],
+    "dependencies": [
+      {
+        "version_id": null,
+        "project_id": "P7dR8mSH",
+        "file_name": null,
+        "dependency_type": "required"
+      }
+    ]
+  }
+]
