@@ -1,0 +1,99 @@
+[
+  {
+    "game_versions": [
+      "1.13",
+      "1.13.1",
+      "1.13.2",
+      "1.14",
+      "1.14.1",
+      "1.14.2",
+      "1.14.3",
+      "1.14.4",
+      "1.15",
+      "1.15.1",
+      "1.15.2",
+      "1.16",
+      "1.16.1",
+      "1.16.2",
+      "1.16.3",
+      "1.16.4",
+      "1.16.5",
+      "1.17",
+      "1.17.1",
+      "1.18",
+      "1.18.1",
+      "1.18.2",
+      "1.19",
+      "1.19.1",
+      "1.19.2",
+      "1.19.3",
+      "1.19.4",
+      "1.20",
+      "1.20.1",
+      "1.20.2",
+      "1.20.3",
+      "1.20.4",
+      "1.20.5",
+      "1.20.6",
+      "1.21",
+      "1.21.1"
+    ],
+    "loaders": [
+      "bukkit",
+      "paper",
+      "spigot"
+    ],
+    "id": "32Chhlnp",
+    "project_id": "3wmN97b8",
+    "author_id": "wrcIgNJd",
+    "featured": false,
+    "name": "4.3.13-pre.3",
+    "version_number": "4.3.13-pre.3",
+    "changelog": "## What's Changed\n* Update to 1.21.1 by @zax71 in https://github.com/Multiverse/Multiverse-Core/pull/3091\n\n\n**Full Changelog**: https://github.com/Multiverse/Multiverse-Core/compare/4.3.13-pre.2...4.3.13-pre.3",
+    "changelog_url": null,
+    "date_published": "2024-08-25T02:15:42.506874Z",
+    "downloads": 1150,
+    "version_type": "beta",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+      {
+        "hashes": {
+          "sha512": "53fd01c0a126c3d6e62d19102d47146ed121bfa7d67ec242bde19304a5a1587f1e2bf2ab45f886ea31dca5ac04f40cd0b37e80a8c8f2c970d148c530f0cd9686",
+          "sha1": "db76901b69d37ca1b969303c9811ad13fa54ab52"
+        },
+        "url": "https://cdn.modrinth.com/data/3wmN97b8/versions/32Chhlnp/multiverse-core-4.3.13-pre.3.jar",
+        "filename": "multiverse-core-4.3.13-pre.3.jar",
+        "primary": true,
+        "size": 527616,
+        "file_type": null
+      }
+    ],
+    "dependencies": [
+      {
+        "version_id": null,
+        "project_id": "qvdtDX3s",
+        "file_name": null,
+        "dependency_type": "optional"
+      },
+      {
+        "version_id": null,
+        "project_id": "vtawPsTo",
+        "file_name": null,
+        "dependency_type": "optional"
+      },
+      {
+        "version_id": null,
+        "project_id": "8VMk6P0I",
+        "file_name": null,
+        "dependency_type": "optional"
+      },
+      {
+        "version_id": null,
+        "project_id": "WuErDeI1",
+        "file_name": null,
+        "dependency_type": "optional"
+      }
+    ]
+  }
+]

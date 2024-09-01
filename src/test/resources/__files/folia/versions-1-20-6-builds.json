@@ -1,0 +1,77 @@
+{
+  "project_id": "folia",
+  "project_name": "Folia",
+  "version": "1.20.6",
+  "builds": [
+    {
+      "build": 2,
+      "time": "2024-05-31T02:22:45.315Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "36e5e836e8b72e39462545709fc656e69bfb53cf",
+          "summary": "Build updates",
+          "message": "Build updates\n\nfixes bundler/paperclip\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "folia-1.20.6-2.jar",
+          "sha256": "888ada440ede55253be0db1b96b3fd69b34a5bc9412654458a8907d747f82727"
+        }
+      }
+    },
+    {
+      "build": 3,
+      "time": "2024-05-31T02:26:49.225Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [],
+      "downloads": {
+        "application": {
+          "name": "folia-1.20.6-3.jar",
+          "sha256": "8e90cfc8129d3d6ca10531aaf5a029cf05a8c86506cbf6d50753c16638c33684"
+        }
+      }
+    },
+    {
+      "build": 4,
+      "time": "2024-05-31T02:31:27.825Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "36e5e836e8b72e39462545709fc656e69bfb53cf",
+          "summary": "Build updates",
+          "message": "Build updates\n\nfixes bundler/paperclip\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "folia-1.20.6-4.jar",
+          "sha256": "8e743ea68033bcba1daf6e8841368730b2cf283af3c35868a819ac63d8dd1553"
+        }
+      }
+    },
+    {
+      "build": 5,
+      "time": "2024-06-19T22:22:08.568Z",
+      "channel": "experimental",
+      "promoted": false,
+      "changes": [
+        {
+          "commit": "d79708296e75ee4f26e78c2925f6e7d4217d0575",
+          "summary": "Update Paper",
+          "message": "Update Paper\n"
+        }
+      ],
+      "downloads": {
+        "application": {
+          "name": "folia-1.20.6-5.jar",
+          "sha256": "915ef267705ccf8219a8c93fe0844244374c3091390aab51b66c1da9636c30c0"
+        }
+      }
+    }
+  ]
+}

@@ -27,6 +27,18 @@ GET https://api.modrinth.com/v2/project/ae2/version?loaders=fabric&game_versions
 GET https://api.modrinth.com/v2/project/datacraft/version?loaders=neoforge&game_versions=1.20.1
 
 ###
+GET https://api.modrinth.com/v2/project/fALzjamp/version?loaders=["fabric"]&game_versions=["1.21.1"]
+
+###
+GET https://api.modrinth.com/v2/project/3wmN97b8/version?loaders=["purpur","paper","spigot"]&game_versions=["1.21.1"]
+
+###
+GET https://api.modrinth.com/v2/project/3wmN97b8/version?loaders=["fabric"]&game_versions=["1.21.1"]
+
+###
+GET https://api.modrinth.com/v2/project/3wmN97b8
+
+###
 GET https://api.modrinth.com/v2/project/9s6osm5g/version?loaders=%5B%22fabric%22%5D&game_versions=%5B%221.19.2%22%5D
 
 ###
@@ -43,3 +55,7 @@ GET https://api.modrinth.com/v2/version/viPgd7Mi
 
 ###
 GET https://cdn.modrinth.com/data/9s6osm5g/versions/o9dFD9SO/cloth-config-8.3.103-fabric.jar
+
+###
+GET https://cdn.modrinth.com/data/3wmN97b8/versions/32Chhlnp/multiverse-core-4.3.13-pre.3.jar
+if-modified-since: Sun, 20 Aug 2024 02:15:42 GMT
