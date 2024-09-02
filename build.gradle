@@ -112,7 +112,7 @@ dependencies {
     // https://github.com/webcompere/model-assert
     // for json assertions
     testImplementation 'uk.org.webcompere:model-assert:1.0.3'
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.3'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.0'
     testImplementation 'org.mockito:mockito-junit-jupiter:5.13.0'
     // would like to transition these to wiremock
     testImplementation 'org.mock-server:mockserver-junit-jupiter:5.15.0'
