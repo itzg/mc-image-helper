@@ -27,6 +27,7 @@ import me.itzg.helpers.http.SharedFetch.Options;
 import me.itzg.helpers.json.ObjectMappers;
 import me.itzg.helpers.modrinth.model.DependencyId;
 import me.itzg.helpers.modrinth.model.ModpackIndex;
+import me.itzg.helpers.modrinth.model.ModpackIndex.ModpackFile;
 import me.itzg.helpers.quilt.QuiltInstaller;
 import org.jetbrains.annotations.Blocking;
 import org.jetbrains.annotations.VisibleForTesting;
@@ -99,6 +100,10 @@ public class ModrinthPackInstaller {
             );
         }
 
+        if (log.isDebugEnabled()) {
+            debugLogModpackIndex(modpackIndex);
+        }
+
         if (!Objects.equals("minecraft", modpackIndex.getGame())) {
             return Mono.error(
                 new InvalidParameterException(
@@ -124,6 +129,15 @@ public class ModrinthPackInstaller {
                         .setFiles(paths);
                 }).subscribeOn(Schedulers.boundedElastic())
             );
+    }
+
+    private void debugLogModpackIndex(ModpackIndex modpackIndex) {
+        log.debug("Modpack index: name={}, game={}, versionId={}",
+            modpackIndex.getName(), modpackIndex.getGame(), modpackIndex.getVersionId()
+            );
+        for (final ModpackFile file : modpackIndex.getFiles()) {
+            log.debug("Modpack file: path={}, env={}", file.getPath(), file.getEnv());
+        }
     }
 
     private Flux<Path> processModFiles(ModpackIndex modpackIndex) {
