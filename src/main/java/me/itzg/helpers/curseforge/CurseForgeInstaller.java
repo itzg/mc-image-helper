@@ -941,24 +941,28 @@ public class CurseForgeInstaller {
     private void prepareModLoader(String id, String minecraftVersion) {
         log.debug("Preparing mod loader given id={} minecraftVersion={}", id, minecraftVersion);
 
-        final String[] parts = id.split("-", 2);
-        if (parts.length != 2) {
+        // id could be values like
+        // neoforge-1.20.1-47.1.99
+        final String[] parts = id.split("-", 3);
+        if (parts.length < 2) {
             throw new GenericException("Unknown modloader ID: " + id);
         }
+
+        final String loaderVersion = parts.length == 2 ? parts[1] : parts[2];
 
         try (SharedFetch sharedFetch = Fetch.sharedFetch("install-curseforge", sharedFetchOptions)) {
 
             switch (parts[0]) {
                 case "forge":
-                    prepareForge(sharedFetch, minecraftVersion, parts[1]);
+                    prepareForge(sharedFetch, minecraftVersion, loaderVersion);
                     break;
 
                 case "neoforge":
-                    prepareNeoForge(sharedFetch, minecraftVersion, parts[1]);
+                    prepareNeoForge(sharedFetch, minecraftVersion, loaderVersion);
                     break;
 
                 case "fabric":
-                    prepareFabric(minecraftVersion, parts[1]);
+                    prepareFabric(minecraftVersion, loaderVersion);
                     break;
 
                 default:
