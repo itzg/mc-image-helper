@@ -1,13 +1,17 @@
 package me.itzg.helpers.modrinth;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.params.provider.Arguments.argumentSet;
 
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Paths;
+import java.util.stream.Stream;
 import me.itzg.helpers.modrinth.model.VersionType;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 public class ProjectRefTest {
@@ -131,5 +135,26 @@ public class ProjectRefTest {
 
         assertThat(new ProjectRef(projectUri, null).getIdOrSlug())
             .isEqualTo("slug");
+    }
+
+    @ParameterizedTest
+    @MethodSource("parseProjectRef_parameters")
+    void parseProjectRef(String input, String slugId, VersionType versionType, String versionId, String versionName, boolean datapack) {
+        final ProjectRef result = ProjectRef.parse(input);
+        assertThat(result.getIdOrSlug()).isEqualTo(slugId);
+        assertThat(result.getVersionType()).isEqualTo(versionType);
+        assertThat(result.getVersionId()).isEqualTo(versionId);
+        assertThat(result.getVersionName()).isEqualTo(versionName);
+        assertThat(result.isDatapack()).isEqualTo(datapack);
+    }
+
+    public static Stream<Arguments> parseProjectRef_parameters() {
+        return Stream.of(
+            argumentSet("just slugId","terralith", "terralith", null, null, null, false),
+            argumentSet("datapack","datapack:terralith", "terralith", null, null, null, true),
+            argumentSet("with version ID","terralith:rEF3UnUI", "terralith", null, "rEF3UnUI", null, false),
+            argumentSet("with version type","terralith:release", "terralith", VersionType.release, null, null, false),
+            argumentSet("with version name","terralith:2.5.5", "terralith", null, null, "2.5.5", false)
+        );
     }
 }

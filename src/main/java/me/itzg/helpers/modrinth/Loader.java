@@ -14,7 +14,8 @@ public enum Loader {
     pufferfish("plugins", paper),
     purpur("plugins", paper),
     bungeecord("plugins", null),
-    velocity("plugins", null);
+    velocity("plugins", null),
+    datapack(null, null);
 
     private final String type;
     private final Loader compatibleWith;

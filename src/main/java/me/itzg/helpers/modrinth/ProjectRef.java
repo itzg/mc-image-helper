@@ -13,29 +13,38 @@ import lombok.Getter;
 import lombok.ToString;
 import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.modrinth.model.VersionType;
+import org.jetbrains.annotations.Nullable;
 
 @Getter
 @ToString
 public class ProjectRef {
     private static final Pattern VERSIONS = Pattern.compile("[a-zA-Z0-9]{8}");
-    private final static Pattern MODPACK_PAGE_URL = Pattern.compile(
+    private static final Pattern MODPACK_PAGE_URL = Pattern.compile(
         "https://modrinth.com/modpack/(?<slug>.+?)(/version/(?<versionName>.+))?"
     );
+    private static final Pattern PROJECT_REF = Pattern.compile("(?<datapack>datapack:)?(?<idSlug>[^:]+?)(:(?<version>[^:]+))?");
 
-    final String idOrSlug;
+    private final String idOrSlug;
+    private final boolean datapack;
+
     /**
      * Either a remote URI or a file URI for a locally provided file
      */
-    final URI projectUri;
-    final VersionType versionType;
-    final String versionId;
-    final String versionName;
+    private final URI projectUri;
+    private final VersionType versionType;
+    private final String versionId;
+    private final String versionName;
 
     public static ProjectRef parse(String projectRef) {
-        final String[] projectRefParts = projectRef.split(":", 2);
+        final Matcher m = PROJECT_REF.matcher(projectRef);
+        if (!m.matches()) {
+            throw new InvalidParameterException("Invalid project reference: " + projectRef);
+        }
 
-        return new ProjectRef(projectRefParts[0],
-            projectRefParts.length > 1 ? projectRefParts[1] : null
+        return new ProjectRef(
+            m.group("idSlug"),
+            m.group("version"),
+            m.group("datapack") != null
         );
     }
 
@@ -44,7 +53,15 @@ public class ProjectRef {
      * @param version can be a {@link VersionType}, ID, or name/number
      */
     public ProjectRef(String projectSlug, String version) {
+        this(projectSlug, version, false);
+    }
+
+    /**
+     * @param version  can be a {@link VersionType}, ID, or name/number
+     */
+    public ProjectRef(String projectSlug, @Nullable String version, boolean datapack) {
         this.idOrSlug = projectSlug;
+        this.datapack = datapack;
         this.projectUri = null;
         this.versionType = parseVersionType(version);
         if (this.versionType == null) {
@@ -64,6 +81,7 @@ public class ProjectRef {
     }
 
     public ProjectRef(URI projectUri, String versionId) {
+        this.datapack = false;
         this.projectUri = projectUri;
 
         final String filename = extractFilename(projectUri);
