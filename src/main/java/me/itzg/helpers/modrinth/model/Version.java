@@ -2,29 +2,31 @@ package me.itzg.helpers.modrinth.model;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import lombok.Data;
-
 import java.time.Instant;
 import java.util.List;
+import lombok.Data;
 
 @Data
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class Version {
-  String id;
 
-  String projectId;
+    private String id;
 
-  String name;
+    private String projectId;
 
-  Instant datePublished;
+    private String name;
 
-  String versionNumber;
+    private Instant datePublished;
 
-  VersionType versionType;
+    private String versionNumber;
 
-  List<VersionFile> files;
+    private VersionType versionType;
 
-  List<VersionDependency> dependencies;
+    private List<VersionFile> files;
 
-  List<String> gameVersions;
+    private List<VersionDependency> dependencies;
+
+    private List<String> gameVersions;
+
+    private List<String> loaders;
 }

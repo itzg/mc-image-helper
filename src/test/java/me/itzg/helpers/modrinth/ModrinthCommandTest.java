@@ -23,6 +23,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
 
@@ -181,6 +182,120 @@ class ModrinthCommandTest {
             );
 
         assertThat(exitCode).isNotEqualTo(ExitCode.OK);
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void handlesDatapacksSpecificVersion(boolean absoluteWorldDir, @TempDir Path tempDir) {
+        final String projectId = randomAlphanumeric(6);
+        final String projectSlug = randomAlphabetic(5);
+        final String versionId = randomAlphanumeric(8 /*versionId's must have len 8*/);
+        final String worldDir = "world-"+randomAlphabetic(5);
+
+        stubProjectBulkRequest(projectId, projectSlug);
+
+        final ArrayNode versionResp = objectMapper.createArrayNode();
+        final ObjectNode versionNode = objectMapper.createObjectNode()
+            .put("id", versionId)
+            .put("project_id", projectId)
+            .put("version_type", "release");
+        versionNode.putArray("loaders").add("datapack");
+        versionNode.putArray("files")
+            .addObject()
+            .put("url", wm.getRuntimeInfo().getHttpBaseUrl() + "/cdn/" + versionId + ".zip")
+            .put("filename", versionId + ".zip");
+        versionNode.putArray("dependencies");
+
+        stubFor(get(urlPathEqualTo("/v2/version/" + versionId))
+            .willReturn(aResponse()
+                .withHeader("Content-Type", "application/json")
+                .withJsonBody(versionNode)
+            )
+        );
+
+        stubFor(get(urlPathMatching("/cdn/" + versionId + ".zip"))
+            .willReturn(aResponse()
+                .withBody("content of zip")
+                .withHeader("Content-Type", "application/zip")
+            )
+        );
+
+        final int exitCode = new CommandLine(
+            new ModrinthCommand()
+        )
+            .execute(
+                "--api-base-url", wm.getRuntimeInfo().getHttpBaseUrl(),
+                "--output-directory", tempDir.toString(),
+                "--world-directory",
+                absoluteWorldDir ?
+                    tempDir.resolve(worldDir).toString()
+                    : worldDir,
+                "--game-version", "1.21.1",
+                "--loader", "datapack",
+                "--projects", String.format("datapack:%s:%s", projectId, versionId)
+            );
+
+        assertThat(exitCode).isEqualTo(ExitCode.OK);
+
+        assertThat(tempDir.resolve(worldDir).resolve("datapacks").resolve(versionId + ".zip"))
+            .exists()
+            .hasContent("content of zip");
+    }
+
+    @Test
+    void handlesDatapacksLatestVersion(@TempDir Path tempDir) {
+        final String projectId = randomAlphanumeric(6);
+        final String projectSlug = randomAlphabetic(5);
+        final String versionId = randomAlphanumeric(8 /*versionId's must have len 8*/);
+        final String worldDir = "world-"+randomAlphabetic(5);
+
+        stubProjectBulkRequest(projectId, projectSlug);
+
+        final ArrayNode versionsResp = objectMapper.createArrayNode();
+        final ObjectNode versionNode = versionsResp.addObject()
+            .put("id", versionId)
+            .put("project_id", projectId)
+            .put("version_type", "release");
+        versionNode.putArray("loaders").add("datapack");
+        versionNode.putArray("files")
+            .addObject()
+            .put("url", wm.getRuntimeInfo().getHttpBaseUrl() + "/cdn/" + versionId + ".zip")
+            .put("filename", versionId + ".zip");
+        versionNode.putArray("dependencies");
+
+        stubFor(get(urlPathEqualTo("/v2/project/" + projectId + "/version"))
+            .withQueryParam("loaders", equalTo("[\"datapack\"]"))
+            .withQueryParam("game_versions", equalTo("[\"1.21.1\"]"))
+            .willReturn(aResponse()
+                .withHeader("Content-Type", "application/json")
+                .withJsonBody(versionsResp)
+            )
+        );
+
+        stubFor(get(urlPathMatching("/cdn/" + versionId + ".zip"))
+            .willReturn(aResponse()
+                .withBody("content of zip")
+                .withHeader("Content-Type", "application/zip")
+            )
+        );
+
+        final int exitCode = new CommandLine(
+            new ModrinthCommand()
+        )
+            .execute(
+                "--api-base-url", wm.getRuntimeInfo().getHttpBaseUrl(),
+                "--output-directory", tempDir.toString(),
+                "--world-directory", worldDir,
+                "--game-version", "1.21.1",
+                "--loader", "paper",
+                "--projects", String.format("datapack:%s", projectId)
+            );
+
+        assertThat(exitCode).isEqualTo(ExitCode.OK);
+
+        assertThat(tempDir.resolve(worldDir).resolve("datapacks").resolve(versionId + ".zip"))
+            .exists()
+            .hasContent("content of zip");
     }
 
     @NotNull

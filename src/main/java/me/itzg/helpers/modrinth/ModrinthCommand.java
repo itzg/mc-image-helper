@@ -26,6 +26,7 @@ import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.http.Fetch;
 import me.itzg.helpers.http.SharedFetchArgs;
 import me.itzg.helpers.json.ObjectMappers;
+import me.itzg.helpers.modrinth.model.Constants;
 import me.itzg.helpers.modrinth.model.DependencyType;
 import me.itzg.helpers.modrinth.model.Project;
 import me.itzg.helpers.modrinth.model.ProjectType;
@@ -42,6 +43,7 @@ import picocli.CommandLine.Option;
 @Slf4j
 public class ModrinthCommand implements Callable<Integer> {
 
+    public static final String DATAPACKS_SUBDIR = "datapacks";
     @Option(names = "--projects", description = "Project ID or Slug",
         split = SPLIT_COMMA_NL, splitSynopsisLabel = SPLIT_SYNOPSIS_COMMA_NL,
         paramLabel = "id|slug"
@@ -77,6 +79,11 @@ public class ModrinthCommand implements Callable<Integer> {
         description = "Default: ${DEFAULT-VALUE}"
     )
     String baseUrl;
+
+    @Option(names = "--world-directory", defaultValue = "${env:LEVEL:-world}",
+        description = "Used for datapacks, a path relative to the output directory or an absolute path\nDefault: ${DEFAULT-VALUE}"
+    )
+    Path worldDirectory;
 
     @ArgGroup(exclusive = false)
     SharedFetchArgs sharedFetchArgs = new SharedFetchArgs();
@@ -115,7 +122,9 @@ public class ModrinthCommand implements Callable<Integer> {
                 .defaultIfEmpty(Collections.emptyList())
                 .block()
                 .stream()
-                .flatMap(resolvedProject -> processProject(modrinthApiClient, resolvedProject.getProjectRef(), resolvedProject.getProject()))
+                .flatMap(resolvedProject -> processProject(
+                    modrinthApiClient, resolvedProject.getProjectRef(), resolvedProject.getProject()
+                ))
                 .collect(Collectors.toList());
         }
     }
@@ -201,14 +210,31 @@ public class ModrinthCommand implements Callable<Integer> {
         return null;
     }
 
-    private Path download(ProjectType projectType, VersionFile versionFile) {
-        if (projectType != ProjectType.mod) {
-            throw new InvalidParameterException("Only mod project types can be downloaded for now");
-        }
+    private Path download(boolean isDatapack, VersionFile versionFile) {
         final Path outPath;
         try {
-            outPath = Files.createDirectories(outputDirectory.resolve(loader.getType()))
-                .resolve(versionFile.getFilename());
+            if (!isDatapack) {
+                outPath = Files.createDirectories(outputDirectory
+                        .resolve(loader.getType())
+                    )
+                    .resolve(versionFile.getFilename());
+            }
+            else {
+                if (worldDirectory.isAbsolute()) {
+                    outPath = Files.createDirectories(worldDirectory
+                            .resolve(DATAPACKS_SUBDIR)
+                        )
+                        .resolve(versionFile.getFilename());
+                }
+                else {
+                    outPath = Files.createDirectories(outputDirectory
+                            .resolve(worldDirectory)
+                            .resolve(DATAPACKS_SUBDIR)
+                        )
+                        .resolve(versionFile.getFilename());
+                }
+            }
+
         } catch (IOException e) {
             throw new RuntimeException("Creating mods directory", e);
         }
@@ -238,7 +264,14 @@ public class ModrinthCommand implements Callable<Integer> {
 
 
     private Stream<Path> processProject(ModrinthApiClient modrinthApiClient, ProjectRef projectRef, Project project) {
-        log.debug("Starting with projectRef={}", projectRef);
+        if (project.getProjectType() != ProjectType.mod) {
+            throw new InvalidParameterException(
+                String.format("Requested project '%s' is not a mod, but has type %s",
+                    project.getTitle(), project.getProjectType()
+                ));
+        }
+
+        log.debug("Starting with project='{}' slug={}", project.getTitle(), project.getSlug());
 
         if (projectsProcessed.add(project.getId())) {
             final Version version;
@@ -256,13 +289,15 @@ public class ModrinthCommand implements Callable<Integer> {
                     throw new GenericException(String.format("Project %s has no files declared", project.getSlug()));
                 }
 
+                final boolean isDatapack = isDatapack(version);
+
                 return Stream.concat(
                         Stream.of(version),
                         expandDependencies(modrinthApiClient, version)
                     )
                     .map(ModrinthApiClient::pickVersionFile)
-                    .map(versionFile -> download(project.getProjectType(), versionFile))
-                    .flatMap(this::expandIfZip);
+                    .map(versionFile -> download(isDatapack, versionFile))
+                    .flatMap(downloadedFile -> !isDatapack ? expandIfZip(downloadedFile) : Stream.empty());
             }
             else {
                 throw new InvalidParameterException(
@@ -272,6 +307,13 @@ public class ModrinthCommand implements Callable<Integer> {
             }
         }
         return Stream.empty();
+    }
+
+    private boolean isDatapack(Version version) {
+        return
+            version.getLoaders() != null
+            && version.getLoaders().size() == 1
+            && version.getLoaders().get(0).equals(Constants.LOADER_DATAPACK);
     }
 
     /**

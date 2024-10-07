@@ -125,8 +125,11 @@ public class ModrinthApiClient implements AutoCloseable {
     public Mono<Version> resolveProjectVersion(Project project, ProjectRef projectRef,
                                                @Nullable Loader loader, String gameVersion,
                                                VersionType defaultVersionType) {
+
+        final Loader loaderToQuery = projectRef.isDatapack() ? Loader.datapack : loader;
+
         if (projectRef.hasVersionName()) {
-            return getVersionsForProject(project.getId(), loader, gameVersion)
+            return getVersionsForProject(project.getId(), loaderToQuery, gameVersion)
                 .flatMap(versions ->
                     Mono.justOrEmpty(versions.stream()
                         .filter(version ->
@@ -137,12 +140,12 @@ public class ModrinthApiClient implements AutoCloseable {
                     ));
         }
         if (projectRef.hasVersionType()) {
-            return getVersionsForProject(project.getId(), loader, gameVersion)
+            return getVersionsForProject(project.getId(), loaderToQuery, gameVersion)
                 .mapNotNull(versions -> pickVersion(project, versions, projectRef.getVersionType()));
         } else if (projectRef.hasVersionId()) {
             return getVersionFromId(projectRef.getVersionId());
         } else {
-            return getVersionsForProject(project.getId(), loader, gameVersion)
+            return getVersionsForProject(project.getId(), loaderToQuery, gameVersion)
                     .mapNotNull(versions -> pickVersion(project, versions, defaultVersionType));
         }
     }
@@ -190,7 +193,7 @@ public class ModrinthApiClient implements AutoCloseable {
                 );
     }
 
-    private List<String> expandCompatibleLoaders(Loader loader) {
+    private List<String> expandCompatibleLoaders(@Nullable Loader loader) {
         if (loader == null) {
             return null;
         }
