@@ -9,7 +9,6 @@ import java.nio.file.Path;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.curseforge.model.Category;
 import me.itzg.helpers.curseforge.model.CurseForgeFile;
@@ -22,6 +21,7 @@ import me.itzg.helpers.curseforge.model.GetModResponse;
 import me.itzg.helpers.curseforge.model.ModsSearchResponse;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidParameterException;
+import me.itzg.helpers.files.ApiCaching;
 import me.itzg.helpers.http.FailedRequestException;
 import me.itzg.helpers.http.Fetch;
 import me.itzg.helpers.http.FileDownloadStatusHandler;
@@ -34,6 +34,8 @@ import reactor.core.scheduler.Schedulers;
 
 @Slf4j
 public class CurseForgeApiClient implements AutoCloseable {
+
+    public static final String CACHING_NAMESPACE = "curseforge";
 
     public static final String CATEGORY_MODPACKS = "modpacks";
     public static final String CATEGORY_MC_MODS = "mc-mods";
@@ -48,10 +50,12 @@ public class CurseForgeApiClient implements AutoCloseable {
     private final UriBuilder downloadFallbackUriBuilder;
     private final String gameId;
 
-    private final ConcurrentHashMap<Integer, CurseForgeMod> cachedMods = new ConcurrentHashMap<>();
+    private final ApiCaching apiCaching;
 
-    public CurseForgeApiClient(String apiBaseUrl, String apiKey, SharedFetch.Options sharedFetchOptions, String gameId
+    public CurseForgeApiClient(String apiBaseUrl, String apiKey, SharedFetch.Options sharedFetchOptions, String gameId,
+        ApiCaching apiCaching
     ) {
+        this.apiCaching = apiCaching;
         if (apiKey == null || apiKey.trim().isEmpty()) {
             throw new InvalidParameterException("CurseForge API key is required");
         }
@@ -128,8 +132,7 @@ public class CurseForgeApiClient implements AutoCloseable {
                 else {
                     return Mono.just(searchResponse.getData().get(0));
                 }
-            })
-            .doOnNext(curseForgeMod -> cachedMods.put(curseForgeMod.getId(), curseForgeMod));
+            });
     }
 
     /**
@@ -184,19 +187,16 @@ public class CurseForgeApiClient implements AutoCloseable {
     ) {
         log.debug("Getting mod metadata for {}", projectID);
 
-        final CurseForgeMod cached = cachedMods.get(projectID);
-        if (cached != null) {
-            return Mono.just(cached);
-        }
-
-        return preparedFetch.fetch(
-                uriBuilder.resolve("/v1/mods/{modId}", projectID)
-            )
-            .toObject(GetModResponse.class)
-            .assemble()
-            .checkpoint("Getting mod info for " + projectID)
-            .map(GetModResponse::getData)
-            .doOnNext(curseForgeMod -> cachedMods.put(curseForgeMod.getId(), curseForgeMod));
+        return apiCaching.cache("getModInfo", CurseForgeMod.class,
+            preparedFetch.fetch(
+                    uriBuilder.resolve("/v1/mods/{modId}", projectID)
+                )
+                .toObject(GetModResponse.class)
+                .assemble()
+                .checkpoint("Getting mod info for " + projectID)
+                .map(GetModResponse::getData),
+            projectID
+        );
     }
 
     public Mono<CurseForgeFile> getModFileInfo(
@@ -204,22 +204,25 @@ public class CurseForgeApiClient implements AutoCloseable {
     ) {
         log.debug("Getting mod file metadata for {}:{}", projectID, fileID);
 
-        return preparedFetch.fetch(
-                uriBuilder.resolve("/v1/mods/{modId}/files/{fileId}", projectID, fileID)
-            )
-            .toObject(GetModFileResponse.class)
-            .assemble()
-            .onErrorMap(FailedRequestException.class::isInstance, e -> {
-                final FailedRequestException fre = (FailedRequestException) e;
-                if (fre.getStatusCode() == 400) {
-                    if (isNotFoundResponse(fre.getBody())) {
-                        return new InvalidParameterException("Requested file not found for modpack", e);
+        return apiCaching.cache("getModFileInfo", CurseForgeFile.class,
+            preparedFetch.fetch(
+                    uriBuilder.resolve("/v1/mods/{modId}/files/{fileId}", projectID, fileID)
+                )
+                .toObject(GetModFileResponse.class)
+                .assemble()
+                .onErrorMap(FailedRequestException.class::isInstance, e -> {
+                    final FailedRequestException fre = (FailedRequestException) e;
+                    if (fre.getStatusCode() == 400) {
+                        if (isNotFoundResponse(fre.getBody())) {
+                            return new InvalidParameterException("Requested file not found for modpack", e);
+                        }
                     }
-                }
-                return e;
-            })
-            .map(GetModFileResponse::getData)
-            .checkpoint();
+                    return e;
+                })
+                .map(GetModFileResponse::getData)
+                .checkpoint(),
+            projectID, fileID
+        );
     }
 
     public Mono<Path> download(CurseForgeFile cfFile, Path outputFile, FileDownloadStatusHandler handler) {

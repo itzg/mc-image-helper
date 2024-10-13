@@ -3,6 +3,7 @@ package me.itzg.helpers.curseforge;
 import static java.util.Collections.emptySet;
 import static java.util.Objects.requireNonNull;
 import static java.util.Optional.ofNullable;
+import static me.itzg.helpers.curseforge.CurseForgeApiClient.CACHING_NAMESPACE;
 import static me.itzg.helpers.curseforge.CurseForgeApiClient.modFileDownloadStatusHandler;
 import static me.itzg.helpers.singles.MoreCollections.safeStreamFrom;
 
@@ -44,6 +45,9 @@ import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.errors.RateLimitException;
 import me.itzg.helpers.fabric.FabricLauncherInstaller;
+import me.itzg.helpers.files.ApiCaching;
+import me.itzg.helpers.files.ApiCachingImpl;
+import me.itzg.helpers.files.DisabledApiCaching;
 import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.files.ResultsFileWriter;
 import me.itzg.helpers.forge.ForgeInstaller;
@@ -127,10 +131,12 @@ public class CurseForgeInstaller {
     @Getter @Setter
     private List<String> ignoreMissingFiles;
 
+    @Getter @Setter
+    private boolean disableApiCaching;
+
     /**
-     * @throws MissingModsException if any mods need to be manually downloaded
      */
-    public void installFromModpackZip(Path modpackZip, String slug) throws IOException {
+    public void installFromModpackZip(Path modpackZip, String slug) {
         requireNonNull(modpackZip, "modpackZip is required");
 
         install(slug, context -> {
@@ -147,9 +153,8 @@ public class CurseForgeInstaller {
     }
 
     /**
-     * @throws MissingModsException if any mods need to be manually downloaded
      */
-    public void installFromModpackManifest(String modpackManifestLoc, String slug) throws IOException {
+    public void installFromModpackManifest(String modpackManifestLoc, String slug) {
         requireNonNull(modpackManifestLoc, "modpackManifest is required");
 
         install(slug, context -> {
@@ -184,7 +189,7 @@ public class CurseForgeInstaller {
         );
     }
 
-    void install(String slug, InstallationEntryPoint entryPoint) throws IOException {
+    void install(String slug, InstallationEntryPoint entryPoint) {
         requireNonNull(outputDir, "outputDir is required");
         requireNonNull(slug);
         requireNonNull(entryPoint);
@@ -209,9 +214,11 @@ public class CurseForgeInstaller {
         }
 
         try (
-            CurseForgeApiClient cfApi = new CurseForgeApiClient(
+            final ApiCaching apiCaching = disableApiCaching ? new DisabledApiCaching() : new ApiCachingImpl(outputDir, CACHING_NAMESPACE);
+            final CurseForgeApiClient cfApi = new CurseForgeApiClient(
                 apiBaseUrl, apiKey, sharedFetchOptions,
-                CurseForgeApiClient.MINECRAFT_GAME_ID
+                CurseForgeApiClient.MINECRAFT_GAME_ID,
+                apiCaching
             )
         ) {
             final CategoryInfo categoryInfo = cfApi.loadCategoryInfo(applicableClassIdSlugs)
@@ -238,6 +245,8 @@ public class CurseForgeInstaller {
             else {
                 throw e;
             }
+        } catch (IOException e) {
+            throw new GenericException("Failed to setup API caching", e);
         }
     }
 

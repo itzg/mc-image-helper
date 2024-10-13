@@ -24,6 +24,9 @@ import me.itzg.helpers.curseforge.model.FileRelationType;
 import me.itzg.helpers.curseforge.model.ModLoaderType;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidParameterException;
+import me.itzg.helpers.files.ApiCaching;
+import me.itzg.helpers.files.ApiCachingImpl;
+import me.itzg.helpers.files.DisabledApiCaching;
 import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.http.SharedFetchArgs;
 import org.jetbrains.annotations.NotNull;
@@ -93,6 +96,9 @@ public class CurseForgeFilesCommand implements Callable<Integer> {
     )
     ModLoaderType modLoaderType;
 
+    @Option(names = "--disable-api-caching", defaultValue = "${env:CF_DISABLE_API_CACHING:-false}")
+    boolean disableApiCaching;
+
     @ArgGroup(exclusive = false)
     SharedFetchArgs sharedFetchArgs = new SharedFetchArgs();
 
@@ -116,10 +122,14 @@ public class CurseForgeFilesCommand implements Callable<Integer> {
         final CurseForgeFilesManifest newManifest;
 
         if (modFileRefs != null && !modFileRefs.isEmpty()) {
-            try (CurseForgeApiClient apiClient = new CurseForgeApiClient(
-                apiBaseUrl, apiKey, sharedFetchArgs.options(),
-                CurseForgeApiClient.MINECRAFT_GAME_ID
-            )) {
+            try (
+                final ApiCaching apiCaching = disableApiCaching ? new DisabledApiCaching() : new ApiCachingImpl(outputDir, CACHING_NAMESPACE);
+                final CurseForgeApiClient apiClient = new CurseForgeApiClient(
+                    apiBaseUrl, apiKey, sharedFetchArgs.options(),
+                    CurseForgeApiClient.MINECRAFT_GAME_ID,
+                    apiCaching
+                )
+            ) {
                 newManifest = apiClient.loadCategoryInfo(Arrays.asList(CATEGORY_MC_MODS, CATEGORY_BUKKIT_PLUGINS))
                     .flatMap(categoryInfo ->
                         processModFileRefs(categoryInfo, previousFiles, apiClient)

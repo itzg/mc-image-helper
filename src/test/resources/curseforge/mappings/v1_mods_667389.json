@@ -1,0 +1,253 @@
+{
+  "request" : {
+    "url" : "/v1/mods/667389",
+    "method" : "GET"
+  },
+  "response" : {
+    "status" : 200,
+    "jsonBody" : {
+      "data": {
+        "id": 667389,
+        "gameId": 432,
+        "name": "Goblin Traders [Fabric]",
+        "slug": "goblintraders-fabric",
+        "links": {
+          "websiteUrl": "https://www.curseforge.com/minecraft/mc-mods/goblintraders-fabric",
+          "wikiUrl": "",
+          "issuesUrl": "https://github.com/MrCrayfish/GoblinTraders/issues",
+          "sourceUrl": "https://github.com/MrCrayfish/GoblinTraders"
+        },
+        "summary": "The official port of Goblin Traders for Fabric",
+        "status": 4,
+        "downloadCount": 5030800,
+        "isFeatured": false,
+        "primaryCategoryId": 422,
+        "categories": [
+          {
+            "id": 406,
+            "gameId": 432,
+            "name": "World Gen",
+            "slug": "world-gen",
+            "url": "https://www.curseforge.com/minecraft/mc-mods/world-gen",
+            "iconUrl": "https://media.forgecdn.net/avatars/6/26/635351494599748860.png",
+            "dateModified": "2017-10-16T21:40:11.473Z",
+            "isClass": false,
+            "classId": 6,
+            "parentCategoryId": 6
+          },
+          {
+            "id": 411,
+            "gameId": 432,
+            "name": "Mobs",
+            "slug": "world-mobs",
+            "url": "https://www.curseforge.com/minecraft/mc-mods/world-gen/world-mobs",
+            "iconUrl": "https://media.forgecdn.net/avatars/6/53/635351500195070414.png",
+            "dateModified": "2014-05-08T17:46:59.507Z",
+            "isClass": false,
+            "classId": 6,
+            "parentCategoryId": 406
+          },
+          {
+            "id": 422,
+            "gameId": 432,
+            "name": "Adventure and RPG",
+            "slug": "adventure-rpg",
+            "url": "https://www.curseforge.com/minecraft/mc-mods/adventure-rpg",
+            "iconUrl": "https://media.forgecdn.net/avatars/6/37/635351497295252123.png",
+            "dateModified": "2014-05-08T17:42:09.54Z",
+            "isClass": false,
+            "classId": 6,
+            "parentCategoryId": 6
+          }
+        ],
+        "classId": 6,
+        "authors": [
+          {
+            "id": 7244595,
+            "name": "MrCrayfish",
+            "url": "https://www.curseforge.com/members/mrcrayfish",
+            "avatarUrl": "https://static-cdn.jtvnw.net/jtv_user_pictures/4ce607d6-66e9-45b8-a5ea-db8577519da2-profile_image-150x150.jpeg"
+          }
+        ],
+        "logo": {
+          "id": 871322,
+          "modId": 667389,
+          "title": "638288811682649421.png",
+          "description": "",
+          "thumbnailUrl": "https://media.forgecdn.net/avatars/thumbnails/871/322/256/256/638288811682649421.png",
+          "url": "https://media.forgecdn.net/avatars/871/322/638288811682649421.png"
+        },
+        "screenshots": [
+          {
+            "id": 670642,
+            "modId": 667389,
+            "title": "Banner",
+            "description": "",
+            "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/670/642/310/172/goblintraders_banner.png",
+            "url": "https://media.forgecdn.net/attachments/670/642/goblintraders_banner.png"
+          }
+        ],
+        "mainFileId": 4802504,
+        "latestFiles": [
+          {
+            "id": 4802504,
+            "gameId": 432,
+            "modId": 667389,
+            "isAvailable": true,
+            "displayName": "Goblin Traders 1.9.3",
+            "fileName": "goblintraders-fabric-1.20.1-1.9.3.jar",
+            "releaseType": 1,
+            "fileStatus": 4,
+            "hashes": [
+              {
+                "value": "04e2a0f65854beac78bbf79126f61b5807953b47",
+                "algo": 1
+              },
+              {
+                "value": "b996dc3cd27dc7ddcd3f6c550f40eed2",
+                "algo": 2
+              }
+            ],
+            "fileDate": "2023-10-17T01:57:30.517Z",
+            "fileLength": 312370,
+            "downloadCount": 1391667,
+            "downloadUrl": "https://edge.forgecdn.net/files/4802/504/goblintraders-fabric-1.20.1-1.9.3.jar",
+            "gameVersions": [
+              "Fabric",
+              "1.20.1"
+            ],
+            "sortableGameVersions": [
+              {
+                "gameVersionName": "Fabric",
+                "gameVersionPadded": "0",
+                "gameVersion": "",
+                "gameVersionReleaseDate": "2022-09-01T00:00:00Z",
+                "gameVersionTypeId": 68441
+              },
+              {
+                "gameVersionName": "1.20.1",
+                "gameVersionPadded": "0000000001.0000000020.0000000001",
+                "gameVersion": "1.20.1",
+                "gameVersionReleaseDate": "2023-06-12T14:26:38.477Z",
+                "gameVersionTypeId": 75125
+              }
+            ],
+            "dependencies": [
+              {
+                "modId": 667377,
+                "relationType": 2
+              },
+              {
+                "modId": 667391,
+                "relationType": 3
+              }
+            ],
+            "alternateFileId": 0,
+            "isServerPack": false,
+            "fileFingerprint": 3916209973,
+            "modules": [
+              {
+                "name": "META-INF",
+                "fingerprint": 582908178
+              },
+              {
+                "name": "LICENSE_Goblin Traders",
+                "fingerprint": 2228520401
+              },
+              {
+                "name": ".cache",
+                "fingerprint": 2906097444
+              },
+              {
+                "name": "fabric.mod.json",
+                "fingerprint": 4033018105
+              },
+              {
+                "name": "goblintraders_background.png",
+                "fingerprint": 808496097
+              },
+              {
+                "name": "data",
+                "fingerprint": 1040927923
+              },
+              {
+                "name": "goblintraders_banner.png",
+                "fingerprint": 2978243803
+              },
+              {
+                "name": "goblintraders_icon.png",
+                "fingerprint": 3040146432
+              },
+              {
+                "name": "goblintraders.common.mixins.json",
+                "fingerprint": 1385391998
+              },
+              {
+                "name": "assets",
+                "fingerprint": 3973342126
+              },
+              {
+                "name": "pack.mcmeta",
+                "fingerprint": 1979345674
+              },
+              {
+                "name": "goblintraders.refmap.json",
+                "fingerprint": 2712489594
+              },
+              {
+                "name": "com",
+                "fingerprint": 3137009607
+              }
+            ]
+          }
+        ],
+        "latestFilesIndexes": [
+          {
+            "gameVersion": "1.20.1",
+            "fileId": 4802504,
+            "filename": "goblintraders-fabric-1.20.1-1.9.3.jar",
+            "releaseType": 1,
+            "gameVersionTypeId": 75125,
+            "modLoader": 4
+          },
+          {
+            "gameVersion": "1.19.4",
+            "fileId": 4728953,
+            "filename": "goblintraders-fabric-1.19.4-1.8.3.jar",
+            "releaseType": 1,
+            "gameVersionTypeId": 73407,
+            "modLoader": 4
+          },
+          {
+            "gameVersion": "1.19.3",
+            "fileId": 4416561,
+            "filename": "goblintraders-fabric-1.8.1-1.19.3.jar",
+            "releaseType": 1,
+            "gameVersionTypeId": 73407,
+            "modLoader": 4
+          },
+          {
+            "gameVersion": "1.19.2",
+            "fileId": 4119629,
+            "filename": "goblintraders-fabric-1.8.1-1.19.2.jar",
+            "releaseType": 1,
+            "gameVersionTypeId": 73407,
+            "modLoader": 4
+          }
+        ],
+        "latestEarlyAccessFilesIndexes": [],
+        "dateCreated": "2022-09-02T15:19:05.287Z",
+        "dateModified": "2024-05-10T14:11:18.18Z",
+        "dateReleased": "2023-10-17T01:57:30.517Z",
+        "allowModDistribution": true,
+        "gamePopularityRank": 2046,
+        "isAvailable": true,
+        "hasCommentsEnabled": true,
+        "thumbsUpCount": 0
+      }
+    },
+    "headers" : {
+      "Content-Type" : "application/json; charset=utf-8"
+    }
+  }
+}

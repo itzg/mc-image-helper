@@ -160,6 +160,9 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
     @Option(names = "--missing-mods-filename", defaultValue = "MODS_NEED_DOWNLOAD.txt")
     String missingModsFilename;
 
+    @Option(names = "--disable-api-caching", defaultValue = "${env:CF_DISABLE_API_CACHING:-false}")
+    boolean disableApiCaching;
+
     @Override
     public Integer call() throws Exception {
         // https://www.curseforge.com/minecraft/modpacks/all-the-mods-8/files
@@ -194,7 +197,8 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
             .setOverridesExclusions(overridesExclusions)
             .setSharedFetchOptions(sharedFetchArgs.options())
             .setApiKey(apiKey)
-            .setDownloadsRepo(downloadsRepo);
+            .setDownloadsRepo(downloadsRepo)
+            .setDisableApiCaching(disableApiCaching);
 
         if (apiBaseUrl != null) {
             installer.setApiBaseUrl(apiBaseUrl);
