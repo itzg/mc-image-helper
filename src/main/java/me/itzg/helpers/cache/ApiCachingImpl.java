@@ -1,4 +1,4 @@
-package me.itzg.helpers.files;
+package me.itzg.helpers.cache;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.TemporalAmount;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -14,9 +15,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import me.itzg.helpers.files.CacheIndex.CacheEntry;
+import me.itzg.helpers.cache.CacheIndex.CacheEntry;
 import me.itzg.helpers.json.ObjectMappers;
 import org.jetbrains.annotations.Blocking;
+import org.jetbrains.annotations.Nullable;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
@@ -30,10 +32,17 @@ public class ApiCachingImpl implements ApiCaching {
     private final Path cacheNamespaceDir;
 
     @Setter
-    private Duration cacheDuration = Duration.ofHours(24);
+    private Duration defaultCacheDuration = Duration.ofHours(48);
+
+    @Setter
+    private Map<String/*operation*/,Duration> cacheDurations = new HashMap<>();
 
     @Blocking
-    public ApiCachingImpl(Path outputDirectory, String namespace) throws IOException {
+    public ApiCachingImpl(Path outputDirectory, String namespace, @Nullable CacheArgs cacheArgs) throws IOException {
+        if (cacheArgs != null) {
+            defaultCacheDuration = cacheArgs.getDefaultCacheDuration();
+            cacheDurations = cacheArgs.getCacheDurations();
+        }
         objectMapper = ObjectMappers.defaultMapper();
         cacheNamespaceDir = outputDirectory.resolve(CACHE_SUBIDR).resolve(namespace);
         cacheIndex = loadCacheIndex();
@@ -110,7 +119,9 @@ public class ApiCachingImpl implements ApiCaching {
                     synchronized (cacheIndex) {
                         cacheIndex.getOperations().computeIfAbsent(operation, s -> new HashMap<>())
                             .put(keys, new CacheEntry()
-                                .setExpiresAt(Instant.now().plus(cacheDuration))
+                                .setExpiresAt(Instant.now().plus(
+                                    lookupCacheDuration(operation)
+                                ))
                                 .setFilename(filename)
                             );
                     }
@@ -124,6 +135,12 @@ public class ApiCachingImpl implements ApiCaching {
 
             })
             .subscribeOn(Schedulers.boundedElastic());
+    }
+
+    private TemporalAmount lookupCacheDuration(String operation) {
+        return cacheDurations != null ?
+            cacheDurations.getOrDefault(operation, defaultCacheDuration)
+            : defaultCacheDuration;
     }
 
     private <R> Mono<R> loadFromCache(String operation, String keys, CacheEntry entry, Class<R> returnType) {

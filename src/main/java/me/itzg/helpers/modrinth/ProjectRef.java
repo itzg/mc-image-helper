@@ -33,7 +33,7 @@ public class ProjectRef {
     private final URI projectUri;
     private final VersionType versionType;
     private final String versionId;
-    private final String versionName;
+    private final String versionNumber;
 
     public static ProjectRef parse(String projectRef) {
         final Matcher m = PROJECT_REF.matcher(projectRef);
@@ -67,16 +67,16 @@ public class ProjectRef {
         if (this.versionType == null) {
             if (isVersionId(version)) {
                 this.versionId = version;
-                this.versionName = null;
+                this.versionNumber = null;
             }
             else {
                 this.versionId = null;
-                this.versionName = version;
+                this.versionNumber = version;
             }
         }
         else {
             this.versionId = null;
-            this.versionName = null;
+            this.versionNumber = null;
         }
     }
 
@@ -88,7 +88,7 @@ public class ProjectRef {
         this.idOrSlug = filename.endsWith(".mrpack") ?
             filename.substring(0, filename.length() - ".mrpack".length()) : filename;
 
-        this.versionName = null;
+        this.versionNumber = null;
         this.versionType = null;
         this.versionId = versionId;
     }
@@ -138,7 +138,7 @@ public class ProjectRef {
     }
 
     public boolean hasVersionName() {
-        return versionName != null;
+        return versionNumber != null;
     }
 
     public boolean hasVersionType() {

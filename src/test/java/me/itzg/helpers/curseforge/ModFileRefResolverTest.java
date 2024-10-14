@@ -10,9 +10,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
+import me.itzg.helpers.cache.ApiCachingDisabled;
 import me.itzg.helpers.curseforge.model.CurseForgeFile;
 import me.itzg.helpers.curseforge.model.ModLoaderType;
-import me.itzg.helpers.files.DisabledApiCaching;
 import me.itzg.helpers.http.SharedFetch.Options;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -53,7 +53,7 @@ class ModFileRefResolverTest {
     void testMcModsRefs(String ref, String defaultCategory, String gameVersion, ModLoaderType modLoader, ModFileIds expected) {
 
         final CurseForgeApiClient apiClient = new CurseForgeApiClient(wm.baseUrl(), "testing", Options.builder().build(),
-            CurseForgeApiClient.MINECRAFT_GAME_ID, new DisabledApiCaching()
+            CurseForgeApiClient.MINECRAFT_GAME_ID, new ApiCachingDisabled()
         );
 
         final CategoryInfo categoryInfo = apiClient.loadCategoryInfo(
