@@ -102,7 +102,7 @@ dependencies {
     // for RFC5987 parsing of content-disposition filename*
     // 3.5.x is last of Java8 compatible: https://cxf.apache.org/download.html
     implementation 'org.apache.cxf:cxf-core:[3.5.6,3.6.0)'
-    implementation 'org.jetbrains:annotations:25.0.0'
+    implementation 'org.jetbrains:annotations:26.0.1'
 
     // https://commons.apache.org/proper/commons-compress/zip.html
     // For IMPLODE compression used by some CurseForge modpacks
