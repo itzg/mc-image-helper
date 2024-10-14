@@ -1,4 +1,4 @@
-package me.itzg.helpers.files;
+package me.itzg.helpers.cache;
 
 import java.io.IOException;
 import reactor.core.publisher.Mono;

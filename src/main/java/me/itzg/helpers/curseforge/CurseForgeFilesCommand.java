@@ -15,6 +15,10 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import me.itzg.helpers.cache.ApiCaching;
+import me.itzg.helpers.cache.ApiCachingDisabled;
+import me.itzg.helpers.cache.ApiCachingImpl;
+import me.itzg.helpers.cache.CacheArgs;
 import me.itzg.helpers.curseforge.CurseForgeFilesManifest.FileEntry;
 import me.itzg.helpers.curseforge.model.Category;
 import me.itzg.helpers.curseforge.model.CurseForgeFile;
@@ -24,9 +28,6 @@ import me.itzg.helpers.curseforge.model.FileRelationType;
 import me.itzg.helpers.curseforge.model.ModLoaderType;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidParameterException;
-import me.itzg.helpers.files.ApiCaching;
-import me.itzg.helpers.files.ApiCachingImpl;
-import me.itzg.helpers.files.DisabledApiCaching;
 import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.http.SharedFetchArgs;
 import org.jetbrains.annotations.NotNull;
@@ -100,6 +101,9 @@ public class CurseForgeFilesCommand implements Callable<Integer> {
     boolean disableApiCaching;
 
     @ArgGroup(exclusive = false)
+    CacheArgs cacheArgs;
+
+    @ArgGroup(exclusive = false)
     SharedFetchArgs sharedFetchArgs = new SharedFetchArgs();
 
     @Parameters(split = ",", paramLabel = "REF",
@@ -123,7 +127,8 @@ public class CurseForgeFilesCommand implements Callable<Integer> {
 
         if (modFileRefs != null && !modFileRefs.isEmpty()) {
             try (
-                final ApiCaching apiCaching = disableApiCaching ? new DisabledApiCaching() : new ApiCachingImpl(outputDir, CACHING_NAMESPACE);
+                final ApiCaching apiCaching = disableApiCaching ? new ApiCachingDisabled()
+                    : new ApiCachingImpl(outputDir, CACHING_NAMESPACE, cacheArgs);
                 final CurseForgeApiClient apiClient = new CurseForgeApiClient(
                     apiBaseUrl, apiKey, sharedFetchArgs.options(),
                     CurseForgeApiClient.MINECRAFT_GAME_ID,

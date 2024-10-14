@@ -133,8 +133,8 @@ public class ModrinthApiClient implements AutoCloseable {
                 .flatMap(versions ->
                     Mono.justOrEmpty(versions.stream()
                         .filter(version ->
-                            version.getVersionNumber().equals(projectRef.getVersionName())
-                            || version.getName().equals(projectRef.getVersionName())
+                            version.getVersionNumber().equals(projectRef.getVersionNumber())
+                            || version.getName().equals(projectRef.getVersionNumber())
                         )
                         .findFirst()
                     ));

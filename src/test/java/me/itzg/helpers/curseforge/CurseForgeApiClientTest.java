@@ -6,7 +6,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import java.util.Collections;
-import me.itzg.helpers.files.DisabledApiCaching;
+import me.itzg.helpers.cache.ApiCachingDisabled;
 import me.itzg.helpers.http.SharedFetch.Options;
 import org.intellij.lang.annotations.Language;
 import org.junit.jupiter.api.Test;
@@ -26,7 +26,7 @@ class CurseForgeApiClientTest {
 
         final CategoryInfo result;
         try (CurseForgeApiClient client = new CurseForgeApiClient(wmInfo.getHttpBaseUrl(), "key\n", Options.builder().build(),
-            "test", new DisabledApiCaching()
+            "test", new ApiCachingDisabled()
         )) {
             result = client.loadCategoryInfo(Collections.singleton("mc-mods"))
                 .block();

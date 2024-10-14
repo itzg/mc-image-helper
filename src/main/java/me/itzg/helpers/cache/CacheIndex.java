@@ -1,4 +1,4 @@
-package me.itzg.helpers.files;
+package me.itzg.helpers.cache;
 
 import java.time.Instant;
 import java.util.HashMap;

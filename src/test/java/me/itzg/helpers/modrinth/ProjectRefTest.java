@@ -61,7 +61,7 @@ public class ProjectRefTest {
         projectRefUT = new ProjectRef(
             this.expectedSlug, this.expectedVersionName);
 
-        assertThat(projectRefUT.getVersionName())
+        assertThat(projectRefUT.getVersionNumber())
             .isEqualTo(expectedVersionName);
         assertThat(projectRefUT.hasVersionId()).isFalse();
         assertThat(projectRefUT.hasVersionType()).isFalse();
@@ -74,7 +74,7 @@ public class ProjectRefTest {
 
         assertThat(projectRefUT.getIdOrSlug())
             .isEqualTo(this.expectedSlug);
-        assertThat(projectRefUT.getVersionName())
+        assertThat(projectRefUT.getVersionNumber())
             .isEqualTo(expectedVersionName);
     }
 
@@ -88,7 +88,7 @@ public class ProjectRefTest {
 
         assertThat(projectRefUT.getIdOrSlug())
             .isEqualTo(this.expectedSlug);
-        assertThat(projectRefUT.getVersionName())
+        assertThat(projectRefUT.getVersionNumber())
             .isEqualTo(expectedVersionName);
     }
 
@@ -102,7 +102,7 @@ public class ProjectRefTest {
 
         assertThat(projectRefUT.getIdOrSlug())
             .isEqualTo(this.expectedSlug);
-        assertThat(projectRefUT.getVersionName())
+        assertThat(projectRefUT.getVersionNumber())
             .isEqualTo(expectedVersionName);
     }
 
@@ -144,7 +144,7 @@ public class ProjectRefTest {
         assertThat(result.getIdOrSlug()).isEqualTo(slugId);
         assertThat(result.getVersionType()).isEqualTo(versionType);
         assertThat(result.getVersionId()).isEqualTo(versionId);
-        assertThat(result.getVersionName()).isEqualTo(versionName);
+        assertThat(result.getVersionNumber()).isEqualTo(versionName);
         assertThat(result.isDatapack()).isEqualTo(datapack);
     }
 

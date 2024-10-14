@@ -32,6 +32,10 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import me.itzg.helpers.cache.ApiCaching;
+import me.itzg.helpers.cache.ApiCachingDisabled;
+import me.itzg.helpers.cache.ApiCachingImpl;
+import me.itzg.helpers.cache.CacheArgs;
 import me.itzg.helpers.curseforge.ExcludeIncludesContent.ExcludeIncludes;
 import me.itzg.helpers.curseforge.OverridesApplier.Result;
 import me.itzg.helpers.curseforge.model.Category;
@@ -45,9 +49,6 @@ import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.errors.RateLimitException;
 import me.itzg.helpers.fabric.FabricLauncherInstaller;
-import me.itzg.helpers.files.ApiCaching;
-import me.itzg.helpers.files.ApiCachingImpl;
-import me.itzg.helpers.files.DisabledApiCaching;
 import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.files.ResultsFileWriter;
 import me.itzg.helpers.forge.ForgeInstaller;
@@ -134,6 +135,9 @@ public class CurseForgeInstaller {
     @Getter @Setter
     private boolean disableApiCaching;
 
+    @Getter @Setter
+    private CacheArgs cacheArgs;
+
     /**
      */
     public void installFromModpackZip(Path modpackZip, String slug) {
@@ -214,7 +218,8 @@ public class CurseForgeInstaller {
         }
 
         try (
-            final ApiCaching apiCaching = disableApiCaching ? new DisabledApiCaching() : new ApiCachingImpl(outputDir, CACHING_NAMESPACE);
+            final ApiCaching apiCaching = disableApiCaching ? new ApiCachingDisabled()
+                : new ApiCachingImpl(outputDir, CACHING_NAMESPACE, cacheArgs);
             final CurseForgeApiClient cfApi = new CurseForgeApiClient(
                 apiBaseUrl, apiKey, sharedFetchOptions,
                 CurseForgeApiClient.MINECRAFT_GAME_ID,

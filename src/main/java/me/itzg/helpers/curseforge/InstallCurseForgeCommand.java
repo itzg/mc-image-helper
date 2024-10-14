@@ -13,6 +13,7 @@ import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import me.itzg.helpers.McImageHelper;
+import me.itzg.helpers.cache.CacheArgs;
 import me.itzg.helpers.curseforge.ModpacksPageUrlParser.Parsed;
 import me.itzg.helpers.files.ResultsFileWriter;
 import me.itzg.helpers.files.TabularOutput;
@@ -163,6 +164,9 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
     @Option(names = "--disable-api-caching", defaultValue = "${env:CF_DISABLE_API_CACHING:-false}")
     boolean disableApiCaching;
 
+    @ArgGroup(exclusive = false)
+    CacheArgs cacheArgs;
+
     @Override
     public Integer call() throws Exception {
         // https://www.curseforge.com/minecraft/modpacks/all-the-mods-8/files
@@ -198,7 +202,8 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
             .setSharedFetchOptions(sharedFetchArgs.options())
             .setApiKey(apiKey)
             .setDownloadsRepo(downloadsRepo)
-            .setDisableApiCaching(disableApiCaching);
+            .setDisableApiCaching(disableApiCaching)
+            .setCacheArgs(cacheArgs);
 
         if (apiBaseUrl != null) {
             installer.setApiBaseUrl(apiBaseUrl);
