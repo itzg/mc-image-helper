@@ -2,8 +2,11 @@ package me.itzg.helpers.cache;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.TemporalAmount;
@@ -74,14 +77,47 @@ public class ApiCachingImpl implements ApiCaching {
         return cacheNamespaceDir.resolve(operation).resolve(filename);
     }
 
-    private CacheIndex loadCacheIndex() throws IOException {
+    private CacheIndex loadCacheIndex() {
         final Path cacheIndexPath = cacheNamespaceDir.resolve(CACHE_INDEX_FILENAME);
         if (Files.exists(cacheIndexPath)) {
             log.debug("Loading cache index from {}", cacheIndexPath);
-            return objectMapper.readValue(cacheIndexPath.toFile(), CacheIndex.class);
+            try {
+                return objectMapper.readValue(cacheIndexPath.toFile(), CacheIndex.class);
+            } catch (IOException e) {
+                log.warn("Failed to load API cache index from {}", cacheIndexPath, e);
+                wipeCacheDirectory();
+                return new CacheIndex();
+            }
         }
         else {
             return new CacheIndex();
+        }
+    }
+
+    private void wipeCacheDirectory() {
+        if (!Files.exists(cacheNamespaceDir)) {
+            log.debug("Skipping wipe of non-existent cache directory {}", cacheNamespaceDir);
+            return;
+        }
+
+        log.debug("Wiping cache directory {}", cacheNamespaceDir);
+        try {
+            Files.walkFileTree(cacheNamespaceDir, new SimpleFileVisitor<Path>() {
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                    if (file.getFileName().toString().endsWith(".json")) {
+                        try {
+                            log.debug("Wiping cache file {}", file);
+                            Files.delete(file);
+                        } catch (IOException e) {
+                            log.warn("Failed to delete cache file {}", file, e);
+                        }
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        } catch (IOException e) {
+            log.warn("Unexpected failure while wiping cache directory", e);
         }
     }
 
