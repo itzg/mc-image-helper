@@ -1,6 +1,7 @@
 <configuration>
     <conversionRule conversionWord="customHighlight" converterClass="me.itzg.helpers.logger.CustomHighlight" />
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <withJansi>true</withJansi>
         <filter class="ch.qos.logback.classic.filter.LevelFilter">
             <level>INFO</level>
             <onMatch>ACCEPT</onMatch>
@@ -13,6 +14,7 @@
         </encoder>
     </appender>
     <appender name="STDERR" class="ch.qos.logback.core.ConsoleAppender">
+        <withJansi>true</withJansi>
         <filter class="ch.qos.logback.classic.filter.LevelFilter">
             <level>INFO</level>
             <onMatch>DENY</onMatch>
