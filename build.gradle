@@ -87,6 +87,7 @@ dependencies {
     implementation 'ch.qos.logback:logback-core'
     implementation 'ch.qos.logback:logback-classic'
     implementation "info.picocli:picocli:${picocliVersion}"
+    implementation 'org.fusesource.jansi:jansi:2.4.0'
     implementation 'com.fasterxml.jackson.core:jackson-databind'
     implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
     implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-xml'
