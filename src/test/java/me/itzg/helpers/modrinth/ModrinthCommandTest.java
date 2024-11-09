@@ -6,6 +6,7 @@ import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -14,8 +15,12 @@ import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
 import java.nio.file.Path;
 import java.util.function.Consumer;
+import me.itzg.helpers.LatchingExecutionExceptionHandler;
+import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.json.ObjectMappers;
 import me.itzg.helpers.modrinth.ModrinthCommand.DownloadDependencies;
+import me.itzg.helpers.modrinth.model.Project;
+import me.itzg.helpers.modrinth.model.ProjectType;
 import org.assertj.core.api.AbstractPathAssert;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
@@ -108,12 +113,7 @@ class ModrinthCommandTest {
         stubVersionRequest(requiredDepProjectId, requiredVersionId, deps -> {});
         stubVersionRequest(optionalDepProjectId, optionalVersionId, deps -> {});
 
-        stubFor(get(urlPathMatching("/cdn/(.+)"))
-            .willReturn(aResponse()
-                .withBody("{{request.pathSegments.[1]}}")
-                .withTransformers("response-template")
-            )
-        );
+        stubDownload();
 
         final int exitCode = new CommandLine(
             new ModrinthCommand()
@@ -148,6 +148,47 @@ class ModrinthCommandTest {
             verify(0, projectVersionsRequest(requiredDepProjectId));
             verify(0, projectVersionsRequest(optionalDepProjectId));
         }
+    }
+
+    @Test
+    void failsWhenNoDependenciesForModLoader(@TempDir Path tempDir) throws JsonProcessingException {
+        final String projectId = randomAlphanumeric(6);
+        final String projectSlug = randomAlphabetic(5);
+        final String versionId = randomAlphanumeric(6);
+        final String requiredDepProjectId = randomAlphanumeric(6);
+
+        stubProjectBulkRequest(projectId, projectSlug);
+
+        stubVersionRequest(projectId, versionId, deps -> {
+            deps.addObject()
+                .put("project_id", requiredDepProjectId)
+                .put("dependency_type", "required");
+        });
+        stubVersionRequestEmptyResponse(requiredDepProjectId);
+        stubGetProject(requiredDepProjectId, new Project().setProjectType(ProjectType.resourcepack));
+
+        stubDownload();
+
+        final LatchingExecutionExceptionHandler executionExceptionHandler = new LatchingExecutionExceptionHandler();
+
+        final int exitCode = new CommandLine(
+            new ModrinthCommand()
+        )
+            .setExecutionExceptionHandler(executionExceptionHandler)
+            .execute(
+                "--api-base-url", wm.getRuntimeInfo().getHttpBaseUrl(),
+                "--output-directory", tempDir.toString(),
+                "--game-version", "1.21.1",
+                "--loader", "paper",
+                "--projects", projectId,
+                "--download-dependencies", DownloadDependencies.REQUIRED.name()
+            );
+
+        assertThat(exitCode).isNotEqualTo(ExitCode.OK);
+
+        assertThat(executionExceptionHandler.getExecutionException())
+            .isInstanceOf(InvalidParameterException.class)
+            .hasCauseInstanceOf(NoFilesAvailableException.class);
     }
 
     @Test
@@ -325,6 +366,15 @@ class ModrinthCommandTest {
         );
     }
 
+    private void stubGetProject(String projectIdOrSlug, Project project) throws JsonProcessingException {
+        stubFor(get(urlPathEqualTo("/v2/project/"+projectIdOrSlug))
+            .willReturn(aResponse()
+                .withHeader("Content-Type", "application/json")
+                .withBody(objectMapper.writeValueAsBytes(project))
+            )
+        );
+    }
+
     private void stubVersionRequest(String projectId, String versionId, Consumer<ArrayNode> depsAdder) {
         final ArrayNode versionResp = objectMapper.createArrayNode();
         final ObjectNode versionNode = versionResp
@@ -347,7 +397,28 @@ class ModrinthCommandTest {
                 .withJsonBody(versionResp)
             )
         );
+    }
 
+    private void stubVersionRequestEmptyResponse(String projectId) {
+        final ArrayNode versionResp = objectMapper.createArrayNode();
+
+        stubFor(get(urlPathEqualTo("/v2/project/" + projectId + "/version"))
+            .withQueryParam("loaders", equalTo("[\"paper\",\"spigot\"]"))
+            .withQueryParam("game_versions", equalTo("[\"1.21.1\"]"))
+            .willReturn(aResponse()
+                .withHeader("Content-Type", "application/json")
+                .withJsonBody(versionResp)
+            )
+        );
+    }
+
+    private static void stubDownload() {
+        stubFor(get(urlPathMatching("/cdn/(.+)"))
+            .willReturn(aResponse()
+                .withBody("{{request.pathSegments.[1]}}")
+                .withTransformers("response-template")
+            )
+        );
     }
 
     private static void setupStubs() {

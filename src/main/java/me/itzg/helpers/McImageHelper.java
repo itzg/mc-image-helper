@@ -33,6 +33,7 @@ import me.itzg.helpers.quilt.InstallQuiltCommand;
 import me.itzg.helpers.singles.Asciify;
 import me.itzg.helpers.singles.HashCommand;
 import me.itzg.helpers.singles.NetworkInterfacesCommand;
+import me.itzg.helpers.singles.TestLoggingCommand;
 import me.itzg.helpers.singles.YamlPathCmd;
 import me.itzg.helpers.sync.InterpolateCommand;
 import me.itzg.helpers.sync.MulitCopyCommand;
@@ -82,6 +83,7 @@ import picocli.CommandLine.Option;
         SetPropertiesCommand.class,
         Sync.class,
         SyncAndInterpolate.class,
+        TestLoggingCommand.class,
         YamlPathCmd.class,
         VanillaTweaksCommand.class,
     }

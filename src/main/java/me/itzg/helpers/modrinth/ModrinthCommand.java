@@ -63,6 +63,12 @@ public class ModrinthCommand implements Callable<Integer> {
         description = "Default is ${DEFAULT-VALUE}\nValid values: ${COMPLETION-CANDIDATES}")
     DownloadDependencies downloadDependencies;
 
+    @Option(names = "--skip-existing", defaultValue = "${env:MODRINTH_SKIP_EXISTING}")
+    boolean skipExisting = true;
+
+    @Option(names = "--skip-up-to-date", defaultValue = "${env:MODRINTH_SKIP_UP_TO_DATE}")
+    boolean skipUpToDate = true;
+
     public enum DownloadDependencies {
         NONE,
         REQUIRED,
@@ -151,30 +157,43 @@ public class ModrinthCommand implements Callable<Integer> {
         return Manifests.load(outputDirectory, ModrinthManifest.ID, ModrinthManifest.class);
     }
 
-    private Stream<Version> expandDependencies(ModrinthApiClient modrinthApiClient, Version version) {
+    private Stream<Version> expandDependencies(ModrinthApiClient modrinthApiClient, Project project, Version version) {
         log.debug("Expanding dependencies of version={}", version);
         return version.getDependencies().stream()
             .filter(this::filterDependency)
             .filter(dep -> projectsProcessed.add(dep.getProjectId()))
             .flatMap(dep -> {
                 projectsProcessed.add(dep.getProjectId());
+
                 final Version depVersion;
-                if (dep.getVersionId() == null) {
-                    log.debug("Fetching versions of dep={} and picking", dep);
-                    depVersion = pickVersion(
-                        getVersionsForProject(modrinthApiClient, dep.getProjectId())
+                try {
+                    if (dep.getVersionId() == null) {
+                        log.debug("Fetching versions of dep={} and picking", dep);
+                        depVersion = pickVersion(
+                            getVersionsForProject(modrinthApiClient, dep.getProjectId())
+                        );
+                    }
+                    else {
+                        log.debug("Fetching version for dep={}", dep);
+                        depVersion = modrinthApiClient.getVersionFromId(dep.getVersionId())
+                            .block();
+                    }
+                } catch (GenericException e) {
+                    throw new GenericException(String.format("Failed to expand %s of project '%s'",
+                        dep, project.getTitle()), e);
+                } catch (NoFilesAvailableException e) {
+                    throw new InvalidParameterException(
+                        String.format("No matching files for %s of project '%s': %s",
+                            dep, project.getTitle(), e.getMessage()
+                        ), e
                     );
                 }
-                else {
-                    log.debug("Fetching version for dep={}", dep);
-                    depVersion = modrinthApiClient.getVersionFromId(dep.getVersionId())
-                        .block();
-                }
+
                 if (depVersion != null) {
                     log.debug("Resolved version={} for dep={}", depVersion.getVersionNumber(), dep);
                     return Stream.concat(
                             Stream.of(depVersion),
-                            expandDependencies(modrinthApiClient, depVersion)
+                            expandDependencies(modrinthApiClient, project, depVersion)
                         )
                         .peek(expandedVer -> log.debug("Expanded dependency={} into version={}", dep, expandedVer));
                 }
@@ -243,7 +262,8 @@ public class ModrinthCommand implements Callable<Integer> {
             return fetch(URI.create(versionFile.getUrl()))
                 .userAgentCommand("modrinth")
                 .toFile(outPath)
-                .skipUpToDate(true)
+                .skipExisting(skipExisting)
+                .skipUpToDate(skipUpToDate)
                 .handleStatus(Fetch.loggingDownloadStatusHandler(log))
                 .execute();
         } catch (IOException e) {
@@ -293,7 +313,7 @@ public class ModrinthCommand implements Callable<Integer> {
 
                 return Stream.concat(
                         Stream.of(version),
-                        expandDependencies(modrinthApiClient, version)
+                        expandDependencies(modrinthApiClient, project, version)
                     )
                     .map(ModrinthApiClient::pickVersionFile)
                     .map(versionFile -> download(isDatapack, versionFile))
