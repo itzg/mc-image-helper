@@ -112,7 +112,7 @@ dependencies {
     testImplementation 'org.assertj:assertj-core:3.26.3'
     // https://github.com/webcompere/model-assert
     // for json assertions
-    testImplementation 'uk.org.webcompere:model-assert:1.0.3'
+    testImplementation 'uk.org.webcompere:model-assert:1.1.0'
     testImplementation 'org.junit.jupiter:junit-jupiter:5.11.3'
     testImplementation 'org.mockito:mockito-junit-jupiter:5.14.2'
     // would like to transition these to wiremock
