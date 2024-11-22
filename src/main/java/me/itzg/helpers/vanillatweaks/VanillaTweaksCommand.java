@@ -97,7 +97,7 @@ public class VanillaTweaksCommand implements Callable<Integer> {
 
     @Override
     public Integer call() throws Exception {
-        if (shareCodes.isEmpty() && packFiles.isEmpty()) {
+        if ((shareCodes == null || shareCodes.isEmpty()) && packFiles.isEmpty()) {
             System.err.println("Either share codes or pack files needed to be given");
             return ExitCode.USAGE;
         }
