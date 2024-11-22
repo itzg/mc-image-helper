@@ -89,7 +89,7 @@ public class ModFileRefResolver {
             .subscribeOn(Schedulers.boundedElastic());
     }
 
-    private Mono<? extends CurseForgeFile> resolveModFileFromMod(String ref, String gameVersion, String category,
+    private Mono<CurseForgeFile> resolveModFileFromMod(String ref, String gameVersion, String category,
         ModLoaderType modLoaderType, CurseForgeMod mod, Matcher m
     ) {
         final String fileId = Optional.ofNullable(m.group("fileIdInUrl"))

@@ -18,6 +18,7 @@ import me.itzg.helpers.cache.ApiCachingDisabled;
 import me.itzg.helpers.cache.ApiCachingImpl;
 import me.itzg.helpers.cache.CacheArgs;
 import me.itzg.helpers.curseforge.CurseForgeFilesManifest.FileEntry;
+import me.itzg.helpers.curseforge.OutputSubdirResolver.Result;
 import me.itzg.helpers.curseforge.model.CurseForgeFile;
 import me.itzg.helpers.curseforge.model.CurseForgeMod;
 import me.itzg.helpers.curseforge.model.FileDependency;
@@ -123,7 +124,8 @@ public class CurseForgeFilesCommand implements Callable<Integer> {
                     apiCaching
                 )
             ) {
-                newManifest = apiClient.loadCategoryInfo(Arrays.asList(CATEGORY_MC_MODS, CATEGORY_BUKKIT_PLUGINS))
+                newManifest =
+                    apiClient.loadCategoryInfo(Arrays.asList(CATEGORY_MC_MODS, CATEGORY_BUKKIT_PLUGINS))
                     .flatMap(categoryInfo ->
                         processModFileRefs(categoryInfo, previousFiles, apiClient)
                             .map(entries -> CurseForgeFilesManifest.builder()
@@ -166,34 +168,61 @@ public class CurseForgeFilesCommand implements Callable<Integer> {
 
         final ModFileRefResolver modFileRefResolver = new ModFileRefResolver(apiClient, categoryInfo);
 
-        return modFileRefResolver.resolveModFiles(modFileRefs, defaultCategory, gameVersion, modLoaderType)
-            .flatMapMany(modFiles -> {
+        final OutputSubdirResolver outputSubdirResolver = new OutputSubdirResolver(outputDir, categoryInfo);
+
+        return
+            modFileRefResolver.resolveModFiles(modFileRefs, defaultCategory, gameVersion, modLoaderType)
+            .flatMapMany(modFiles ->
+                {
                     final Set<Integer> requestedModIds = modFiles.stream()
                         .map(CurseForgeFile::getModId)
                         .collect(Collectors.toSet());
 
                     return Flux.fromIterable(modFiles)
-                        .flatMap(cfFile -> {
-
-                            final Mono<FileEntry> retrieval;
-                            final ModFileIds modFileIds = idsFrom(cfFile);
-                            final FileEntry entry = previousFiles.get(modFileIds);
-                            final Path outputFile = outputDir.resolve(cfFile.getFileName());
-                            if (entry != null && Files.exists(outputFile)) {
-                                log.debug("Mod file {} already exists at {}", cfFile.getFileName(), entry.getFilePath());
-                                retrieval = Mono.just(entry);
-                            }
-                            else {
-                                retrieval = apiClient.download(cfFile, outputFile, modFileDownloadStatusHandler(outputDir, log))
-                                    .map(path -> new FileEntry(modFileIds, outputDir.relativize(path).toString()));
-                            }
-
-                            return reportMissingDependencies(apiClient, cfFile, requestedModIds)
-                                .then(retrieval);
-                        });
+                        .flatMap(cfFile -> processFile(apiClient, outputSubdirResolver, previousFiles, requestedModIds, cfFile));
                 }
             )
             .collectList();
+    }
+
+    private Mono<FileEntry> processFile(CurseForgeApiClient apiClient, OutputSubdirResolver outputSubdirResolver, Map<ModFileIds, FileEntry> previousFiles,
+        Set<Integer> requestedModIds, CurseForgeFile cfFile
+    ) {
+        final ModFileIds modFileIds = idsFrom(cfFile);
+        final FileEntry entry = previousFiles.get(modFileIds);
+
+        final Mono<FileEntry> retrievalMono;
+        if (entry != null) {
+            log.debug("Mod file {} already exists at {}", cfFile.getFileName(), entry.getFilePath());
+            retrievalMono = Mono.just(entry);
+        }
+        else {
+            retrievalMono =
+                resolveOutputSubdir(apiClient, outputSubdirResolver, cfFile)
+                    .flatMap(subdir ->
+                            apiClient.download(cfFile,
+                                    subdir.resolve(cfFile.getFileName()),
+                                    modFileDownloadStatusHandler(outputDir, log)
+                                )
+                                .map(path -> new FileEntry(modFileIds,
+                                    outputDir.relativize(path).toString()
+                                ))
+                        );
+        }
+
+        return reportMissingDependencies(apiClient, cfFile, requestedModIds)
+            .then(retrievalMono);
+    }
+
+    private Mono<Path> resolveOutputSubdir(
+        CurseForgeApiClient apiClient, OutputSubdirResolver outputSubdirResolver,
+        CurseForgeFile cfFile
+    ) {
+        return apiClient.getModInfo(cfFile.getModId())
+            .flatMap(modInfo ->
+                outputSubdirResolver.resolve(modInfo)
+                    .map(Result::getDir)
+            );
     }
 
     /**
@@ -238,9 +267,11 @@ public class CurseForgeFilesCommand implements Callable<Integer> {
     }
 
     @NotNull
-    private static Map<ModFileIds, FileEntry> buildPreviousFilesFromManifest(CurseForgeFilesManifest oldManifest) {
+    private Map<ModFileIds, FileEntry> buildPreviousFilesFromManifest(CurseForgeFilesManifest oldManifest) {
         return oldManifest != null ?
             oldManifest.getEntries().stream()
+                // make sure file still exists
+                .filter(fileEntry -> Files.exists(outputDir.resolve(fileEntry.getFilePath())))
                 .collect(Collectors.toMap(
                     FileEntry::getIds,
                     fileEntry -> fileEntry,

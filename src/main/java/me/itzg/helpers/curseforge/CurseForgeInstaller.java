@@ -18,7 +18,6 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -38,7 +37,6 @@ import me.itzg.helpers.cache.ApiCachingImpl;
 import me.itzg.helpers.cache.CacheArgs;
 import me.itzg.helpers.curseforge.ExcludeIncludesContent.ExcludeIncludes;
 import me.itzg.helpers.curseforge.OverridesApplier.Result;
-import me.itzg.helpers.curseforge.model.Category;
 import me.itzg.helpers.curseforge.model.CurseForgeFile;
 import me.itzg.helpers.curseforge.model.CurseForgeMod;
 import me.itzg.helpers.curseforge.model.ManifestFileRef;
@@ -61,6 +59,7 @@ import me.itzg.helpers.http.Uris;
 import me.itzg.helpers.json.ObjectMappers;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
+import org.jetbrains.annotations.Blocking;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import reactor.core.publisher.Flux;
@@ -115,13 +114,6 @@ public class CurseForgeInstaller {
 
     @Getter @Setter
     private Path downloadsRepo;
-
-    private final Set<String> applicableClassIdSlugs = new HashSet<>(Arrays.asList(
-        CurseForgeApiClient.CATEGORY_MODPACKS,
-        CurseForgeApiClient.CATEGORY_MC_MODS,
-        CurseForgeApiClient.CATEGORY_BUKKIT_PLUGINS,
-        CurseForgeApiClient.CATEGORY_WORLDS
-    ));
 
     @Getter @Setter
     private List<String> overridesExclusions;
@@ -226,7 +218,12 @@ public class CurseForgeInstaller {
                 apiCaching
             )
         ) {
-            final CategoryInfo categoryInfo = cfApi.loadCategoryInfo(applicableClassIdSlugs)
+            final CategoryInfo categoryInfo = cfApi.loadCategoryInfo(Arrays.asList(
+                    CurseForgeApiClient.CATEGORY_MODPACKS,
+                    CurseForgeApiClient.CATEGORY_MC_MODS,
+                    CurseForgeApiClient.CATEGORY_BUKKIT_PLUGINS,
+                    CurseForgeApiClient.CATEGORY_WORLDS
+                ))
                 .block();
 
             entryPoint.install(
@@ -557,11 +554,7 @@ public class CurseForgeInstaller {
             .findFirst()
             .orElseThrow(() -> new GenericException("Unable to find primary mod loader in modpack"));
 
-        final OutputPaths outputPaths = new OutputPaths(
-            Files.createDirectories(outputDir.resolve("mods")),
-            Files.createDirectories(outputDir.resolve("plugins")),
-            Files.createDirectories(outputDir.resolve("saves"))
-        );
+        final OutputSubdirResolver outputSubdirResolver = new OutputSubdirResolver(outputDir, context.categoryInfo);
 
         final ExcludeIncludeIds excludeIncludeIds = resolveExcludeIncludes(context);
         log.debug("Using {}", excludeIncludeIds);
@@ -594,10 +587,8 @@ public class CurseForgeInstaller {
             })
             // ...download and possibly unzip world file
             .flatMap(fileRef ->
-                processFileFromModpack(context, outputPaths,
-                    fileRef.getProjectID(), fileRef.getFileID(),
-                    excludeIncludeIds.getForceIncludeIds(),
-                    context.categoryInfo
+                processFileWithIds(context, outputSubdirResolver,
+                    excludeIncludeIds.getForceIncludeIds(), fileRef.getProjectID(), fileRef.getFileID()
                 )
                     .checkpoint()
             )
@@ -707,98 +698,94 @@ public class CurseForgeInstaller {
     /**
      * Downloads the referenced project-file into the appropriate subdirectory from outputPaths
      */
-    private Mono<PathWithInfo> processFileFromModpack(
-        InstallContext context, OutputPaths outputPaths,
-        int projectID, int fileID,
-        Set<Integer> forceIncludeIds,
-        CategoryInfo categoryInfo
+    private Mono<PathWithInfo> processFileWithIds(
+        InstallContext context, OutputSubdirResolver outputSubdirResolver,
+        Set<Integer> forceIncludeIds, int projectID, int fileID
     ) {
         return context.cfApi.getModInfo(projectID)
-            .flatMap(modInfo -> {
-                final Category category = categoryInfo.contentClassIds.get(modInfo.getClassId());
-                // applicable category?
-                if (category == null) {
-                    log.debug("Skipping project={} slug={} file={} since it is not an applicable classId={}",
-                        projectID, modInfo.getSlug(), fileID, modInfo.getClassId()
-                    );
-                    return Mono.empty();
-                }
+            .flatMap(modInfo ->
+                context.cfApi.getModFileInfo(projectID, fileID)
+                    .flatMap(cfFile -> processFile(context, outputSubdirResolver, forceIncludeIds, modInfo, cfFile)))
+            .checkpoint(String.format("Processing file  %d:%d from modpack", projectID, fileID));
+    }
 
-                final Path outputDir;
-                final boolean isWorld;
-                if (category.getSlug().endsWith("-mods")) {
-                    outputDir = outputPaths.getModsDir();
-                    isWorld = false;
-                }
-                else if (category.getSlug().endsWith("-plugins")) {
-                    outputDir = outputPaths.getPluginsDir();
-                    isWorld = false;
-                }
-                else if (category.getSlug().equals("worlds")) {
-                    outputDir = outputPaths.getWorldsDir();
-                    isWorld = true;
-                }
-                else {
-                    return Mono.error(
-                        new GenericException(
-                            String.format("Unsupported category type=%s from mod=%s", category.getSlug(), modInfo.getSlug()))
-                    );
-                }
+    private Mono<PathWithInfo> processFile(InstallContext context, OutputSubdirResolver outputSubdirResolver,
+        Set<Integer> forceIncludeIds, CurseForgeMod modInfo, CurseForgeFile cfFile
+    ) {
+        if (!forceIncludeIds.contains(modInfo.getId()) && !isServerMod(cfFile)) {
+            log.debug("Skipping {} since it is a client mod", cfFile.getFileName());
+            return Mono.empty();
+        }
+        log.debug("Download/confirm mod {} @ {}:{}",
+            // several mods have non-descriptive display names, like "v1.0.0", so filename tends to be better
+            cfFile.getFileName(),
+            modInfo.getSlug(), cfFile.getId()
+        );
 
-                return context.cfApi.getModFileInfo(projectID, fileID)
-                    .flatMap(cfFile -> {
-                        if (!forceIncludeIds.contains(projectID) && !isServerMod(cfFile)) {
-                            log.debug("Skipping {} since it is a client mod", cfFile.getFileName());
-                            return Mono.empty();
-                        }
-                        log.debug("Download/confirm mod {} @ {}:{}",
-                            // several mods have non-descriptive display names, like "v1.0.0", so filename tends to be better
-                            cfFile.getFileName(),
-                            projectID, fileID
-                        );
+        return outputSubdirResolver.resolve(modInfo)
+            .flatMap(outputResult ->
+                downloadAndPostProcess(context, modInfo, cfFile,
+                    outputResult.isWorld(),
+                    outputResult.getDir()
+                )
+            )
+            .switchIfEmpty(Mono.error(() -> new GenericException(
+                String.format("Unable to determine output location for file '%s' in '%s'",
+                    cfFile.getDisplayName(), modInfo.getName()
+                )))
+            );
+    }
 
-                        final Mono<ResolveResult> resolvedFileMono =
-                            Mono.defer(() ->
-                                    downloadOrResolveFile(context, modInfo, isWorld, outputDir, cfFile)
-                                        .checkpoint()
-                                )
-                                // retry the deferred part above if one of the expected failure cases
-                                .retryWhen(
-                                    Retry.fixedDelay(BAD_FILE_ATTEMPTS, BAD_FILE_DELAY)
-                                        .filter(throwable ->
-                                            throwable instanceof FileHashInvalidException ||
-                                            throwable instanceof FailedRequestException
-                                        )
-                                        .doBeforeRetry(retrySignal ->
-                                            log.warn("Retrying to download {} @ {}:{}",
-                                            cfFile.getFileName(), projectID, fileID)
-                                        )
-                                );
+    private Mono<PathWithInfo> downloadAndPostProcess(
+        InstallContext context, CurseForgeMod modInfo, CurseForgeFile cfFile,
+        boolean isWorld, Path outputSubdir
+    ) {
+        return isWorld ?
+            buildRetryableDownload(context, modInfo, cfFile, isWorld, outputSubdir)
+                .flatMap(downloadResult ->
+                    downloadResult.downloadNeeded ?
+                        Mono.just(new PathWithInfo(downloadResult.path)
+                            .setDownloadNeeded(downloadResult.downloadNeeded)
+                            .setModInfo(modInfo)
+                            .setCurseForgeFile(cfFile)
+                        )
+                        : Mono.fromCallable(() -> extractWorldZip(modInfo, downloadResult.path, outputSubdir))
+                            .subscribeOn(Schedulers.boundedElastic())
+                )
+            : buildRetryableDownload(context, modInfo, cfFile, isWorld, outputSubdir)
+                .map(resolveResult ->
+                    new PathWithInfo(resolveResult.path)
+                        .setDownloadNeeded(resolveResult.downloadNeeded)
+                        .setModInfo(modInfo)
+                        .setCurseForgeFile(cfFile)
+                );
+    }
 
-                        return isWorld ?
-                            resolvedFileMono
-                                .map(resolveResult ->
-                                    resolveResult.downloadNeeded ?
-                                        new PathWithInfo(resolveResult.path)
-                                            .setDownloadNeeded(resolveResult.downloadNeeded)
-                                            .setModInfo(modInfo)
-                                            .setCurseForgeFile(cfFile)
-                                        : extractWorldZip(modInfo, resolveResult.path, outputPaths.getWorldsDir())
-                                )
-                            : resolvedFileMono
-                                .map(resolveResult ->
-                                    new PathWithInfo(resolveResult.path)
-                                        .setDownloadNeeded(resolveResult.downloadNeeded)
-                                        .setModInfo(modInfo)
-                                        .setCurseForgeFile(cfFile)
-                                );
-                    });
-            })
-            .checkpoint(String.format("Downloading file from modpack %d:%d", projectID, fileID));
+    private  Mono<DownloadOrResolveResult> buildRetryableDownload(InstallContext context,
+        CurseForgeMod modInfo, CurseForgeFile cfFile, boolean isWorld, Path outputSubdir
+    ) {
+        // use defer so that the download mono is rebuilt on each retry
+        return Mono.defer(() ->
+                downloadOrResolveFile(context, modInfo, isWorld, outputSubdir, cfFile)
+                    .checkpoint()
+            )
+            // retry the deferred part above if one of the expected failure cases
+            .retryWhen(
+                Retry.fixedDelay(BAD_FILE_ATTEMPTS, BAD_FILE_DELAY)
+                    .filter(throwable ->
+                        throwable instanceof FileHashInvalidException ||
+                            throwable instanceof FailedRequestException
+                    )
+                    .doBeforeRetry(retrySignal ->
+                        log.warn("Retrying to download {} @ {}:{}",
+                            cfFile.getFileName(), modInfo.getName(), cfFile.getDisplayName()
+                        )
+                    )
+            );
     }
 
     @RequiredArgsConstructor
-    static class ResolveResult {
+    static class DownloadOrResolveResult {
 
         final Path path;
         @Setter
@@ -806,23 +793,23 @@ public class CurseForgeInstaller {
     }
 
     /**
-     * @param outputDir the mods, plugins, etc directory to place the mod file
+     * @param outputSubdir the mods, plugins, etc directory to place the mod file
      */
-    private Mono<ResolveResult> downloadOrResolveFile(InstallContext context, CurseForgeMod modInfo,
-        boolean isWorld, Path outputDir, CurseForgeFile cfFile
+    private Mono<DownloadOrResolveResult> downloadOrResolveFile(InstallContext context, CurseForgeMod modInfo,
+        boolean isWorld, Path outputSubdir, CurseForgeFile cfFile
     ) {
-        final Path outputFile = outputDir.resolve(cfFile.getFileName());
+        final Path outputFile = outputSubdir.resolve(cfFile.getFileName());
 
         // Will try to locate an existing file by alternate names that browser might create,
         // but only for non-world files of the modpack
         final Path locatedFile = !isWorld ?
-            locateFileIn(cfFile.getFileName(), outputDir)
+            locateFileIn(cfFile.getFileName(), outputSubdir)
             : null;
 
         if (locatedFile != null) {
             log.info("Mod file {} already exists", locatedFile);
             return verifyHash(cfFile, locatedFile)
-                .map(ResolveResult::new);
+                .map(DownloadOrResolveResult::new);
         }
         else {
             final Path fileInRepo = locateModInRepo(cfFile.getFileName());
@@ -832,7 +819,7 @@ public class CurseForgeInstaller {
 
             return context.cfApi.download(cfFile, outputFile, modFileDownloadStatusHandler(this.outputDir, log))
                 .flatMap(path -> verifyHash(cfFile, path))
-                .map(ResolveResult::new)
+                .map(DownloadOrResolveResult::new)
                 .onErrorResume(
                     e -> e instanceof FailedRequestException
                         && ((FailedRequestException) e).getStatusCode() == 404,
@@ -841,6 +828,9 @@ public class CurseForgeInstaller {
         }
     }
 
+    /**
+     * @return Mono.error with {@link FileHashInvalidException} when not valid
+     */
     private static Mono<Path> verifyHash(CurseForgeFile cfFile, Path path) {
         return FileHashVerifier.verify(path, cfFile.getHashes())
             .onErrorResume(IllegalArgumentException.class::isInstance,
@@ -851,7 +841,7 @@ public class CurseForgeInstaller {
             );
     }
 
-    private Mono<ResolveResult> handleFileNeedingManualDownload(CurseForgeMod modInfo, boolean isWorld, CurseForgeFile cfFile,
+    private Mono<DownloadOrResolveResult> handleFileNeedingManualDownload(CurseForgeMod modInfo, boolean isWorld, CurseForgeFile cfFile,
         Path outputFile
     ) {
         final Path resolved =
@@ -863,14 +853,14 @@ public class CurseForgeInstaller {
                     "Manually download the file '{}' from {} and supply via downloads repo or separately.",
                 modInfo.getName(), cfFile.getDisplayName(), modInfo.getLinks().getWebsiteUrl()
             );
-            return Mono.just(new ResolveResult(outputFile).setDownloadNeeded(true));
+            return Mono.just(new DownloadOrResolveResult(outputFile).setDownloadNeeded(true));
         }
         else {
             return copyFromDownloadsRepo(outputFile, resolved);
         }
     }
 
-    private @NotNull Mono<ResolveResult> copyFromDownloadsRepo(Path outputFile, Path resolved) {
+    private @NotNull Mono<DownloadOrResolveResult> copyFromDownloadsRepo(Path outputFile, Path resolved) {
         return
             Mono.fromCallable(() -> {
                     log.info("Mod file {} obtained from downloads repo",
@@ -879,9 +869,10 @@ public class CurseForgeInstaller {
                     return Files.copy(resolved, outputFile);
                 })
                 .subscribeOn(Schedulers.boundedElastic())
-                .map(ResolveResult::new);
+                .map(DownloadOrResolveResult::new);
     }
 
+    @Blocking
     private PathWithInfo extractWorldZip(CurseForgeMod modInfo, Path zipPath, Path worldsDir) {
         if (levelFrom != LevelFrom.WORLD_FILE) {
             return new PathWithInfo(zipPath);
