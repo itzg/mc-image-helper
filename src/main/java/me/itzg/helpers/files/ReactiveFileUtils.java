@@ -34,6 +34,11 @@ public class ReactiveFileUtils {
             .subscribeOn(Schedulers.boundedElastic());
     }
 
+    public static Mono<Path> createDirectories(Path dir) {
+        return Mono.fromCallable(() -> Files.createDirectories(dir))
+            .subscribeOn(Schedulers.boundedElastic());
+    }
+
     @SuppressWarnings("BlockingMethodInNonBlockingContext")
     public static Mono<Long> copyByteBufFluxToFile(ByteBufFlux byteBufFlux, Path file) {
         return Mono.fromCallable(() -> {
