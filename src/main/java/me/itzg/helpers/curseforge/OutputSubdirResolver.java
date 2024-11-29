@@ -1,20 +1,18 @@
 package me.itzg.helpers.curseforge;
 
 import java.nio.file.Path;
-import java.util.concurrent.ConcurrentHashMap;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.curseforge.model.Category;
 import me.itzg.helpers.curseforge.model.CurseForgeMod;
-import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.files.ReactiveFileUtils;
 import org.jetbrains.annotations.NotNull;
 import reactor.core.publisher.Mono;
 
+@Slf4j
 public class OutputSubdirResolver {
 
     private final CategoryInfo categoryInfo;
-    private final ConcurrentHashMap<String, Mono<Path>> subDirs
-        = new ConcurrentHashMap<>();
     private final OutputPaths outputPaths;
 
     public OutputSubdirResolver(Path outputDir, CategoryInfo categoryInfo) {
@@ -41,6 +39,9 @@ public class OutputSubdirResolver {
         final Category category = categoryInfo.contentClassIds.get(modInfo.getClassId());
         // applicable category?
         if (category == null) {
+            log.debug("Skipping output of project file '{}' (id={}) with class ID {}",
+                modInfo.getName(), modInfo.getId(), modInfo.getClassId()
+                );
             return Mono.empty();
         }
 
@@ -55,10 +56,7 @@ public class OutputSubdirResolver {
             subDirMono = outputPaths.getWorldsDir();
         }
         else {
-            return Mono.error(
-                new GenericException(
-                    String.format("Unsupported category type=%s from mod=%s", category.getSlug(), modInfo.getSlug()))
-            );
+            return Mono.empty();
         }
 
         return subDirMono
