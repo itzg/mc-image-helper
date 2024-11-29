@@ -728,11 +728,6 @@ public class CurseForgeInstaller {
                     outputResult.isWorld(),
                     outputResult.getDir()
                 )
-            )
-            .switchIfEmpty(Mono.error(() -> new GenericException(
-                String.format("Unable to determine output location for file '%s' in '%s'",
-                    cfFile.getDisplayName(), modInfo.getName()
-                )))
             );
     }
 
