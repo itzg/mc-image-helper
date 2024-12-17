@@ -97,7 +97,7 @@ dependencies {
     implementation 'com.kjetland:mbknor-jackson-jsonschema_2.13:1.0.39'
     implementation 'com.jayway.jsonpath:json-path:2.9.0'
     implementation 'org.apache.httpcomponents.client5:httpclient5:5.4.1'
-    implementation 'io.projectreactor.netty:reactor-netty-http:1.2.0'
+    implementation 'io.projectreactor.netty:reactor-netty-http:1.2.1'
     implementation 'org.apache.maven:maven-artifact:3.9.9'
     implementation 'commons-codec:commons-codec:1.17.1'
     // for RFC5987 parsing of content-disposition filename*
@@ -113,7 +113,7 @@ dependencies {
     // https://github.com/webcompere/model-assert
     // for json assertions
     testImplementation 'uk.org.webcompere:model-assert:1.1.0'
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.3'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
     testImplementation 'org.mockito:mockito-junit-jupiter:5.14.2'
     // would like to transition these to wiremock
     testImplementation 'org.mock-server:mockserver-junit-jupiter:5.15.0'
