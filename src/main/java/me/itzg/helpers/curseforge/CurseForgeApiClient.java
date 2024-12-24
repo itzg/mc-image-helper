@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -22,10 +23,12 @@ import me.itzg.helpers.curseforge.model.GetModResponse;
 import me.itzg.helpers.curseforge.model.ModsSearchResponse;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidParameterException;
+import me.itzg.helpers.errors.RateLimitException;
 import me.itzg.helpers.http.FailedRequestException;
 import me.itzg.helpers.http.Fetch;
 import me.itzg.helpers.http.FileDownloadStatusHandler;
 import me.itzg.helpers.http.SharedFetch;
+import me.itzg.helpers.http.SharedFetch.Options;
 import me.itzg.helpers.http.UriBuilder;
 import me.itzg.helpers.json.ObjectMappers;
 import org.slf4j.Logger;
@@ -41,9 +44,17 @@ public class CurseForgeApiClient implements AutoCloseable {
     public static final String CATEGORY_MC_MODS = "mc-mods";
     public static final String CATEGORY_BUKKIT_PLUGINS = "bukkit-plugins";
     public static final String CATEGORY_WORLDS = "worlds";
+    public static final String API_KEY_VAR = "CF_API_KEY";
+    public static final String ETERNAL_DEVELOPER_CONSOLE_URL = "https://console.curseforge.com/";
 
     private static final String API_KEY_HEADER = "x-api-key";
     static final String MINECRAFT_GAME_ID = "432";
+
+    public static final String OP_SEARCH_MOD_WITH_GAME_ID_SLUG_CLASS_ID = "searchModWithGameIdSlugClassId";
+    private static final Map<String, Duration> CACHE_DURATIONS = new HashMap<>();
+    static {
+        CACHE_DURATIONS.put(OP_SEARCH_MOD_WITH_GAME_ID_SLUG_CLASS_ID, Duration.ofHours(1));
+    }
 
     private final SharedFetch preparedFetch;
     private final UriBuilder uriBuilder;
@@ -52,7 +63,7 @@ public class CurseForgeApiClient implements AutoCloseable {
 
     private final ApiCaching apiCaching;
 
-    public CurseForgeApiClient(String apiBaseUrl, String apiKey, SharedFetch.Options sharedFetchOptions, String gameId,
+    public CurseForgeApiClient(String apiBaseUrl, String apiKey, Options sharedFetchOptions, String gameId,
         ApiCaching apiCaching
     ) {
         this.apiCaching = apiCaching;
@@ -61,7 +72,7 @@ public class CurseForgeApiClient implements AutoCloseable {
         }
 
         this.preparedFetch = Fetch.sharedFetch("install-curseforge",
-            (sharedFetchOptions != null ? sharedFetchOptions : SharedFetch.Options.builder().build())
+            (sharedFetchOptions != null ? sharedFetchOptions : Options.builder().build())
                 .withHeader(API_KEY_HEADER, apiKey.trim())
         );
         this.uriBuilder = UriBuilder.withBaseUrl(apiBaseUrl);
@@ -85,6 +96,10 @@ public class CurseForgeApiClient implements AutoCloseable {
                     break;
             }
         };
+    }
+
+    public static Map<String, Duration> getCacheDurations() {
+        return CACHE_DURATIONS;
     }
 
     @Override
@@ -111,28 +126,34 @@ public class CurseForgeApiClient implements AutoCloseable {
 
                     return Mono.just(new CategoryInfo(contentClassIds, slugIds));
                 }
-            );
+            )
+            .onErrorMap(FailedRequestException::isForbidden, this::errorMapForbidden);
     }
 
     Mono<CurseForgeMod> searchMod(String slug, int classId) {
-        return preparedFetch.fetch(
-                uriBuilder.resolve("/v1/mods/search?gameId={gameId}&slug={slug}&classId={classId}",
-                    gameId, slug, classId
-                )
-            )
-            .toObject(ModsSearchResponse.class)
-            .assemble()
-            .flatMap(searchResponse -> {
-                if (searchResponse.getData() == null || searchResponse.getData().isEmpty()) {
-                    return Mono.error(new GenericException("No mods found with slug=" + slug));
-                }
-                else if (searchResponse.getData().size() > 1) {
-                    return Mono.error(new GenericException("More than one mod found with slug=" + slug));
-                }
-                else {
-                    return Mono.just(searchResponse.getData().get(0));
-                }
-            });
+        return
+            apiCaching.cache(OP_SEARCH_MOD_WITH_GAME_ID_SLUG_CLASS_ID, CurseForgeMod.class,
+                preparedFetch.fetch(
+                        uriBuilder.resolve("/v1/mods/search?gameId={gameId}&slug={slug}&classId={classId}",
+                            gameId, slug, classId
+                        )
+                    )
+                    .toObject(ModsSearchResponse.class)
+                    .assemble()
+                    .flatMap(searchResponse -> {
+                        if (searchResponse.getData() == null || searchResponse.getData().isEmpty()) {
+                            return Mono.error(new GenericException("No mods found with slug=" + slug));
+                        }
+                        else if (searchResponse.getData().size() > 1) {
+                            return Mono.error(new GenericException("More than one mod found with slug=" + slug));
+                        }
+                        else {
+                            return Mono.just(searchResponse.getData().get(0));
+                        }
+                    })
+                    .onErrorMap(FailedRequestException::isForbidden, this::errorMapForbidden),
+                gameId, slug, classId
+            );
     }
 
     /**
@@ -179,7 +200,8 @@ public class CurseForgeApiClient implements AutoCloseable {
                     .findFirst()
                     .map(CurseForgeMod::getId)
                     .orElseThrow(() -> new GenericException("Unable to resolve slug into ID (no matches): " + slug))
-            );
+            )
+            .onErrorMap(FailedRequestException::isForbidden, this::errorMapForbidden);
     }
 
     public Mono<CurseForgeMod> getModInfo(
@@ -193,6 +215,7 @@ public class CurseForgeApiClient implements AutoCloseable {
                 )
                 .toObject(GetModResponse.class)
                 .assemble()
+                .onErrorMap(FailedRequestException::isForbidden, this::errorMapForbidden)
                 .checkpoint("Getting mod info for " + projectID)
                 .map(GetModResponse::getData),
             projectID
@@ -219,6 +242,7 @@ public class CurseForgeApiClient implements AutoCloseable {
                     }
                     return e;
                 })
+                .onErrorMap(FailedRequestException::isForbidden, this::errorMapForbidden)
                 .map(GetModFileResponse::getData)
                 .checkpoint(),
             projectID, fileID
@@ -285,4 +309,21 @@ public class CurseForgeApiClient implements AutoCloseable {
         );
     }
 
+    public Throwable errorMapForbidden(Throwable throwable) {
+        final FailedRequestException e = (FailedRequestException) throwable;
+
+        log.debug("Failed request details: {}", e.toString());
+
+        if (e.getBody().contains("There might be too much traffic")) {
+            return new RateLimitException(null, String.format("Access to %s has been rate-limited.", uriBuilder.getBaseUrl()), e);
+        }
+        else {
+            return new InvalidParameterException(String.format("Access to %s is forbidden or rate-limit has been exceeded."
+                    + " Ensure %s is set to a valid API key from %s or allow rate-limit to reset.",
+                uriBuilder.getBaseUrl(), API_KEY_VAR, ETERNAL_DEVELOPER_CONSOLE_URL
+            ), e
+            );
+        }
+
+    }
 }
