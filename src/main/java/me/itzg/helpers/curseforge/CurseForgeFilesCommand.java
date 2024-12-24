@@ -68,10 +68,10 @@ public class CurseForgeFilesCommand implements Callable<Integer> {
             + "%nCan also be passed via CF_API_BASE_URL")
     String apiBaseUrl;
 
-    @Option(names = "--api-key", defaultValue = "${env:" + CurseForgeInstaller.API_KEY_VAR + "}",
+    @Option(names = "--api-key", defaultValue = "${env:" + API_KEY_VAR + "}",
         description = "An API key allocated from the Eternal developer console at "
-            + CurseForgeInstaller.ETERNAL_DEVELOPER_CONSOLE_URL +
-            "%nCan also be passed via " + CurseForgeInstaller.API_KEY_VAR
+            + ETERNAL_DEVELOPER_CONSOLE_URL +
+            "%nCan also be passed via " + API_KEY_VAR
     )
     String apiKey;
 
@@ -117,7 +117,8 @@ public class CurseForgeFilesCommand implements Callable<Integer> {
         if (modFileRefs != null && !modFileRefs.isEmpty()) {
             try (
                 final ApiCaching apiCaching = disableApiCaching ? new ApiCachingDisabled()
-                    : new ApiCachingImpl(outputDir, CACHING_NAMESPACE, cacheArgs);
+                    : new ApiCachingImpl(outputDir, CACHING_NAMESPACE, cacheArgs)
+                        .setCacheDurations(CurseForgeApiClient.getCacheDurations());
                 final CurseForgeApiClient apiClient = new CurseForgeApiClient(
                     apiBaseUrl, apiKey, sharedFetchArgs.options(),
                     CurseForgeApiClient.MINECRAFT_GAME_ID,
