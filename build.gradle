@@ -10,7 +10,7 @@ plugins {
     // https://github.com/qoomon/gradle-git-versioning-plugin
     id 'me.qoomon.git-versioning' version '6.4.4'
     // https://github.com/itzg/github-releaser-gradle-plugin
-    id 'io.github.itzg.github-releaser' version '0.1.1'
+    id 'io.github.itzg.github-releaser' version '0.2.0'
 }
 
 group = 'io.github.itzg'
