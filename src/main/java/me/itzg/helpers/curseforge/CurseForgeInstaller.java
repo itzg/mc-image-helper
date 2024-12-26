@@ -45,7 +45,6 @@ import me.itzg.helpers.curseforge.model.MinecraftModpackManifest;
 import me.itzg.helpers.curseforge.model.ModLoader;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidParameterException;
-import me.itzg.helpers.errors.RateLimitException;
 import me.itzg.helpers.fabric.FabricLauncherInstaller;
 import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.files.ResultsFileWriter;
@@ -229,23 +228,6 @@ public class CurseForgeInstaller {
                 new InstallContext(slug, cfApi, categoryInfo, manifest)
             );
 
-        } catch (FailedRequestException e) {
-            if (FailedRequestException.isForbidden(e)) {
-                log.debug("Failed request details: {}", e.toString());
-
-                if (e.getBody().contains("There might be too much traffic")) {
-                    throw new RateLimitException(null, String.format("Access to %s has been rate-limited.", apiBaseUrl), e);
-                }
-                else {
-                    throw new InvalidParameterException(String.format("Access to %s is forbidden or rate-limit has been exceeded."
-                            + " Ensure %s is set to a valid API key from %s or allow rate-limit to reset.",
-                        apiBaseUrl, CurseForgeApiClient.API_KEY_VAR, CurseForgeApiClient.ETERNAL_DEVELOPER_CONSOLE_URL
-                    ), e);
-                }
-            }
-            else {
-                throw e;
-            }
         } catch (IOException e) {
             throw new GenericException("Failed to setup API caching", e);
         }
