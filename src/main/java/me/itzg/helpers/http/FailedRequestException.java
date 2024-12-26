@@ -32,6 +32,10 @@ public class FailedRequestException extends RuntimeException {
         return isStatus(throwable, HttpResponseStatus.NOT_FOUND);
     }
 
+    public static boolean isForbidden(Throwable throwable) {
+        return isStatus(throwable, HttpResponseStatus.FORBIDDEN);
+    }
+
     public static boolean isStatus(Throwable throwable, HttpResponseStatus... statuses) {
         if (throwable instanceof FailedRequestException) {
             final int actualStatus = ((FailedRequestException) throwable).getStatusCode();

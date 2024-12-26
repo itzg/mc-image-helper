@@ -45,7 +45,6 @@ import me.itzg.helpers.curseforge.model.MinecraftModpackManifest;
 import me.itzg.helpers.curseforge.model.ModLoader;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidParameterException;
-import me.itzg.helpers.errors.RateLimitException;
 import me.itzg.helpers.fabric.FabricLauncherInstaller;
 import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.files.ResultsFileWriter;
@@ -71,10 +70,8 @@ import reactor.util.retry.Retry;
 @Slf4j
 public class CurseForgeInstaller {
 
-    public static final String API_KEY_VAR = "CF_API_KEY";
     public static final String MODPACK_ZIP_VAR = "CF_MODPACK_ZIP";
 
-    public static final String ETERNAL_DEVELOPER_CONSOLE_URL = "https://console.curseforge.com/";
     public static final String CURSEFORGE_ID = "curseforge";
     public static final String REPO_SUBDIR_MODPACKS = "modpacks";
     public static final String REPO_SUBDIR_MODS = "mods";
@@ -199,19 +196,20 @@ public class CurseForgeInstaller {
                 log.warn("API key is not set, so will re-use previous modpack installation of {}",
                     manifest.getSlug() != null ? manifest.getSlug() : "Project ID " + manifest.getModId()
                 );
-                log.warn("Obtain an API key from " + ETERNAL_DEVELOPER_CONSOLE_URL
-                    + " and set the environment variable " + API_KEY_VAR + " in order to restore full functionality.");
+                log.warn("Obtain an API key from " + CurseForgeApiClient.ETERNAL_DEVELOPER_CONSOLE_URL
+                    + " and set the environment variable " + CurseForgeApiClient.API_KEY_VAR + " in order to restore full functionality.");
                 return;
             }
             else {
-                throw new InvalidParameterException("API key is not set. Obtain an API key from " + ETERNAL_DEVELOPER_CONSOLE_URL
-                    + " and set the environment variable " + API_KEY_VAR);
+                throw new InvalidParameterException("API key is not set. Obtain an API key from " + CurseForgeApiClient.ETERNAL_DEVELOPER_CONSOLE_URL
+                    + " and set the environment variable " + CurseForgeApiClient.API_KEY_VAR);
             }
         }
 
         try (
             final ApiCaching apiCaching = disableApiCaching ? new ApiCachingDisabled()
-                : new ApiCachingImpl(outputDir, CACHING_NAMESPACE, cacheArgs);
+                : new ApiCachingImpl(outputDir, CACHING_NAMESPACE, cacheArgs)
+                    .setCacheDurations(CurseForgeApiClient.getCacheDurations());
             final CurseForgeApiClient cfApi = new CurseForgeApiClient(
                 apiBaseUrl, apiKey, sharedFetchOptions,
                 CurseForgeApiClient.MINECRAFT_GAME_ID,
@@ -230,23 +228,6 @@ public class CurseForgeInstaller {
                 new InstallContext(slug, cfApi, categoryInfo, manifest)
             );
 
-        } catch (FailedRequestException e) {
-            if (e.getStatusCode() == 403) {
-                log.debug("Failed request details: {}", e.toString());
-
-                if (e.getBody().contains("There might be too much traffic")) {
-                    throw new RateLimitException(null, String.format("Access to %s has been rate-limited.", apiBaseUrl), e);
-                }
-                else {
-                    throw new InvalidParameterException(String.format("Access to %s is forbidden or rate-limit has been exceeded."
-                            + " Ensure %s is set to a valid API key from %s or allow rate-limit to reset.",
-                        apiBaseUrl, API_KEY_VAR, ETERNAL_DEVELOPER_CONSOLE_URL
-                    ), e);
-                }
-            }
-            else {
-                throw e;
-            }
         } catch (IOException e) {
             throw new GenericException("Failed to setup API caching", e);
         }

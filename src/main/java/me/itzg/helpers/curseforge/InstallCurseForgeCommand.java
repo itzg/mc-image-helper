@@ -79,10 +79,10 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
         description = "Allows for overriding the CurseForge Eternal API used")
     String apiBaseUrl;
 
-    @Option(names = "--api-key", defaultValue = "${env:" + CurseForgeInstaller.API_KEY_VAR + "}",
+    @Option(names = "--api-key", defaultValue = "${env:" + CurseForgeApiClient.API_KEY_VAR + "}",
         description = "An API key allocated from the Eternal developer console at "
-            + CurseForgeInstaller.ETERNAL_DEVELOPER_CONSOLE_URL +
-            "%nCan also be passed via " + CurseForgeInstaller.API_KEY_VAR
+            + CurseForgeApiClient.ETERNAL_DEVELOPER_CONSOLE_URL +
+            "%nCan also be passed via " + CurseForgeApiClient.API_KEY_VAR
     )
     String apiKey;
 
