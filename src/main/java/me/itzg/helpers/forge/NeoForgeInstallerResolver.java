@@ -106,6 +106,7 @@ public class NeoForgeInstallerResolver implements InstallerResolver {
                         .allMatch(i -> parts[i].equals(neoforgeVersion[i]));
                 }
                 else {
+                    // specific minecraft version
                     if (minecraftVersion != null) {
                         // minor.patch of minecraft version != major.minor of neoforge version
                         final String minor = minecraftVersion[1];
@@ -116,11 +117,13 @@ public class NeoForgeInstallerResolver implements InstallerResolver {
                         }
                     }
 
-                    if (parts.length >= 4 && parts[3].equals("beta")) {
-                        return neoForgeVersionType == NeoForgeVersionType.BETA;
+                    // If requesting a beta, then only match a beta version
+                    if (neoForgeVersionType == NeoForgeVersionType.BETA) {
+                        return parts.length >= 4 && parts[3].equals("beta");
                     }
-
-                    return true;
+                    else {
+                        return parts.length == 3;
+                    }
                 }
             })
             .reduce((s, s2) -> s2)
