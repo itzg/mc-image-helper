@@ -7,6 +7,7 @@ import static me.itzg.helpers.curseforge.CurseForgeApiClient.CACHING_NAMESPACE;
 import static me.itzg.helpers.curseforge.CurseForgeApiClient.modFileDownloadStatusHandler;
 import static me.itzg.helpers.singles.MoreCollections.safeStreamFrom;
 
+import com.fasterxml.jackson.databind.JsonMappingException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -983,6 +984,8 @@ public class CurseForgeInstaller {
             if (entry != null) {
                 try (InputStream in = zipFile.getInputStream(entry)) {
                     return ObjectMappers.defaultMapper().readValue(in, MinecraftModpackManifest.class);
+                } catch (JsonMappingException e) {
+                    throw new InvalidParameterException("The modpack's manifest file was not valid -- did you make sure to reference a client, not server, file?", e);
                 }
             }
         }
