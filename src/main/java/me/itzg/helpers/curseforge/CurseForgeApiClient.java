@@ -35,6 +35,9 @@ import org.slf4j.Logger;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
+/**
+ * Implements parts of the <a href="https://docs.curseforge.com/rest-api">CurseForge REST API</a>
+ */
 @Slf4j
 public class CurseForgeApiClient implements AutoCloseable {
 
@@ -183,25 +186,6 @@ public class CurseForgeApiClient implements AutoCloseable {
                 );
                 return new GenericException("No matching files found for mod");
             });
-    }
-
-    Mono<Integer> slugToId(CategoryInfo categoryInfo,
-        String slug
-    ) {
-        return preparedFetch
-            .fetch(
-                uriBuilder.resolve("/v1/mods/search?gameId={gameId}&slug={slug}", gameId, slug)
-            )
-            .toObject(ModsSearchResponse.class)
-            .assemble()
-            .map(resp ->
-                resp.getData().stream()
-                    .filter(curseForgeMod -> categoryInfo.contentClassIds.containsKey(curseForgeMod.getClassId()))
-                    .findFirst()
-                    .map(CurseForgeMod::getId)
-                    .orElseThrow(() -> new GenericException("Unable to resolve slug into ID (no matches): " + slug))
-            )
-            .onErrorMap(FailedRequestException::isForbidden, this::errorMapForbidden);
     }
 
     public Mono<CurseForgeMod> getModInfo(
