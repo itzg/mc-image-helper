@@ -102,13 +102,13 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
 
         static class Listed {
             @Option(names = "--exclude-mods", paramLabel = "PROJECT_ID|SLUG",
-                split = "\\s+|,", splitSynopsisLabel = ",|<ws>",
+                split = McImageHelper.SPLIT_COMMA_WS, splitSynopsisLabel = McImageHelper.SPLIT_SYNOPSIS_COMMA_WS,
                 description = "For mods that need to be excluded from server deployments, such as those that don't label as client"
             )
             Set<String> excludedMods;
 
             @Option(names = "--force-include-mods", paramLabel = "PROJECT_ID|SLUG",
-                split = "\\s+|,", splitSynopsisLabel = ",|<ws>",
+                split = McImageHelper.SPLIT_COMMA_WS, splitSynopsisLabel = McImageHelper.SPLIT_SYNOPSIS_COMMA_WS,
                 description = "Some mods incorrectly declare client-only support, but still need to be included in a server deploy."
                     + "%nThis can also be used to selectively override exclusions."
             )
