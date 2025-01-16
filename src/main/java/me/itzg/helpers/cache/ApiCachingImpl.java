@@ -62,7 +62,7 @@ public class ApiCachingImpl implements ApiCaching {
                 if (entry.getExpiresAt().isBefore(now)) {
                     final Path contentFile = resolveContentFile(operation, entry.getFilename());
                     try {
-                        log.debug("Pruning cached content file {}", contentFile);
+                        log.trace("Pruning cached content file {}", contentFile);
                         Files.delete(contentFile);
                     } catch (IOException e) {
                         log.warn("Failed to delete cached content file {}", contentFile, e);
@@ -162,7 +162,7 @@ public class ApiCachingImpl implements ApiCaching {
                             );
                     }
 
-                    log.debug("Saved cache content of {}({}) to {}", operation, keys, contentFile);
+                    log.trace("Saved cache content of {}({}) to {}", operation, keys, contentFile);
                 } catch (IOException e) {
                     log.warn("Failed to cache file for operation={} keys={}", operation, keys, e);
                 }
