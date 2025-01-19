@@ -6,11 +6,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.Enumeration;
+import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.jar.Attributes;
 import java.util.jar.Attributes.Name;
 import java.util.jar.Manifest;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import me.itzg.helpers.McImageHelper.ShowAllSubcommandUsage;
 import me.itzg.helpers.assertcmd.AssertCommand;
 import me.itzg.helpers.curseforge.CurseForgeFilesCommand;
 import me.itzg.helpers.curseforge.InstallCurseForgeCommand;
@@ -48,9 +51,12 @@ import org.slf4j.LoggerFactory;
 import picocli.CommandLine;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
+import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.ITypeConverter;
 import picocli.CommandLine.IVersionProvider;
+import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
+import picocli.CommandLine.Spec;
 
 @Command(name = "mc-image-helper",
     versionProvider = McImageHelper.AppVersionProvider.class,
@@ -81,6 +87,7 @@ import picocli.CommandLine.Option;
         PatchCommand.class,
         ResolveMinecraftVersionCommand.class,
         SetPropertiesCommand.class,
+        ShowAllSubcommandUsage.class,
         Sync.class,
         SyncAndInterpolate.class,
         TestLoggingCommand.class,
@@ -202,6 +209,32 @@ public class McImageHelper {
         @Override
         public Level convert(String value) {
             return Level.toLevel(value);
+        }
+    }
+
+    @Command(name = "show-all-subcommand-usage", description = "Renders all of the subcommand usage as markdown sections for README")
+    public static class ShowAllSubcommandUsage implements Callable<Integer> {
+
+        @Spec
+        CommandSpec spec;
+
+        @Override
+        public Integer call() throws Exception {
+
+            System.out.printf("%n_The following is generated using `%s`_%n%n", spec.qualifiedName());
+
+            spec.parent().subcommands().entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .forEach(entry -> {
+                    System.out.printf("### %s%n", entry.getKey());
+                    System.out.println();
+                    System.out.println("```");
+                    entry.getValue().usage(System.out);
+                    System.out.println("```");
+                    System.out.println();
+                });
+
+            return ExitCode.OK;
         }
     }
 }
