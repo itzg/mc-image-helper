@@ -1,6 +1,12 @@
 package me.itzg.helpers.patch;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.concurrent.Callable;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.env.Interpolator;
 import me.itzg.helpers.env.StandardEnvironmentVariablesProvider;
@@ -8,15 +14,13 @@ import me.itzg.helpers.patch.model.PatchDefinition;
 import me.itzg.helpers.patch.model.PatchSet;
 import picocli.CommandLine;
 
-import java.io.IOException;
-import java.nio.file.DirectoryStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.concurrent.Callable;
-
 @CommandLine.Command(name = "patch",
-    description = "Patches one or more existing files using JSON path based operations"
+    description = "Patches one or more existing files using JSON path based operations%n"
+        + "Supports the file formats:%n"
+        + "- JSON%n"
+        + "- JSON5%n"
+        + "- Yaml%n"
+        + "- TOML, but processed output is not pretty"
 )
 @Slf4j
 public class PatchCommand implements Callable<Integer> {

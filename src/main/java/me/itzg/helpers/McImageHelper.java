@@ -6,11 +6,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.Enumeration;
+import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.jar.Attributes;
 import java.util.jar.Attributes.Name;
 import java.util.jar.Manifest;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import me.itzg.helpers.McImageHelper.ShowAllSubcommandUsage;
 import me.itzg.helpers.assertcmd.AssertCommand;
 import me.itzg.helpers.curseforge.CurseForgeFilesCommand;
 import me.itzg.helpers.curseforge.InstallCurseForgeCommand;
@@ -48,9 +51,12 @@ import org.slf4j.LoggerFactory;
 import picocli.CommandLine;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
+import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.ITypeConverter;
 import picocli.CommandLine.IVersionProvider;
+import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
+import picocli.CommandLine.Spec;
 
 @Command(name = "mc-image-helper",
     versionProvider = McImageHelper.AppVersionProvider.class,
@@ -81,6 +87,7 @@ import picocli.CommandLine.Option;
         PatchCommand.class,
         ResolveMinecraftVersionCommand.class,
         SetPropertiesCommand.class,
+        ShowAllSubcommandUsage.class,
         Sync.class,
         SyncAndInterpolate.class,
         TestLoggingCommand.class,
@@ -91,107 +98,136 @@ import picocli.CommandLine.Option;
 @Slf4j
 public class McImageHelper {
 
-  //language=RegExp
-  public static final String OPTION_SPLIT_COMMAS = "\\s*,\\s*";
-  //language=RegExp
-  public static final String SPLIT_COMMA_NL = "\\n|\\s*,\\s*";
-  public static final String SPLIT_SYNOPSIS_COMMA_NL = ",|<nl>";
-  //language=RegExp
-  public static final String VERSION_REGEX = "\\d+(\\.\\d+)+";
+    //language=RegExp
+    public static final String OPTION_SPLIT_COMMAS = "\\s*,\\s*";
+    //language=RegExp
+    public static final String SPLIT_COMMA_NL = "\\n|\\s*,\\s*";
+    public static final String SPLIT_SYNOPSIS_COMMA_NL = ",|<nl>";
+    //language=RegExp
+    public static final String VERSION_REGEX = "\\d+(\\.\\d+)+";
 
-  @Option(names = {"-h",
-      "--help"}, usageHelp = true, description = "Show this usage and exit")
-  boolean showHelp;
+    @Option(names = {"-h",
+        "--help"}, usageHelp = true, description = "Show this usage and exit")
+    boolean showHelp;
 
-  @Option(names = {"-V", "--version"}, versionHelp = true)
-  boolean showVersion;
+    @Option(names = {"-V", "--version"}, versionHelp = true)
+    boolean showVersion;
 
-  @ArgGroup
-  LoggingOptions loggingOptions = new LoggingOptions();
+    @ArgGroup
+    LoggingOptions loggingOptions = new LoggingOptions();
 
-  static class LoggingOptions {
-    @Option(names = "--debug", description = "Enable debug output."
-        + " Can also set environment variables DEBUG_HELPER or DEBUG",
-        defaultValue = "${env:DEBUG_HELPER:-${env:DEBUG}}")
-    void setDebug(boolean enabled) {
-      setLevel(enabled, Level.DEBUG);
-    }
+    static class LoggingOptions {
 
-    @Option(names = "--logging", description = "Set logging to specific level.\nValid values: ${COMPLETION-CANDIDATES}",
-      defaultValue = "${env:HELPER_LOGGING_LEVEL}",
-        converter = LogbackLevelConverter.class
-    )
-    void setLoggingLevel(Level level) {
-      setLevel(true, level);
-    }
-
-    private static void setLevel(boolean enabled, Level level) {
-      ((Logger) LoggerFactory.getLogger("me.itzg.helpers")).setLevel(
-          enabled ? level : Level.INFO);
-      if (Level.TRACE.isGreaterOrEqual(level)) {
-        ((Logger) LoggerFactory.getLogger("org.apache.hc.client5.http")).setLevel(
-            enabled ? level : Level.INFO);
-      }
-    }
-
-  }
-
-
-  @Option(names = {"-s", "--silent"}, description = "Don't output logs even if there's an error")
-  @Getter
-  boolean silent;
-
-  @Getter
-  private static String version;
-
-  public static void main(String[] args) {
-    final McImageHelper rootCommand = new McImageHelper();
-    try {
-      version = McImageHelper.loadVersion();
-    } catch (IOException e) {
-      log.error("Failed to load version", e);
-      System.exit(1);
-    }
-
-    System.exit(
-        new CommandLine(rootCommand)
-            .setExitCodeExceptionMapper(new ExitCodeMapper())
-            .setExecutionExceptionHandler(new ExceptionHandler(rootCommand))
-            .setCaseInsensitiveEnumValuesAllowed(true)
-            .execute(args)
-    );
-  }
-
-  private static String loadVersion() throws IOException {
-    final Enumeration<URL> resources = McImageHelper.class.getClassLoader().getResources("META-INF/MANIFEST.MF");
-    while (resources.hasMoreElements()) {
-      final URL url = resources.nextElement();
-      try (InputStream inputStream = url.openStream()) {
-        final Manifest manifest = new Manifest(inputStream);
-        final Attributes attributes = manifest.getMainAttributes();
-        if ("mc-image-helper".equals(attributes.getValue(Name.IMPLEMENTATION_TITLE))) {
-          return attributes.getValue(Name.IMPLEMENTATION_VERSION);
+        @Option(names = "--debug", description = "Enable debug output."
+            + " Can also set environment variables DEBUG_HELPER or DEBUG",
+            defaultValue = "${env:DEBUG_HELPER:-${env:DEBUG}}")
+        void setDebug(boolean enabled) {
+            setLevel(enabled, Level.DEBUG);
         }
-      }
-    }
-    return "???";
-  }
 
-  public static class AppVersionProvider implements IVersionProvider {
-    @Override
-    public String[] getVersion() {
+        @Option(names = "--logging", description = "Set logging to specific level.\nValid values: ${COMPLETION-CANDIDATES}",
+            defaultValue = "${env:HELPER_LOGGING_LEVEL}",
+            converter = LogbackLevelConverter.class
+        )
+        void setLoggingLevel(Level level) {
+            setLevel(true, level);
+        }
 
-          return new String[]{
-              "${COMMAND-FULL-NAME}",
-              version
-          };
-    }
-  }
+        private static void setLevel(boolean enabled, Level level) {
+            ((Logger) LoggerFactory.getLogger("me.itzg.helpers")).setLevel(
+                enabled ? level : Level.INFO);
+            if (Level.TRACE.isGreaterOrEqual(level)) {
+                ((Logger) LoggerFactory.getLogger("org.apache.hc.client5.http")).setLevel(
+                    enabled ? level : Level.INFO);
+            }
+        }
 
-  private static class LogbackLevelConverter implements ITypeConverter<Level> {
-    @Override
-    public Level convert(String value) {
-      return Level.toLevel(value);
     }
-  }
+
+
+    @Option(names = {"-s", "--silent"}, description = "Don't output logs even if there's an error")
+    @Getter
+    boolean silent;
+
+    @Getter
+    private static String version;
+
+    public static void main(String[] args) {
+        final McImageHelper rootCommand = new McImageHelper();
+        try {
+            version = McImageHelper.loadVersion();
+        } catch (IOException e) {
+            log.error("Failed to load version", e);
+            System.exit(1);
+        }
+
+        System.exit(
+            new CommandLine(rootCommand)
+                .setExitCodeExceptionMapper(new ExitCodeMapper())
+                .setExecutionExceptionHandler(new ExceptionHandler(rootCommand))
+                .setCaseInsensitiveEnumValuesAllowed(true)
+                .execute(args)
+        );
+    }
+
+    private static String loadVersion() throws IOException {
+        final Enumeration<URL> resources = McImageHelper.class.getClassLoader().getResources("META-INF/MANIFEST.MF");
+        while (resources.hasMoreElements()) {
+            final URL url = resources.nextElement();
+            try (InputStream inputStream = url.openStream()) {
+                final Manifest manifest = new Manifest(inputStream);
+                final Attributes attributes = manifest.getMainAttributes();
+                if ("mc-image-helper".equals(attributes.getValue(Name.IMPLEMENTATION_TITLE))) {
+                    return attributes.getValue(Name.IMPLEMENTATION_VERSION);
+                }
+            }
+        }
+        return "???";
+    }
+
+    public static class AppVersionProvider implements IVersionProvider {
+
+        @Override
+        public String[] getVersion() {
+
+            return new String[]{
+                "${COMMAND-FULL-NAME}",
+                version
+            };
+        }
+    }
+
+    private static class LogbackLevelConverter implements ITypeConverter<Level> {
+
+        @Override
+        public Level convert(String value) {
+            return Level.toLevel(value);
+        }
+    }
+
+    @Command(name = "show-all-subcommand-usage", description = "Renders all of the subcommand usage as markdown sections for README")
+    public static class ShowAllSubcommandUsage implements Callable<Integer> {
+
+        @Spec
+        CommandSpec spec;
+
+        @Override
+        public Integer call() throws Exception {
+
+            System.out.printf("%n_The following is generated using `%s`_%n%n", spec.qualifiedName());
+
+            spec.parent().subcommands().entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .forEach(entry -> {
+                    System.out.printf("### %s%n", entry.getKey());
+                    System.out.println();
+                    System.out.println("```");
+                    entry.getValue().usage(System.out);
+                    System.out.println("```");
+                    System.out.println();
+                });
+
+            return ExitCode.OK;
+        }
+    }
 }
