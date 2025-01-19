@@ -103,6 +103,12 @@ public class McImageHelper {
     //language=RegExp
     public static final String SPLIT_COMMA_NL = "\\n|\\s*,\\s*";
     public static final String SPLIT_SYNOPSIS_COMMA_NL = ",|<nl>";
+    /**
+     * Also works for newline delimited values.
+     */
+    //language=RegExp
+    public static final String SPLIT_COMMA_WS = "\\s+|\\s*,\\s*";
+    public static final String SPLIT_SYNOPSIS_COMMA_WS = ",|<ws>";
     //language=RegExp
     public static final String VERSION_REGEX = "\\d+(\\.\\d+)+";
 
@@ -113,6 +119,7 @@ public class McImageHelper {
     @Option(names = {"-V", "--version"}, versionHelp = true)
     boolean showVersion;
 
+    @SuppressWarnings("unused") // processed by setters
     @ArgGroup
     LoggingOptions loggingOptions = new LoggingOptions();
 

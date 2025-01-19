@@ -19,15 +19,17 @@ class NeoForgeInstallerResolverTest {
 
     public static Stream<Arguments> resolve_args() {
         return Stream.of(
-            arguments("1.20.4", "beta", "1.20.4", "20.4.62-beta"),
-            arguments("1.20.4", "latest", null, null),
+            arguments("1.20.4", "beta", "1.20.4", "20.4.166-beta"),
+            arguments("1.21.4", "latest", null, null),
             arguments("1.20.2", "latest", "1.20.2", "20.2.88"),
-            arguments("1.20.2", "beta", "1.20.2", "20.2.88"),
+            arguments("1.20.2", "beta", "1.20.2", "20.2.85-beta"),
             arguments("1.20.3", "beta", "1.20.3", "20.3.8-beta"),
             arguments("latest", "20.2.85-beta", "1.20.2", "20.2.85-beta"),
             arguments("latest", "20.2.88", "1.20.2", "20.2.88"),
             arguments("1.20.1", "latest", "1.20.1", "47.1.84"),
-            arguments("1.21", "beta", "1.21", "21.0.42-beta")
+            arguments("1.21", "beta", "1.21", "21.0.142-beta"),
+            arguments("latest", "beta", "1.21.4", "21.4.48-beta"),
+            arguments("latest", "latest", "1.21.1", "21.1.93")
         );
     }
 
@@ -67,4 +69,5 @@ class NeoForgeInstallerResolverTest {
 
         }
     }
+
 }

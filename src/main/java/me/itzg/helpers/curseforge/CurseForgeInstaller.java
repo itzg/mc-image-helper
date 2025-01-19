@@ -7,6 +7,7 @@ import static me.itzg.helpers.curseforge.CurseForgeApiClient.CACHING_NAMESPACE;
 import static me.itzg.helpers.curseforge.CurseForgeApiClient.modFileDownloadStatusHandler;
 import static me.itzg.helpers.singles.MoreCollections.safeStreamFrom;
 
+import com.fasterxml.jackson.databind.JsonMappingException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -636,15 +637,18 @@ public class CurseForgeInstaller {
         final ExcludeIncludes specific =
             excludeIncludes.getModpacks() != null ? excludeIncludes.getModpacks().get(context.slug) : null;
 
+        final int modsClassId = context.categoryInfo.getClassIdForSlug(CurseForgeApiClient.CATEGORY_MC_MODS);
+
         return Mono.zip(
                 resolveFromSlugOrIds(
-                    context, context.categoryInfo,
+                    context,
+                    modsClassId,
                     excludeIncludes.getGlobalExcludes(),
                     specific != null ? specific.getExcludes() : null
                 ),
                 resolveFromSlugOrIds(
-                    context, context.categoryInfo,
-                    excludeIncludes.getGlobalForceIncludes(),
+                    context,
+                    modsClassId, excludeIncludes.getGlobalForceIncludes(),
                     specific != null ? specific.getForceIncludes() : null
                 )
             )
@@ -655,8 +659,8 @@ public class CurseForgeInstaller {
     }
 
     private Mono<Set<Integer>> resolveFromSlugOrIds(
-        InstallContext context, CategoryInfo categoryInfo,
-        Collection<String> global, Collection<String> specific
+        InstallContext context,
+        int modsClassId, Collection<String> global, Collection<String> specific
     ) {
         log.trace("Resolving slug|id into IDs global={} specific={}", global, specific);
 
@@ -667,10 +671,12 @@ public class CurseForgeInstaller {
             )
             .flatMap(s -> {
                 try {
+                    // Is it an integer already? If not, it'll drop into catch-block below
                     final int id = Integer.parseInt(s);
                     return Mono.just(id);
                 } catch (NumberFormatException e) {
-                    return context.cfApi.slugToId(categoryInfo, s);
+                    return context.cfApi.searchMod(s, modsClassId)
+                        .map(CurseForgeMod::getId);
                 }
             })
             .collect(Collectors.toSet());
@@ -983,6 +989,8 @@ public class CurseForgeInstaller {
             if (entry != null) {
                 try (InputStream in = zipFile.getInputStream(entry)) {
                     return ObjectMappers.defaultMapper().readValue(in, MinecraftModpackManifest.class);
+                } catch (JsonMappingException e) {
+                    throw new InvalidParameterException("The modpack's manifest file was not valid -- did you make sure to reference a client, not server, file?", e);
                 }
             }
         }

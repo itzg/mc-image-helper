@@ -97,7 +97,7 @@ dependencies {
     implementation 'org.apache.httpcomponents.client5:httpclient5:5.4.1'
     implementation 'io.projectreactor.netty:reactor-netty-http:1.2.1'
     implementation 'org.apache.maven:maven-artifact:3.9.9'
-    implementation 'commons-codec:commons-codec:1.17.1'
+    implementation 'commons-codec:commons-codec:1.17.2'
     // for RFC5987 parsing of content-disposition filename*
     // 3.5.x is last of Java8 compatible: https://cxf.apache.org/download.html
     implementation 'org.apache.cxf:cxf-core:[3.5.6,3.6.0)'
@@ -107,12 +107,12 @@ dependencies {
     // For IMPLODE compression used by some CurseForge modpacks
     implementation 'org.apache.commons:commons-compress:1.27.1'
 
-    testImplementation 'org.assertj:assertj-core:3.27.0'
+    testImplementation 'org.assertj:assertj-core:3.27.2'
     // https://github.com/webcompere/model-assert
     // for json assertions
     testImplementation 'uk.org.webcompere:model-assert:1.1.0'
     testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
-    testImplementation 'org.mockito:mockito-junit-jupiter:5.14.2'
+    testImplementation 'org.mockito:mockito-junit-jupiter:5.15.2'
     // would like to transition these to wiremock
     testImplementation 'org.mock-server:mockserver-junit-jupiter:5.15.0'
     // https://github.com/wiremock/wiremock/releases/tag/3.0.0 drops support for Java 8
