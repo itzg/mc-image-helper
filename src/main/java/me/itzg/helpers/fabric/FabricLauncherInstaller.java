@@ -65,6 +65,7 @@ public class FabricLauncherInstaller {
                                     resolvedLoaderVersion,
                                     resolvedInstallerVersion
                                 ))
+                                .checkpoint("downloadResolvedLauncher")
                         )
                 )
                 .block();
