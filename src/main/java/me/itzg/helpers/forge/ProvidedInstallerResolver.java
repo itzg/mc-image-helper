@@ -3,6 +3,7 @@ package me.itzg.helpers.forge;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -11,7 +12,12 @@ import me.itzg.helpers.files.IoStreams;
 import me.itzg.helpers.json.ObjectMappers;
 
 public class ProvidedInstallerResolver implements InstallerResolver {
+
     private static final Pattern OLD_FORGE_ID_VERSION = Pattern.compile("forge(.+)", Pattern.CASE_INSENSITIVE);
+    public static final String PROP_ID = "id";
+    public static final String PROP_INHERITS_FROM = "inheritsFrom";
+    public static final String INSTALLER_ID_FORGE = "forge";
+    public static final String INSTALLER_ID_CLEANROOM = "cleanroom";
 
     private final Path forgeInstaller;
 
@@ -31,7 +37,7 @@ public class ProvidedInstallerResolver implements InstallerResolver {
             throw new GenericException("Failed to locate version from provided installer file");
         }
 
-        return new VersionPair(versions.minecraft, versions.forge);
+        return versions;
     }
 
     @Override
@@ -46,22 +52,10 @@ public class ProvidedInstallerResolver implements InstallerResolver {
 
     private VersionPair extractVersion(Path forgeInstaller) throws IOException {
 
-        // Extract version from installer jar's version.json file
-        // where top level "id" field is used
-
-        final VersionPair fromVersionJson = IoStreams.readFileFromZip(forgeInstaller, "version.json", inputStream -> {
-            final ObjectNode parsed = ObjectMappers.defaultMapper()
-                .readValue(inputStream, ObjectNode.class);
-
-            final String id = parsed.get("id").asText("");
-
-            final String[] idParts = id.split("-");
-            if (idParts.length != 3 || !idParts[1].equals("forge")) {
-                throw new GenericException("Unexpected format of id from Forge installer's version.json: " + id);
-            }
-
-            return new VersionPair(idParts[0], idParts[2]);
-        });
+        final VersionPair fromVersionJson = IoStreams.readFileFromZip(forgeInstaller, "version.json",
+            ProvidedInstallerResolver::extractFromVersionJson
+        );
+        // will be null if version.json wasn't present
         if (fromVersionJson != null) {
             return fromVersionJson;
         }
@@ -70,7 +64,7 @@ public class ProvidedInstallerResolver implements InstallerResolver {
             final ObjectNode parsed = ObjectMappers.defaultMapper()
                 .readValue(inputStream, ObjectNode.class);
 
-            final JsonNode idNode = parsed.path("versionInfo").path("id");
+            final JsonNode idNode = parsed.path("versionInfo").path(PROP_ID);
             if (idNode.isTextual()) {
                 final String[] idParts = idNode.asText().split("-");
 
@@ -99,5 +93,34 @@ public class ProvidedInstallerResolver implements InstallerResolver {
 
             }
         });
+    }
+
+    /**
+     * Extract version from installer jar's version.json file where top level "id" and "inheritedFrom" fields are used
+     * @throws GenericException if something wasn't right about the version.json
+     */
+    public static VersionPair extractFromVersionJson(InputStream versionJsonIn) throws IOException {
+        final ObjectNode parsed = ObjectMappers.defaultMapper()
+            .readValue(versionJsonIn, ObjectNode.class);
+
+        final String id = parsed.get(PROP_ID).asText();
+        final JsonNode inheritsFromNode = parsed.get(PROP_INHERITS_FROM);
+        if (inheritsFromNode.isMissingNode()) {
+            throw new GenericException("Installer version.json is missing " + PROP_INHERITS_FROM);
+        }
+        final String minecraftVersion = inheritsFromNode.asText();
+
+        final String[] idParts = id.split("-");
+        if (idParts.length >= 3) {
+            if (idParts[1].equals(INSTALLER_ID_FORGE)) {
+                return new VersionPair(minecraftVersion, idParts[2]);
+            }
+            if (idParts[0].equals(INSTALLER_ID_CLEANROOM)) {
+                return new VersionPair(minecraftVersion, String.join("-", idParts[1], idParts[2]))
+                    .setVariantOverride(INSTALLER_ID_CLEANROOM);
+            }
+        }
+
+        throw new GenericException("Unexpected format of id from Forge installer's version.json: " + id);
     }
 }

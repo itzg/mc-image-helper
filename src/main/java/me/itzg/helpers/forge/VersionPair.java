@@ -1,13 +1,16 @@
 package me.itzg.helpers.forge;
 
-import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.ToString;
 
-@AllArgsConstructor
+@RequiredArgsConstructor
 @ToString @EqualsAndHashCode
 public class VersionPair {
 
-    String minecraft;
-    String forge;
+    final String minecraft;
+    final String forge;
+    @Setter
+    String variantOverride;
 }

@@ -12,6 +12,7 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import lombok.NonNull;
@@ -29,11 +30,6 @@ public class ForgeInstaller {
     private static final Pattern RESULT_INFO = Pattern.compile(
         "Exec:\\s+(?<exec>.+)"
             + "|The server installed successfully, you should now be able to run the file (?<universalJar>.+)");
-
-    private static final List<String> entryJarFormats = Arrays.asList(
-        "forge-%s-%s.jar",
-        "forge-%s-%s-shim.jar"
-    );
 
     private final InstallerResolver installerResolver;
 
@@ -96,7 +92,7 @@ public class ForgeInstaller {
             final Path forgeInstallerJar = installerResolver.download(resolved.minecraft, resolved.forge, outputDir);
 
             try {
-                newManifest = install(forgeInstallerJar, outputDir, resolved.minecraft, variant, resolved.forge);
+                newManifest = install(forgeInstallerJar, outputDir, resolved.minecraft, Optional.ofNullable(resolved.variantOverride).orElse(variant), resolved.forge);
 
             } finally {
 
@@ -217,7 +213,7 @@ public class ForgeInstaller {
             // A 1.12.2 style installer that doesn't report entry point in logs
             // >= 1.20.4 where "Exec:" line is no longer included in logs
             if (entryFile == null) {
-                final Path resolved = findEntryJar(outputDir, minecraftVersion, forgeVersion);
+                final Path resolved = findEntryJar(outputDir, variant, minecraftVersion, forgeVersion);
                 if (resolved != null) {
                     entryFile = resolved.toAbsolutePath();
                 }
@@ -254,9 +250,20 @@ public class ForgeInstaller {
         }
     }
 
-    private static Path findEntryJar(Path outputDir, String minecraftVersion, String forgeVersion) {
-        for (final String entryJarFormat : entryJarFormats) {
-            final Path path = outputDir.resolve(String.format(entryJarFormat, minecraftVersion, forgeVersion));
+    @FunctionalInterface
+    interface ServerJarNameBuilder {
+        String build(String variant, String minecraftVersion, String forgeVersion);
+    }
+
+    private final static List<ServerJarNameBuilder> serverJarNameBuilders = Arrays.asList(
+        (v, m, f) -> String.format("%s-%s-%s.jar", v, m, f),
+        (v,m, f) -> String.format("%s-%s-%s-shim.jar", v, m, f),
+        (v,m, f) -> String.format("%s-%s.jar", v, f)
+    );
+
+    private static Path findEntryJar(Path outputDir, String variant, String minecraftVersion, String forgeVersion) {
+        for (final ServerJarNameBuilder builder : serverJarNameBuilders) {
+            final Path path = outputDir.resolve(builder.build(variant.toLowerCase(), minecraftVersion, forgeVersion));
             if (Files.exists(path)) {
                 return path;
             }
