@@ -1,8 +1,11 @@
 package me.itzg.helpers.fabric;
 
+import java.io.IOException;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.List;
 import java.util.function.Predicate;
+import lombok.Setter;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.http.FileDownloadStatusHandler;
 import me.itzg.helpers.http.SharedFetch;
@@ -10,11 +13,16 @@ import me.itzg.helpers.http.UriBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import reactor.core.publisher.Mono;
+import reactor.util.retry.Retry;
 
 public class FabricMetaClient {
 
     private final SharedFetch sharedFetch;
     private final UriBuilder uriBuilder;
+    @Setter
+    private int downloadRetryMaxAttempts = 5;
+    @Setter
+    private Duration downloadRetryMinBackoff = Duration.ofMillis(500);
 
     public FabricMetaClient(SharedFetch sharedFetch, String fabricMetaBaseUrl) {
         this.sharedFetch = sharedFetch;
@@ -106,7 +114,9 @@ public class FabricMetaClient {
             )
             .toDirectory(outputDir)
             .handleStatus(statusHandler)
-            .assemble();
+            .assemble()
+            .retryWhen(Retry.backoff(downloadRetryMaxAttempts, downloadRetryMinBackoff).filter(IOException.class::isInstance))
+            .checkpoint("downloadLauncher");
     }
 
     @NotNull
