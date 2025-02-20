@@ -20,6 +20,7 @@ import me.itzg.helpers.curseforge.InstallCurseForgeCommand;
 import me.itzg.helpers.errors.ExceptionHandler;
 import me.itzg.helpers.errors.ExitCodeMapper;
 import me.itzg.helpers.fabric.InstallFabricLoaderCommand;
+import me.itzg.helpers.files.TomlQueryCommand;
 import me.itzg.helpers.find.FindCommand;
 import me.itzg.helpers.forge.InstallForgeCommand;
 import me.itzg.helpers.forge.InstallNeoForgeCommand;
@@ -91,6 +92,7 @@ import picocli.CommandLine.Spec;
         Sync.class,
         SyncAndInterpolate.class,
         TestLoggingCommand.class,
+        TomlQueryCommand.class,
         YamlPathCmd.class,
         VanillaTweaksCommand.class,
     }
