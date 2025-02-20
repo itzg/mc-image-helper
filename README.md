@@ -14,28 +14,65 @@ Usage: mc-image-helper [-hs] [--debug] [COMMAND]
   -h, --help     Show this usage and exit
   -s, --silent   Don't output logs even if there's an error
 Commands:
-  asciify               Converts UTF-8 on stdin to ASCII by escaping Unicode
-                          characters
-  assert                Provides assertion operators for verifying container
-                          setup
-  compare-versions      Used for shell scripting, exits with success(0) when
-                          comparison is satisfied or 1 when not
-  find                  Specialized replacement for GNU's find
-  get                   Download a file
-  hash                  Outputs an MD5 hash of the standard input
-  install-forge         Downloads and installs a requested version of Forge
-  interpolate           Interpolates existing files in one or more directories
-  java-release          Outputs the Java release number, such as 8, 11, 17
-  maven-download        Downloads a maven artifact from a Maven repository
-  modrinth              Automates downloading of modrinth resources
-  patch                 Patches one or more existing files using JSON path
-                          based operations
-  sync                  Synchronizes the contents of one directory to another.
-  sync-and-interpolate  Synchronizes the contents of one directory to another
-                          with conditional variable interpolation.
-  yaml-path             Extracts a path from a YAML file using json-path syntax
-  vanillatweaks         Downloads Vanilla Tweaks resource packs, data packs, or
-                          crafting tweaks given a share code or pack file
+  asciify                    Converts UTF-8 on stdin to ASCII by escaping
+                               Unicode characters
+  assert                     Provides assertion operators for verifying
+                               container setup
+  compare-versions           Used for shell scripting, exits with success(0)
+                               when comparison is satisfied or 1 when not
+  curseforge-files           Download and manage individual mod/plugin files
+                               from CurseForge
+  find                       Specialized replacement for GNU's find
+  get                        Download a file
+  github
+  hash                       Outputs an MD5 hash of the standard input
+  install-curseforge         Downloads, installs, and upgrades CurseForge
+                               modpacks
+  install-fabric-loader      Provides a few ways to obtain a Fabric loader with
+                               simple cleanup of previous loader instances
+  install-forge              Downloads and installs a requested version of Forge
+  install-modrinth-modpack   Supports installation of Modrinth modpacks along
+                               with the associated mod loader
+  install-neoforge           Downloads and installs a requested version of
+                               NeoForge
+  install-paper              Installs selected PaperMC
+  install-purpur             Downloads latest or selected version of Purpur
+  install-quilt              Installs Quilt mod loader
+  interpolate                Interpolates existing files in one or more
+                               directories
+  java-release               Outputs the Java release number, such as 8, 11, 17
+  manage-users
+  maven-download             Downloads a maven artifact from a Maven repository
+  modrinth                   Automates downloading of modrinth resources
+  mcopy                      Multi-source file copy operation with with managed
+                               cleanup. Supports auto-detected sourcing from
+                               file list, directories, and URLs
+  network-interfaces         Provides simple operations to list network
+                               interface names and check existence
+  patch                      Patches one or more existing files using JSON path
+                               based operations
+                             Supports the file formats:
+                             - JSON
+                             - JSON5
+                             - Yaml
+                             - TOML, but processed output is not pretty
+  resolve-minecraft-version  Resolves and validate latest, snapshot, and
+                               specific versions
+  set-properties             Maps environment variables to a properties file
+  show-all-subcommand-usage  Renders all of the subcommand usage as markdown
+                               sections for README
+  sync                       Synchronizes the contents of one directory to
+                               another.
+  sync-and-interpolate       Synchronizes the contents of one directory to
+                               another with conditional variable interpolation.
+  test-logging-levels
+  toml-path                  Extracts a path from a TOML file using json-path
+                               syntax
+  yaml-path                  Extracts a path from a YAML file using json-path
+                               syntax
+  vanillatweaks              Downloads Vanilla Tweaks resource packs, data
+                               packs, or crafting tweaks given a share code or
+                               pack file
 ```
 
 For [patch](#patch) command [see below](#patch-schemas) for a description of [PatchSet](#patchset) and [PatchDefinition](#patchdefinition) JSON schemas.
@@ -86,13 +123,12 @@ Usage: mc-image-helper curseforge-files [-h] [--disable-api-caching]
                                         [--mod-loader=<modLoaderType>] [-o=DIR]
                                         [[--api-cache-ttl=OPERATION=DURATION]...
                                          [--api-cache-default-ttl=DURATION]]
-                                        [[--connection-pool-max-idle-timeout=DUR
-                                        ATION]
+                                        [[--http-response-timeout=DURATION]
                                         [--tls-handshake-timeout=DURATION]
                                         [--connection-pool-pending-acquire-timeo
                                         ut=DURATION]
-                                        [--http-response-timeout=DURATION]] [REF
-                                        [,REF...]...]
+                                        [--connection-pool-max-idle-timeout=DURA
+                                        TION]] [REF[,REF...]...]
 Download and manage individual mod/plugin files from CurseForge
       [REF[,REF...]...]    Can be <project ID>|<slug>':'<file ID>, <project
                              ID>|<slug>'@'<filename matcher>, <project
@@ -269,10 +305,9 @@ Usage: mc-image-helper install-curseforge [-h] [--disable-api-caching]
        <overridesExclusions>...]]... [[--exclude-include-file=FILE|URI]
        [[--exclude-mods=PROJECT_ID|SLUG[,|<ws>PROJECT_ID|SLUG...]]...
        [--force-include-mods=PROJECT_ID|SLUG[,|<ws>PROJECT_ID|SLUG...]]...]]
-       [[--connection-pool-max-idle-timeout=DURATION]
-       [--tls-handshake-timeout=DURATION]
+       [[--http-response-timeout=DURATION] [--tls-handshake-timeout=DURATION]
        [--connection-pool-pending-acquire-timeout=DURATION]
-       [--http-response-timeout=DURATION]]
+       [--connection-pool-max-idle-timeout=DURATION]]
        [[--api-cache-ttl=OPERATION=DURATION]...
        [--api-cache-default-ttl=DURATION]] [COMMAND]
 Downloads, installs, and upgrades CurseForge modpacks
@@ -407,11 +442,12 @@ Usage: mc-image-helper install-forge [-h] [--force-reinstall]
                                      [--results-file=FILE]
                                      [--forge-installer=<installer> |
                                      [--forge-version=<version>]]
-                                     [[--connection-pool-max-idle-timeout=DURATI
-                                     ON] [--tls-handshake-timeout=DURATION]
+                                     [[--http-response-timeout=DURATION]
+                                     [--tls-handshake-timeout=DURATION]
                                      [--connection-pool-pending-acquire-timeout=
                                      DURATION]
-                                     [--http-response-timeout=DURATION]]
+                                     [--connection-pool-max-idle-timeout=DURATIO
+                                     N]]
 Downloads and installs a requested version of Forge
       --connection-pool-max-idle-timeout=DURATION
 
@@ -455,11 +491,10 @@ Usage: mc-image-helper install-modrinth-modpack [--force-modloader-reinstall]
        [--ignore-missing-files=<ignoreMissingFiles>[,
        |<nl><ignoreMissingFiles>...]]...
        [--overrides-exclusions=<overridesExclusions>[NL or ,
-       <overridesExclusions>...]]...
-       [[--connection-pool-max-idle-timeout=DURATION]
+       <overridesExclusions>...]]... [[--http-response-timeout=DURATION]
        [--tls-handshake-timeout=DURATION]
        [--connection-pool-pending-acquire-timeout=DURATION]
-       [--http-response-timeout=DURATION]]
+       [--connection-pool-max-idle-timeout=DURATION]]
 Supports installation of Modrinth modpacks along with the associated mod loader
       --api-base-url=<baseUrl>
                             Default: https://api.modrinth.com
@@ -531,12 +566,12 @@ Usage: mc-image-helper install-neoforge [-h] [--force-reinstall]
                                         [--neoforge-version=<version>]
                                         [--output-directory=DIR]
                                         [--results-file=FILE]
-                                        [[--connection-pool-max-idle-timeout=DUR
-                                        ATION]
+                                        [[--http-response-timeout=DURATION]
                                         [--tls-handshake-timeout=DURATION]
                                         [--connection-pool-pending-acquire-timeo
                                         ut=DURATION]
-                                        [--http-response-timeout=DURATION]]
+                                        [--connection-pool-max-idle-timeout=DURA
+                                        TION]]
 Downloads and installs a requested version of NeoForge
       --connection-pool-max-idle-timeout=DURATION
 
@@ -571,11 +606,12 @@ Usage: mc-image-helper install-paper [--check-updates] [--base-url=<baseUrl>]
                                      | [[--project=<project>] [--build=<build>]
                                      [--channel=<channel>]
                                      [--version=<version>]]]
-                                     [--connection-pool-max-idle-timeout=DURATIO
-                                     N | [--tls-handshake-timeout=DURATION] |
+                                     [[--http-response-timeout=DURATION] |
+                                     [--tls-handshake-timeout=DURATION] |
                                      --connection-pool-pending-acquire-timeout=D
                                      URATION |
-                                     [--http-response-timeout=DURATION]]
+                                     --connection-pool-max-idle-timeout=DURATION
+                                     ]
 Installs selected PaperMC
       --base-url=<baseUrl>
       --build=<build>
@@ -610,11 +646,12 @@ Usage: mc-image-helper install-purpur [--base-url=<baseUrl>]
                                       [--url=<downloadUrl> |
                                       [[--version=<version>]
                                       [--build=<build>]]]
-                                      [--connection-pool-max-idle-timeout=DURATI
-                                      ON | [--tls-handshake-timeout=DURATION] |
+                                      [[--http-response-timeout=DURATION] |
+                                      [--tls-handshake-timeout=DURATION] |
                                       --connection-pool-pending-acquire-timeout=
                                       DURATION |
-                                      [--http-response-timeout=DURATION]]
+                                      --connection-pool-max-idle-timeout=DURATIO
+                                      N]
 Downloads latest or selected version of Purpur
       --base-url=<baseUrl>
       --build=<build>
@@ -646,11 +683,12 @@ Usage: mc-image-helper install-quilt [-h] [--force-reinstall]
                                      [--repo-url=<repoUrl>]
                                      [--results-file=FILE] [--installer-url=URL
                                      | --installer-version=VERSION]
-                                     [[--connection-pool-max-idle-timeout=DURATI
-                                     ON] [--tls-handshake-timeout=DURATION]
+                                     [[--http-response-timeout=DURATION]
+                                     [--tls-handshake-timeout=DURATION]
                                      [--connection-pool-pending-acquire-timeout=
                                      DURATION]
-                                     [--http-response-timeout=DURATION]]
+                                     [--connection-pool-max-idle-timeout=DURATIO
+                                     N]]
 Installs Quilt mod loader
       --connection-pool-max-idle-timeout=DURATION
 
@@ -722,12 +760,12 @@ Usage: mc-image-helper manage-users [-fh] [--existing=<existingFileBehavior>]
                                     >] -t=<type>
                                     [--user-api-provider=<userApiProvider>]
                                     [--version=<version>]
-                                    [[--connection-pool-max-idle-timeout=DURATIO
-                                    N] [--tls-handshake-timeout=DURATION]
+                                    [[--http-response-timeout=DURATION]
+                                    [--tls-handshake-timeout=DURATION]
                                     [--connection-pool-pending-acquire-timeout=D
                                     URATION]
-                                    [--http-response-timeout=DURATION]] [INPUT[,
-                                    INPUT...]...]
+                                    [--connection-pool-max-idle-timeout=DURATION
+                                    ]] [INPUT[,INPUT...]...]
       [INPUT[,INPUT...]...] One or more Mojang usernames, UUID, or ID (UUID
                               without dashes); however, when offline, only
                               UUID/IDs can be provided.
@@ -770,11 +808,12 @@ Usage: mc-image-helper maven-download [-h] [--print-filename] [--skip-existing]
                                       [--output-directory=<outputDirectory>]
                                       [--packaging=<packaging>]
                                       [-r=<mavenRepo>] [-v=<version>]
-                                      [[--connection-pool-max-idle-timeout=DURAT
-                                      ION] [--tls-handshake-timeout=DURATION]
+                                      [[--http-response-timeout=DURATION]
+                                      [--tls-handshake-timeout=DURATION]
                                       [--connection-pool-pending-acquire-timeout
                                       =DURATION]
-                                      [--http-response-timeout=DURATION]]
+                                      [--connection-pool-max-idle-timeout=DURATI
+                                      ON]]
 Downloads a maven artifact from a Maven repository
   -a, -m, --module, --artifact=<artifact>
 
@@ -842,10 +881,11 @@ Usage: mc-image-helper modrinth [--skip-existing] [--skip-up-to-date]
                                 [--output-directory=DIR]
                                 [--world-directory=<worldDirectory>]
                                 [--projects=id|slug[,|<nl>id|slug...]]...
-                                [[--connection-pool-max-idle-timeout=DURATION]
+                                [[--http-response-timeout=DURATION]
                                 [--tls-handshake-timeout=DURATION]
                                 [--connection-pool-pending-acquire-timeout=DURAT
-                                ION] [--http-response-timeout=DURATION]]
+                                ION]
+                                [--connection-pool-max-idle-timeout=DURATION]]
 Automates downloading of modrinth resources
       --allowed-version-type=<defaultVersionType>
                           Valid values: release, beta, alpha
@@ -914,10 +954,9 @@ Supports the file formats:
 
 ```
 Usage: mc-image-helper resolve-minecraft-version
-       [[--connection-pool-max-idle-timeout=DURATION]
-       [--tls-handshake-timeout=DURATION]
+       [[--http-response-timeout=DURATION] [--tls-handshake-timeout=DURATION]
        [--connection-pool-pending-acquire-timeout=DURATION]
-       [--http-response-timeout=DURATION]] <inputVersion>
+       [--connection-pool-max-idle-timeout=DURATION]] <inputVersion>
 Resolves and validate latest, snapshot, and specific versions
       <inputVersion>
       --connection-pool-max-idle-timeout=DURATION
@@ -1001,6 +1040,14 @@ interpolation.
 Usage: mc-image-helper test-logging-levels
 ```
 
+### toml-path
+
+```
+Usage: mc-image-helper toml-path query [file]
+      query    JSON path expression where root element $ can be omitted
+      [file]   TOML file or reads stdin
+```
+
 ### vanillatweaks
 
 ```
@@ -1010,11 +1057,12 @@ Usage: mc-image-helper vanillatweaks [--force-synchronize]
                                      [--world-subdir=<worldSubdir>]
                                      [--pack-files=FILE[,|<nl>FILE...]]...
                                      [--share-codes=CODE[,|<nl>CODE...]]...
-                                     [[--connection-pool-max-idle-timeout=DURATI
-                                     ON] [--tls-handshake-timeout=DURATION]
+                                     [[--http-response-timeout=DURATION]
+                                     [--tls-handshake-timeout=DURATION]
                                      [--connection-pool-pending-acquire-timeout=
                                      DURATION]
-                                     [--http-response-timeout=DURATION]]
+                                     [--connection-pool-max-idle-timeout=DURATIO
+                                     N]]
 Downloads Vanilla Tweaks resource packs, data packs, or crafting tweaks given a
 share code or pack file
       --base-url=<baseUrl>

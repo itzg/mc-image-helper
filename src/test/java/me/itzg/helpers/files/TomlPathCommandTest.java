@@ -9,13 +9,13 @@ import org.junit.jupiter.params.provider.ValueSource;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
 
-class TomlQueryCommandTest {
+class TomlPathCommandTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"$.bind", ".bind"})
     void extractsVelocityBind(String queryPath) throws Exception {
         final String out = tapSystemOut(() -> {
-            final int exitCode = new CommandLine(new TomlQueryCommand())
+            final int exitCode = new CommandLine(new TomlPathCommand())
                 .execute(
                     queryPath,
                     Paths.get("src/test/resources/velocity.toml").toString()

@@ -1,4 +1,4 @@
-package me.itzg.helpers.singles;
+package me.itzg.helpers.files;
 
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.jayway.jsonpath.Configuration;
@@ -13,7 +13,7 @@ import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
 @Command(name = "yaml-path", description = "Extracts a path from a YAML file using json-path syntax")
-public class YamlPathCmd implements Callable<Integer> {
+public class YamlPathCommand implements Callable<Integer> {
 
   @Option(names = "--file", description = "A YAML file to query")
   File yamlFile;

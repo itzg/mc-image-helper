@@ -20,7 +20,8 @@ import me.itzg.helpers.curseforge.InstallCurseForgeCommand;
 import me.itzg.helpers.errors.ExceptionHandler;
 import me.itzg.helpers.errors.ExitCodeMapper;
 import me.itzg.helpers.fabric.InstallFabricLoaderCommand;
-import me.itzg.helpers.files.TomlQueryCommand;
+import me.itzg.helpers.files.TomlPathCommand;
+import me.itzg.helpers.files.YamlPathCommand;
 import me.itzg.helpers.find.FindCommand;
 import me.itzg.helpers.forge.InstallForgeCommand;
 import me.itzg.helpers.forge.InstallNeoForgeCommand;
@@ -38,7 +39,6 @@ import me.itzg.helpers.singles.Asciify;
 import me.itzg.helpers.singles.HashCommand;
 import me.itzg.helpers.singles.NetworkInterfacesCommand;
 import me.itzg.helpers.singles.TestLoggingCommand;
-import me.itzg.helpers.singles.YamlPathCmd;
 import me.itzg.helpers.sync.InterpolateCommand;
 import me.itzg.helpers.sync.MulitCopyCommand;
 import me.itzg.helpers.sync.Sync;
@@ -92,8 +92,8 @@ import picocli.CommandLine.Spec;
         Sync.class,
         SyncAndInterpolate.class,
         TestLoggingCommand.class,
-        TomlQueryCommand.class,
-        YamlPathCmd.class,
+        TomlPathCommand.class,
+        YamlPathCommand.class,
         VanillaTweaksCommand.class,
     }
 )
