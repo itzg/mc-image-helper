@@ -1,11 +1,12 @@
 package me.itzg.helpers.files;
 
-import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.dataformat.toml.TomlFactory;
 import com.fasterxml.jackson.dataformat.toml.TomlMapper;
+import com.jayway.jsonpath.Configuration;
+import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
-import java.io.IOException;
+import com.jayway.jsonpath.ParseContext;
+import com.jayway.jsonpath.spi.json.JacksonJsonProvider;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -13,8 +14,8 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.Parameters;
 
-@Command(name = "toml-query")
-public class TomlQueryCommand implements Callable<Integer> {
+@Command(name = "toml-path", description = "Extracts a path from a TOML file using json-path syntax")
+public class TomlPathCommand implements Callable<Integer> {
 
     public static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<Map<String, Object>>() {
     };
@@ -31,16 +32,22 @@ public class TomlQueryCommand implements Callable<Integer> {
 
     @Override
     public Integer call() throws Exception {
-        final Map<String,Object> content;
-        try (JsonParser parser = loadParser()) {
-            if (path != null) {
-                content = new TomlMapper().readValue(parser, MAP_TYPE);
-            }
-            else {
-                content = new TomlMapper().readValue(parser, MAP_TYPE);
-            }
+
+        final ParseContext parseContext = JsonPath.using(
+            Configuration.builder()
+                .jsonProvider(new JacksonJsonProvider(new TomlMapper()))
+                .build()
+        );
+
+        final DocumentContext context;
+        if (path != null) {
+            context = parseContext.parse(path.toFile());
         }
-        final Object result = JsonPath.read(content,
+        else {
+            context = parseContext.parse(System.in);
+        }
+
+        final Object result = context.read(
             // if user left off root element reference, then add it
             // maybe using a shell where $ triggers interpolation
             query.startsWith("$") ? query : "$" + query
@@ -51,14 +58,4 @@ public class TomlQueryCommand implements Callable<Integer> {
         return ExitCode.OK;
     }
 
-    private JsonParser loadParser() throws IOException {
-        final JsonParser parser;
-        if (path != null) {
-            parser = new TomlFactory().createParser(path.toFile());
-        }
-        else {
-            parser = new TomlFactory().createParser(System.in);
-        }
-        return parser;
-    }
 }
