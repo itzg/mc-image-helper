@@ -1,6 +1,6 @@
 package me.itzg.helpers.files;
 
-import static com.github.stefanbirkner.systemlambda.SystemLambda.tapSystemOut;
+import static com.github.stefanbirkner.systemlambda.SystemLambda.tapSystemOutNormalized;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.nio.file.Paths;
@@ -14,11 +14,11 @@ class TomlPathCommandTest {
     @ParameterizedTest
     @ValueSource(strings = {"$.bind", ".bind"})
     void extractsVelocityBind(String queryPath) throws Exception {
-        final String out = tapSystemOut(() -> {
+        final String out = tapSystemOutNormalized(() -> {
             final int exitCode = new CommandLine(new TomlPathCommand())
                 .execute(
-                    queryPath,
-                    Paths.get("src/test/resources/velocity.toml").toString()
+                    "--file", Paths.get("src/test/resources/velocity.toml").toString(),
+                    queryPath
                 );
 
             assertThat(exitCode).isEqualTo(ExitCode.OK);
