@@ -1,34 +1,28 @@
 package me.itzg.helpers.files;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.dataformat.toml.TomlMapper;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.ParseContext;
 import com.jayway.jsonpath.spi.json.JacksonJsonProvider;
-import java.nio.file.Path;
-import java.util.Map;
+import java.io.File;
 import java.util.concurrent.Callable;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.ExitCode;
+import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
 @Command(name = "toml-path", description = "Extracts a path from a TOML file using json-path syntax")
 public class TomlPathCommand implements Callable<Integer> {
 
-    public static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<Map<String, Object>>() {
-    };
+    @Option(names = "--file", paramLabel = "FILE", description = "A TOML file to query. If not set, reads stdin")
+    File tomlFile;
 
-    @Parameters(index = "0", arity = "1",
+    @Parameters(arity = "1",
         paramLabel = "query",
         description = "JSON path expression where root element $ can be omitted")
     String query;
-
-    @Parameters(index = "1", arity = "0..1",
-        paramLabel = "file",
-        description = "TOML file or reads stdin")
-    Path path;
 
     @Override
     public Integer call() throws Exception {
@@ -40,8 +34,8 @@ public class TomlPathCommand implements Callable<Integer> {
         );
 
         final DocumentContext context;
-        if (path != null) {
-            context = parseContext.parse(path.toFile());
+        if (tomlFile != null) {
+            context = parseContext.parse(tomlFile);
         }
         else {
             context = parseContext.parse(System.in);
