@@ -202,6 +202,50 @@ class FabricLauncherInstallerTest {
     }
 
     @Test
+    void testNoNetworkUsageWhenVersionMatches(WireMockRuntimeInfo wmRuntimeInfo) {
+        final WireMock wm = wmRuntimeInfo.getWireMock();
+        wm.loadMappingsFrom("src/test/resources/fabric");
+
+        final FabricLauncherInstaller installer = new FabricLauncherInstaller(
+            tempDir
+        );
+        installer.setFabricMetaBaseUrl(wmRuntimeInfo.getHttpBaseUrl());
+
+        installer.installUsingVersions(
+            "1.19.2", null, null
+        );
+
+        wm.verifyThat(
+            // since minecraft version is pinned
+            0,
+            getRequestedFor(urlEqualTo("/v2/versions/game")));
+        wm.verifyThat(
+            // to lookup installer version
+            1,
+            getRequestedFor(urlEqualTo("/v2/versions/installer")));
+
+        final Path expectedLauncher192 = tempDir.resolve("fabric-server-mc.1.19.2-loader.0.14.12-launcher.0.11.1.jar");
+        assertThat(expectedLauncher192)
+            .isNotEmptyFile()
+            .hasContent("fabric-server-mc.1.19.2-loader.0.14.12-launcher.0.11.1");
+
+        // Now try again with same
+
+        wm.resetRequests();
+
+        installer.installUsingVersions(
+            "1.19.2", "0.14.12", "0.11.1"
+        );
+
+        assertThat(expectedLauncher192)
+            .isNotEmptyFile()
+            .hasContent("fabric-server-mc.1.19.2-loader.0.14.12-launcher.0.11.1");
+
+        wm.verifyThat(0, getRequestedFor(urlEqualTo("/v2/versions/game")));
+        wm.verifyThat(0, getRequestedFor(urlEqualTo("/v2/versions/installer")));
+    }
+
+    @Test
     @EnabledIfSystemProperty(named = "testEnableManualTests", matches = "true", disabledReason = "For manual recording")
     void forRecordingVersionDiscovery() {
         final Path resultsFile = tempDir.resolve("results.env");

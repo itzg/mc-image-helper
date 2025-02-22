@@ -37,17 +37,21 @@ public class FabricMetaClient {
      * @param version can be latest, snapshot or specific
      */
     public Mono<String> resolveMinecraftVersion(@Nullable String version) {
+        if (!isLatest(version) && !isSnapshot(version)) {
+            return Mono.just(version);
+        }
+
         return sharedFetch.fetch(
                 uriBuilder.resolve("/v2/versions/game")
             )
             .toObjectList(VersionEntry.class)
             .assemble()
             .flatMap(versionEntries -> {
-                if (version == null || version.equalsIgnoreCase("latest")) {
+                if (isLatest(version)) {
                     return findFirst(versionEntries, VersionEntry::isStable)
                         .switchIfEmpty(Mono.error(() -> new GenericException("Unable to find any stable versions")));
                 }
-                else if (version.equalsIgnoreCase("snapshot")) {
+                else if (isSnapshot(version)) {
                     return findFirst(versionEntries, versionEntry -> !versionEntry.isStable())
                         .switchIfEmpty(Mono.error(() -> new GenericException("Unable to find any unstable versions")));
                 }
@@ -56,6 +60,14 @@ public class FabricMetaClient {
                         .switchIfEmpty(Mono.error(() -> new GenericException("Unable to find requested version")));
                 }
             });
+    }
+
+    private static boolean isSnapshot(@Nullable String version) {
+        return version != null && version.equalsIgnoreCase("snapshot");
+    }
+
+    private static boolean isLatest(@Nullable String version) {
+        return version == null || version.equalsIgnoreCase("latest");
     }
 
     public Mono<String> resolveLoaderVersion(String minecraftVersion, String loaderVersion) {
