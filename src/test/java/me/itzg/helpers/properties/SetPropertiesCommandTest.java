@@ -289,6 +289,28 @@ class SetPropertiesCommandTest {
 
     }
 
+    @Test
+    void complexSecretsProcessedCorrectly() throws Exception {
+        final String secret = ":xDmW!T5Y%Jjam;$L9adz-tf%4BuhN,z#64pGx+;3R6^W$#PgGv!Nm-*)A}3^*/js*&)#";
+
+        final int exitCode = new CommandLine(new SetPropertiesCommand()
+            .setEnvironmentVariablesProvider(MappedEnvVarProvider.of(
+                "RCON_PASSWORD", secret
+            ))
+        )
+            .execute(
+                "--definitions", definitionsFile.toString(),
+                propertiesFile.toString()
+            );
+
+        assertThat(exitCode).isEqualTo(ExitCode.OK);
+
+        final Properties properties = loadProperties();
+
+        assertThat(properties).containsEntry("rcon.password", secret);
+        assertPropertiesEqualExcept(properties, "rcon.password");
+    }
+
     private void assertPropertiesEqualExcept(Properties properties, String... propertiesToIgnore) {
         final HashSet<Object> actualKeys = new HashSet<>(properties.keySet());
         Arrays.asList(propertiesToIgnore).forEach(actualKeys::remove);
