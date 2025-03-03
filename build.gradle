@@ -1,14 +1,14 @@
 plugins {
-    id 'java'
-    id 'application'
-    id 'idea'
-    id "io.freefair.lombok" version '8.12.2'
-    // https://github.com/qoomon/gradle-git-versioning-plugin
-    id 'me.qoomon.git-versioning' version '6.4.4'
-    // https://github.com/itzg/github-releaser-gradle-plugin
-    id 'io.github.itzg.github-releaser' version '0.2.1'
-    // https://github.com/ben-manes/gradle-versions-plugin
-    id 'com.github.ben-manes.versions' version '0.52.0'
+  id 'java'
+  id 'application'
+  id 'idea'
+  id "io.freefair.lombok" version '8.12.2'
+  // https://github.com/qoomon/gradle-git-versioning-plugin
+  id 'me.qoomon.git-versioning' version '6.4.4'
+  // https://github.com/itzg/github-releaser-gradle-plugin
+  id 'io.github.itzg.github-releaser' version '0.2.1'
+  // https://github.com/ben-manes/gradle-versions-plugin
+  id 'com.github.ben-manes.versions' version '0.52.0'
 }
 
 group = 'io.github.itzg'
@@ -16,115 +16,121 @@ description = 'This tool does the complicated bits for itzg/minecraft-server'
 
 version = '0.0.1-SNAPSHOT'
 gitVersioning.apply {
-    refs {
-        tag('.+') {
-            version = '${ref}'
-        }
-        branch('main') {
-            version = '0.0.0-${describe.tag}-SNAPSHOT'
-        }
-        branch('.+') {
-            version = '0.0.0-${ref}-SNAPSHOT'
-        }
+  refs {
+    tag('.+') {
+      version = '${ref}'
     }
+    branch('main') {
+      version = '0.0.0-${describe.tag}-SNAPSHOT'
+    }
+    branch('.+') {
+      version = '0.0.0-${ref}-SNAPSHOT'
+    }
+  }
 
-    // optional fallback configuration in case of no matching ref configuration
-    rev {
-        version = '${commit}'
-    }
+  // optional fallback configuration in case of no matching ref configuration
+  rev {
+    version = '${commit}'
+  }
 
 }
 
 jar {
-    manifest {
-        attributes(
-            "Implementation-Title": 'mc-image-helper',
-            "Implementation-Version": project.version
-        )
-    }
+  manifest {
+    attributes(
+        "Implementation-Title": 'mc-image-helper',
+        "Implementation-Version": project.version
+    )
+  }
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
+  sourceCompatibility = JavaVersion.VERSION_1_8
 }
 
 test {
-    useJUnitPlatform()
+  useJUnitPlatform()
 
-    // Can set with -PmockServerLogLevel=info
-    systemProperty 'mockServerLogLevel', findProperty('mockServerLogLevel') ?: 'warn'
-    systemProperty 'testEnableManualTests', findProperty('testEnableManualTests') ?: 'false'
+  // Can set with -PmockServerLogLevel=info
+  systemProperty 'mockServerLogLevel', findProperty('mockServerLogLevel') ?: 'warn'
+  systemProperty 'testEnableManualTests', findProperty('testEnableManualTests') ?: 'false'
 }
 
 application {
-    mainClass = 'me.itzg.helpers.McImageHelper'
+  mainClass = 'me.itzg.helpers.McImageHelper'
 }
 
 project.tasks.distTar {
-    compression = Compression.GZIP
+  compression = Compression.GZIP
 }
 
 idea {
-    module {
-        downloadJavadoc = true
-    }
+  module {
+    downloadJavadoc = true
+  }
 }
 
 repositories {
-    mavenLocal()
-    mavenCentral()
+  mavenLocal()
+  mavenCentral()
 }
 
 dependencies {
-    def picocliVersion = '4.7.6'
+  def picocliVersion = '4.7.6'
 
-    implementation(platform('com.fasterxml.jackson:jackson-bom:2.18.2'))
-    // 1.4.+ requires Java 11 and we are stuck on 8
-    implementation(platform('ch.qos.logback:logback-parent:[1.3.5,1.4)'))
+  implementation(platform('com.fasterxml.jackson:jackson-bom:2.18.2'))
+  // 1.4.+ requires Java 11 and we are stuck on 8
+  implementation(platform('ch.qos.logback:logback-parent:[1.3.5,1.4)'))
 
-    implementation 'ch.qos.logback:logback-core'
-    implementation 'ch.qos.logback:logback-classic'
-    implementation "info.picocli:picocli:${picocliVersion}"
-    implementation 'org.fusesource.jansi:jansi:2.4.1'
-    implementation 'com.fasterxml.jackson.core:jackson-databind'
-    implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
-    implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-xml'
-    implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-toml'
-    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
-    // https://github.com/mbknor/mbknor-jackson-jsonSchema
-    implementation 'com.kjetland:mbknor-jackson-jsonschema_2.13:1.0.39'
-    implementation 'com.jayway.jsonpath:json-path:2.9.0'
-    implementation 'org.apache.httpcomponents.client5:httpclient5:5.4.2'
-    implementation 'io.projectreactor.netty:reactor-netty-http:1.2.3'
-    implementation 'org.apache.maven:maven-artifact:3.9.9'
-    implementation 'commons-codec:commons-codec:1.18.0'
-    // for RFC5987 parsing of content-disposition filename*
-    // 3.5.x is last of Java8 compatible: https://cxf.apache.org/download.html
-    implementation 'org.apache.cxf:cxf-core:[3.5.6,3.6.0)'
-    implementation 'org.jetbrains:annotations:26.0.2'
+  implementation 'ch.qos.logback:logback-core'
+  implementation 'ch.qos.logback:logback-classic'
+  implementation "info.picocli:picocli:${picocliVersion}"
+  implementation 'org.fusesource.jansi:jansi:2.4.1'
+  implementation 'com.fasterxml.jackson.core:jackson-databind'
+  implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
+  implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-xml'
+  implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-toml'
+  implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+  // https://github.com/mbknor/mbknor-jackson-jsonSchema
+  implementation 'com.kjetland:mbknor-jackson-jsonschema_2.13:1.0.39'
+  implementation 'com.jayway.jsonpath:json-path:2.9.0'
+  implementation 'org.apache.httpcomponents.client5:httpclient5:5.4.2'
+  implementation 'io.projectreactor.netty:reactor-netty-http:1.2.3'
+  implementation 'org.apache.maven:maven-artifact:3.9.9'
+  implementation 'commons-codec:commons-codec:1.18.0'
+  // for RFC5987 parsing of content-disposition filename*
+  // 3.5.x is last of Java8 compatible: https://cxf.apache.org/download.html
+  implementation 'org.apache.cxf:cxf-core:[3.5.6,3.6.0)'
+  implementation 'org.jetbrains:annotations:26.0.2'
 
-    // https://commons.apache.org/proper/commons-compress/zip.html
-    // For IMPLODE compression used by some CurseForge modpacks
-    implementation 'org.apache.commons:commons-compress:1.27.1'
+  // https://commons.apache.org/proper/commons-compress/zip.html
+  // For IMPLODE compression used by some CurseForge modpacks
+  implementation 'org.apache.commons:commons-compress:1.27.1'
 
-    testImplementation 'org.assertj:assertj-core:3.27.3'
-    // https://github.com/webcompere/model-assert
-    // for json assertions
-    testImplementation 'uk.org.webcompere:model-assert:1.1.0'
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
-    testImplementation 'org.mockito:mockito-junit-jupiter:5.15.2'
-    // would like to transition these to wiremock
-    testImplementation 'org.mock-server:mockserver-junit-jupiter:5.15.0'
-    // https://github.com/wiremock/wiremock/releases/tag/3.0.0 drops support for Java 8
-    testImplementation 'com.github.tomakehurst:wiremock-jre8:[2.35.1,3.0.0)'
-    // https://github.com/stefanbirkner/system-lambda
-    testImplementation 'com.github.stefanbirkner:system-lambda:1.2.1'
+  testImplementation 'org.assertj:assertj-core:3.27.3'
+  // https://github.com/webcompere/model-assert
+  // for json assertions
+  testImplementation 'uk.org.webcompere:model-assert:1.1.0'
 
-    annotationProcessor "info.picocli:picocli-codegen:${picocliVersion}"
+  // https://junit.org/junit5/docs/current/user-guide/#running-tests-build-gradle-bom
+  // stuck < 5.12.0 due to Java 8
+  testImplementation(platform("org.junit:junit-bom:[5.11.4,5.12.0)"))
+  testImplementation 'org.junit.jupiter:junit-jupiter'
+  testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+
+  testImplementation 'org.mockito:mockito-junit-jupiter:5.15.2'
+  // would like to transition these to wiremock
+  testImplementation 'org.mock-server:mockserver-junit-jupiter:5.15.0'
+  // https://github.com/wiremock/wiremock/releases/tag/3.0.0 drops support for Java 8
+  testImplementation 'com.github.tomakehurst:wiremock-jre8:[2.35.1,3.0.0)'
+  // https://github.com/stefanbirkner/system-lambda
+  testImplementation 'com.github.stefanbirkner:system-lambda:1.2.1'
+
+  annotationProcessor "info.picocli:picocli-codegen:${picocliVersion}"
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
+  sourceCompatibility = JavaVersion.VERSION_1_8
 }
 
 compileJava {
@@ -136,8 +142,8 @@ compileTestJava {
 }
 
 githubReleaser {
-    project {
-        homepage = 'https://github.com/itzg/mc-image-helper'
-        license = 'MIT'
-    }
+  project {
+    homepage = 'https://github.com/itzg/mc-image-helper'
+    license = 'MIT'
+  }
 }
