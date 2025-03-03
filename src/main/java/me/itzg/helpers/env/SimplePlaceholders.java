@@ -39,7 +39,11 @@ public class SimplePlaceholders {
             do {
                 final String type = Optional.ofNullable(m.group("type"))
                     .orElse("env");
-                final String replacement = buildPlaceholderReplacement(type, m.group("var"), m.group());
+                final String replacement = buildPlaceholderReplacement(type, m.group("var"));
+
+                if (replacement == null) {
+                    continue;
+                }
 
                 m.appendReplacement(sb, replacement);
             } while (m.find());
@@ -50,18 +54,15 @@ public class SimplePlaceholders {
         return value;
     }
 
-    private String buildPlaceholderReplacement(String type, String var, String fallback) {
+    private String buildPlaceholderReplacement(String type, String var) {
         log.debug("Building placeholder replacement from type={} with var='{}'", type, var);
         switch (type) {
             case "env":
                 final String result = environmentVariablesProvider.get(var);
-                if (result != null) {
-                    return result;
-                }
-                else {
+                if (result == null) {
                     log.warn("Unable to resolve environment variable {}", var);
-                    return fallback;
                 }
+                return result;
 
             case "date":
             case "time":
@@ -70,11 +71,11 @@ public class SimplePlaceholders {
                     return ZonedDateTime.now(clock).format(f);
                 } catch (IllegalArgumentException e) {
                     log.error("Invalid date/time format in {}", var, e);
-                    return fallback;
+                    return null;
                 }
         }
 
-        return fallback;
+        return null;
     }
 
 }

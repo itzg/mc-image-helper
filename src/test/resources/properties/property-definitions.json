@@ -72,6 +72,9 @@
   "compression-threshold": {
     "env": "COMPRESSION_THRESHOLD"
   },
+  "rcon.password": {
+    "env": "RCON_PASSWORD"
+  },
   "level-name": {
     "env": "LEVEL_NAME"
   },
