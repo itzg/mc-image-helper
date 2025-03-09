@@ -131,10 +131,6 @@ dependencies {
   annotationProcessor "info.picocli:picocli-codegen:${picocliVersion}"
 }
 
-java {
-  sourceCompatibility = JavaVersion.VERSION_1_8
-}
-
 compileJava {
   options.encoding = 'utf-8'
 }
