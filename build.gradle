@@ -45,7 +45,9 @@ jar {
 }
 
 java {
+  // Specify to gradle that the project expects to be built with java 21, but produce output compatible with Java 8
   sourceCompatibility = JavaVersion.VERSION_1_8
+  toolchain.languageVersion = JavaLanguageVersion.of(21)
 }
 
 test {
@@ -127,10 +129,6 @@ dependencies {
   testImplementation 'com.github.stefanbirkner:system-lambda:1.2.1'
 
   annotationProcessor "info.picocli:picocli-codegen:${picocliVersion}"
-}
-
-java {
-  sourceCompatibility = JavaVersion.VERSION_1_8
 }
 
 compileJava {
