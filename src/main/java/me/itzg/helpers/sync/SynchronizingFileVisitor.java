@@ -1,7 +1,5 @@
 package me.itzg.helpers.sync;
 
-import lombok.extern.slf4j.Slf4j;
-
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
@@ -9,6 +7,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
+import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 class SynchronizingFileVisitor implements FileVisitor<Path> {
@@ -22,6 +22,24 @@ class SynchronizingFileVisitor implements FileVisitor<Path> {
         this.dest = dest;
         this.skipNewerInDestination = skipNewerInDestination;
         this.fileProcessor = fileProcessor;
+    }
+
+    static int walkDirectories(List<Path> srcDest, boolean skipNewerInDestination,
+        FileProcessor fileProcessor
+    ) {
+        final Path dest = srcDest.getLast();
+
+        for (final Path src : srcDest.subList(0, srcDest.size() - 1)) {
+            try {
+                Files.walkFileTree(src, new SynchronizingFileVisitor(src, dest, skipNewerInDestination, fileProcessor));
+            } catch (IOException e) {
+                log.error("Failed to sync and interpolate {} into {} : {}", src, dest, e.getMessage());
+                log.debug("Details", e);
+                return 1;
+            }
+        }
+
+        return 0;
     }
 
     @Override
@@ -79,9 +97,9 @@ class SynchronizingFileVisitor implements FileVisitor<Path> {
     }
 
     @Override
-    public FileVisitResult visitFileFailed(Path file, IOException exc) {
-        log.warn("Failed to access {} due to {}", file, exc.getMessage());
-        log.debug("Details", exc);
+    public FileVisitResult visitFileFailed(Path file, IOException e) {
+        log.warn("Failed to visit file {} due to {}:{}", file, e.getClass(), e.getMessage());
+        log.debug("Details", e);
         return FileVisitResult.CONTINUE;
     }
 

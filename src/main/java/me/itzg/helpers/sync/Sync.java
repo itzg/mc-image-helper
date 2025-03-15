@@ -1,17 +1,15 @@
 package me.itzg.helpers.sync;
 
+import java.nio.file.Path;
+import java.util.List;
+import java.util.concurrent.Callable;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
+import me.itzg.helpers.McImageHelper;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
-
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.List;
-import java.util.concurrent.Callable;
 
 @Command(name = "sync",
         description = "Synchronizes the contents of one directory to another.")
@@ -34,24 +32,14 @@ public class Sync implements Callable<Integer> {
     @ToString.Exclude
     List<String> extra;
 
-    @Parameters(index = "0", description = "source directory")
-    Path src;
-
-    @Parameters(index = "1", description = "destination directory")
-    Path dest;
+    @Parameters(arity = "2..*", description = "src... dest directories",
+        split = McImageHelper.SPLIT_COMMA_NL, splitSynopsisLabel = McImageHelper.SPLIT_SYNOPSIS_COMMA_NL)
+    List<Path> srcDest;
 
     @Override
     public Integer call() throws Exception {
         log.debug("Configured with {}", this);
 
-        try {
-            Files.walkFileTree(src, new SynchronizingFileVisitor(src, dest, skipNewerInDestination, new CopyingFileProcessor()));
-        } catch (IOException e) {
-            log.error("Failed to sync {} into {} : {}", src, dest, e.getMessage());
-            log.debug("Details", e);
-            return 1;
-        }
-
-        return 0;
+        return SynchronizingFileVisitor.walkDirectories(srcDest, skipNewerInDestination, new CopyingFileProcessor());
     }
 }
