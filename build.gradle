@@ -97,7 +97,7 @@ dependencies {
   implementation 'com.kjetland:mbknor-jackson-jsonschema_2.13:1.0.39'
   implementation 'com.jayway.jsonpath:json-path:2.9.0'
   implementation 'org.apache.httpcomponents.client5:httpclient5:5.4.2'
-  implementation 'io.projectreactor.netty:reactor-netty-http:1.2.3'
+  implementation 'io.projectreactor.netty:reactor-netty-http:1.2.4'
   implementation 'org.apache.maven:maven-artifact:3.9.9'
   implementation 'commons-codec:commons-codec:1.18.0'
   // for RFC5987 parsing of content-disposition filename*
@@ -120,7 +120,7 @@ dependencies {
   testImplementation 'org.junit.jupiter:junit-jupiter'
   testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
 
-  testImplementation 'org.mockito:mockito-junit-jupiter:5.16.0'
+  testImplementation 'org.mockito:mockito-junit-jupiter:5.16.1'
   // would like to transition these to wiremock
   testImplementation 'org.mock-server:mockserver-junit-jupiter:5.15.0'
   // https://github.com/wiremock/wiremock/releases/tag/3.0.0 drops support for Java 8
