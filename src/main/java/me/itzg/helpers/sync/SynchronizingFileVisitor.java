@@ -30,12 +30,17 @@ class SynchronizingFileVisitor implements FileVisitor<Path> {
         final Path dest = srcDest.getLast();
 
         for (final Path src : srcDest.subList(0, srcDest.size() - 1)) {
-            try {
-                Files.walkFileTree(src, new SynchronizingFileVisitor(src, dest, skipNewerInDestination, fileProcessor));
-            } catch (IOException e) {
-                log.error("Failed to sync and interpolate {} into {} : {}", src, dest, e.getMessage());
-                log.debug("Details", e);
-                return 1;
+            if (Files.isDirectory(src)) {
+                try {
+                    Files.walkFileTree(src, new SynchronizingFileVisitor(src, dest, skipNewerInDestination, fileProcessor));
+                } catch (IOException e) {
+                    log.error("Failed to sync and interpolate {} into {} : {}", src, dest, e.getMessage());
+                    log.debug("Details", e);
+                    return 1;
+                }
+            }
+            else {
+                log.debug("Skipping missing source directory {}", src);
             }
         }
 

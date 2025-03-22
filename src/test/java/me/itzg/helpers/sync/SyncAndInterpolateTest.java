@@ -101,6 +101,31 @@ class SyncAndInterpolateTest {
             assertThat(destDir.resolve("test4.txt")).exists();
         }
 
+        @ParameterizedTest
+        @ValueSource(classes = {Sync.class, SyncAndInterpolate.class})
+        void skipsMissingSrcDir(Class<?> commandClass, @TempDir Path tempDir) throws Exception {
+            final Path srcDir1 = Files.createDirectory(tempDir.resolve("src"));
+            Files.createFile(srcDir1.resolve("test1.txt"));
+            Files.createFile(srcDir1.resolve("test2.txt"));
+            final Path destDir = Files.createDirectory(tempDir.resolve("dest"));
+
+            final String stderr = tapSystemErr(() -> {
+                final int exitCode = new CommandLine(commandClass)
+                    .execute(
+                        "--replace-env-file-suffixes=json",
+                        String.join(",", srcDir1.toString(), tempDir.resolve("missing").toString()),
+                        destDir.toString()
+                    );
+
+                assertThat(exitCode).isEqualTo(0);
+            });
+            assertThat(stderr).isBlank();
+
+            assertThat(destDir).isNotEmptyDirectory();
+            assertThat(destDir.resolve("test1.txt")).exists();
+            assertThat(destDir.resolve("test2.txt")).exists();
+        }
+
     }
 
 }
