@@ -27,7 +27,8 @@ class SynchronizingFileVisitor implements FileVisitor<Path> {
     static int walkDirectories(List<Path> srcDest, boolean skipNewerInDestination,
         FileProcessor fileProcessor
     ) {
-        final Path dest = srcDest.getLast();
+        // TODO can use getLast() with java 21
+        final Path dest = srcDest.get(srcDest.size() - 1);
 
         for (final Path src : srcDest.subList(0, srcDest.size() - 1)) {
             if (Files.isDirectory(src)) {
