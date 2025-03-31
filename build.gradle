@@ -2,7 +2,7 @@ plugins {
   id 'java'
   id 'application'
   id 'idea'
-  id "io.freefair.lombok" version '8.13'
+  id "io.freefair.lombok" version '8.13.1'
   // https://github.com/qoomon/gradle-git-versioning-plugin
   id 'me.qoomon.git-versioning' version '6.4.4'
   // https://github.com/itzg/github-releaser-gradle-plugin
@@ -96,7 +96,7 @@ dependencies {
   // https://github.com/mbknor/mbknor-jackson-jsonSchema
   implementation 'com.kjetland:mbknor-jackson-jsonschema_2.13:1.0.39'
   implementation 'com.jayway.jsonpath:json-path:2.9.0'
-  implementation 'org.apache.httpcomponents.client5:httpclient5:5.4.2'
+  implementation 'org.apache.httpcomponents.client5:httpclient5:5.4.3'
   implementation 'io.projectreactor.netty:reactor-netty-http:1.2.4'
   implementation 'org.apache.maven:maven-artifact:3.9.9'
   implementation 'commons-codec:commons-codec:1.18.0'
