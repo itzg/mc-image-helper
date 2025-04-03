@@ -19,6 +19,18 @@ public class FabricMetaClient {
 
     private final SharedFetch sharedFetch;
     private final UriBuilder uriBuilder;
+
+    /**
+     * Retry attempts for metadata, non-downloads
+     */
+    @Setter
+    private long retryMaxAttempts = 5;
+    /**
+     * Retry minimum backoff for metadata, non-downloads
+     */
+    @Setter
+    private Duration retryMinBackoff = Duration.ofMillis(500);
+
     @Setter
     private int downloadRetryMaxAttempts = 5;
     @Setter
@@ -59,7 +71,9 @@ public class FabricMetaClient {
                     return findFirst(versionEntries, versionEntry -> versionEntry.getVersion().equalsIgnoreCase(version))
                         .switchIfEmpty(Mono.error(() -> new GenericException("Unable to find requested version")));
                 }
-            });
+            })
+            .retryWhen(Retry.backoff(retryMaxAttempts, retryMinBackoff).filter(IOException.class::isInstance))
+            .checkpoint();
     }
 
     private static boolean isSnapshot(@Nullable String version) {
@@ -91,7 +105,9 @@ public class FabricMetaClient {
                     .getLoader();
 
                 return Mono.just(loader.getVersion());
-            });
+            })
+            .retryWhen(Retry.backoff(retryMaxAttempts, retryMinBackoff).filter(IOException.class::isInstance))
+            .checkpoint();
     }
 
     public Mono<String> resolveInstallerVersion(String installerVersion) {
@@ -111,7 +127,9 @@ public class FabricMetaClient {
                 .orElseGet(
                     () -> Mono.error(new GenericException("Failed to find stable installer from " + uriBuilder.getBaseUrl()))
                 )
-            );
+            )
+            .retryWhen(Retry.backoff(retryMaxAttempts, retryMinBackoff).filter(IOException.class::isInstance))
+            .checkpoint();
     }
 
     public Mono<Path> downloadLauncher(
