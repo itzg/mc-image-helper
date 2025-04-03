@@ -31,6 +31,9 @@ import org.jetbrains.annotations.Nullable;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
+/**
+ * Provides a client for <a href="https://docs.modrinth.com/api/">Modrinth Labrinth API</a>
+ */
 @Slf4j
 public class ModrinthApiClient implements AutoCloseable {
 
