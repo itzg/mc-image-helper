@@ -254,7 +254,7 @@ public class ModrinthPackInstaller {
         new FabricLauncherInstaller(this.outputDirectory)
             .setResultsFile(this.resultsFile)
             .installUsingVersions(
-                minecraftVersion,
+                sharedFetchOpts, minecraftVersion,
                 fabricVersion,
                 null
             );

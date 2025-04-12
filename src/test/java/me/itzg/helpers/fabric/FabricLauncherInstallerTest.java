@@ -14,6 +14,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
 import me.itzg.helpers.files.Manifests;
+import me.itzg.helpers.http.SharedFetch.Options;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.api.io.TempDir;
@@ -58,7 +59,7 @@ class FabricLauncherInstallerTest {
             .setResultsFile(resultsFile);
         installer.setFabricMetaBaseUrl(wmRuntimeInfo.getHttpBaseUrl());
 
-        installer.installUsingVersions("1.19.3", null, null);
+        installer.installUsingVersions(buildSharedFetchOptions(), "1.19.3", null, null);
 
         final Path expectedLauncherPath = tempDir.resolve("fabric-server-mc.1.19.3-loader.0.14.12-launcher.0.11.1.jar");
         assertThat(expectedLauncherPath)
@@ -84,6 +85,10 @@ class FabricLauncherInstallerTest {
             .at("/files").isArrayContaining("fabric-server-mc.1.19.3-loader.0.14.12-launcher.0.11.1.jar");
     }
 
+    private Options buildSharedFetchOptions() {
+        return Options.builder().build();
+    }
+
     @Test
     void testWithProvidedUri(WireMockRuntimeInfo wmRuntimeInfo) throws IOException {
         stubFor(
@@ -104,7 +109,7 @@ class FabricLauncherInstallerTest {
             .setResultsFile(expectedResultsPath);
         final URI loaderUri = URI.create(wmRuntimeInfo.getHttpBaseUrl() + "/fabric-launcher.jar");
 
-        installer.installUsingUri(loaderUri);
+        installer.installUsingUri(Options.builder().build(), loaderUri);
 
         final Path expectedLauncherPath = tempDir.resolve("fabric-launcher.jar");
         assertThat(expectedLauncherPath)
@@ -139,7 +144,7 @@ class FabricLauncherInstallerTest {
 
         final FabricLauncherInstaller installer = new FabricLauncherInstaller(tempDir);
         installer.installUsingUri(
-            URI.create(wmRuntimeInfo.getHttpBaseUrl() + "/server")
+            Options.builder().build(), URI.create(wmRuntimeInfo.getHttpBaseUrl() + "/server")
         );
 
         final Path expectedLauncherPath = tempDir.resolve("fabric-server-mc.1.19.3-loader.0.14.12-launcher.0.11.1.jar");
@@ -178,7 +183,7 @@ class FabricLauncherInstallerTest {
         installer.setFabricMetaBaseUrl(wmRuntimeInfo.getHttpBaseUrl());
 
         installer.installUsingVersions(
-            "1.19.2", null, null
+            buildSharedFetchOptions(), "1.19.2", null, null
         );
 
         final Path expectedLauncher192 = tempDir.resolve("fabric-server-mc.1.19.2-loader.0.14.12-launcher.0.11.1.jar");
@@ -189,7 +194,7 @@ class FabricLauncherInstallerTest {
         // Now upgrade from 1.19.2 to 1.19.3
 
         installer.installUsingVersions(
-            "1.19.3", null, null
+            buildSharedFetchOptions(), "1.19.3", null, null
         );
 
         final Path expectedLauncher193 = tempDir.resolve("fabric-server-mc.1.19.3-loader.0.14.12-launcher.0.11.1.jar");
@@ -212,7 +217,7 @@ class FabricLauncherInstallerTest {
         installer.setFabricMetaBaseUrl(wmRuntimeInfo.getHttpBaseUrl());
 
         installer.installUsingVersions(
-            "1.19.2", null, null
+            buildSharedFetchOptions(), "1.19.2", null, null
         );
 
         wm.verifyThat(
@@ -234,7 +239,7 @@ class FabricLauncherInstallerTest {
         wm.resetRequests();
 
         installer.installUsingVersions(
-            "1.19.2", "0.14.12", "0.11.1"
+            buildSharedFetchOptions(), "1.19.2", "0.14.12", "0.11.1"
         );
 
         assertThat(expectedLauncher192)
@@ -253,6 +258,6 @@ class FabricLauncherInstallerTest {
             .setResultsFile(resultsFile);
         installer.setFabricMetaBaseUrl("http://localhost:8080");
 
-        installer.installUsingVersions("1.19.3", null, null);
+        installer.installUsingVersions(buildSharedFetchOptions(), "1.19.3", null, null);
     }
 }

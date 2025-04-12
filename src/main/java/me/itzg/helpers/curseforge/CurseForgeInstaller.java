@@ -962,7 +962,7 @@ public class CurseForgeInstaller {
         final FabricLauncherInstaller installer = new FabricLauncherInstaller(outputDir)
             .setResultsFile(resultsFile)
             .setForceReinstall(forceReinstallModloader);
-        installer.installUsingVersions(minecraftVersion, loaderVersion, null);
+        installer.installUsingVersions(sharedFetchOptions, minecraftVersion, loaderVersion, null);
     }
 
     private void prepareForge(SharedFetch sharedFetch, String minecraftVersion, String loaderVersion) {
