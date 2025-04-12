@@ -6,6 +6,7 @@ import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.files.ResultsFileWriter;
+import me.itzg.helpers.http.SharedFetchArgs;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.ExitCode;
@@ -29,6 +30,9 @@ public class InstallFabricLoaderCommand implements Callable<Integer> {
 
     @ArgGroup
     OriginOptions originOptions = new OriginOptions();
+
+    @ArgGroup(exclusive = false)
+    SharedFetchArgs sharedFetchArgs = new SharedFetchArgs();
 
     static class OriginOptions {
         @ArgGroup(exclusive = false)
@@ -84,13 +88,14 @@ public class InstallFabricLoaderCommand implements Callable<Integer> {
             .setResultsFile(resultsFile);
 
         if (originOptions.fromUri != null) {
-            installer.installUsingUri(originOptions.fromUri);
+            installer.installUsingUri(sharedFetchArgs.options(), originOptions.fromUri);
         }
         else if (originOptions.launcherFile != null) {
             installer.installUsingLocalFile(originOptions.launcherFile);
         }
         else {
             installer.installUsingVersions(
+                sharedFetchArgs.options(),
                 originOptions.versionOptions.minecraftVersion,
                 originOptions.versionOptions.loaderVersion,
                 originOptions.versionOptions.installerVersion

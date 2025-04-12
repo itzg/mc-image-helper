@@ -43,11 +43,11 @@ public class FabricLauncherInstaller {
     private boolean forceReinstall;
 
     public void installUsingVersions(
-        @NonNull String minecraftVersion,
+        Options sharedFetchOptions, @NonNull String minecraftVersion,
         @Nullable String loaderVersion,
         @Nullable String installerVersion
     ) {
-        try (SharedFetch sharedFetch = sharedFetch("fabric", Options.builder().build())) {
+        try (SharedFetch sharedFetch = sharedFetch("fabric", sharedFetchOptions)) {
             final FabricMetaClient fabricMetaClient = new FabricMetaClient(sharedFetch, fabricMetaBaseUrl);
 
             fabricMetaClient.resolveMinecraftVersion(minecraftVersion)
@@ -156,9 +156,9 @@ public class FabricLauncherInstaller {
         return Mono.just(newManifest);
     }
 
-    public void installUsingUri(URI loaderUri) throws IOException {
+    public void installUsingUri(Options sharedFetchOptions, URI loaderUri) throws IOException {
         final Path launcherPath;
-        try (SharedFetch sharedFetch = sharedFetch("fabric", Options.builder().build())) {
+        try (SharedFetch sharedFetch = sharedFetch("fabric", sharedFetchOptions)) {
             launcherPath = sharedFetch.fetch(loaderUri)
                 .toDirectory(outputDir)
                 .skipUpToDate(true)

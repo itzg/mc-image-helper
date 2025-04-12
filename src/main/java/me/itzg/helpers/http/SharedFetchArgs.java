@@ -34,7 +34,7 @@ public class SharedFetchArgs {
         optionsBuilder.tlsHandshakeTimeout(timeout);
     }
 
-    @Option(names = "--connection-pool-max-idle-timeout", defaultValue = "${env:FETCH_CONNECTION_POOL_MAX_IDLE_TIMEOUT}",
+    @Option(names = "--connection-pool-max-idle-timeout", defaultValue = "${env:FETCH_CONNECTION_POOL_MAX_IDLE_TIMEOUT:-PT15S}",
         paramLabel = "DURATION"
     )
     public void setConnectionPoolMaxIdleTimeout(Duration timeout) {
