@@ -1,5 +1,6 @@
 package me.itzg.helpers.modrinth;
 
+import static com.github.stefanbirkner.systemlambda.SystemLambda.tapSystemErrNormalized;
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
@@ -223,6 +224,44 @@ class ModrinthCommandTest {
             );
 
         assertThat(exitCode).isNotEqualTo(ExitCode.OK);
+    }
+
+    @Test
+    void handlesNotExistentVersionId(@TempDir Path tempDir) throws Exception {
+        stubFor(
+            get(urlPathMatching("/v2/projects"))
+                .withQueryParam("ids", equalTo("[\"lithium\"]"))
+                .willReturn(aResponse()
+                    .withHeader("Content-Type", "application/json")
+                    .withBodyFile("bulk-lithium.json")
+                )
+        );
+
+        stubFor(
+            get(urlPathMatching("/v2/version/vWYoZjBF"))
+                .willReturn(aResponse()
+                    .withStatus(404)
+                )
+        );
+
+        final String out = tapSystemErrNormalized(() -> {
+            final int exitCode = new CommandLine(
+                new ModrinthCommand()
+            )
+                .execute(
+                    "--api-base-url", wm.getRuntimeInfo().getHttpBaseUrl(),
+                    "--output-directory", tempDir.toString(),
+                    "--game-version", "1.21.5",
+                    "--loader", "fabric",
+                    "--projects", "lithium:vWYoZjBF"
+                );
+
+            assertThat(exitCode).isNotEqualTo(ExitCode.OK);
+        });
+
+        assertThat(out)
+            .contains("InvalidParameterException")
+            .contains("Version vWYoZjBF does not exist");
     }
 
     @ParameterizedTest

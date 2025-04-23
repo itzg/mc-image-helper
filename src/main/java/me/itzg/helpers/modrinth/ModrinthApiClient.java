@@ -17,6 +17,7 @@ import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidParameterException;
+import me.itzg.helpers.http.FailedRequestException;
 import me.itzg.helpers.http.Fetch;
 import me.itzg.helpers.http.FileDownloadedHandler;
 import me.itzg.helpers.http.SharedFetch;
@@ -146,7 +147,11 @@ public class ModrinthApiClient implements AutoCloseable {
             return getVersionsForProject(project.getId(), loaderToQuery, gameVersion)
                 .mapNotNull(versions -> pickVersion(project, versions, projectRef.getVersionType()));
         } else if (projectRef.hasVersionId()) {
-            return getVersionFromId(projectRef.getVersionId());
+            return getVersionFromId(projectRef.getVersionId())
+                .onErrorMap(FailedRequestException::isNotFound, throwable ->
+                    new InvalidParameterException(String.format("Version %s does not exist, requested for project %s",
+                        projectRef.getVersionId(), project.getSlug()))
+                );
         } else {
             return getVersionsForProject(project.getId(), loaderToQuery, gameVersion)
                     .mapNotNull(versions -> pickVersion(project, versions, defaultVersionType));
