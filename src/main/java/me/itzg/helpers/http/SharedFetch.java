@@ -77,7 +77,7 @@ public class SharedFetch implements AutoCloseable {
 
         headers.put("x-fetch-session", fetchSessionId);
 
-        concurrencyLimiter = new ConcurrencyLimiter(options.getConcurrentFileDownloads());
+        concurrencyLimiter = new ConcurrencyLimiterImpl(options.getConcurrentFileDownloads());
     }
 
     public FetchBuilderBase<?> fetch(URI uri) {
