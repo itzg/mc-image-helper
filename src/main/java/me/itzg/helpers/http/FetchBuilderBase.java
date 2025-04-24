@@ -142,6 +142,10 @@ public class FetchBuilderBase<SELF extends FetchBuilderBase<SELF>> {
         return state.uri;
     }
 
+    protected ConcurrencyLimiter getConcurrencyLimiter() {
+        return state.sharedFetch != null ? state.sharedFetch.getConcurrencyLimiter() : null;
+    }
+
     public Set<String> getAcceptContentTypes() {
         return state.acceptContentTypes;
     }

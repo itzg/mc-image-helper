@@ -33,6 +33,8 @@ public class SharedFetch implements AutoCloseable {
 
     private final HttpClient reactiveClient;
 
+    private final ConcurrencyLimiter concurrencyLimiter;
+
     public SharedFetch(String forCommand, Options options) {
         final String userAgent = String.format("%s/%s/%s (cmd=%s)",
             "itzg",
@@ -74,6 +76,8 @@ public class SharedFetch implements AutoCloseable {
             );
 
         headers.put("x-fetch-session", fetchSessionId);
+
+        concurrencyLimiter = new ConcurrencyLimiter(options.getConcurrentFileDownloads());
     }
 
     public FetchBuilderBase<?> fetch(URI uri) {
@@ -116,6 +120,9 @@ public class SharedFetch implements AutoCloseable {
         @Default
         private final Duration pendingAcquireTimeout = Duration.ofSeconds(120);
 
+        @Default
+        private final int concurrentFileDownloads = 10;
+
         private final Map<String,String> extraHeaders;
 
         public Options withHeader(String key, String value) {
@@ -124,7 +131,7 @@ public class SharedFetch implements AutoCloseable {
             newHeaders.put(key, value);
 
             return new Options(
-                responseTimeout, tlsHandshakeTimeout, maxIdleTimeout, pendingAcquireTimeout,
+                responseTimeout, tlsHandshakeTimeout, maxIdleTimeout, pendingAcquireTimeout, concurrentFileDownloads,
                 newHeaders
             );
         }
