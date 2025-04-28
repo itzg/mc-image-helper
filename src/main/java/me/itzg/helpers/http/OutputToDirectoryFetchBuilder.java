@@ -4,17 +4,19 @@ import static io.netty.handler.codec.http.HttpHeaderNames.IF_MODIFIED_SINCE;
 import static io.netty.handler.codec.http.HttpHeaderNames.LAST_MODIFIED;
 import static java.util.Objects.requireNonNull;
 
-import io.netty.handler.codec.http.HttpHeaderNames;
-import io.netty.handler.codec.http.HttpResponseStatus;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
+
+import org.jetbrains.annotations.NotNull;
+
+import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.files.ReactiveFileUtils;
-import org.jetbrains.annotations.NotNull;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import reactor.netty.ByteBufFlux;
@@ -75,12 +77,12 @@ public class OutputToDirectoryFetchBuilder extends FetchBuilderBase<OutputToDire
                 .head()
                 .uri(uri())
                 .responseSingle((resp, bodyMono) -> {
-                    if (notSuccess(resp)) {
-                        return failedRequestMono(resp, bodyMono, "Extracting filename");
-                    }
-
                     if (isHeadUnsupportedResponse(resp)) {
                         return assembleFileDownloadNameViaGet(client);
+                    }
+
+                    if (notSuccess(resp)) {
+                        return failedRequestMono(resp, bodyMono, "Extracting filename");
                     }
 
                     final Path outputFile = outputDirectory.resolve(extractFilename(resp));
