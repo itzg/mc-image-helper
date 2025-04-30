@@ -184,7 +184,9 @@ public class CurseForgeApiClient implements AutoCloseable {
                 log.debug("No matching files trying fileMatcher={} against {}", fileMatcher,
                     mod.getLatestFiles()
                 );
-                return new GenericException("No matching files found for mod");
+                return new GenericException(String.format("No matching files found for mod with id=%s, name=%s using fileMatcher='%s'",
+                    mod.getId(), mod.getName(), fileMatcher)
+                );
             });
     }
 
