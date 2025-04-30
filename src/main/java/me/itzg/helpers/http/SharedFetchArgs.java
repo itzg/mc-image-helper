@@ -48,14 +48,6 @@ public class SharedFetchArgs {
         optionsBuilder.pendingAcquireTimeout(timeout);
     }
 
-    @Option(names = "--concurrent-file-downloads", defaultValue = "${env:FETCH_CONCURRENT_FILE_DOWNLOADS:-10}",
-        paramLabel = "COUNT",
-        description = "The maximum number of concurrent file downloads. Default: ${DEFAULT-VALUE}"
-    )
-    public void setConcurrentFileDownloads(int concurrentFileDownloads) {
-        optionsBuilder.concurrentFileDownloads(concurrentFileDownloads);
-    }
-
     public Options options() {
         return optionsBuilder.build();
     }
