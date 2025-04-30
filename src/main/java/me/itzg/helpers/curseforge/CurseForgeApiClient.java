@@ -181,11 +181,12 @@ public class CurseForgeApiClient implements AutoCloseable {
                     (fileMatcher == null || file.getFileName().contains(fileMatcher)))
             .findFirst()
             .orElseThrow(() -> {
-                log.debug("No matching files trying fileMatcher={} against {}", fileMatcher,
-                    mod.getLatestFiles()
+                log.debug("No matching files for mod id={} name={} trying fileMatcher={}, sample of latest files={}",
+                    mod.getId(), mod.getName(),
+                    fileMatcher, mod.getLatestFiles()
                 );
-                return new GenericException(String.format("No matching files found for mod with id=%s, name=%s using fileMatcher='%s'",
-                    mod.getId(), mod.getName(), fileMatcher)
+                return new GenericException(String.format("No matching files found for mod '%s' (%d) using fileMatcher '%s'",
+                    mod.getSlug(), mod.getId(), fileMatcher)
                 );
             });
     }
