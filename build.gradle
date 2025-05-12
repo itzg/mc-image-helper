@@ -87,7 +87,7 @@ dependencies {
   implementation 'ch.qos.logback:logback-core'
   implementation 'ch.qos.logback:logback-classic'
   implementation "info.picocli:picocli:${picocliVersion}"
-  implementation 'org.fusesource.jansi:jansi:2.4.1'
+  implementation 'org.fusesource.jansi:jansi:2.4.2'
   implementation 'com.fasterxml.jackson.core:jackson-databind'
   implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
   implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-xml'
@@ -96,7 +96,7 @@ dependencies {
   // https://github.com/mbknor/mbknor-jackson-jsonSchema
   implementation 'com.kjetland:mbknor-jackson-jsonschema_2.13:1.0.39'
   implementation 'com.jayway.jsonpath:json-path:2.9.0'
-  implementation 'org.apache.httpcomponents.client5:httpclient5:5.4.3'
+  implementation 'org.apache.httpcomponents.client5:httpclient5:5.4.4'
   implementation 'io.projectreactor.netty:reactor-netty-http:1.2.5'
   implementation 'org.apache.maven:maven-artifact:3.9.9'
   implementation 'commons-codec:commons-codec:1.18.0'
