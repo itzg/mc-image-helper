@@ -9,7 +9,9 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.cache.ApiCaching;
 import me.itzg.helpers.curseforge.model.Category;
@@ -174,19 +176,25 @@ public class CurseForgeApiClient implements AutoCloseable {
             .toObject(GetModFilesResponse.class)
             .execute();
 
-        return resp.getData().stream()
+        final List<CurseForgeFile> files = resp.getData();
+
+        return files.stream()
             .filter(file ->
                 // even though we're preparing a server, we need client modpack to get deterministic manifest layout
                 !file.isServerPack() &&
                     (fileMatcher == null || file.getFileName().contains(fileMatcher)))
             .findFirst()
             .orElseThrow(() -> {
+                final String names = files.stream()
+                    .map(CurseForgeFile::getFileName)
+                    .collect(Collectors.joining(","));
+
                 log.debug("No matching files for mod id={} name={} trying fileMatcher={}, sample of latest files={}",
                     mod.getId(), mod.getName(),
                     fileMatcher, mod.getLatestFiles()
                 );
-                return new GenericException(String.format("No matching files found for mod '%s' (%d) using fileMatcher '%s'",
-                    mod.getSlug(), mod.getId(), fileMatcher)
+                return new GenericException(String.format("No matching files found for mod '%s' (%d) using fileMatcher '%s': %s",
+                    mod.getSlug(), mod.getId(), fileMatcher, names)
                 );
             });
     }
