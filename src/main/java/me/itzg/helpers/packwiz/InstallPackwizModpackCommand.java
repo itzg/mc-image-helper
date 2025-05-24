@@ -2,15 +2,21 @@ package me.itzg.helpers.packwiz;
 
 import com.fasterxml.jackson.dataformat.toml.TomlMapper;
 import lombok.extern.slf4j.Slf4j;
+import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidParameterException;
+import me.itzg.helpers.fabric.FabricLauncherInstaller;
 import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.files.ResultsFileWriter;
+import me.itzg.helpers.forge.ForgeInstaller;
+import me.itzg.helpers.forge.ForgeInstallerResolver;
+import me.itzg.helpers.forge.NeoForgeInstallerResolver;
 import me.itzg.helpers.http.Fetch;
 import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.http.SharedFetchArgs;
 import me.itzg.helpers.modrinth.ModrinthModpackManifest;
 import me.itzg.helpers.packwiz.model.PackwizModLoader;
 import me.itzg.helpers.packwiz.model.PackwizPack;
+import me.itzg.helpers.quilt.QuiltInstaller;
 import org.apache.commons.lang3.tuple.Pair;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
@@ -61,15 +67,19 @@ public final class InstallPackwizModpackCommand implements Callable<Integer> {
                 return ExitCode.OK;
             }
 
+            final String minecraftVersion = newManifest.minecraftVersion();
+            if (minecraftVersion == null) {
+                throw new GenericException("Minecraft version not set in packwiz pack");
+            }
+            // TODO might need to set/save the Minecraft version somewhere
+
             final Pair<PackwizModLoader, String> loaderInfo = getModLoader(newManifest);
             if (loaderInfo != null) {
                 final PackwizModLoader loader = loaderInfo.getLeft();
                 final String version = loaderInfo.getRight();
-                // TODO install modloader, see ModrinthPackInstaller::applyModLoader
+                installModLoader(fetch, loader, version, minecraftVersion);
             }
 
-            // might need to set the Minecraft version somewhere
-            final String minecraftVersion = newManifest.minecraftVersion();
             // populate the results file
             // run packwiz bootstrap
         }
@@ -78,6 +88,35 @@ public final class InstallPackwizModpackCommand implements Callable<Integer> {
         Manifests.save(outputDirectory, ModrinthModpackManifest.ID, newManifest);
 
         return ExitCode.OK;
+    }
+
+    private void installModLoader(SharedFetch fetch, PackwizModLoader loader, String loaderVersion, String minecraftVersion) {
+        // TODO support forceReinstall parameters (the falses)
+        switch (loader) {
+            case NEOFORGE:
+                new ForgeInstaller(new NeoForgeInstallerResolver(fetch, minecraftVersion, loaderVersion))
+                    .install(outputDirectory, resultsFile, false, "NeoForge");
+                break;
+            case FORGE:
+                new ForgeInstaller(new ForgeInstallerResolver(fetch, minecraftVersion, loaderVersion))
+                    .install(outputDirectory, resultsFile, false, "Forge");
+                break;
+            case FABRIC:
+                new FabricLauncherInstaller(outputDirectory)
+                    .setResultsFile(resultsFile)
+                    .installUsingVersions(sharedFetchArgs.options(), minecraftVersion, loaderVersion, null);
+                break;
+            case QUILT:
+                try (QuiltInstaller installer = new QuiltInstaller(
+                    QuiltInstaller.DEFAULT_REPO_URL,
+                    sharedFetchArgs.options(),
+                    outputDirectory,
+                    minecraftVersion
+                ).setResultsFile(resultsFile)) {
+                    installer.installWithVersion(null, loaderVersion);
+                }
+                break;
+        }
     }
 
     private Pair<PackwizModLoader, String> getModLoader(PackwizModpackManifest manifest) {
