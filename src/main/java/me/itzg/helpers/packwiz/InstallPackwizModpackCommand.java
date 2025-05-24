@@ -14,10 +14,8 @@ import me.itzg.helpers.http.Fetch;
 import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.http.SharedFetchArgs;
 import me.itzg.helpers.modrinth.ModrinthModpackManifest;
-import me.itzg.helpers.packwiz.model.PackwizModLoader;
 import me.itzg.helpers.packwiz.model.PackwizPack;
 import me.itzg.helpers.quilt.QuiltInstaller;
-import org.apache.commons.lang3.tuple.Pair;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.ExitCode;
@@ -46,7 +44,7 @@ public final class InstallPackwizModpackCommand implements Callable<Integer> {
     Path resultsFile;
 
     @Option(names = "--force-update", defaultValue = "${env:PACKWIZ_FORCE_UPDATE:-false}",
-        description = "Force updating the pack even when the version hasn't changed (default: ${DEFAULT-VALUE})"
+        description = "Force update the pack even when the version hasn't changed (default: ${DEFAULT-VALUE})"
     )
     boolean forceUpdate;
 
@@ -73,15 +71,10 @@ public final class InstallPackwizModpackCommand implements Callable<Integer> {
             }
             // TODO might need to set/save the Minecraft version somewhere
 
-            final Pair<PackwizModLoader, String> loaderInfo = getModLoader(newManifest);
-            if (loaderInfo != null) {
-                final PackwizModLoader loader = loaderInfo.getLeft();
-                final String version = loaderInfo.getRight();
-                installModLoader(fetch, loader, version, minecraftVersion);
-            }
+            installModLoader(newManifest, fetch);
 
-            // populate the results file
             // run packwiz bootstrap
+            // populate the results file (MODPACK_NAME, MODPACK_VERSION)
         }
 
         Manifests.cleanup(outputDirectory, prevManifest, newManifest, log);
@@ -90,59 +83,44 @@ public final class InstallPackwizModpackCommand implements Callable<Integer> {
         return ExitCode.OK;
     }
 
-    private void installModLoader(SharedFetch fetch, PackwizModLoader loader, String loaderVersion, String minecraftVersion) {
+    private void installModLoader(PackwizModpackManifest manifest, SharedFetch fetch) {
+        final String minecraftVersion = manifest.minecraftVersion();
         // TODO support forceReinstall parameters (the falses)
-        switch (loader) {
-            case NEOFORGE:
-                new ForgeInstaller(new NeoForgeInstallerResolver(fetch, minecraftVersion, loaderVersion))
-                    .install(outputDirectory, resultsFile, false, "NeoForge");
-                break;
-            case FORGE:
-                new ForgeInstaller(new ForgeInstallerResolver(fetch, minecraftVersion, loaderVersion))
-                    .install(outputDirectory, resultsFile, false, "Forge");
-                break;
-            case FABRIC:
-                new FabricLauncherInstaller(outputDirectory)
-                    .setResultsFile(resultsFile)
-                    .installUsingVersions(sharedFetchArgs.options(), minecraftVersion, loaderVersion, null);
-                break;
-            case QUILT:
-                try (QuiltInstaller installer = new QuiltInstaller(
-                    QuiltInstaller.DEFAULT_REPO_URL,
-                    sharedFetchArgs.options(),
-                    outputDirectory,
-                    minecraftVersion
-                ).setResultsFile(resultsFile)) {
-                    installer.installWithVersion(null, loaderVersion);
-                }
-                break;
-        }
-    }
-
-    private Pair<PackwizModLoader, String> getModLoader(PackwizModpackManifest manifest) {
         // check NeoForge and Forge first, in case the pack is using Fabric mods on (Neo)Forge via Sinytra Connector or similar
         // (packwiz requires you to declare a fabric version in your pack.toml to add fabric mods to a (neo)forge-based pack)
-        final String neoforge = manifest.neoforgeVersion();
-        if (neoforge != null) {
-            return Pair.of(PackwizModLoader.NEOFORGE, neoforge);
+        final String neoforgeVersion = manifest.neoforgeVersion();
+        if (neoforgeVersion != null) {
+            new ForgeInstaller(new NeoForgeInstallerResolver(fetch, minecraftVersion, neoforgeVersion))
+                .install(outputDirectory, resultsFile, false, "NeoForge");
+            return;
         }
 
-        final String forge = manifest.forgeVersion();
-        if (forge != null) {
-            return Pair.of(PackwizModLoader.FORGE, forge);
+        final String forgeVersion = manifest.forgeVersion();
+        if (forgeVersion != null) {
+            new ForgeInstaller(new ForgeInstallerResolver(fetch, minecraftVersion, forgeVersion))
+                .install(outputDirectory, resultsFile, false, "Forge");
+            return;
         }
 
-        final String fabric = manifest.fabricVersion();
-        if (fabric != null) {
-            return Pair.of(PackwizModLoader.FABRIC, fabric);
+        final String fabricVersion = manifest.fabricVersion();
+        if (fabricVersion != null) {
+            new FabricLauncherInstaller(outputDirectory)
+                .setResultsFile(resultsFile)
+                .installUsingVersions(sharedFetchArgs.options(), minecraftVersion, fabricVersion, null);
+            return;
         }
 
-        final String quilt = manifest.quiltVersion();
-        if (quilt != null) {
-            return Pair.of(PackwizModLoader.QUILT, quilt);
+        final String quiltVersion = manifest.quiltVersion();
+        if (quiltVersion != null) {
+            try (QuiltInstaller installer = new QuiltInstaller(
+                QuiltInstaller.DEFAULT_REPO_URL,
+                sharedFetchArgs.options(),
+                outputDirectory,
+                minecraftVersion
+            ).setResultsFile(resultsFile)) {
+                installer.installWithVersion(null, quiltVersion);
+            }
         }
-
-        return null;
     }
 
     private PackwizModpackManifest getManifest(SharedFetch fetch) throws IOException {
