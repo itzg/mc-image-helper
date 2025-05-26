@@ -4,19 +4,17 @@ import static io.netty.handler.codec.http.HttpHeaderNames.IF_MODIFIED_SINCE;
 import static io.netty.handler.codec.http.HttpHeaderNames.LAST_MODIFIED;
 import static java.util.Objects.requireNonNull;
 
+import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
-
-import org.jetbrains.annotations.NotNull;
-
-import io.netty.handler.codec.http.HttpHeaderNames;
-import io.netty.handler.codec.http.HttpResponseStatus;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.files.ReactiveFileUtils;
+import org.jetbrains.annotations.NotNull;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import reactor.netty.ByteBufFlux;
@@ -244,7 +242,7 @@ public class OutputToDirectoryFetchBuilder extends FetchBuilderBase<OutputToDire
     private Mono<Path> copyBodyInputStreamToFile(ByteBufFlux byteBufFlux, Path outputFile) {
         log.trace("Copying response body to file={}", outputFile);
 
-        return ReactiveFileUtils.copyByteBufFluxToFile(byteBufFlux, outputFile)
+        return ReactiveFileUtils.writeByteBufFluxToFile(byteBufFlux, outputFile)
             .map(fileSize -> {
                 statusHandler.call(FileDownloadStatus.DOWNLOADED, uri(), outputFile);
                 downloadedHandler.call(uri(), outputFile, fileSize);

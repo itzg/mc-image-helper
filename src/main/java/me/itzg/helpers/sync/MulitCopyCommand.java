@@ -228,6 +228,9 @@ public class MulitCopyCommand implements Callable<Integer> {
             .toDirectory(dest)
             .skipUpToDate(skipUpToDate)
             .skipExisting(skipExisting)
+            .handleDownloaded((downloaded, uri, size) -> {
+                log.debug("Downloaded {} from {} ({} bytes)", downloaded, uri, size);
+            })
             .handleStatus((status, uri, file) -> {
                 switch (status) {
                     case DOWNLOADING:
@@ -240,7 +243,6 @@ public class MulitCopyCommand implements Callable<Integer> {
                         log.info("The file {} already exists", file);
                         break;
                     case DOWNLOADED:
-                        log.debug("Finished downloading to file={}", file);
                         break;
                 }
             })

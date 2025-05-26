@@ -107,7 +107,7 @@ public class SpecificFileFetchBuilder extends FetchBuilderBase<SpecificFileFetch
                         return failedContentTypeMono(resp);
                     }
 
-                    return ReactiveFileUtils.copyByteBufFluxToFile(byteBufFlux, file)
+                    return ReactiveFileUtils.writeByteBufFluxToFile(byteBufFlux, file)
                         .flatMap(fileSize -> {
                             statusHandler.call(FileDownloadStatus.DOWNLOADED, uri, file);
                             downloadedHandler.call(uri, file, fileSize);

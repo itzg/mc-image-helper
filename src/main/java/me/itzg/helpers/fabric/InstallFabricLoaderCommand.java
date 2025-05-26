@@ -28,6 +28,9 @@ public class InstallFabricLoaderCommand implements Callable<Integer> {
     @Option(names = "--results-file", description = ResultsFileWriter.OPTION_DESCRIPTION, paramLabel = "FILE")
     Path resultsFile;
 
+    @Option(names = "--force-reinstall", description = "Force reinstall of the loader even if it already exists")
+    boolean forceReinstall;
+
     @ArgGroup
     OriginOptions originOptions = new OriginOptions();
 
@@ -85,7 +88,8 @@ public class InstallFabricLoaderCommand implements Callable<Integer> {
     @Override
     public Integer call() throws Exception {
         final FabricLauncherInstaller installer = new FabricLauncherInstaller(outputDirectory)
-            .setResultsFile(resultsFile);
+            .setResultsFile(resultsFile)
+            .setForceReinstall(forceReinstall);
 
         if (originOptions.fromUri != null) {
             installer.installUsingUri(sharedFetchArgs.options(), originOptions.fromUri);
