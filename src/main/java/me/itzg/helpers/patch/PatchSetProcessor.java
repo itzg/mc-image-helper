@@ -29,15 +29,20 @@ public class PatchSetProcessor {
     private final Interpolator interpolator;
 
     public PatchSetProcessor(Interpolator interpolator) {
-        this.interpolator = interpolator;
+        this(interpolator, false);
     }
 
-    private final FileFormat[] fileFormats = new FileFormat[]{
-            new JsonFileFormat(),
-            new Json5FileFormat(),
-            new YamlFileFormat(),
-            new TomlFileFormat()
-    };
+    public PatchSetProcessor(Interpolator interpolator, boolean jsonAllowComments) {
+        this.interpolator = interpolator;
+        fileFormats = new FileFormat[]{
+                new JsonFileFormat(jsonAllowComments),
+                new Json5FileFormat(),
+                new YamlFileFormat(),
+                new TomlFileFormat()
+        };
+    }
+
+    private final FileFormat[] fileFormats;
 
     public void process(PatchSet patchSet) {
         log.debug("patchSet={}", patchSet);

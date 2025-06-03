@@ -1,0 +1,6 @@
+{
+  "outer": {
+    // some comment
+    "field1": "old"
+  }
+}

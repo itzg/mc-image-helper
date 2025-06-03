@@ -13,28 +13,39 @@ import me.itzg.helpers.env.StandardEnvironmentVariablesProvider;
 import me.itzg.helpers.patch.model.PatchDefinition;
 import me.itzg.helpers.patch.model.PatchSet;
 import picocli.CommandLine;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
+import picocli.CommandLine.Parameters;
 
-@CommandLine.Command(name = "patch",
+@Command(name = "patch",
     description = "Patches one or more existing files using JSON path based operations%n"
         + "Supports the file formats:%n"
         + "- JSON%n"
         + "- JSON5%n"
         + "- Yaml%n"
-        + "- TOML, but processed output is not pretty"
+        + "- TOML, but processed output is not pretty",
+    showDefaultValues = true
 )
 @Slf4j
 public class PatchCommand implements Callable<Integer> {
-    @CommandLine.Option(names = {"-h", "--help"}, usageHelp = true, description = "Show this usage and exit")
+
+    private static final String ENV_JSON_ALLOW_COMMENTS = "PATCH_JSON_ALLOW_COMMENTS";
+    @Option(names = {"-h", "--help"}, usageHelp = true, description = "Show this usage and exit")
     boolean showHelp;
 
-    @CommandLine.Option(names = "--patch-env-prefix",
+    @Option(names = "--patch-env-prefix",
             defaultValue = "CFG_",
-            showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
             description = "Only placeholder variables with this prefix will be processed"
     )
     String envPrefix;
 
-    @CommandLine.Parameters(description = "Path to a PatchSet json file or directory containing PatchDefinition json files",
+    @Option(names = "--json-allow-comments", defaultValue = "${env:" + ENV_JSON_ALLOW_COMMENTS + ":-true}",
+        description = "Whether to allow comments in JSON files. Env: " + ENV_JSON_ALLOW_COMMENTS,
+        showDefaultValue = CommandLine.Help.Visibility.ALWAYS
+    )
+    boolean jsonAllowComments;
+
+    @Parameters(description = "Path to a PatchSet json file or directory containing PatchDefinition json files",
         paramLabel = "FILE_OR_DIR"
     )
     Path patches;

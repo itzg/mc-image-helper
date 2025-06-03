@@ -16,6 +16,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.stream.Stream;
 import me.itzg.helpers.env.EnvironmentVariablesProvider;
 import me.itzg.helpers.env.Interpolator;
 import me.itzg.helpers.patch.model.PatchDefinition;
@@ -25,6 +26,9 @@ import me.itzg.helpers.patch.model.PatchSetOperation;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -34,29 +38,39 @@ class PatchSetProcessorTest {
     @Mock
     EnvironmentVariablesProvider environmentVariablesProvider;
 
-    @Test
-    void setInJson(@TempDir Path tempDir) throws IOException {
+    public static Stream<Arguments> setInJson_args() {
+        return Stream.of(
+            Arguments.arguments("testing.json", false),
+            Arguments.arguments("testing.json", true),
+            Arguments.arguments("testing-with-comment.json", true)
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("setInJson_args")
+    void setInJson(String file, boolean allowComments, @TempDir Path tempDir) throws IOException {
         final Path src = tempDir.resolve("testing.json");
-        Files.copy(Paths.get("src/test/resources/patch/testing.json"), src);
+        Files.copy(Paths.get("src/test/resources/patch/" + file), src);
 
         final PatchSetProcessor processor = new PatchSetProcessor(
-                new Interpolator(environmentVariablesProvider, "CFG_")
+            new Interpolator(environmentVariablesProvider, "CFG_"),
+            allowComments
         );
 
         processor.process(new PatchSet()
-                .setPatches(singletonList(
-                    new PatchDefinition()
-                        .setFile(src.toString())
-                        .setOps(singletonList(
-                            new PatchSetOperation()
-                                .setPath("$.outer.field1")
-                                .setValue(new TextNode("new value"))
-                        ))
-                ))
+            .setPatches(singletonList(
+                new PatchDefinition()
+                    .setFile(src.toString())
+                    .setOps(singletonList(
+                        new PatchSetOperation()
+                            .setPath("$.outer.field1")
+                            .setValue(new TextNode("new value"))
+                    ))
+            ))
         );
 
         assertThat(src).hasSameTextualContentAs(
-                Paths.get("src/test/resources/patch/expected-setInJson.json")
+            Paths.get("src/test/resources/patch/expected-setInJson.json")
         );
     }
 
