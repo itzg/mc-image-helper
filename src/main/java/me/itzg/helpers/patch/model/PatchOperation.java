@@ -6,7 +6,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 @JsonTypeInfo(include = JsonTypeInfo.As.WRAPPER_OBJECT, use = JsonTypeInfo.Id.NAME)
 @JsonSubTypes({
         @JsonSubTypes.Type(value = PatchSetOperation.class, name = "$set"),
-        @JsonSubTypes.Type(value = PatchPutOperation.class, name = "$put")
+        @JsonSubTypes.Type(value = PatchPutOperation.class, name = "$put"),
+        @JsonSubTypes.Type(value = PatchAddOperation.class, name = "$add"),
 })
 public abstract class PatchOperation {
     protected static final String VALUE_DESCRIPTION = "The value to set." +

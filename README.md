@@ -1225,6 +1225,15 @@ Example:
 }
 ```
 
+#### `$add`
+
+The `$add` operation allows for adding a value to an array.
+
+- `$add`
+    - `path` : The [JSON path](https://github.com/json-path/JsonPath#readme) to the array
+    - `value` : The value to add. If the given value is a string, variable placeholders of the form `${...}` will be replaced from the environment variables and the resulting string can be converted by setting value-type.
+    - `value-type` : **optional** [see below](#valuetype)
+
 ### ValueType
 
 One of the following identifiers or can be prefixed with `list of ` to indicate a list of the identified type:
