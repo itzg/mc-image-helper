@@ -935,7 +935,8 @@ Provides simple operations to list network interface names and check existence
 ### patch
 
 ```
-Usage: mc-image-helper patch [-h] [--patch-env-prefix=<envPrefix>] FILE_OR_DIR
+Usage: mc-image-helper patch [-h] [--json-allow-comments]
+                             [--patch-env-prefix=<envPrefix>] FILE_OR_DIR
 Patches one or more existing files using JSON path based operations
 Supports the file formats:
 - JSON
@@ -945,6 +946,9 @@ Supports the file formats:
       FILE_OR_DIR   Path to a PatchSet json file or directory containing
                       PatchDefinition json files
   -h, --help        Show this usage and exit
+      --json-allow-comments
+                    Whether to allow comments in JSON files. Env: PATCH_JSON_ALLOW_COMMENTS
+                      Default: true
       --patch-env-prefix=<envPrefix>
                     Only placeholder variables with this prefix will be
                       processed

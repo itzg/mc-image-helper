@@ -230,7 +230,7 @@ public class CurseForgeInstaller {
             );
 
         } catch (IOException e) {
-            throw new GenericException("Failed to setup API caching", e);
+            throw new GenericException("File system issue during installation", e);
         }
     }
 

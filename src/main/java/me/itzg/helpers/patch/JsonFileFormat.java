@@ -1,5 +1,6 @@
 package me.itzg.helpers.patch;
 
+import com.fasterxml.jackson.core.JsonParser.Feature;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.core.util.Separators;
@@ -19,8 +20,9 @@ public class JsonFileFormat implements FileFormat {
     private final ObjectMapper objectMapper;
     private final ObjectWriter objectWriter;
 
-    public JsonFileFormat() {
-        objectMapper = new ObjectMapper();
+    public JsonFileFormat(boolean allowComments) {
+        objectMapper = new ObjectMapper()
+            .configure(Feature.ALLOW_COMMENTS, allowComments);
         objectWriter = objectMapper.writer(
                 new DefaultPrettyPrinter()
                     .withSeparators(
