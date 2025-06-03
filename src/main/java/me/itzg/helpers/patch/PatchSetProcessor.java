@@ -17,6 +17,7 @@ import me.itzg.helpers.CharsetDetector;
 import me.itzg.helpers.env.Interpolator;
 import me.itzg.helpers.env.Interpolator.Result;
 import me.itzg.helpers.env.MissingVariablesException;
+import me.itzg.helpers.patch.model.PatchAddOperation;
 import me.itzg.helpers.patch.model.PatchDefinition;
 import me.itzg.helpers.patch.model.PatchOperation;
 import me.itzg.helpers.patch.model.PatchPutOperation;
@@ -150,6 +151,13 @@ public class PatchSetProcessor {
                         putOp.getValue(), putOp.getValueType(),
                         "put", putOp + " at " + putOp.getPath(),
                         obj -> doc.put(putOp.getPath(), putOp.getKey(), obj)
+                );
+            } else if (op instanceof PatchAddOperation) {
+                final PatchAddOperation addOp = (PatchAddOperation) op;
+                processValueType(
+                        addOp.getValue(), addOp.getValueType(),
+                        "add", addOp + " at " + addOp.getPath(),
+                        obj -> doc.add(addOp.getPath(), obj)
                 );
             }
         }

@@ -3,6 +3,7 @@ package me.itzg.helpers.patch;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
+import static uk.org.webcompere.modelassert.json.JsonAssertions.assertJson;
 import static uk.org.webcompere.modelassert.json.JsonAssertions.assertYaml;
 
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -19,6 +20,7 @@ import java.util.Arrays;
 import java.util.stream.Stream;
 import me.itzg.helpers.env.EnvironmentVariablesProvider;
 import me.itzg.helpers.env.Interpolator;
+import me.itzg.helpers.patch.model.PatchAddOperation;
 import me.itzg.helpers.patch.model.PatchDefinition;
 import me.itzg.helpers.patch.model.PatchPutOperation;
 import me.itzg.helpers.patch.model.PatchSet;
@@ -72,6 +74,31 @@ class PatchSetProcessorTest {
         assertThat(src).hasSameTextualContentAs(
             Paths.get("src/test/resources/patch/expected-setInJson.json")
         );
+    }
+
+    @Test
+    void addToArray(@TempDir Path tempDir) throws IOException {
+        final Path src = tempDir.resolve("testing.json");
+        Files.copy(Paths.get("src/test/resources/patch/testing-with-array.json"), src);
+
+        final PatchSetProcessor processor = new PatchSetProcessor(
+            new Interpolator(environmentVariablesProvider, "CFG_")
+        );
+
+        processor.process(new PatchSet()
+            .setPatches(singletonList(
+                new PatchDefinition()
+                    .setFile(src.toString())
+                    .setOps(singletonList(
+                        new PatchAddOperation()
+                            .setPath("$.outer.array")
+                            .setValue(new TextNode("new value"))
+                    ))
+            ))
+        );
+
+        assertJson(src)
+            .at("/outer/array/0").hasValue("new value");
     }
 
     @Test
