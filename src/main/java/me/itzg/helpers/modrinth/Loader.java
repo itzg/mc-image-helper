@@ -12,6 +12,7 @@ public enum Loader {
     spigot("plugins", null),
     paper("plugins", spigot),
     pufferfish("plugins", paper),
+    leaf("plugins", paper),
     purpur("plugins", paper),
     bungeecord("plugins", null),
     velocity("plugins", null),
