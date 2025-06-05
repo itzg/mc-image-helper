@@ -18,8 +18,6 @@ import me.itzg.helpers.files.ReactiveFileUtils;
 import org.apache.hc.client5.http.async.methods.AbstractBinResponseConsumer;
 import org.apache.hc.client5.http.async.methods.SimpleRequestBuilder;
 import org.apache.hc.client5.http.async.methods.SimpleRequestProducer;
-import org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient;
-import org.apache.hc.client5.http.impl.async.HttpAsyncClients;
 import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.HttpException;
 import org.apache.hc.core5.http.HttpResponse;
@@ -36,7 +34,6 @@ import reactor.netty.http.client.HttpClientResponse;
 public class OutputToDirectoryFetchBuilder extends FetchBuilderBase<OutputToDirectoryFetchBuilder> {
 
     private final Path outputDirectory;
-    private final CloseableHttpAsyncClient hcHttpClient;
 
     @Setter
     private boolean skipExisting;
@@ -56,9 +53,6 @@ public class OutputToDirectoryFetchBuilder extends FetchBuilderBase<OutputToDire
             throw new IllegalArgumentException(outputDirectory + " is not a directory or does not exist");
         }
         this.outputDirectory = outputDirectory;
-
-        hcHttpClient = HttpAsyncClients.createDefault();
-        hcHttpClient.start();
     }
 
     @SuppressWarnings("unused")
@@ -225,7 +219,7 @@ public class OutputToDirectoryFetchBuilder extends FetchBuilderBase<OutputToDire
                         .map(instant -> reqBuilder.setHeader("If-Modified-Since", httpDateTimeFormatter.format(instant)))
                         .then(
                             Mono.<Path>create(sink -> {
-                                hcHttpClient.execute(
+                                getHcAsyncClient().execute(
                                     SimpleRequestProducer.create(reqBuilder.build()),
                                     new ResponseToFileConsumer(outputFile),
                                     new MonoSinkFutureCallbackAdapter<>(sink)

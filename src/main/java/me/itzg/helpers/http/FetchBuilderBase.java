@@ -29,7 +29,9 @@ import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.http.SharedFetch.Options;
 import me.itzg.helpers.json.ObjectMappers;
+import org.apache.hc.client5.http.async.HttpAsyncClient;
 import org.apache.hc.client5.http.async.methods.SimpleRequestBuilder;
+import org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient;
 import org.slf4j.Logger;
 import reactor.core.publisher.Mono;
 import reactor.netty.ByteBufMono;
@@ -177,6 +179,10 @@ public class FetchBuilderBase<SELF extends FetchBuilderBase<SELF>> {
         R use(HttpClient client);
     }
 
+    protected interface HcAsyncClientUser<R> {
+        R use(HttpAsyncClient client);
+    }
+
     protected <R> R useReactiveClient(ReactiveClientUser<R> user) {
         if (state.sharedFetch != null) {
             return user.use(state.sharedFetch.getReactiveClient());
@@ -186,6 +192,10 @@ public class FetchBuilderBase<SELF extends FetchBuilderBase<SELF>> {
                 return user.use(sharedFetch.getReactiveClient());
             }
         }
+    }
+
+    protected CloseableHttpAsyncClient getHcAsyncClient() {
+        return state.sharedFetch.getHcAsyncClient();
     }
 
     protected static BiConsumer<? super HttpClientRequest, ? super Connection> debugLogRequest(
