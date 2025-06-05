@@ -1,19 +1,29 @@
 package me.itzg.helpers.http;
 
-import static io.netty.handler.codec.http.HttpHeaderNames.IF_MODIFIED_SINCE;
 import static io.netty.handler.codec.http.HttpHeaderNames.LAST_MODIFIED;
 import static java.util.Objects.requireNonNull;
 
 import io.netty.handler.codec.http.HttpHeaderNames;
-import io.netty.handler.codec.http.HttpResponseStatus;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.time.Instant;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.files.ReactiveFileUtils;
+import org.apache.hc.client5.http.async.methods.AbstractBinResponseConsumer;
+import org.apache.hc.client5.http.async.methods.SimpleRequestBuilder;
+import org.apache.hc.client5.http.async.methods.SimpleRequestProducer;
+import org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient;
+import org.apache.hc.client5.http.impl.async.HttpAsyncClients;
+import org.apache.hc.core5.concurrent.FutureCallback;
+import org.apache.hc.core5.http.ContentType;
+import org.apache.hc.core5.http.HttpException;
+import org.apache.hc.core5.http.HttpResponse;
 import org.jetbrains.annotations.NotNull;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -26,6 +36,7 @@ import reactor.netty.http.client.HttpClientResponse;
 public class OutputToDirectoryFetchBuilder extends FetchBuilderBase<OutputToDirectoryFetchBuilder> {
 
     private final Path outputDirectory;
+    private final CloseableHttpAsyncClient hcHttpClient;
 
     @Setter
     private boolean skipExisting;
@@ -45,6 +56,9 @@ public class OutputToDirectoryFetchBuilder extends FetchBuilderBase<OutputToDire
             throw new IllegalArgumentException(outputDirectory + " is not a directory or does not exist");
         }
         this.outputDirectory = outputDirectory;
+
+        hcHttpClient = HttpAsyncClients.createDefault();
+        hcHttpClient.start();
     }
 
     @SuppressWarnings("unused")
@@ -202,7 +216,36 @@ public class OutputToDirectoryFetchBuilder extends FetchBuilderBase<OutputToDire
 
         return alreadyUpToDateMono
             .filter(alreadyUpToDate -> !alreadyUpToDate)
-            .flatMap(notUsed -> client
+            .flatMap(notUsed ->
+
+                    Mono.<Path>create(sink -> {
+
+                        final SimpleRequestBuilder reqBuilder = SimpleRequestBuilder.get(resourceUrl);
+
+                        hcHttpClient.execute(
+                            SimpleRequestProducer.create(reqBuilder.build()),
+                            new ResponseToFileConsumer(outputFile),
+                            new FutureCallback<Path>() {
+
+                                @Override
+                                public void completed(Path result) {
+                                    sink.success(result);
+                                }
+
+                                @Override
+                                public void failed(Exception ex) {
+                                    sink.error(ex);
+                                }
+
+                                @Override
+                                public void cancelled() {
+                                    sink.success();
+                                }
+                            }
+                        );
+                    })
+
+                /*client
                 .headers(this::applyHeaders)
                 .headersWhen(headers ->
                     skipUpToDate ?
@@ -234,7 +277,7 @@ public class OutputToDirectoryFetchBuilder extends FetchBuilderBase<OutputToDire
                     return copyBodyInputStreamToFile(byteBufFlux, outputFile);
                 })
                 .last()
-                .checkpoint("Fetching file into directory")
+                .checkpoint("Fetching file into directory")*/
             )
             .defaultIfEmpty(outputFile);
     }
@@ -261,4 +304,58 @@ public class OutputToDirectoryFetchBuilder extends FetchBuilderBase<OutputToDire
         return resp.path().substring(pos + 1);
     }
 
+    private class ResponseToFileConsumer extends AbstractBinResponseConsumer<Path> {
+
+        private final Path outputFile;
+
+        private SeekableByteChannel channel;
+        private long amount;
+
+        public ResponseToFileConsumer(Path outputFile) {
+            this.outputFile = outputFile;
+        }
+
+        @Override
+        public void releaseResources() {
+            try {
+                channel.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        @Override
+        protected int capacityIncrement() {
+            return 1024;
+        }
+
+        @Override
+        protected void data(ByteBuffer src, boolean endOfStream) throws IOException {
+            amount += channel.write(src);
+            if (endOfStream) {
+                channel.close();
+
+                statusHandler.call(FileDownloadStatus.DOWNLOADED, uri(), outputFile);
+                downloadedHandler.call(uri(), outputFile, amount);
+            }
+        }
+
+        @Override
+        protected void start(HttpResponse response,
+            ContentType contentType
+        ) throws HttpException, IOException {
+            statusHandler.call(FileDownloadStatus.DOWNLOADING, uri(), outputFile);
+
+            channel = Files.newByteChannel(outputFile,
+                StandardOpenOption.WRITE,
+                StandardOpenOption.CREATE,
+                StandardOpenOption.TRUNCATE_EXISTING
+            );
+        }
+
+        @Override
+        protected Path buildResult() {
+            return outputFile;
+        }
+    }
 }
