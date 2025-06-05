@@ -1,9 +1,12 @@
 package me.itzg.helpers.http;
 
-import static io.netty.handler.codec.http.HttpHeaderNames.ACCEPT;
-import static io.netty.handler.codec.http.HttpHeaderNames.AUTHORIZATION;
-import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
+import static io.netty.handler.codec.http.HttpHeaderNames.*;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpStatusClass;
+import io.netty.handler.codec.http.HttpUtil;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
@@ -22,19 +25,12 @@ import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
-import org.slf4j.Logger;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import io.netty.handler.codec.http.HttpHeaderNames;
-import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpStatusClass;
-import io.netty.handler.codec.http.HttpUtil;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.http.SharedFetch.Options;
 import me.itzg.helpers.json.ObjectMappers;
+import org.apache.hc.client5.http.async.methods.SimpleRequestBuilder;
+import org.slf4j.Logger;
 import reactor.core.publisher.Mono;
 import reactor.netty.ByteBufMono;
 import reactor.netty.Connection;
@@ -284,6 +280,25 @@ public class FetchBuilderBase<SELF extends FetchBuilderBase<SELF>> {
         }
 
         state.requestHeaders.forEach(headers::set);
+    }
+
+    protected void applyHeaders(SimpleRequestBuilder requestBuilder) {
+        final Set<String> contentTypes = getAcceptContentTypes();
+        if (contentTypes != null && !contentTypes.isEmpty()) {
+            contentTypes.forEach(s -> requestBuilder.addHeader(ACCEPT.toString(), s));
+        }
+
+        if (state.userInfo != null) {
+            requestBuilder.setHeader(
+                AUTHORIZATION.toString(),
+                "Basic " +
+                    Base64.getEncoder().encodeToString(
+                        state.userInfo.getBytes(StandardCharsets.UTF_8)
+                    )
+            );
+        }
+
+        state.requestHeaders.forEach(requestBuilder::setHeader);
     }
 
     static String formatDuration(long millis) {

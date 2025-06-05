@@ -20,10 +20,10 @@ import org.apache.hc.client5.http.async.methods.SimpleRequestBuilder;
 import org.apache.hc.client5.http.async.methods.SimpleRequestProducer;
 import org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient;
 import org.apache.hc.client5.http.impl.async.HttpAsyncClients;
-import org.apache.hc.core5.concurrent.FutureCallback;
 import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.HttpException;
 import org.apache.hc.core5.http.HttpResponse;
+import org.apache.hc.core5.http.HttpStatus;
 import org.jetbrains.annotations.NotNull;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -216,69 +216,23 @@ public class OutputToDirectoryFetchBuilder extends FetchBuilderBase<OutputToDire
 
         return alreadyUpToDateMono
             .filter(alreadyUpToDate -> !alreadyUpToDate)
-            .flatMap(notUsed ->
+            .flatMap(notUsed -> {
+                final SimpleRequestBuilder reqBuilder = SimpleRequestBuilder.get(resourceUrl);
+                applyHeaders(reqBuilder);
 
-                    Mono.<Path>create(sink -> {
-
-                        final SimpleRequestBuilder reqBuilder = SimpleRequestBuilder.get(resourceUrl);
-
-                        hcHttpClient.execute(
-                            SimpleRequestProducer.create(reqBuilder.build()),
-                            new ResponseToFileConsumer(outputFile),
-                            new FutureCallback<Path>() {
-
-                                @Override
-                                public void completed(Path result) {
-                                    sink.success(result);
-                                }
-
-                                @Override
-                                public void failed(Exception ex) {
-                                    sink.error(ex);
-                                }
-
-                                @Override
-                                public void cancelled() {
-                                    sink.success();
-                                }
-                            }
+                return
+                    fileLastModifiedMono
+                        .map(instant -> reqBuilder.setHeader("If-Modified-Since", httpDateTimeFormatter.format(instant)))
+                        .then(
+                            Mono.<Path>create(sink -> {
+                                hcHttpClient.execute(
+                                    SimpleRequestProducer.create(reqBuilder.build()),
+                                    new ResponseToFileConsumer(outputFile),
+                                    new MonoSinkFutureCallbackAdapter<>(sink)
+                                );
+                            })
                         );
-                    })
-
-                /*client
-                .headers(this::applyHeaders)
-                .headersWhen(headers ->
-                    skipUpToDate ?
-                        fileLastModifiedMono
-                            .map(outputLastModified -> headers.set(
-                                IF_MODIFIED_SINCE,
-                                httpDateTimeFormatter.format(outputLastModified)
-                            ))
-                            .defaultIfEmpty(headers)
-                        : Mono.just(headers)
-                )
-                .followRedirect(true)
-                .doOnRequest(debugLogRequest(log, "file fetch"))
-                .doOnRequest(
-                    (httpClientRequest, connection) -> statusHandler.call(FileDownloadStatus.DOWNLOADING, uri(), outputFile))
-                .get()
-                .uri(resourceUrl)
-                .response((resp, byteBufFlux) -> {
-                    if (skipUpToDate && resp.status() == HttpResponseStatus.NOT_MODIFIED) {
-                        log.debug("The file {} is already up to date", outputFile);
-                        statusHandler.call(FileDownloadStatus.SKIP_FILE_UP_TO_DATE, uri(), outputFile);
-                        return Mono.just(outputFile);
-                    }
-
-                    if (notSuccess(resp)) {
-                        return failedRequestMono(resp, byteBufFlux.aggregate(), "Downloading file");
-                    }
-
-                    return copyBodyInputStreamToFile(byteBufFlux, outputFile);
-                })
-                .last()
-                .checkpoint("Fetching file into directory")*/
-            )
+            })
             .defaultIfEmpty(outputFile);
     }
 
@@ -317,26 +271,30 @@ public class OutputToDirectoryFetchBuilder extends FetchBuilderBase<OutputToDire
 
         @Override
         public void releaseResources() {
-            try {
-                channel.close();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+            if (channel != null) {
+                try {
+                    channel.close();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             }
         }
 
         @Override
         protected int capacityIncrement() {
-            return 1024;
+            return 4096;
         }
 
         @Override
         protected void data(ByteBuffer src, boolean endOfStream) throws IOException {
-            amount += channel.write(src);
-            if (endOfStream) {
-                channel.close();
+            if (channel != null) {
+                amount += channel.write(src);
+                if (endOfStream) {
+                    channel.close();
 
-                statusHandler.call(FileDownloadStatus.DOWNLOADED, uri(), outputFile);
-                downloadedHandler.call(uri(), outputFile, amount);
+                    statusHandler.call(FileDownloadStatus.DOWNLOADED, uri(), outputFile);
+                    downloadedHandler.call(uri(), outputFile, amount);
+                }
             }
         }
 
@@ -344,6 +302,12 @@ public class OutputToDirectoryFetchBuilder extends FetchBuilderBase<OutputToDire
         protected void start(HttpResponse response,
             ContentType contentType
         ) throws HttpException, IOException {
+            if (skipUpToDate && response.getCode() == HttpStatus.SC_NOT_MODIFIED) {
+                log.debug("The file {} is already up to date", outputFile);
+                statusHandler.call(FileDownloadStatus.SKIP_FILE_UP_TO_DATE, uri(), outputFile);
+                return;
+            }
+
             statusHandler.call(FileDownloadStatus.DOWNLOADING, uri(), outputFile);
 
             channel = Files.newByteChannel(outputFile,
