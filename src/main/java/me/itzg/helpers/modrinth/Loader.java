@@ -11,6 +11,7 @@ public enum Loader {
     bukkit("plugins", null),
     spigot("plugins", null),
     paper("plugins", spigot),
+    folia("plugins", paper),
     pufferfish("plugins", paper),
     leaf("plugins", paper),
     purpur("plugins", paper),
@@ -25,5 +26,4 @@ public enum Loader {
         this.type = type;
         this.compatibleWith = compatibleWith;
     }
-
 }
