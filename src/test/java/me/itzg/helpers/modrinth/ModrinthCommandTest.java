@@ -311,7 +311,7 @@ class ModrinthCommandTest {
                     tempDir.resolve(worldDir).toString()
                     : worldDir,
                 "--game-version", "1.21.1",
-                "--loader", "datapack",
+                "--loader", "paper",
                 "--projects", String.format("datapack:%s:%s", projectId, versionId)
             );
 
