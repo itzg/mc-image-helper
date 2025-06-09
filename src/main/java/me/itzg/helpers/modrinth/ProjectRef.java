@@ -50,7 +50,7 @@ public class ProjectRef {
         if (firstColon > 0) {
             final String prefix = projectRef.substring(0, firstColon);
             if (VALID_LOADERS.contains(prefix.toLowerCase())) {
-                loader = Loader.valueOf(prefix);
+                loader = Loader.valueOf(prefix.toLowerCase());
                 rest = projectRef.substring(firstColon + 1);
             }
         }
