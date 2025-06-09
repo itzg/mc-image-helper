@@ -229,10 +229,10 @@ public class ModrinthCommand implements Callable<Integer> {
         return null;
     }
 
-    private Path download(Loader loaderRef, VersionFile versionFile) {
+    private Path download(Loader loader, VersionFile versionFile) {
         final Path outPath;
         try {
-            final Loader effectiveLoader = loaderRef != null ? loaderRef : loader;
+            final Loader effectiveLoader = loader != null ? loader : loader;
             final String outputType = effectiveLoader.getType();
             
             if (outputType == null) {
@@ -298,7 +298,7 @@ public class ModrinthCommand implements Callable<Integer> {
         log.debug("Starting with project='{}' slug={}", project.getTitle(), project.getSlug());
 
         if (projectsProcessed.add(project.getId())) {
-            final Loader effectiveLoader = projectRef.getLoaderRef() != null ? projectRef.getLoaderRef() : loader;
+            final Loader effectiveLoader = projectRef.getLoader() != null ? projectRef.getLoader() : loader;
             
             final Version version;
             try {

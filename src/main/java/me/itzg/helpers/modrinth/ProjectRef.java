@@ -31,7 +31,7 @@ public class ProjectRef {
         .collect(Collectors.toSet());
 
     private final String idOrSlug;
-    private final Loader loaderRef;
+    private final Loader loader;
 
     /**
      * Either a remote URI or a file URI for a locally provided file
@@ -44,13 +44,13 @@ public class ProjectRef {
     public static ProjectRef parse(String projectRef) {
         // First, try to split into potential loader prefix and the rest
         final int firstColon = projectRef.indexOf(':');
-        Loader loaderRef = null;
+        Loader loader = null;
         String rest = projectRef;
         
         if (firstColon > 0) {
             final String prefix = projectRef.substring(0, firstColon);
             if (VALID_LOADERS.contains(prefix.toLowerCase())) {
-                loaderRef = Loader.valueOf(prefix);
+                loader = Loader.valueOf(prefix);
                 rest = projectRef.substring(firstColon + 1);
             }
         }
@@ -67,7 +67,7 @@ public class ProjectRef {
             idSlug = rest;
         }
 
-        return new ProjectRef(idSlug, version, loaderRef);
+        return new ProjectRef(idSlug, version, loader);
     }
 
     /**
@@ -81,9 +81,9 @@ public class ProjectRef {
     /**
      * @param version  can be a {@link VersionType}, ID, or name/number
      */
-    public ProjectRef(String projectSlug, @Nullable String version, Loader loaderRef) {
+    public ProjectRef(String projectSlug, @Nullable String version, Loader loader) {
         this.idOrSlug = projectSlug;
-        this.loaderRef = loaderRef;
+        this.loader = loader;
         this.projectUri = null;
         this.versionType = parseVersionType(version);
         if (this.versionType == null) {
@@ -103,7 +103,7 @@ public class ProjectRef {
     }
 
     public ProjectRef(URI projectUri, String versionId) {
-        this.loaderRef = null;
+        this.loader = null;
         this.projectUri = projectUri;
 
         final String filename = extractFilename(projectUri);

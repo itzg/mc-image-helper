@@ -139,13 +139,13 @@ public class ProjectRefTest {
 
     @ParameterizedTest
     @MethodSource("parseProjectRef_parameters")
-    void parseProjectRef(String input, String slugId, VersionType versionType, String versionId, String versionName, Loader loaderRef) {
+    void parseProjectRef(String input, String slugId, VersionType versionType, String versionId, String versionName, Loader loader) {
         final ProjectRef result = ProjectRef.parse(input);
         assertThat(result.getIdOrSlug()).isEqualTo(slugId);
         assertThat(result.getVersionType()).isEqualTo(versionType);
         assertThat(result.getVersionId()).isEqualTo(versionId);
         assertThat(result.getVersionNumber()).isEqualTo(versionName);
-        assertThat(result.getLoaderRef()).isEqualTo(loaderRef);
+        assertThat(result.getLoader()).isEqualTo(loader);
     }
 
     public static Stream<Arguments> parseProjectRef_parameters() {
