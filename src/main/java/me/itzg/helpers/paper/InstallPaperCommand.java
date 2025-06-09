@@ -142,8 +142,8 @@ public class InstallPaperCommand implements Callable<Integer> {
         if (resultsFile != null) {
             try (ResultsFileWriter results = new ResultsFileWriter(resultsFile)) {
                 results.writeServer(result.serverJar);
-                results.writeType("PAPER");
                 results.writeVersion(result.version);
+                results.writeType(inputs.coordinates.project.toUpperCase());
             }
         }
 
