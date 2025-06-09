@@ -42,32 +42,39 @@ public class ProjectRef {
     private final String versionNumber;
 
     public static ProjectRef parse(String projectRef) {
-        // First, try to split into potential loader prefix and the rest
-        final int firstColon = projectRef.indexOf(':');
+        final String[] parts = projectRef.split(":", 3);
+        
+        // Handle cases with no colon
+        if (parts.length == 1) {
+            return new ProjectRef(parts[0], null, null);
+        }
+        
+        // Check if first part is a valid loader
         Loader loader = null;
-        String rest = projectRef;
+        int idIndex = 0;
+        if (VALID_LOADERS.contains(parts[0].toLowerCase())) {
+            loader = Loader.valueOf(parts[0].toLowerCase());
+            idIndex = 1;
+        }
         
-        if (firstColon > 0) {
-            final String prefix = projectRef.substring(0, firstColon);
-            if (VALID_LOADERS.contains(prefix.toLowerCase())) {
-                loader = Loader.valueOf(prefix.toLowerCase());
-                rest = projectRef.substring(firstColon + 1);
+        // Handle remaining parts
+        if (parts.length == 2) {
+            // Either loader:id or id:version
+            if (loader != null) {
+                return new ProjectRef(parts[1], null, loader);
+            } else {
+                return new ProjectRef(parts[0], parts[1], null);
             }
+        } 
+        else if (parts.length == 3) {
+            // Must be loader:id:version
+            if (loader == null) {
+                throw new InvalidParameterException("Invalid loader in project reference: " + parts[0]);
+            }
+            return new ProjectRef(parts[1], parts[2], loader);
         }
-
-        // Now process the rest of the string
-        final int versionSeparator = rest.indexOf(':');
-        String idSlug;
-        String version = null;
         
-        if (versionSeparator >= 0) {
-            idSlug = rest.substring(0, versionSeparator);
-            version = rest.substring(versionSeparator + 1);
-        } else {
-            idSlug = rest;
-        }
-
-        return new ProjectRef(idSlug, version, loader);
+        throw new InvalidParameterException("Invalid project reference: " + projectRef);
     }
 
     /**
