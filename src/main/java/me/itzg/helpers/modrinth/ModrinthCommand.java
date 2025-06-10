@@ -298,7 +298,7 @@ public class ModrinthCommand implements Callable<Integer> {
         log.debug("Starting with project='{}' slug={}", project.getTitle(), project.getSlug());
 
         if (projectsProcessed.add(project.getId())) {
-            final Loader effectiveLoader = projectRef.getLoader() != null ? projectRef.getLoader() : loader;
+            final Loader effectiveLoader = projectRef.getLoader() != null ? projectRef.getLoader() : this.loader;
             
             final Version version;
             try {
