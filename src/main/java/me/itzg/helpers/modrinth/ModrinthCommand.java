@@ -321,12 +321,7 @@ public class ModrinthCommand implements Callable<Integer> {
                     )
                     .map(ModrinthApiClient::pickVersionFile)
                     .map(versionFile -> download(effectiveLoader, versionFile))
-                    .flatMap(downloadedFile -> {
-                    // Only expand ZIPs for non-datapack loaders
-                    return effectiveLoader == Loader.datapack ? 
-                        Stream.of(downloadedFile) : 
-                        expandIfZip(downloadedFile);
-                });
+                    .flatMap(downloadedFile -> expandIfZip(downloadedFile));
             }
             else {
                 throw new InvalidParameterException(
