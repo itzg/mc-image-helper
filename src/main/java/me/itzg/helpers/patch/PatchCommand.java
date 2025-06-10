@@ -68,7 +68,8 @@ public class PatchCommand implements Callable<Integer> {
                         new Interpolator(
                                 new StandardEnvironmentVariablesProvider(),
                                 envPrefix
-                        )
+                        ),
+                    jsonAllowComments
                 );
 
         patchSetProcessor.process(patchSet);
