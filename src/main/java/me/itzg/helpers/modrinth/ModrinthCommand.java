@@ -26,7 +26,6 @@ import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.http.Fetch;
 import me.itzg.helpers.http.SharedFetchArgs;
 import me.itzg.helpers.json.ObjectMappers;
-import me.itzg.helpers.modrinth.model.Constants;
 import me.itzg.helpers.modrinth.model.DependencyType;
 import me.itzg.helpers.modrinth.model.Project;
 import me.itzg.helpers.modrinth.model.ProjectType;
@@ -332,8 +331,7 @@ public class ModrinthCommand implements Callable<Integer> {
         final Path outPath;
         try {
             final Loader effectiveLoader = loader != null
-                ? loader
-                : this.loader;
+                ? loader : this.loader;
             final String outputType = effectiveLoader.getType();
 
             if (outputType == null) {
