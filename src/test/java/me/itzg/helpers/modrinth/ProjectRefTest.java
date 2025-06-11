@@ -139,22 +139,22 @@ public class ProjectRefTest {
 
     @ParameterizedTest
     @MethodSource("parseProjectRef_parameters")
-    void parseProjectRef(String input, String slugId, VersionType versionType, String versionId, String versionName, boolean datapack) {
+    void parseProjectRef(String input, String slugId, VersionType versionType, String versionId, String versionName, Loader loader) {
         final ProjectRef result = ProjectRef.parse(input);
         assertThat(result.getIdOrSlug()).isEqualTo(slugId);
         assertThat(result.getVersionType()).isEqualTo(versionType);
         assertThat(result.getVersionId()).isEqualTo(versionId);
         assertThat(result.getVersionNumber()).isEqualTo(versionName);
-        assertThat(result.isDatapack()).isEqualTo(datapack);
+        assertThat(result.getLoader()).isEqualTo(loader);
     }
 
     public static Stream<Arguments> parseProjectRef_parameters() {
         return Stream.of(
-            argumentSet("just slugId","terralith", "terralith", null, null, null, false),
-            argumentSet("datapack","datapack:terralith", "terralith", null, null, null, true),
-            argumentSet("with version ID","terralith:rEF3UnUI", "terralith", null, "rEF3UnUI", null, false),
-            argumentSet("with version type","terralith:release", "terralith", VersionType.release, null, null, false),
-            argumentSet("with version name","terralith:2.5.5", "terralith", null, null, "2.5.5", false)
+            argumentSet("just slugId","terralith", "terralith", null, null, null, null),
+            argumentSet("with loader prefix","fabric:terralith", "terralith", null, null, null, Loader.fabric),
+            argumentSet("with loader and version ID","paper:terralith:rEF3UnUI", "terralith", null, "rEF3UnUI", null, Loader.paper),
+            argumentSet("with loader and version type","datapack:terralith:release", "terralith", VersionType.release, null, null, Loader.datapack),
+            argumentSet("with loader and version name","forge:terralith:2.5.5", "terralith", null, null, "2.5.5", Loader.forge)
         );
     }
 }
