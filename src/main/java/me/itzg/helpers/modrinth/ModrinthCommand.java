@@ -245,8 +245,7 @@ public class ModrinthCommand implements Callable<Integer> {
     private Path download(Loader loader, VersionFile versionFile) {
         final Path outPath;
         try {
-            final Loader effectiveLoader = loader != null
-                ? loader : this.loader;
+            final Loader effectiveLoader = loader != null ? loader : this.loader;
             final String outputType = effectiveLoader.getType();
 
             if (outputType == null) {
