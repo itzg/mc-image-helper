@@ -39,34 +39,62 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.Option;
 
-@Command(name = "modrinth", description = "Automates downloading of modrinth resources")
+@Command(
+    name = "modrinth",
+    description = "Automates downloading of modrinth resources"
+)
 @Slf4j
 public class ModrinthCommand implements Callable<Integer> {
 
     public static final String DATAPACKS_SUBDIR = "datapacks";
-    @Option(names = "--projects", description = "Project ID or Slug. Prefix with loader: e.g. fabric:project-id",
-        split = SPLIT_COMMA_NL, splitSynopsisLabel = SPLIT_SYNOPSIS_COMMA_NL,
+
+    @Option(
+        names = "--projects",
+        description = "Project ID or Slug. Prefix with loader: e.g. fabric:project-id",
+        split = SPLIT_COMMA_NL,
+        splitSynopsisLabel = SPLIT_SYNOPSIS_COMMA_NL,
         paramLabel = "[loader:]id|slug"
     )
     List<String> projects;
 
-    @Option(names = "--game-version", description = "Applicable Minecraft version", required = true)
+    @Option(
+        names = "--game-version",
+        description = "Applicable Minecraft version",
+        required = true
+    )
     String gameVersion;
 
-    @Option(names = "--loader", required = true, description = "Valid values: ${COMPLETION-CANDIDATES}")
+    @Option(
+        names = "--loader",
+        required = true,
+        description = "Valid values: ${COMPLETION-CANDIDATES}"
+    )
     Loader loader;
 
-    @Option(names = "--output-directory", defaultValue = ".", paramLabel = "DIR")
+    @Option(
+        names = "--output-directory",
+        defaultValue = ".",
+        paramLabel = "DIR"
+    )
     Path outputDirectory;
 
-    @Option(names = "--download-dependencies", defaultValue = "NONE",
-        description = "Default is ${DEFAULT-VALUE}\nValid values: ${COMPLETION-CANDIDATES}")
+    @Option(
+        names = "--download-dependencies",
+        defaultValue = "NONE",
+        description = "Default is ${DEFAULT-VALUE}\nValid values: ${COMPLETION-CANDIDATES}"
+    )
     DownloadDependencies downloadDependencies;
 
-    @Option(names = "--skip-existing", defaultValue = "${env:MODRINTH_SKIP_EXISTING}")
+    @Option(
+        names = "--skip-existing",
+        defaultValue = "${env:MODRINTH_SKIP_EXISTING}"
+    )
     boolean skipExisting = true;
 
-    @Option(names = "--skip-up-to-date", defaultValue = "${env:MODRINTH_SKIP_UP_TO_DATE}")
+    @Option(
+        names = "--skip-up-to-date",
+        defaultValue = "${env:MODRINTH_SKIP_UP_TO_DATE}"
+    )
     boolean skipUpToDate = true;
 
     public enum DownloadDependencies {
@@ -75,18 +103,26 @@ public class ModrinthCommand implements Callable<Integer> {
         /**
          * Implies {@link #REQUIRED}
          */
-        OPTIONAL
+        OPTIONAL,
     }
 
-    @Option(names = "--allowed-version-type", defaultValue = "release", description = "Valid values: ${COMPLETION-CANDIDATES}")
+    @Option(
+        names = "--allowed-version-type",
+        defaultValue = "release",
+        description = "Valid values: ${COMPLETION-CANDIDATES}"
+    )
     VersionType defaultVersionType;
 
-    @Option(names = "--api-base-url", defaultValue = "${env:MODRINTH_API_BASE_URL:-https://api.modrinth.com}",
+    @Option(
+        names = "--api-base-url",
+        defaultValue = "${env:MODRINTH_API_BASE_URL:-https://api.modrinth.com}",
         description = "Default: ${DEFAULT-VALUE}"
     )
     String baseUrl;
 
-    @Option(names = "--world-directory", defaultValue = "${env:LEVEL:-world}",
+    @Option(
+        names = "--world-directory",
+        defaultValue = "${env:LEVEL:-world}",
         description = "Used for datapacks, a path relative to the output directory or an absolute path\nDefault: ${DEFAULT-VALUE}"
     )
     Path worldDirectory;
@@ -94,7 +130,8 @@ public class ModrinthCommand implements Callable<Integer> {
     @ArgGroup(exclusive = false)
     SharedFetchArgs sharedFetchArgs = new SharedFetchArgs();
 
-    final Set<String/*projectId*/> projectsProcessed = Collections.synchronizedSet(new HashSet<>());
+    final Set<String/*projectId*/> projectsProcessed =
+        Collections.synchronizedSet(new HashSet<>());
 
     @Override
     public Integer call() throws Exception {
@@ -117,34 +154,48 @@ public class ModrinthCommand implements Callable<Integer> {
     }
 
     private List<Path> processProjects(List<String> projects) {
-        try (ModrinthApiClient modrinthApiClient = new ModrinthApiClient(baseUrl, "modrinth", sharedFetchArgs.options())) {
+        try (
+            ModrinthApiClient modrinthApiClient = new ModrinthApiClient(
+                baseUrl,
+                "modrinth",
+                sharedFetchArgs.options()
+            )
+        ) {
             //noinspection DataFlowIssue since it thinks block() may return null
-            return
-                modrinthApiClient.bulkGetProjects(
-                    projects.stream()
+            return modrinthApiClient
+                .bulkGetProjects(
+                    projects
+                        .stream()
                         .filter(s -> !s.trim().isEmpty())
                         .map(ProjectRef::parse)
                 )
                 .defaultIfEmpty(Collections.emptyList())
                 .block()
                 .stream()
-                .flatMap(resolvedProject -> processProject(
-                    modrinthApiClient, resolvedProject.getProjectRef(), resolvedProject.getProject()
-                ))
+                .flatMap(resolvedProject ->
+                    processProject(
+                        modrinthApiClient,
+                        resolvedProject.getProjectRef(),
+                        resolvedProject.getProject()
+                    )
+                )
                 .collect(Collectors.toList());
         }
     }
 
     private ModrinthManifest loadManifest() throws IOException {
-        final Path legacyManifestPath = outputDirectory.resolve(LegacyModrinthManifest.FILENAME);
+        final Path legacyManifestPath = outputDirectory.resolve(
+            LegacyModrinthManifest.FILENAME
+        );
 
         if (Files.exists(legacyManifestPath)) {
             final ObjectMapper objectMapper = ObjectMappers.defaultMapper();
 
-            final LegacyModrinthManifest legacyManifest = objectMapper.readValue(
-                legacyManifestPath.toFile(),
-                LegacyModrinthManifest.class
-            );
+            final LegacyModrinthManifest legacyManifest =
+                objectMapper.readValue(
+                    legacyManifestPath.toFile(),
+                    LegacyModrinthManifest.class
+                );
 
             Files.delete(legacyManifestPath);
 
@@ -154,12 +205,24 @@ public class ModrinthCommand implements Callable<Integer> {
                 .build();
         }
 
-        return Manifests.load(outputDirectory, ModrinthManifest.ID, ModrinthManifest.class);
+        return Manifests.load(
+            outputDirectory,
+            ModrinthManifest.ID,
+            ModrinthManifest.class
+        );
     }
 
-    private Stream<Version> expandDependencies(ModrinthApiClient modrinthApiClient, Loader loader, String gameVersion, Project project, Version version) {
+    private Stream<Version> expandDependencies(
+        ModrinthApiClient modrinthApiClient,
+        Loader loader,
+        String gameVersion,
+        Project project,
+        Version version
+    ) {
         log.debug("Expanding dependencies of version={}", version);
-        return version.getDependencies().stream()
+        return version
+            .getDependencies()
+            .stream()
             .filter(this::filterDependency)
             .filter(dep -> projectsProcessed.add(dep.getProjectId()))
             .flatMap(dep -> {
@@ -168,40 +231,71 @@ public class ModrinthCommand implements Callable<Integer> {
                 final Version depVersion;
                 try {
                     if (dep.getVersionId() == null) {
-                        log.debug("Fetching versions of dep={} and picking", dep);
-                        depVersion = pickVersion(
-                            getVersionsForProject(modrinthApiClient, dep.getProjectId(), loader, gameVersion)
+                        log.debug(
+                            "Fetching versions of dep={} and picking",
+                            dep
                         );
-                    }
-                    else {
+                        depVersion = pickVersion(
+                            getVersionsForProject(
+                                modrinthApiClient,
+                                dep.getProjectId(),
+                                loader,
+                                gameVersion
+                            )
+                        );
+                    } else {
                         log.debug("Fetching version for dep={}", dep);
-                        depVersion = modrinthApiClient.getVersionFromId(dep.getVersionId())
+                        depVersion = modrinthApiClient
+                            .getVersionFromId(dep.getVersionId())
                             .block();
                     }
                 } catch (GenericException e) {
-                    throw new GenericException(String.format("Failed to expand %s of project '%s'",
-                        dep, project.getTitle()), e);
+                    throw new GenericException(
+                        String.format(
+                            "Failed to expand %s of project '%s'",
+                            dep,
+                            project.getTitle()
+                        ),
+                        e
+                    );
                 } catch (NoFilesAvailableException e) {
                     throw new InvalidParameterException(
-                        String.format("No matching files for %s of project '%s': %s",
-                            dep, project.getTitle(), e.getMessage()
-                        ), e
+                        String.format(
+                            "No matching files for %s of project '%s': %s",
+                            dep,
+                            project.getTitle(),
+                            e.getMessage()
+                        ),
+                        e
                     );
                 }
 
                 if (depVersion != null) {
-                    log.debug("Resolved version={} for dep={}", depVersion.getVersionNumber(), dep);
+                    log.debug(
+                        "Resolved version={} for dep={}",
+                        depVersion.getVersionNumber(),
+                        dep
+                    );
                     return Stream.concat(
-                            Stream.of(depVersion),
-                            expandDependencies(modrinthApiClient, loader, gameVersion, project, depVersion)
+                        Stream.of(depVersion),
+                        expandDependencies(
+                            modrinthApiClient,
+                            loader,
+                            gameVersion,
+                            project,
+                            depVersion
                         )
-                        .peek(expandedVer -> log.debug("Expanded dependency={} into version={}", dep, expandedVer));
-                }
-                else {
+                    ).peek(expandedVer ->
+                        log.debug(
+                            "Expanded dependency={} into version={}",
+                            dep,
+                            expandedVer
+                        )
+                    );
+                } else {
                     return Stream.empty();
                 }
             });
-
     }
 
     private boolean filterDependency(VersionDependency dep) {
@@ -209,10 +303,12 @@ public class ModrinthCommand implements Callable<Integer> {
             return false;
         }
 
-        return (downloadDependencies == DownloadDependencies.REQUIRED && dep.getDependencyType() == DependencyType.required)
-            || (
-            downloadDependencies == DownloadDependencies.OPTIONAL
-                && (dep.getDependencyType() == DependencyType.required || dep.getDependencyType() == DependencyType.optional)
+        return (
+            (downloadDependencies == DownloadDependencies.REQUIRED &&
+                dep.getDependencyType() == DependencyType.required) ||
+            (downloadDependencies == DownloadDependencies.OPTIONAL &&
+                (dep.getDependencyType() == DependencyType.required ||
+                    dep.getDependencyType() == DependencyType.optional))
         );
     }
 
@@ -220,7 +316,10 @@ public class ModrinthCommand implements Callable<Integer> {
         return this.pickVersion(versions, defaultVersionType);
     }
 
-    private Version pickVersion(List<Version> versions, VersionType versionType) {
+    private Version pickVersion(
+        List<Version> versions,
+        VersionType versionType
+    ) {
         for (final Version version : versions) {
             if (version.getVersionType().sufficientFor(versionType)) {
                 return version;
@@ -232,32 +331,29 @@ public class ModrinthCommand implements Callable<Integer> {
     private Path download(Loader loader, VersionFile versionFile) {
         final Path outPath;
         try {
-            final Loader effectiveLoader = loader != null ? loader : this.loader;
+            final Loader effectiveLoader = loader != null
+                ? loader
+                : this.loader;
             final String outputType = effectiveLoader.getType();
-            
+
             if (outputType == null) {
                 // Datapack case
                 if (worldDirectory.isAbsolute()) {
-                    outPath = Files.createDirectories(worldDirectory
-                            .resolve(DATAPACKS_SUBDIR)
-                        )
-                        .resolve(versionFile.getFilename());
-                }
-                else {
-                    outPath = Files.createDirectories(outputDirectory
+                    outPath = Files.createDirectories(
+                        worldDirectory.resolve(DATAPACKS_SUBDIR)
+                    ).resolve(versionFile.getFilename());
+                } else {
+                    outPath = Files.createDirectories(
+                        outputDirectory
                             .resolve(worldDirectory)
                             .resolve(DATAPACKS_SUBDIR)
-                        )
-                        .resolve(versionFile.getFilename());
+                    ).resolve(versionFile.getFilename());
                 }
+            } else {
+                outPath = Files.createDirectories(
+                    outputDirectory.resolve(outputType)
+                ).resolve(versionFile.getFilename());
             }
-            else {
-                outPath = Files.createDirectories(outputDirectory
-                        .resolve(outputType)
-                    )
-                    .resolve(versionFile.getFilename());
-            }
-
         } catch (IOException e) {
             throw new RuntimeException("Creating output directory", e);
         }
@@ -275,64 +371,103 @@ public class ModrinthCommand implements Callable<Integer> {
         }
     }
 
-    private List<Version> getVersionsForProject(ModrinthApiClient modrinthApiClient, String project, Loader loader, String gameVersion) {
-        final List<Version> versions = modrinthApiClient.getVersionsForProject(
-                project, loader, gameVersion
-            )
+    private List<Version> getVersionsForProject(
+        ModrinthApiClient modrinthApiClient,
+        String project,
+        Loader loader,
+        String gameVersion
+    ) {
+        final List<Version> versions = modrinthApiClient
+            .getVersionsForProject(project, loader, gameVersion)
             .block();
         if (versions == null) {
-            throw new GenericException("Unable to retrieve versions for project " + project);
+            throw new GenericException(
+                "Unable to retrieve versions for project " + project
+            );
         }
         return versions;
     }
 
-
-    private Stream<Path> processProject(ModrinthApiClient modrinthApiClient, ProjectRef projectRef, Project project) {
+    private Stream<Path> processProject(
+        ModrinthApiClient modrinthApiClient,
+        ProjectRef projectRef,
+        Project project
+    ) {
         if (project.getProjectType() != ProjectType.mod) {
             throw new InvalidParameterException(
-                String.format("Requested project '%s' is not a mod, but has type %s",
-                    project.getTitle(), project.getProjectType()
-                ));
+                String.format(
+                    "Requested project '%s' is not a mod, but has type %s",
+                    project.getTitle(),
+                    project.getProjectType()
+                )
+            );
         }
 
-        log.debug("Starting with project='{}' slug={}", project.getTitle(), project.getSlug());
+        log.debug(
+            "Starting with project='{}' slug={}",
+            project.getTitle(),
+            project.getSlug()
+        );
 
         if (projectsProcessed.add(project.getId())) {
-            final Loader effectiveLoader = projectRef.getLoader() != null ? projectRef.getLoader() : this.loader;
-            
+            final Loader effectiveLoader = projectRef.getLoader() != null
+                ? projectRef.getLoader()
+                : this.loader;
+
             final Version version;
             try {
-                version = modrinthApiClient.resolveProjectVersion(
-                        project, projectRef, effectiveLoader, gameVersion, defaultVersionType
+                version = modrinthApiClient
+                    .resolveProjectVersion(
+                        project,
+                        projectRef,
+                        effectiveLoader,
+                        gameVersion,
+                        defaultVersionType
                     )
                     .block();
-            } catch (NoApplicableVersionsException | NoFilesAvailableException e) {
+            } catch (
+                NoApplicableVersionsException | NoFilesAvailableException e
+            ) {
                 throw new InvalidParameterException(e.getMessage(), e);
             }
 
             if (version != null) {
                 if (version.getFiles().isEmpty()) {
-                    throw new GenericException(String.format("Project %s has no files declared", project.getSlug()));
+                    throw new GenericException(
+                        String.format(
+                            "Project %s has no files declared",
+                            project.getSlug()
+                        )
+                    );
                 }
 
                 return Stream.concat(
-                        Stream.of(version),
-                        expandDependencies(modrinthApiClient, effectiveLoader, gameVersion, project, version)
+                    Stream.of(version),
+                    expandDependencies(
+                        modrinthApiClient,
+                        effectiveLoader,
+                        gameVersion,
+                        project,
+                        version
                     )
+                )
                     .map(ModrinthApiClient::pickVersionFile)
                     .map(versionFile -> download(effectiveLoader, versionFile))
                     .flatMap(downloadedFile -> {
-                    // Only expand ZIPs for non-datapack loaders
-                    return effectiveLoader == Loader.datapack ? 
-                        Stream.of(downloadedFile) : 
-                        expandIfZip(downloadedFile);
-                });
-            }
-            else {
+                        // Only expand ZIPs for non-datapack loaders
+                        return effectiveLoader == Loader.datapack
+                            ? Stream.of(downloadedFile)
+                            : expandIfZip(downloadedFile);
+                    });
+            } else {
                 throw new InvalidParameterException(
-                    String.format("Project %s does not have any matching versions for loader %s, game version %s",
-                        projectRef, effectiveLoader, gameVersion
-                    ));
+                    String.format(
+                        "Project %s does not have any matching versions for loader %s, game version %s",
+                        projectRef,
+                        effectiveLoader,
+                        gameVersion
+                    )
+                );
             }
         }
         return Stream.empty();
@@ -349,8 +484,7 @@ public class ModrinthCommand implements Callable<Integer> {
                 Stream.of(downloadedFile),
                 expandZip(downloadedFile)
             );
-        }
-        else {
+        } else {
             return Stream.of(downloadedFile);
         }
     }
@@ -361,7 +495,11 @@ public class ModrinthCommand implements Callable<Integer> {
 
         final ArrayList<Path> contents = new ArrayList<>();
 
-        try (ZipInputStream zipIn = new ZipInputStream(Files.newInputStream(zipFile))) {
+        try (
+            ZipInputStream zipIn = new ZipInputStream(
+                Files.newInputStream(zipFile)
+            )
+        ) {
             ZipEntry entry;
             while ((entry = zipIn.getNextEntry()) != null) {
                 if (!entry.isDirectory()) {
@@ -373,8 +511,7 @@ public class ModrinthCommand implements Callable<Integer> {
                             Files.createDirectories(resolved.getParent());
                         }
                         Files.copy(zipIn, resolved);
-                    }
-                    else {
+                    } else {
                         log.debug("File={} from zip already exists", resolved);
                     }
                     contents.add(resolved);
