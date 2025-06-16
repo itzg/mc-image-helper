@@ -14,6 +14,7 @@ import me.itzg.helpers.http.Fetch;
 import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.http.SharedFetchArgs;
 import me.itzg.helpers.modrinth.ModrinthModpackManifest;
+import me.itzg.helpers.mvn.MavenRepoApi;
 import me.itzg.helpers.packwiz.model.PackwizPack;
 import me.itzg.helpers.quilt.QuiltInstaller;
 import picocli.CommandLine.ArgGroup;
@@ -22,6 +23,7 @@ import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.Option;
 import java.io.File;
 import java.io.IOException;
+import java.lang.ProcessBuilder.Redirect;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
@@ -72,8 +74,8 @@ public final class InstallPackwizModpackCommand implements Callable<Integer> {
             // TODO might need to set/save the Minecraft version somewhere
 
             installModLoader(newManifest, fetch);
+            bootstrapPackwiz(fetch);
 
-            // run packwiz bootstrap
             // populate the results file (MODPACK_NAME, MODPACK_VERSION)
         }
 
@@ -81,6 +83,42 @@ public final class InstallPackwizModpackCommand implements Callable<Integer> {
         Manifests.save(outputDirectory, ModrinthModpackManifest.ID, newManifest);
 
         return ExitCode.OK;
+    }
+
+    private void bootstrapPackwiz(SharedFetch fetch) throws IOException {
+        //     if ! packwizInstaller=$(mc-image-helper maven-download \
+        // --maven-repo=https://maven.packwiz.infra.link/repository/release/ \
+        // --group=link.infra.packwiz --artifact=packwiz-installer --classifier=dist \
+        // --skip-existing); then
+        //
+        //
+        //
+        // java -cp "${packwizInstaller}" link.infra.packwiz.installer.Main -s server "${PACKWIZ_URL}"; then
+
+        final MavenRepoApi mavenRepoApi = new MavenRepoApi("https://maven.packwiz.infra.link/repository/release/", fetch)
+            .setMetadataCacheDir(outputDirectory.resolve(".maven"))
+            .setSkipExisting(true)
+            .setSkipUpToDate(false);
+
+        final String group = "link.infra.packwiz";
+        final String artifactId = "packwiz-installer";
+        final Path installerJar = mavenRepoApi.fetchMetadata(group, artifactId)
+            .flatMap(metadata -> mavenRepoApi.download(
+                outputDirectory, group, artifactId, metadata.getVersioning().getRelease(), "jar", "dist"
+            ))
+            .block();
+
+        final Process process = new ProcessBuilder(
+            "java",
+            "-cp", installerJar.toAbsolutePath().toString(),
+            "link.infra.packwiz.installer.Main",
+            "-s", "server",
+            pack)
+            .directory(outputDirectory.toFile())
+            .redirectOutput(Redirect.INHERIT)
+            .redirectError(Redirect.INHERIT)
+            .start();
+        // TODO check exit code
     }
 
     private void installModLoader(PackwizModpackManifest manifest, SharedFetch fetch) {
