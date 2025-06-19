@@ -397,6 +397,7 @@ class ModrinthCommandTest {
         final int exitCode = new CommandLine(
             new ModrinthCommand()
         )
+            .setExpandAtFiles(false)
             .execute(
                 "--api-base-url", wm.getRuntimeInfo().getHttpBaseUrl(),
                 "--output-directory", tempDir.toString(),
