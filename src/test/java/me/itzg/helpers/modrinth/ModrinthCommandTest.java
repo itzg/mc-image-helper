@@ -386,9 +386,9 @@ class ModrinthCommandTest {
 
         final Path listingFile = Files.write(tempDir.resolve("listing.txt"),
             Arrays.asList(
-                "fabric-api:vNBWcMLP",
+                "fabric-api",
                 "# This is a comment",
-                "cloth-config:qA00xo1O",
+                "cloth-config",
                 "",
                 "# Another comment"
             )
@@ -400,15 +400,15 @@ class ModrinthCommandTest {
             .execute(
                 "--api-base-url", wm.getRuntimeInfo().getHttpBaseUrl(),
                 "--output-directory", tempDir.toString(),
-                "--game-version", "1.21.5",
+                "--game-version", "1.19.2",
                 "--loader", "fabric",
                 "--projects", "@" + listingFile
             );
 
         assertThat(exitCode).isEqualTo(ExitCode.OK);
 
-        assertThat(tempDir.resolve("mods/fabric-api-0.127.1+1.21.5.jar")).exists();
-        assertThat(tempDir.resolve("mods/cloth-config-18.0.145-fabric.jar")).exists();
+        assertThat(tempDir.resolve("mods/fabric-api-0.76.1+1.19.2.jar")).exists();
+        assertThat(tempDir.resolve("mods/cloth-config-8.3.103-fabric.jar")).exists();
     }
 
     @NotNull
