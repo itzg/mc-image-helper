@@ -15,6 +15,8 @@ import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemp
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
 import java.nio.file.Path;
+import java.nio.file.Files;
+import java.util.Arrays;
 import java.util.function.Consumer;
 import me.itzg.helpers.LatchingExecutionExceptionHandler;
 import me.itzg.helpers.errors.InvalidParameterException;
@@ -376,6 +378,37 @@ class ModrinthCommandTest {
         assertThat(tempDir.resolve(worldDir).resolve("datapacks").resolve(versionId + ".zip"))
             .exists()
             .hasContent("content of zip");
+    }
+
+    @Test
+    void usingListingFile(@TempDir Path tempDir) throws Exception {
+        setupStubs();
+
+        final Path listingFile = Files.write(tempDir.resolve("listing.txt"),
+            Arrays.asList(
+                "fabric-api:vNBWcMLP",
+                "# This is a comment",
+                "cloth-config:qA00xo1O",
+                "",
+                "# Another comment"
+            )
+        );
+
+        final int exitCode = new CommandLine(
+            new ModrinthCommand()
+        )
+            .execute(
+                "--api-base-url", wm.getRuntimeInfo().getHttpBaseUrl(),
+                "--output-directory", tempDir.toString(),
+                "--game-version", "1.21.5",
+                "--loader", "fabric",
+                "--projects", "@" + listingFile
+            );
+
+        assertThat(exitCode).isEqualTo(ExitCode.OK);
+
+        assertThat(tempDir.resolve("mods/fabric-api-0.127.1+1.21.5.jar")).exists();
+        assertThat(tempDir.resolve("mods/cloth-config-18.0.145-fabric.jar")).exists();
     }
 
     @NotNull
