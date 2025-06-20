@@ -25,8 +25,10 @@ class ManageUsersCommandTest {
 
     private static final String USER1_ID = "3f5f20286a85445fa7b46100e70c2b3a";
     private static final String USER1_UUID = "3f5f2028-6a85-445f-a7b4-6100e70c2b3a";
+    private static final String USER1_OFFLINE_UUID = "fb4cdad9-642b-358f-8f6f-717981c9f42b";
     private static final String USER2_ID = "5e5a1b2294b14f5892466062597e4c91";
     private static final String USER2_UUID = "5e5a1b22-94b1-4f58-9246-6062597e4c91";
+    private static final String USER2_OFFLINE_UUID = "6e7d9aa0-0da2-390c-ab6a-377df9d77518";
 
     @TempDir
     Path tempDir;
@@ -403,6 +405,45 @@ class ManageUsersCommandTest {
 
             verify(0, getRequestedFor(urlEqualTo("/users/profiles/minecraft/user1")));
             verify(0, getRequestedFor(urlEqualTo("/users/profiles/minecraft/user2")));
+        }
+    }
+
+    @Nested
+    public class whitelistOffline {
+        @Test
+        void givenNames(WireMockRuntimeInfo wmInfo) {
+            setupUserStubs();
+
+            final int exitCode = new CommandLine(
+                new ManageUsersCommand()
+            )
+                .execute(
+                    "--mojang-api-base-url", wmInfo.getHttpBaseUrl(),
+                    "--user-api-provider", "mojang",
+                    "--offline",
+                    "--type", "JAVA_WHITELIST",
+                    "--output-directory", tempDir.toString(),
+                    "user1", "user2"
+                );
+
+            assertThat(exitCode).isEqualTo(0);
+
+            final Path expectedFile = tempDir.resolve("whitelist.json");
+
+            assertThat(expectedFile).exists();
+
+            assertJson(expectedFile)
+                .isArrayContainingExactlyInAnyOrder(
+                    conditions()
+                        .satisfies(conditions()
+                            .at("/name").hasValue("user1")
+                            .at("/uuid").hasValue(USER1_OFFLINE_UUID)
+                        )
+                        .satisfies(conditions()
+                            .at("/name").hasValue("user2")
+                            .at("/uuid").hasValue(USER2_OFFLINE_UUID)
+                        )
+                );
         }
     }
 

@@ -14,6 +14,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
@@ -25,7 +26,10 @@ import me.itzg.helpers.http.Uris;
 import me.itzg.helpers.json.ObjectMappers;
 import me.itzg.helpers.users.model.JavaOp;
 import me.itzg.helpers.users.model.JavaUser;
+
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.maven.artifact.versioning.ComparableVersion;
+
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.ExitCode;
@@ -45,6 +49,9 @@ public class ManageUsersCommand implements Callable<Integer> {
     @SuppressWarnings("unused")
     @Option(names = {"--help", "-h"}, usageHelp = true)
     boolean help;
+
+    @Option(names = {"--offline"}, required = false, description = "Use for offline server, UUIDs are generated")
+    boolean offline;
 
     @Option(names = "--output-directory", defaultValue = ".")
     Path outputDirectory;
@@ -240,6 +247,10 @@ public class ManageUsersCommand implements Callable<Integer> {
                     }
                 }
 
+                if (offline) {
+                    return getOfflineUUID(input);
+                }
+
                 final UserApi userApi;
                 switch (userApiProvider) {
                     case mojang:
@@ -328,5 +339,33 @@ public class ManageUsersCommand implements Callable<Integer> {
 
     private boolean usesTextUserList() {
         return version != null && new ComparableVersion(version).compareTo(MIN_VERSION_USES_JSON) < 0;
+    }
+
+    private static JavaUser getOfflineUUID(String username) {
+        byte[] bytes = DigestUtils.md5("OfflinePlayer:"+username);
+
+        // Force version = 3 (bits 12-15 of time_hi_and_version)
+        bytes[6] &= 0x0F;
+        bytes[6] |= 0x30;
+
+        // Force variant = 2 (bits 6-7 of clock_seq_hi_and_reserved)
+        bytes[8] &= 0x3F;
+        bytes[8] |= 0x80;
+
+        long msb = 0;
+        long lsb = 0;
+
+        for (int i = 0; i < 8; i++) {
+            msb = (msb << 8) | (bytes[i] & 0xFF);
+        }
+
+        for (int i = 8; i < 16; i++) {
+            lsb = (lsb << 8) | (bytes[i] & 0xFF);
+        }
+
+        return JavaUser.builder()
+        .name(username)
+        .uuid(new UUID(msb, lsb).toString())
+        .build();
     }
 }
