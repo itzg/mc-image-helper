@@ -397,13 +397,12 @@ class ModrinthCommandTest {
         final int exitCode = new CommandLine(
             new ModrinthCommand()
         )
-            .setExpandAtFiles(false)
             .execute(
                 "--api-base-url", wm.getRuntimeInfo().getHttpBaseUrl(),
                 "--output-directory", tempDir.toString(),
                 "--game-version", "1.19.2",
                 "--loader", "fabric",
-                "--projects", "@" + listingFile
+                "--projects=@" + listingFile
             );
 
         assertThat(exitCode).isEqualTo(ExitCode.OK);
