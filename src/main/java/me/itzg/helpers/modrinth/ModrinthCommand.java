@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -46,10 +47,17 @@ public class ModrinthCommand implements Callable<Integer> {
 
     @Option(
         names = "--projects",
-        description = "Project ID or Slug. Prefix with loader: e.g. fabric:project-id",
+        description = "Project ID or Slug. Can be <project ID>|<slug>,"
+            + " <loader>:<project ID>|<slug>,"
+            + " <loader>:<project ID>|<slug>:<version ID|version number|release type>,"
+            + " '@'<filename with ref per line (supports # comments)>"
+            + "%nExamples: fabric-api, fabric:fabric-api, fabric:fabric-api:0.76.1+1.19.2,"
+            + " datapack:terralith, @/path/to/modrinth-mods.txt"
+            + "%nValid release types: release, beta, alpha"
+            + "%nValid loaders: fabric, forge, paper, datapack, etc.",
         split = SPLIT_COMMA_NL,
         splitSynopsisLabel = SPLIT_SYNOPSIS_COMMA_NL,
-        paramLabel = "[loader:]id|slug"
+        paramLabel = "[loader:]id|slug[:version]"
     )
     List<String> projects;
 
@@ -124,7 +132,7 @@ public class ModrinthCommand implements Callable<Integer> {
             //noinspection DataFlowIssue since it thinks block() may return null
             return
                 modrinthApiClient.bulkGetProjects(
-                    projects.stream()
+                    expandProjectListings(projects).stream()
                         .filter(s -> !s.trim().isEmpty())
                         .map(ProjectRef::parse)
                 )
@@ -140,6 +148,30 @@ public class ModrinthCommand implements Callable<Integer> {
                 )
                 .collect(Collectors.toList());
         }
+    }
+
+    private List<String> expandProjectListings(List<String> projects) {
+        return projects.stream()
+            .distinct()
+            // handle @-file containing refs
+            .flatMap(ref -> {
+                if (ref.startsWith("@")) {
+                    try {
+                        return Files.readAllLines(Paths.get(ref.substring(1))).stream()
+                            .map(s -> s
+                                .replaceFirst("#.*", "")
+                                .trim()
+                            )
+                            .filter(s -> !s.isEmpty());
+                    } catch (IOException e) {
+                        throw new GenericException("Reading project refs from file: " + ref.substring(1), e);
+                    }
+                }
+                else {
+                    return Stream.of(ref);
+                }
+            })
+            .collect(Collectors.toList());
     }
 
     private ModrinthManifest loadManifest() throws IOException {
