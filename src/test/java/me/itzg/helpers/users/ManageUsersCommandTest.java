@@ -411,7 +411,42 @@ class ManageUsersCommandTest {
     @Nested
     public class whitelistOffline {
         @Test
-        void givenNames(WireMockRuntimeInfo wmInfo) {
+        void allOffline(WireMockRuntimeInfo wmInfo) {
+            setupUserStubs();
+
+            final int exitCode = new CommandLine(
+                new ManageUsersCommand()
+            )
+                .execute(
+                    "--mojang-api-base-url", wmInfo.getHttpBaseUrl(),
+                    "--user-api-provider", "mojang",
+                    "--offline",
+                    "--type", "JAVA_WHITELIST",
+                    "--output-directory", tempDir.toString(),
+                    "user1:offline", "user2:offline"
+                );
+
+            assertThat(exitCode).isEqualTo(0);
+
+            final Path expectedFile = tempDir.resolve("whitelist.json");
+
+            assertThat(expectedFile).exists();
+
+            assertJson(expectedFile)
+                .isArrayContainingExactlyInAnyOrder(
+                    conditions()
+                        .satisfies(conditions()
+                            .at("/name").hasValue("user1")
+                            .at("/uuid").hasValue(USER1_OFFLINE_UUID)
+                        )
+                        .satisfies(conditions()
+                            .at("/name").hasValue("user2")
+                            .at("/uuid").hasValue(USER2_OFFLINE_UUID)
+                        )
+                );
+        }
+        @Test
+        void allOnline(WireMockRuntimeInfo wmInfo) {
             setupUserStubs();
 
             final int exitCode = new CommandLine(
@@ -437,11 +472,46 @@ class ManageUsersCommandTest {
                     conditions()
                         .satisfies(conditions()
                             .at("/name").hasValue("user1")
+                            .at("/uuid").hasValue(USER1_UUID)
+                        )
+                        .satisfies(conditions()
+                            .at("/name").hasValue("user2")
+                            .at("/uuid").hasValue(USER2_UUID)
+                        )
+                );
+        }
+        @Test
+        void partialOnlineOffline(WireMockRuntimeInfo wmInfo) {
+            setupUserStubs();
+
+            final int exitCode = new CommandLine(
+                new ManageUsersCommand()
+            )
+                .execute(
+                    "--mojang-api-base-url", wmInfo.getHttpBaseUrl(),
+                    "--user-api-provider", "mojang",
+                    "--offline",
+                    "--type", "JAVA_WHITELIST",
+                    "--output-directory", tempDir.toString(),
+                    "user1:offline", "user2"
+                );
+
+            assertThat(exitCode).isEqualTo(0);
+
+            final Path expectedFile = tempDir.resolve("whitelist.json");
+
+            assertThat(expectedFile).exists();
+
+            assertJson(expectedFile)
+                .isArrayContainingExactlyInAnyOrder(
+                    conditions()
+                        .satisfies(conditions()
+                            .at("/name").hasValue("user1")
                             .at("/uuid").hasValue(USER1_OFFLINE_UUID)
                         )
                         .satisfies(conditions()
                             .at("/name").hasValue("user2")
-                            .at("/uuid").hasValue(USER2_OFFLINE_UUID)
+                            .at("/uuid").hasValue(USER2_UUID)
                         )
                 );
         }

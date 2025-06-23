@@ -16,6 +16,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
+
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidParameterException;
@@ -26,6 +28,7 @@ import me.itzg.helpers.http.Uris;
 import me.itzg.helpers.json.ObjectMappers;
 import me.itzg.helpers.users.model.JavaOp;
 import me.itzg.helpers.users.model.JavaUser;
+import me.itzg.helpers.users.model.UserDef;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.maven.artifact.versioning.ComparableVersion;
@@ -114,8 +117,9 @@ public class ManageUsersCommand implements Callable<Integer> {
     }
 
     private void processJavaUserIdList(SharedFetch sharedFetch, List<String> inputs) throws IOException {
+        List<UserDef> userDefs = inputs.stream().map((String input) -> {return new UserDef(input);}).collect(Collectors.toList());
         if (usesTextUserList()) {
-            verifyNotUuids(inputs);
+            verifyNotUuids(userDefs);
 
             final Path resultFile = outputDirectory.resolve(
                 type == Type.JAVA_OPS ? "ops.txt" : "white-list.txt"
@@ -126,8 +130,9 @@ public class ManageUsersCommand implements Callable<Integer> {
             }
 
             final Set<String> users = loadExistingTextUserList(resultFile);
-
-            users.addAll(inputs);
+            for (final UserDef user : userDefs) {
+                users.add(user.name);
+            }
 
             log.debug("Writing users list to {}: {}", resultFile, users);
             Files.write(resultFile, users);
@@ -142,7 +147,7 @@ public class ManageUsersCommand implements Callable<Integer> {
             }
 
             objectMapper.writeValue(resultFile.toFile(),
-                reconcile(sharedFetch, inputs,
+                reconcile(sharedFetch, userDefs,
                     loadExistingJavaJson(resultFile)
                 )
             );
@@ -158,7 +163,7 @@ public class ManageUsersCommand implements Callable<Integer> {
         return false;
     }
 
-    private List<? extends JavaUser> reconcile(SharedFetch sharedFetch, List<String> inputs, List<? extends JavaUser> existing) {
+    private List<? extends JavaUser> reconcile(SharedFetch sharedFetch, List<UserDef> userDefs, List<? extends JavaUser> existing) {
 
         final List<JavaUser> reconciled;
         if (existingFileBehavior == ExistingFileBehavior.MERGE) {
@@ -168,8 +173,8 @@ public class ManageUsersCommand implements Callable<Integer> {
             reconciled = new ArrayList<>(inputs.size());
         }
 
-        for (final String input : inputs) {
-            final JavaUser resolvedUser = resolveJavaUserId(sharedFetch, existing, input.trim());
+        for (final UserDef userDef : userDefs) {
+            final JavaUser resolvedUser = resolveJavaUserId(sharedFetch, existing, userDef);
 
             if (existingFileBehavior == ExistingFileBehavior.SYNCHRONIZE
                     || !containsUserByUuid(reconciled, resolvedUser.getUuid())) {
@@ -203,18 +208,18 @@ public class ManageUsersCommand implements Callable<Integer> {
         return false;
     }
 
-    private JavaUser resolveJavaUserId(SharedFetch sharedFetch, List<? extends JavaUser> existing, String input) {
+    private JavaUser resolveJavaUserId(SharedFetch sharedFetch, List<? extends JavaUser> existing, UserDef user) {
 
-        return UuidQuirks.ifIdOrUuid(input)
+        return UuidQuirks.ifIdOrUuid(user.name)
             .map(uuid -> {
                 for (final JavaUser existingUser : existing) {
                     if (existingUser.getUuid().equalsIgnoreCase(uuid)) {
-                        log.debug("Resolved '{}' from existing user entry by UUID: {}", input, existingUser);
+                        log.debug("Resolved '{}' from existing user entry by UUID: {}", user.name, existingUser);
                         return existingUser;
                     }
                 }
 
-                log.debug("Resolved '{}' into new user entry", input);
+                log.debug("Resolved '{}' into new user entry", user.name);
                 return JavaUser.builder()
                     .uuid(uuid)
                     // username needs to be present, but content doesn't matter
@@ -226,8 +231,8 @@ public class ManageUsersCommand implements Callable<Integer> {
 
                 // ...or username
                 for (final JavaUser existingUser : existing) {
-                    if (existingUser.getName().equalsIgnoreCase(input)) {
-                        log.debug("Resolved '{}' from existing user entry by name: {}", input, existingUser);
+                    if (existingUser.getName().equalsIgnoreCase(user.name)) {
+                        log.debug("Resolved '{}' from existing user entry by name: {}", user.name, existingUser);
                         return existingUser;
                     }
                 }
@@ -237,8 +242,8 @@ public class ManageUsersCommand implements Callable<Integer> {
                     try {
                         final List<JavaUser> userCache = objectMapper.readValue(userCacheFile.toFile(), LIST_OF_JAVA_USER);
                         for (final JavaUser existingUser : userCache) {
-                            if (existingUser.getName().equalsIgnoreCase(input)) {
-                                log.debug("Resolved '{}' from user cache by name: {}", input, existingUser);
+                            if (existingUser.getName().equalsIgnoreCase(user.name)) {
+                                log.debug("Resolved '{}' from user cache by name: {}", user.name, existingUser);
                                 return existingUser;
                             }
                         }
@@ -247,8 +252,8 @@ public class ManageUsersCommand implements Callable<Integer> {
                     }
                 }
 
-                if (offline) {
-                    return getOfflineUUID(input);
+                if (offline && user.flags.contains("offline")) {
+                    return getOfflineUUID(user.name);
                 }
 
                 final UserApi userApi;
@@ -262,7 +267,7 @@ public class ManageUsersCommand implements Callable<Integer> {
                     default:
                         throw new GenericException("User API provider was not specified");
                 }
-                return userApi.resolveUser(input);
+                return userApi.resolveUser(user.name);
 
             });
 
@@ -293,10 +298,10 @@ public class ManageUsersCommand implements Callable<Integer> {
         return new HashSet<>();
     }
 
-    private void verifyNotUuids(List<String> inputs) {
-        for (final String input : inputs) {
-            if (UuidQuirks.isIdOrUuid(input)) {
-                throw new InvalidParameterException("UUID cannot be provided: " + input);
+    private void verifyNotUuids(List<UserDef> userDefs) {
+        for (final UserDef user : userDefs) {
+            if (UuidQuirks.isIdOrUuid(user.name)) {
+                throw new InvalidParameterException("UUID cannot be provided: " + user.name);
             }
         }
     }
