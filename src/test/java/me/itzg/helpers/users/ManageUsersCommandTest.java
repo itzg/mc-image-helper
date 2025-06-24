@@ -112,8 +112,8 @@ class ManageUsersCommandTest {
                         )
                 );
 
-            verify(0, getRequestedFor(urlEqualTo("/users/profiles/minecraft/user1")));
-            verify(0, getRequestedFor(urlEqualTo("/users/profiles/minecraft/user2")));
+            verify(1, getRequestedFor(urlEqualTo("/users/profiles/minecraft/user1")));
+            verify(1, getRequestedFor(urlEqualTo("/users/profiles/minecraft/user2")));
         }
 
         @Test
@@ -230,7 +230,7 @@ class ManageUsersCommandTest {
                         )
                 );
 
-            verify(0, getRequestedFor(urlEqualTo("/users/profiles/minecraft/user1")));
+            verify(1, getRequestedFor(urlEqualTo("/users/profiles/minecraft/user1")));
             verify(0, getRequestedFor(urlEqualTo("/users/profiles/minecraft/user2")));
         }
 
@@ -604,7 +604,7 @@ class ManageUsersCommandTest {
                 );
 
             verify(0, getRequestedFor(urlEqualTo("/users/profiles/minecraft/user1")));
-            verify(0, getRequestedFor(urlEqualTo("/users/profiles/minecraft/user2")));
+            verify(1, getRequestedFor(urlEqualTo("/users/profiles/minecraft/user2")));
         }
 
         @Test
@@ -650,8 +650,8 @@ class ManageUsersCommandTest {
                         )
                 );
 
-            verify(0, getRequestedFor(urlEqualTo("/users/profiles/minecraft/user1")));
-            verify(0, getRequestedFor(urlEqualTo("/users/profiles/minecraft/user2")));
+            verify(1, getRequestedFor(urlEqualTo("/users/profiles/minecraft/user1")));
+            verify(1, getRequestedFor(urlEqualTo("/users/profiles/minecraft/user2")));
         }
 
     }

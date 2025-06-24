@@ -233,14 +233,6 @@ public class ManageUsersCommand implements Callable<Integer> {
                     return getOfflineUUID(user.getName());
                 }
 
-                // ...or username
-                for (final JavaUser existingUser : existing) {
-                    if (existingUser.getName().equalsIgnoreCase(user.getName())) {
-                        log.debug("Resolved '{}' from existing user entry by name: {}", user.getName(), existingUser);
-                        return existingUser;
-                    }
-                }
-
                 final Path userCacheFile = outputDirectory.resolve("usercache.json");
                 if (Files.exists(userCacheFile)) {
                     try {
