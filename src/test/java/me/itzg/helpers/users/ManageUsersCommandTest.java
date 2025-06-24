@@ -642,7 +642,7 @@ class ManageUsersCommandTest {
                     conditions()
                         .satisfies(conditions()
                             .at("/name").hasValue("user1")
-                            .at("/uuid").hasValue(USER1_OFFLINE_UUID)
+                            .at("/uuid").hasValue(USER1_UUID)
                         )
                         .satisfies(conditions()
                             .at("/name").hasValue("user2")
