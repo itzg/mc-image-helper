@@ -229,6 +229,10 @@ public class ManageUsersCommand implements Callable<Integer> {
             })
             .orElseGet(() -> {
 
+                if (offline && user.flags.contains("offline")) {
+                    return getOfflineUUID(user.name);
+                }
+
                 // ...or username
                 for (final JavaUser existingUser : existing) {
                     if (existingUser.getName().equalsIgnoreCase(user.name)) {
@@ -250,10 +254,6 @@ public class ManageUsersCommand implements Callable<Integer> {
                     } catch (IOException e) {
                         log.error("Failed to parse usercache.json", e);
                     }
-                }
-
-                if (offline && user.flags.contains("offline")) {
-                    return getOfflineUUID(user.name);
                 }
 
                 final UserApi userApi;

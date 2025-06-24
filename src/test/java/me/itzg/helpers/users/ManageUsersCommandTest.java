@@ -445,6 +445,7 @@ class ManageUsersCommandTest {
                         )
                 );
         }
+        
         @Test
         void allOnline(WireMockRuntimeInfo wmInfo) {
             setupUserStubs();
@@ -480,6 +481,7 @@ class ManageUsersCommandTest {
                         )
                 );
         }
+        
         @Test
         void partialOnlineOffline(WireMockRuntimeInfo wmInfo) {
             setupUserStubs();
@@ -515,6 +517,144 @@ class ManageUsersCommandTest {
                         )
                 );
         }
+    
+        @Test
+        void givenNameExistsInCache(WireMockRuntimeInfo wmInfo) throws IOException {
+            setupUserStubs();
+
+            final Path expectedFile = tempDir.resolve("usercache.json");
+            Files.write(expectedFile,
+                Collections.singletonList(
+                    "[{\"name\":\"user1\",\"uuid\":\"" + USER1_UUID
+                        + "\",\"expiresOn\":\"2023-09-13 20:14:26 +0000\"}]"
+                )
+            );
+
+            final int exitCode = new CommandLine(
+                new ManageUsersCommand()
+            )
+                .execute(
+                    "--mojang-api-base-url", wmInfo.getHttpBaseUrl(),
+                    "--user-api-provider", "mojang",
+                    "--type", "JAVA_WHITELIST",
+                    "--output-directory", tempDir.toString(),
+                    "--offline",
+                    "user1:offline"
+                );
+
+            assertThat(exitCode).isEqualTo(0);
+
+            final Path whitelistFile = tempDir.resolve("whitelist.json");
+            assertThat(whitelistFile).exists();
+
+            assertJson(whitelistFile)
+                .isArrayContainingExactlyInAnyOrder(
+                    conditions()
+                        .satisfies(conditions()
+                            .at("/name").hasValue("user1")
+                            .at("/uuid").hasValue(USER1_OFFLINE_UUID)
+                        )
+                );
+
+            verify(0, getRequestedFor(urlEqualTo("/users/profiles/minecraft/user1")));
+        }
+
+        @Test
+        void changeOnlineToOffline(WireMockRuntimeInfo wmInfo) throws IOException {
+            setupUserStubs();
+
+            final Path expectedFile = tempDir.resolve("whitelist.json");
+            Files.write(expectedFile,
+                Collections.singletonList(
+                    "["
+                        + "{\"name\":\"user1\",\"uuid\":\"" + USER1_UUID + "\"},"
+                        + "{\"name\":\"user2\",\"uuid\":\"" + USER2_UUID + "\"}"
+                        + "]"
+                )
+            );
+
+            // now run with user2 not included
+            final int exitCode = new CommandLine(
+                new ManageUsersCommand()
+            )
+                .execute(
+                    "--mojang-api-base-url", wmInfo.getHttpBaseUrl(),
+                    "--user-api-provider", "mojang",
+                    "--type", "JAVA_WHITELIST",
+                    "--output-directory", tempDir.toString(),
+                    "--offline",
+                    "user1:offline", "user2"
+                );
+
+            assertThat(exitCode).isEqualTo(0);
+
+            assertThat(expectedFile).exists();
+
+            assertJson(expectedFile)
+                .isArrayContainingExactlyInAnyOrder(
+                    conditions()
+                        .satisfies(conditions()
+                            .at("/name").hasValue("user1")
+                            .at("/uuid").hasValue(USER1_OFFLINE_UUID)
+                        )
+                        .satisfies(conditions()
+                            .at("/name").hasValue("user2")
+                            .at("/uuid").hasValue(USER2_UUID)
+                        )
+                );
+
+            verify(0, getRequestedFor(urlEqualTo("/users/profiles/minecraft/user1")));
+            verify(0, getRequestedFor(urlEqualTo("/users/profiles/minecraft/user2")));
+        }
+
+        @Test
+        void changeOfflineToOnline(WireMockRuntimeInfo wmInfo) throws IOException {
+            setupUserStubs();
+
+            final Path expectedFile = tempDir.resolve("whitelist.json");
+            Files.write(expectedFile,
+                Collections.singletonList(
+                    "["
+                        + "{\"name\":\"user1\",\"uuid\":\"" + USER1_OFFLINE_UUID + "\"},"
+                        + "{\"name\":\"user2\",\"uuid\":\"" + USER2_UUID + "\"}"
+                        + "]"
+                )
+            );
+
+            // now run with user2 not included
+            final int exitCode = new CommandLine(
+                new ManageUsersCommand()
+            )
+                .execute(
+                    "--mojang-api-base-url", wmInfo.getHttpBaseUrl(),
+                    "--user-api-provider", "mojang",
+                    "--type", "JAVA_WHITELIST",
+                    "--output-directory", tempDir.toString(),
+                    "--offline",
+                    "user1", "user2"
+                );
+
+            assertThat(exitCode).isEqualTo(0);
+
+            assertThat(expectedFile).exists();
+
+            assertJson(expectedFile)
+                .isArrayContainingExactlyInAnyOrder(
+                    conditions()
+                        .satisfies(conditions()
+                            .at("/name").hasValue("user1")
+                            .at("/uuid").hasValue(USER1_OFFLINE_UUID)
+                        )
+                        .satisfies(conditions()
+                            .at("/name").hasValue("user2")
+                            .at("/uuid").hasValue(USER2_UUID)
+                        )
+                );
+
+            verify(0, getRequestedFor(urlEqualTo("/users/profiles/minecraft/user1")));
+            verify(0, getRequestedFor(urlEqualTo("/users/profiles/minecraft/user2")));
+        }
+
     }
 
     @Nested
