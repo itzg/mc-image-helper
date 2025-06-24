@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Callable;
@@ -228,9 +229,17 @@ public class ManageUsersCommand implements Callable<Integer> {
 
             })
             .orElseGet(() -> {
+                Optional<JavaUser> finalUser = Optional.empty();
+                // ...or username
+                for (final JavaUser existingUser : existing) {
+                    if (existingUser.getName().equalsIgnoreCase(user.getName())) {
+                        log.debug("Resolved '{}' from existing user entry by name: {}", user.getName(), existingUser);
+                        finalUser = Optional.of(existingUser);
+                    }
+                }
 
                 if (offline && user.getFlags().contains("offline")) {
-                    return getOfflineUUID(user.getName());
+                    return finalUser.orElse(JavaUser.builder().name(user.getName()).build()).setUuid(getOfflineUUID(user.getName()));
                 }
 
                 final Path userCacheFile = outputDirectory.resolve("usercache.json");
@@ -259,8 +268,13 @@ public class ManageUsersCommand implements Callable<Integer> {
                     default:
                         throw new GenericException("User API provider was not specified");
                 }
-                return userApi.resolveUser(user.getName());
+                JavaUser apiUser = userApi.resolveUser(user.getName());
 
+                if (finalUser.isPresent()) {
+                    return finalUser.get().setUuid(apiUser.getUuid());
+                }else{
+                    return apiUser;
+                }
             });
 
     }
@@ -338,7 +352,7 @@ public class ManageUsersCommand implements Callable<Integer> {
         return version != null && new ComparableVersion(version).compareTo(MIN_VERSION_USES_JSON) < 0;
     }
 
-    private static JavaUser getOfflineUUID(String username) {
+    private static String getOfflineUUID(String username) {
         byte[] bytes = DigestUtils.md5("OfflinePlayer:"+username);
 
         // Force version = 3 (bits 12-15 of time_hi_and_version)
@@ -360,9 +374,6 @@ public class ManageUsersCommand implements Callable<Integer> {
             lsb = (lsb << 8) | (bytes[i] & 0xFF);
         }
 
-        return JavaUser.builder()
-        .name(username)
-        .uuid(new UUID(msb, lsb).toString())
-        .build();
+        return new UUID(msb, lsb).toString();
     }
 }
