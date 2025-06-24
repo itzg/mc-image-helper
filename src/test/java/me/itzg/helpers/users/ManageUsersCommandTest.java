@@ -630,7 +630,6 @@ class ManageUsersCommandTest {
                     "--user-api-provider", "mojang",
                     "--type", "JAVA_WHITELIST",
                     "--output-directory", tempDir.toString(),
-                    "--offline",
                     "user1", "user2"
                 );
 

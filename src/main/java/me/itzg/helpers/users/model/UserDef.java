@@ -11,8 +11,8 @@ import lombok.extern.jackson.Jacksonized;
 @Data @SuperBuilder
 @Jacksonized
 public class UserDef {
-    public final String name;
-    public final List<String> flags;
+    final String name;
+    final List<String> flags;
 
     public UserDef(String input) {
         ArrayList<String> tokens = new ArrayList<String>(Arrays.asList(input.trim().split(":")));

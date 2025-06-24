@@ -131,7 +131,7 @@ public class ManageUsersCommand implements Callable<Integer> {
 
             final Set<String> users = loadExistingTextUserList(resultFile);
             for (final UserDef user : userDefs) {
-                users.add(user.name);
+                users.add(user.getName());
             }
 
             log.debug("Writing users list to {}: {}", resultFile, users);
@@ -210,16 +210,16 @@ public class ManageUsersCommand implements Callable<Integer> {
 
     private JavaUser resolveJavaUserId(SharedFetch sharedFetch, List<? extends JavaUser> existing, UserDef user) {
 
-        return UuidQuirks.ifIdOrUuid(user.name)
+        return UuidQuirks.ifIdOrUuid(user.getName())
             .map(uuid -> {
                 for (final JavaUser existingUser : existing) {
                     if (existingUser.getUuid().equalsIgnoreCase(uuid)) {
-                        log.debug("Resolved '{}' from existing user entry by UUID: {}", user.name, existingUser);
+                        log.debug("Resolved '{}' from existing user entry by UUID: {}", user.getName(), existingUser);
                         return existingUser;
                     }
                 }
 
-                log.debug("Resolved '{}' into new user entry", user.name);
+                log.debug("Resolved '{}' into new user entry", user.getName());
                 return JavaUser.builder()
                     .uuid(uuid)
                     // username needs to be present, but content doesn't matter
@@ -229,14 +229,14 @@ public class ManageUsersCommand implements Callable<Integer> {
             })
             .orElseGet(() -> {
 
-                if (offline && user.flags.contains("offline")) {
-                    return getOfflineUUID(user.name);
+                if (offline && user.getFlags().contains("offline")) {
+                    return getOfflineUUID(user.getName());
                 }
 
                 // ...or username
                 for (final JavaUser existingUser : existing) {
-                    if (existingUser.getName().equalsIgnoreCase(user.name)) {
-                        log.debug("Resolved '{}' from existing user entry by name: {}", user.name, existingUser);
+                    if (existingUser.getName().equalsIgnoreCase(user.getName())) {
+                        log.debug("Resolved '{}' from existing user entry by name: {}", user.getName(), existingUser);
                         return existingUser;
                     }
                 }
@@ -246,8 +246,8 @@ public class ManageUsersCommand implements Callable<Integer> {
                     try {
                         final List<JavaUser> userCache = objectMapper.readValue(userCacheFile.toFile(), LIST_OF_JAVA_USER);
                         for (final JavaUser existingUser : userCache) {
-                            if (existingUser.getName().equalsIgnoreCase(user.name)) {
-                                log.debug("Resolved '{}' from user cache by name: {}", user.name, existingUser);
+                            if (existingUser.getName().equalsIgnoreCase(user.getName())) {
+                                log.debug("Resolved '{}' from user cache by name: {}", user.getName(), existingUser);
                                 return existingUser;
                             }
                         }
@@ -267,7 +267,7 @@ public class ManageUsersCommand implements Callable<Integer> {
                     default:
                         throw new GenericException("User API provider was not specified");
                 }
-                return userApi.resolveUser(user.name);
+                return userApi.resolveUser(user.getName());
 
             });
 
@@ -300,8 +300,8 @@ public class ManageUsersCommand implements Callable<Integer> {
 
     private void verifyNotUuids(List<UserDef> userDefs) {
         for (final UserDef user : userDefs) {
-            if (UuidQuirks.isIdOrUuid(user.name)) {
-                throw new InvalidParameterException("UUID cannot be provided: " + user.name);
+            if (UuidQuirks.isIdOrUuid(user.getName())) {
+                throw new InvalidParameterException("UUID cannot be provided: " + user.getName());
             }
         }
     }
