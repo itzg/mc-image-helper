@@ -13,7 +13,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Callable;
@@ -229,17 +228,21 @@ public class ManageUsersCommand implements Callable<Integer> {
 
             })
             .orElseGet(() -> {
-                Optional<JavaUser> finalUser = Optional.empty();
+                JavaUser finalUser = null;
                 // ...or username
                 for (final JavaUser existingUser : existing) {
                     if (existingUser.getName().equalsIgnoreCase(user.getName())) {
                         log.debug("Resolved '{}' from existing user entry by name: {}", user.getName(), existingUser);
-                        finalUser = Optional.of(existingUser);
+                        finalUser = existingUser;
                     }
                 }
 
                 if (offline && user.getFlags().contains("offline")) {
-                    return finalUser.orElse(JavaUser.builder().name(user.getName()).build()).setUuid(getOfflineUUID(user.getName()));
+                    log.debug("Resolved '{}' as offline user", user.getName());
+                    if (finalUser == null) {
+                        finalUser = JavaUser.builder().name(user.getName()).build();
+                    }
+                    return finalUser.setUuid(getOfflineUUID(user.getName()));
                 }
 
                 final Path userCacheFile = outputDirectory.resolve("usercache.json");
@@ -270,8 +273,8 @@ public class ManageUsersCommand implements Callable<Integer> {
                 }
                 JavaUser apiUser = userApi.resolveUser(user.getName());
 
-                if (finalUser.isPresent()) {
-                    return finalUser.get().setUuid(apiUser.getUuid());
+                if (finalUser != null) {
+                    return finalUser.setUuid(apiUser.getUuid());
                 }else{
                     return apiUser;
                 }
