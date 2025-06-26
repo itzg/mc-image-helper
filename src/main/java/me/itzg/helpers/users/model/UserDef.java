@@ -15,8 +15,16 @@ public class UserDef {
     final List<String> flags;
 
     public UserDef(String input) {
-        ArrayList<String> tokens = new ArrayList<String>(Arrays.asList(input.trim().split(":")));
-        name = tokens.remove(0);
-        flags = tokens;
+        final int colonIndex = input.trim().indexOf(':');
+        if (colonIndex < 0) {
+            name = input.trim();
+            flags = new ArrayList<>();
+            return;
+        }
+        name = input.substring(0, colonIndex).trim();
+        flags = Arrays.stream(input.substring(colonIndex + 1).split(","))
+            .map(String::trim)
+            .filter(flag -> !flag.isEmpty())
+            .toList();
     }
 }
