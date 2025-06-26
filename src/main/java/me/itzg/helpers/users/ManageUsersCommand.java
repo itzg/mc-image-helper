@@ -118,7 +118,7 @@ public class ManageUsersCommand implements Callable<Integer> {
     }
 
     private void processJavaUserIdList(SharedFetch sharedFetch, List<String> inputs) throws IOException {
-        List<UserDef> userDefs = inputs.stream().map((String input) -> {return new UserDef(input);}).collect(Collectors.toList());
+        List<UserDef> userDefs = inputs.stream().map(input -> new UserDef(input)).collect(Collectors.toList());
         if (usesTextUserList()) {
             verifyNotUuids(userDefs);
 
