@@ -769,8 +769,9 @@ Usage: mc-image-helper manage-users [-fh] [--existing=<existingFileBehavior>]
                                     [--connection-pool-max-idle-timeout=DURATION
                                     ]] [INPUT[,INPUT...]...]
       [INPUT[,INPUT...]...] One or more Mojang usernames, UUID, or ID (UUID
-                              without dashes); flags are separated by ":"
-                              <username/UUID/ID>:flag1:flag2
+                              without dashes); flags are listed after a colon
+                              separated by comma:
+                              <username/UUID/ID>:flag1,flag2
                             When input is a file, only one local file path or
                               URL can be provided
       --connection-pool-max-idle-timeout=DURATION
