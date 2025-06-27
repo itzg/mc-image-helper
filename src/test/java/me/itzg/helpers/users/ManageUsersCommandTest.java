@@ -854,6 +854,65 @@ class ManageUsersCommandTest {
             verify(1, getRequestedFor(urlEqualTo("/users/profiles/minecraft/user2")));
         }
 
+        @Test
+        void givenNameExistsInCache(WireMockRuntimeInfo wmInfo) throws IOException {
+            setupUserStubs();
+            
+            final Path cacheFile = tempDir.resolve("usercache.json");
+            Files.write(cacheFile,
+                Collections.singletonList(
+                    "[{\"name\":\"user1\",\"uuid\":\"" + USER1_UUID
+                        + "\",\"expiresOn\":\"2023-09-13 20:14:26 +0000\"}]"
+                )
+            );
+
+            final Path expectedFile = tempDir.resolve("ops.json");
+            Files.write(expectedFile,
+                Collections.singletonList(
+                    "["
+                        // make sure the bypassesPlayerLimit is retained
+                        + "{\"name\":\"user1\",\"uuid\":\"" + USER1_UUID + "\",\"level\": 4,\"bypassesPlayerLimit\": true},"
+                        + "{\"name\":\"user2\",\"uuid\":\"" + USER2_UUID + "\",\"level\": 4,\"bypassesPlayerLimit\": false}"
+                        + "]"
+                )
+            );
+
+            final int exitCode = new CommandLine(
+                new ManageUsersCommand()
+            )
+                .execute(
+                    "--mojang-api-base-url", wmInfo.getHttpBaseUrl(),
+                    "--user-api-provider", "mojang",
+                    "--type", "JAVA_OPS",
+                    "--output-directory", tempDir.toString(),
+                    "user1", "user2"
+                );
+
+            assertThat(exitCode).isEqualTo(0);
+
+            assertThat(expectedFile).exists();
+
+            assertJson(expectedFile)
+                .isArrayContainingExactlyInAnyOrder(
+                    conditions()
+                        .satisfies(conditions()
+                            .at("/name").hasValue("user1")
+                            .at("/uuid").hasValue(USER1_UUID)
+                            .at("/level").hasValue(4)
+                            .at("/bypassesPlayerLimit").hasValue(true)
+                        )
+                        .satisfies(conditions()
+                            .at("/name").hasValue("user2")
+                            .at("/uuid").hasValue(USER2_UUID)
+                            .at("/level").hasValue(4)
+                            .at("/bypassesPlayerLimit").hasValue(false)
+                        )
+                );
+
+            verify(0, getRequestedFor(urlEqualTo("/users/profiles/minecraft/user1")));
+            verify(1, getRequestedFor(urlEqualTo("/users/profiles/minecraft/user2")));
+        }
+
     }
 
     @Nested

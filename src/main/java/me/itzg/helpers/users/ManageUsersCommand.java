@@ -228,8 +228,10 @@ public class ManageUsersCommand implements Callable<Integer> {
 
             })
             .orElseGet(() -> {
+                // User to be used
                 JavaUser finalUser = null;
-                // ...or username
+
+                // Try to find user in existing users list
                 for (final JavaUser existingUser : existing) {
                     if (existingUser.getName().equalsIgnoreCase(user.getName())) {
                         log.debug("Resolved '{}' from existing user entry by name: {}", user.getName(), existingUser);
@@ -237,11 +239,15 @@ public class ManageUsersCommand implements Callable<Integer> {
                     }
                 }
 
+                // If existing user is not found, build a new one
+                if (finalUser == null) {
+                    finalUser = JavaUser.builder().name(user.getName()).build();
+                }
+
+                // User is not online, generating offline UUID
                 if (offline && user.getFlags().contains("offline")) {
                     log.debug("Resolved '{}' as offline user", user.getName());
-                    if (finalUser == null) {
-                        finalUser = JavaUser.builder().name(user.getName()).build();
-                    }
+                    // update UUID keeping the other fields in case of existing user
                     return finalUser.setUuid(getOfflineUUID(user.getName()));
                 }
 
@@ -252,7 +258,9 @@ public class ManageUsersCommand implements Callable<Integer> {
                         for (final JavaUser existingUser : userCache) {
                             if (existingUser.getName().equalsIgnoreCase(user.getName())) {
                                 log.debug("Resolved '{}' from user cache by name: {}", user.getName(), existingUser);
-                                return existingUser;
+                                // UUID from usercache.jsona are safe to use regardless of the user type
+                                // if a UUID is present here, user joined successfully with that UUID
+                                return finalUser.setUuid(existingUser.getUuid());
                             }
                         }
                     } catch (IOException e) {
@@ -275,7 +283,8 @@ public class ManageUsersCommand implements Callable<Integer> {
 
                 if (finalUser != null) {
                     return finalUser.setUuid(apiUser.getUuid());
-                }else{
+                }
+                else {
                     return apiUser;
                 }
             });
@@ -356,7 +365,7 @@ public class ManageUsersCommand implements Callable<Integer> {
     }
 
     private static String getOfflineUUID(String username) {
-        byte[] bytes = DigestUtils.md5("OfflinePlayer:"+username);
+        byte[] bytes = DigestUtils.md5("OfflinePlayer:" + username);
 
         // Force version = 3 (bits 12-15 of time_hi_and_version)
         bytes[6] &= 0x0F;
