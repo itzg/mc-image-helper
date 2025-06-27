@@ -3,12 +3,14 @@ package me.itzg.helpers.users.model;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import lombok.Data;
 import lombok.experimental.SuperBuilder;
 import lombok.extern.jackson.Jacksonized;
 
-@Data @SuperBuilder
+@Data
+@SuperBuilder
 @Jacksonized
 public class UserDef {
     final String name;
@@ -23,8 +25,8 @@ public class UserDef {
         }
         name = input.substring(0, colonIndex).trim();
         flags = Arrays.stream(input.substring(colonIndex + 1).split(","))
-            .map(String::trim)
-            .filter(flag -> !flag.isEmpty())
-            .toList();
+                .map(String::trim)
+                .filter(flag -> !flag.isEmpty())
+                .collect(Collectors.toList());
     }
 }
