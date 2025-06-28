@@ -80,7 +80,8 @@ public class InstallPaperCommand implements Callable<Integer> {
             @Option(names = "--build")
             Integer build;
 
-            @Option(names = "--channel", defaultValue = "default")
+            @Option(names = "--channel", description = "This is ignored for now",
+                defaultValue = "default")
             RequestedChannel channel;
         }
     }
