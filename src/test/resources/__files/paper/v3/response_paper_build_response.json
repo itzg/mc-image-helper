@@ -1,0 +1,22 @@
+{
+  "id": 46,
+  "time": "2025-06-26T18:54:33.827Z",
+  "channel": "STABLE",
+  "commits": [
+    {
+      "sha": "35b2c6ece4a8e9a2f4b9d3c21dc06d7b94dcc604",
+      "time": "2025-06-26T18:44:29Z",
+      "message": "Use dropped item for stats info (#12747)\n\nWe are already using the dropped stack to determine the type, we\nmight as well also use it for the count, given that plugins can already\nmutate the type, might as well let them mess with the amount."
+    }
+  ],
+  "downloads": {
+    "server:default": {
+      "name": "paper-1.21.6-46.jar",
+      "checksums": {
+        "sha256": "bfca155b4a6b45644bfc1766f4e02a83c736e45fcc060e8788c71d6e7b3d56f6"
+      },
+      "size": 52636397,
+      "url": "https://fill-data.papermc.io/v1/objects/bfca155b4a6b45644bfc1766f4e02a83c736e45fcc060e8788c71d6e7b3d56f6/paper-1.21.6-46.jar"
+    }
+  }
+}
