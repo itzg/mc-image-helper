@@ -761,6 +761,7 @@ Usage: mc-image-helper manage-users [-fh] [--existing=<existingFileBehavior>]
                                     >] -t=<type>
                                     [--user-api-provider=<userApiProvider>]
                                     [--version=<version>]
+                                    [--offline]
                                     [[--http-response-timeout=DURATION]
                                     [--tls-handshake-timeout=DURATION]
                                     [--connection-pool-pending-acquire-timeout=D
@@ -768,8 +769,9 @@ Usage: mc-image-helper manage-users [-fh] [--existing=<existingFileBehavior>]
                                     [--connection-pool-max-idle-timeout=DURATION
                                     ]] [INPUT[,INPUT...]...]
       [INPUT[,INPUT...]...] One or more Mojang usernames, UUID, or ID (UUID
-                              without dashes); however, when offline, only
-                              UUID/IDs can be provided.
+                              without dashes); flags are listed after a colon
+                              separated by comma:
+                              <username/UUID/ID>:flag1,flag2
                             When input is a file, only one local file path or
                               URL can be provided
       --connection-pool-max-idle-timeout=DURATION
@@ -798,6 +800,8 @@ Usage: mc-image-helper manage-users [-fh] [--existing=<existingFileBehavior>]
                             Allowed: mojang, playerdb
       --version=<version>   Minecraft game version. If not provided, assumes
                               JSON format
+      --offline             Server is in offline mode, for users that have the
+                              offline flag the UUID is generated locally 
 ```
 
 ### maven-download
