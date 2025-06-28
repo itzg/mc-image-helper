@@ -18,3 +18,48 @@ jobs:
     with:
       arguments: test
       include-test-report: true
+
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: Setup Java JDK
+        uses: actions/setup-java@v4.7.1
+        with:
+          java-version: 21
+          distribution: temurin
+
+      - name: Setup gradle
+        uses: gradle/actions/setup-gradle@v4.4.1
+
+      - name: Run gradle test
+        run: ./gradlew test
+
+      - name: Re-run test with output
+        if: failure()
+        run: |
+          cat <<EOF > ${{ runner.temp }}/test-logging.gradle
+          allprojects {
+            tasks.withType(Test).configureEach {
+              testLogging {
+                showStandardStreams = true
+              }
+            }
+          }
+          EOF
+
+      - name: Re-run test with output
+        if: failure()
+        run: ./gradlew --init-script ${{ runner.temp }}/test-logging.gradle test
+
+      - name: Test Report
+        uses: dorny/test-reporter@v2.1.0
+        if: github.actor == github.repository_owner && inputs.include-test-report && ( success() || failure() )    # run this step even if previous step failed
+        with:
+          name: test results
+          path: build/test-results/test/*.xml
+          reporter: java-junit
