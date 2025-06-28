@@ -33,6 +33,8 @@ public class SharedFetch implements AutoCloseable {
 
     private final HttpClient reactiveClient;
 
+    private final URI filesViaUrl;
+
     public SharedFetch(String forCommand, Options options) {
         final String userAgent = String.format("%s/%s/%s (cmd=%s)",
             "itzg",
@@ -74,6 +76,8 @@ public class SharedFetch implements AutoCloseable {
             );
 
         headers.put("x-fetch-session", fetchSessionId);
+
+        this.filesViaUrl = options.getFilesViaUrl();
     }
 
     public FetchBuilderBase<?> fetch(URI uri) {
@@ -118,6 +122,12 @@ public class SharedFetch implements AutoCloseable {
 
         private final Map<String,String> extraHeaders;
 
+        /**
+         * Can be set for unit testing file downloads where the original URL's path is resolved
+         * against this given URL.
+         */
+        private final URI filesViaUrl;
+
         public Options withHeader(String key, String value) {
             final Map<String, String> newHeaders = extraHeaders != null ?
                 new HashMap<>(extraHeaders) : new HashMap<>();
@@ -125,7 +135,7 @@ public class SharedFetch implements AutoCloseable {
 
             return new Options(
                 responseTimeout, tlsHandshakeTimeout, maxIdleTimeout, pendingAcquireTimeout,
-                newHeaders
+                newHeaders, filesViaUrl
             );
         }
     }

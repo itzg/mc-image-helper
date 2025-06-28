@@ -54,7 +54,7 @@ public class SpecificFileFetchBuilder extends FetchBuilderBase<SpecificFileFetch
     }
 
     public Mono<Path> assemble() {
-        final URI uri = uri();
+        final URI uri = uriForFile();
 
         if (skipExisting && Files.exists(file)) {
             log.debug("Skipping file={} that already exists due to request", file);

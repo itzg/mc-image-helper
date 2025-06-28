@@ -1,180 +1,187 @@
 package me.itzg.helpers.paper;
 
-import static com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder.okForJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
-import java.util.Arrays;
+import java.net.URI;
+import java.nio.file.Path;
+import me.itzg.helpers.http.FileDownloadStatusHandler;
 import me.itzg.helpers.http.SharedFetch.Options;
 import me.itzg.helpers.paper.PaperDownloadsClient.VersionBuild;
-import me.itzg.helpers.paper.model.BuildInfo;
-import me.itzg.helpers.paper.model.ProjectInfo;
-import me.itzg.helpers.paper.model.ReleaseChannel;
-import me.itzg.helpers.paper.model.VersionBuilds;
+import me.itzg.helpers.paper.PaperDownloadsClient.VersionBuildFile;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.mockito.Mockito;
 
 @WireMockTest
 class PaperDownloadsClientTest {
 
     @Test
-    void getLatestBuild(WireMockRuntimeInfo wmInfo) {
-        stubFor(get("/v2/projects/paper/versions/1.20.6/builds")
-            .willReturn(
-                aResponse()
-                    .withHeader("Content-Type", "application/json")
-                    .withBodyFile("paper/version-builds-response_mix_default_latest.json")
+    void latestVersionBuild(WireMockRuntimeInfo wmInfo) {
+        //TODO use urlPathTemplate with Wiremock 3.x
+        stubFor(get(urlPathEqualTo("/v3/projects/paper/versions"))
+            .willReturn(aResponse()
+                .withHeader("Content-Type", "application/json")
+                .withBodyFile("paper/v3/response_paper_project.json")
             )
         );
 
-        final Integer result;
         try (PaperDownloadsClient client = new PaperDownloadsClient(wmInfo.getHttpBaseUrl(),
             Options.builder().build()
         )) {
-
-            result = client.getLatestBuild("paper", "1.20.6", ReleaseChannel.DEFAULT)
+            final VersionBuild result = client.getLatestVersionBuild("paper")
                 .block();
+
+            assertThat(result).isNotNull();
+            assertThat(result.getVersion()).isEqualTo("1.21.6");
+            assertThat(result.getBuild()).isEqualTo(46);
         }
 
-        assertThat(result).isNotNull();
-        assertThat(result).isEqualTo(140);
     }
 
     @Test
-    void getLatestBuild_butNoMatchingChannel(WireMockRuntimeInfo wmInfo) {
-        stubFor(get("/v2/projects/paper/versions/1.20.5/builds")
-            .willReturn(
-                aResponse()
-                    .withHeader("Content-Type", "application/json")
-                    .withBodyFile("paper/version-builds-response_only_experimental.json")
+    void latestBuild(WireMockRuntimeInfo wmInfo) {
+        stubFor(get(urlPathEqualTo("/v3/projects/paper/versions/1.21.6/builds/latest"))
+            .willReturn(aResponse()
+                .withHeader("Content-Type", "application/json")
+                .withBodyFile("paper/v3/response_paper_build_response.json")
             )
         );
 
-        final Integer result;
         try (PaperDownloadsClient client = new PaperDownloadsClient(wmInfo.getHttpBaseUrl(),
             Options.builder().build()
         )) {
-
-            result = client.getLatestBuild("paper", "1.20.5", ReleaseChannel.DEFAULT)
+            final Integer buildId = client.getLatestBuild("paper", "1.21.6")
                 .block();
-        }
 
-        assertThat(result).isNull();
+            assertThat(buildId).isNotNull()
+                .isEqualTo(46);
+        }
     }
 
     @Test
-    void getLatestVersionBuild_withExperimentalThenMix(WireMockRuntimeInfo wmInfo) {
-        stubFor(get("/v2/projects/paper/versions/experiments/builds")
-            .willReturn(
-                okForJson(
-                    new VersionBuilds()
-                        .setVersion("experiments")
-                        .setBuilds(Arrays.asList(
-                            new BuildInfo()
-                                .setBuild(1)
-                                .setChannel(ReleaseChannel.EXPERIMENTAL),
-                            new BuildInfo()
-                                .setBuild(2)
-                                .setChannel(ReleaseChannel.EXPERIMENTAL)
-                        ))
-                )
+    void downloadsSpecific(WireMockRuntimeInfo wmInfo, @TempDir Path tempDir) {
+        stubFor(get(urlPathEqualTo("/v3/projects/paper/versions/1.21.6/builds/46"))
+            .willReturn(aResponse()
+                .withHeader("Content-Type", "application/json")
+                .withBodyFile("paper/v3/response_paper_build_response.json")
             )
         );
 
-        stubFor(get("/v2/projects/paper/versions/mix/builds")
-            .willReturn(
-                okForJson(
-                    new VersionBuilds()
-                        .setVersion("mix")
-                        .setBuilds(Arrays.asList(
-                            new BuildInfo()
-                                .setBuild(1)
-                                .setChannel(ReleaseChannel.EXPERIMENTAL),
-                            new BuildInfo()
-                                .setBuild(2)
-                                .setChannel(ReleaseChannel.DEFAULT),
-                            new BuildInfo()
-                                .setBuild(3)
-                                .setChannel(ReleaseChannel.EXPERIMENTAL)
-                        ))
-                )
+        stubFor(get(urlPathEqualTo("/v1/objects/bfca155b4a6b45644bfc1766f4e02a83c736e45fcc060e8788c71d6e7b3d56f6/paper-1.21.6-46.jar"))
+            .willReturn(aResponse()
+                .withHeader("Content-Type", "application/java-archive")
+                .withBody("some-jar-content")
             )
         );
 
-        stubFor(get("/v2/projects/paper")
-            .willReturn(okForJson(
-                new ProjectInfo()
-                    .setVersions(Arrays.asList(
-                        "oldest",
-                        "older",
-                        "mix",
-                        "experiments"
-                    ))
-                )
-            )
-        );
+        final FileDownloadStatusHandler statusHandler = Mockito.mock(FileDownloadStatusHandler.class);
 
-        final VersionBuild result;
         try (PaperDownloadsClient client = new PaperDownloadsClient(wmInfo.getHttpBaseUrl(),
-            Options.builder().build()
+            Options.builder()
+                .filesViaUrl(URI.create(wmInfo.getHttpBaseUrl()))
+                .build()
         )) {
-
-            result = client.getLatestVersionBuild("paper", ReleaseChannel.DEFAULT)
+            final VersionBuildFile result = client.download("paper", tempDir, statusHandler, "1.21.6", 46)
                 .block();
+
+            assertThat(result).isNotNull();
+            assertThat(result.getVersion()).isEqualTo("1.21.6");
+            assertThat(result.getBuild()).isEqualTo(46);
+            assertThat(result.getFile()).hasFileName("paper-1.21.6-46.jar");
+
+            final Path expectedFile = tempDir.resolve("paper-1.21.6-46.jar");
+            assertThat(expectedFile)
+                .exists()
+                .hasContent("some-jar-content");
         }
 
-        assertThat(result).isNotNull();
-        assertThat(result.getVersion()).isEqualTo("mix");
-        assertThat(result.getBuild()).isEqualTo(2);
+
     }
 
     @Test
-    void getLatestVersionBuild_wantsExperimental(WireMockRuntimeInfo wmInfo) {
-        stubFor(get("/v2/projects/paper/versions/experiments/builds")
-            .willReturn(
-                okForJson(
-                    new VersionBuilds()
-                        .setVersion("experiments")
-                        .setBuilds(Arrays.asList(
-                            new BuildInfo()
-                                .setBuild(1)
-                                .setChannel(ReleaseChannel.EXPERIMENTAL),
-                            new BuildInfo()
-                                .setBuild(2)
-                                .setChannel(ReleaseChannel.EXPERIMENTAL)
-                        ))
-                )
+    void downloadsLatest(WireMockRuntimeInfo wmInfo, @TempDir Path tempDir) {
+        stubFor(get(urlPathEqualTo("/v3/projects/paper/versions"))
+            .willReturn(aResponse()
+                .withHeader("Content-Type", "application/json")
+                .withBodyFile("paper/v3/response_paper_project.json")
+            )
+        );
+        stubFor(get(urlPathEqualTo("/v3/projects/paper/versions/1.21.6/builds/46"))
+            .willReturn(aResponse()
+                .withHeader("Content-Type", "application/json")
+                .withBodyFile("paper/v3/response_paper_build_response.json")
+            )
+        );
+        stubFor(get(urlPathEqualTo("/v1/objects/bfca155b4a6b45644bfc1766f4e02a83c736e45fcc060e8788c71d6e7b3d56f6/paper-1.21.6-46.jar"))
+            .willReturn(aResponse()
+                .withHeader("Content-Type", "application/java-archive")
+                .withBody("some-jar-content")
             )
         );
 
-        stubFor(get("/v2/projects/paper")
-            .willReturn(okForJson(
-                new ProjectInfo()
-                    .setVersions(Arrays.asList(
-                        "oldest",
-                        "older",
-                        "mix",
-                        "experiments"
-                    ))
-                )
-            )
-        );
+        final FileDownloadStatusHandler statusHandler = Mockito.mock(FileDownloadStatusHandler.class);
 
-        final VersionBuild result;
         try (PaperDownloadsClient client = new PaperDownloadsClient(wmInfo.getHttpBaseUrl(),
-            Options.builder().build()
+            Options.builder()
+                .filesViaUrl(URI.create(wmInfo.getHttpBaseUrl()))
+                .build()
         )) {
-
-            result = client.getLatestVersionBuild("paper",
-                    ReleaseChannel.EXPERIMENTAL)
+            final VersionBuildFile result = client.downloadLatest("paper", tempDir, statusHandler)
                 .block();
+
+            assertThat(result).isNotNull();
+            assertThat(result.getVersion()).isEqualTo("1.21.6");
+            assertThat(result.getBuild()).isEqualTo(46);
+            assertThat(result.getFile()).hasFileName("paper-1.21.6-46.jar");
+
+            final Path expectedFile = tempDir.resolve("paper-1.21.6-46.jar");
+            assertThat(expectedFile)
+                .exists()
+                .hasContent("some-jar-content");
         }
 
-        assertThat(result).isNotNull();
-        assertThat(result.getVersion()).isEqualTo("experiments");
-        assertThat(result.getBuild()).isEqualTo(2);
+
     }
 
+    @Test
+    void downloadsLatestBuild(WireMockRuntimeInfo wmInfo, @TempDir Path tempDir) {
+        stubFor(get(urlPathEqualTo("/v3/projects/paper/versions/1.21.6/builds/latest"))
+            .willReturn(aResponse()
+                .withHeader("Content-Type", "application/json")
+                .withBodyFile("paper/v3/response_paper_build_response.json")
+            )
+        );
+        stubFor(get(urlPathEqualTo("/v1/objects/bfca155b4a6b45644bfc1766f4e02a83c736e45fcc060e8788c71d6e7b3d56f6/paper-1.21.6-46.jar"))
+            .willReturn(aResponse()
+                .withHeader("Content-Type", "application/java-archive")
+                .withBody("some-jar-content")
+            )
+        );
 
+        final FileDownloadStatusHandler statusHandler = Mockito.mock(FileDownloadStatusHandler.class);
+
+        try (PaperDownloadsClient client = new PaperDownloadsClient(wmInfo.getHttpBaseUrl(),
+            Options.builder()
+                .filesViaUrl(URI.create(wmInfo.getHttpBaseUrl()))
+                .build()
+        )) {
+            final VersionBuildFile result = client.downloadLatestBuild("paper", tempDir, statusHandler, "1.21.6")
+                .block();
+
+            assertThat(result).isNotNull();
+            assertThat(result.getVersion()).isEqualTo("1.21.6");
+            assertThat(result.getBuild()).isEqualTo(46);
+            assertThat(result.getFile()).hasFileName("paper-1.21.6-46.jar");
+
+            final Path expectedFile = tempDir.resolve("paper-1.21.6-46.jar");
+            assertThat(expectedFile)
+                .exists()
+                .hasContent("some-jar-content");
+        }
+
+
+    }
 }
