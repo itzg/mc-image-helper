@@ -65,6 +65,7 @@ import org.jetbrains.annotations.Nullable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
+import reactor.netty.http.client.PrematureCloseException;
 import reactor.util.retry.Retry;
 
 @RequiredArgsConstructor
@@ -753,10 +754,11 @@ public class CurseForgeInstaller {
             )
             // retry the deferred part above if one of the expected failure cases
             .retryWhen(
-                Retry.fixedDelay(BAD_FILE_ATTEMPTS, BAD_FILE_DELAY)
+                Retry.backoff(BAD_FILE_ATTEMPTS, BAD_FILE_DELAY)
                     .filter(throwable ->
                         throwable instanceof FileHashInvalidException ||
-                            throwable instanceof FailedRequestException
+                            throwable instanceof FailedRequestException ||
+                            throwable instanceof PrematureCloseException
                     )
                     .doBeforeRetry(retrySignal ->
                         log.warn("Retrying to download {} @ {}:{}",
