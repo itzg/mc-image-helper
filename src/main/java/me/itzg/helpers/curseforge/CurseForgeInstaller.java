@@ -8,6 +8,7 @@ import static me.itzg.helpers.curseforge.CurseForgeApiClient.modFileDownloadStat
 import static me.itzg.helpers.singles.MoreCollections.safeStreamFrom;
 
 import com.fasterxml.jackson.databind.JsonMappingException;
+import io.netty.channel.ChannelException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -65,7 +66,6 @@ import org.jetbrains.annotations.Nullable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
-import reactor.netty.http.client.PrematureCloseException;
 import reactor.util.retry.Retry;
 
 @RequiredArgsConstructor
@@ -758,7 +758,8 @@ public class CurseForgeInstaller {
                     .filter(throwable ->
                         throwable instanceof FileHashInvalidException ||
                             throwable instanceof FailedRequestException ||
-                            throwable instanceof PrematureCloseException
+                            throwable instanceof IOException ||
+                            throwable instanceof ChannelException
                     )
                     .doBeforeRetry(retrySignal ->
                         log.warn("Retrying to download {} @ {}:{}",
