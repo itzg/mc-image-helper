@@ -61,7 +61,7 @@ public class InstallPaperCommand implements Callable<Integer> {
             @Option(names = "--project", defaultValue = "paper")
             String project;
 
-            private static final Pattern ALLOWED_VERSIONS = Pattern.compile("latest|\\d+\\.\\d+(\\.\\d+)?",
+            private static final Pattern ALLOWED_VERSIONS = Pattern.compile("latest|\\d+\\.\\d+(\\.\\d+)?(-SNAPSHOT)?",
                 Pattern.CASE_INSENSITIVE
             );
 
@@ -71,8 +71,7 @@ public class InstallPaperCommand implements Callable<Integer> {
                 if (!m.matches()) {
                     throw new ParameterException(spec.commandLine(), "Invalid value for minecraft version: " + version);
                 }
-                this.version = version.toLowerCase();
-
+                this.version = version;
             }
 
             String version;
