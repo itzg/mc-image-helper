@@ -754,7 +754,7 @@ public class CurseForgeInstaller {
             )
             // retry the deferred part above if one of the expected failure cases
             .retryWhen(
-                Retry.fixedDelay(BAD_FILE_ATTEMPTS, BAD_FILE_DELAY)
+                Retry.backoff(BAD_FILE_ATTEMPTS, BAD_FILE_DELAY)
                     .filter(throwable ->
                         throwable instanceof FileHashInvalidException ||
                             throwable instanceof FailedRequestException ||
