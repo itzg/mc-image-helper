@@ -17,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.files.Manifests;
+import me.itzg.helpers.http.FailedRequestException;
 import me.itzg.helpers.http.Fetch;
 import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.http.Uris;
@@ -61,6 +62,9 @@ public class MulitCopyCommand implements Callable<Integer> {
 
     @Option(names = "--skip-existing", defaultValue = "false")
     boolean skipExisting;
+
+    @Option(names = "--ignore-missing-sources", description = "Don't log or fail exit code when any or all sources are missing")
+    boolean ignoreMissingSources;
 
     @Parameters(split = SPLIT_COMMA_NL, splitSynopsisLabel = SPLIT_SYNOPSIS_COMMA_NL, arity = "1..*",
         paramLabel = "SRC",
@@ -228,9 +232,9 @@ public class MulitCopyCommand implements Callable<Integer> {
             .toDirectory(dest)
             .skipUpToDate(skipUpToDate)
             .skipExisting(skipExisting)
-            .handleDownloaded((downloaded, uri, size) -> {
-                log.debug("Downloaded {} from {} ({} bytes)", downloaded, uri, size);
-            })
+            .handleDownloaded((downloaded, uri, size) ->
+                log.debug("Downloaded {} from {} ({} bytes)", downloaded, uri, size)
+            )
             .handleStatus((status, uri, file) -> {
                 switch (status) {
                     case DOWNLOADING:
@@ -247,6 +251,9 @@ public class MulitCopyCommand implements Callable<Integer> {
                 }
             })
             .assemble()
+            .onErrorResume(throwable -> ignoreMissingSources && FailedRequestException.isNotFound(throwable),
+                throwable -> Mono.empty()
+            )
             .checkpoint("Retrieving " + source, true);
     }
 
