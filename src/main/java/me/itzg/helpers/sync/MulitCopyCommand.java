@@ -23,6 +23,7 @@ import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.http.Uris;
 import org.jetbrains.annotations.Blocking;
 import org.reactivestreams.Publisher;
+import org.slf4j.event.Level;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.Option;
@@ -62,6 +63,9 @@ public class MulitCopyCommand implements Callable<Integer> {
 
     @Option(names = "--skip-existing", defaultValue = "false")
     boolean skipExisting;
+
+    @Option(names = "--quiet-when-skipped", description = "Don't log when file exists or is up to date")
+    boolean quietWhenSkipped;
 
     @Option(names = "--ignore-missing-sources", description = "Don't log or fail exit code when any or all sources are missing")
     boolean ignoreMissingSources;
@@ -241,10 +245,12 @@ public class MulitCopyCommand implements Callable<Integer> {
                         log.info("Downloading {} from {}", file, uri);
                         break;
                     case SKIP_FILE_UP_TO_DATE:
-                        log.info("The file {} is already up to date", file);
+                        log.atLevel(quietWhenSkipped ? Level.DEBUG : Level.INFO)
+                            .log("The file {} is already up to date", file);
                         break;
                     case SKIP_FILE_EXISTS:
-                        log.info("The file {} already exists", file);
+                        log.atLevel(quietWhenSkipped ? Level.DEBUG : Level.INFO)
+                            .log("The file {} already exists", file);
                         break;
                     case DOWNLOADED:
                         break;

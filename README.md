@@ -851,9 +851,11 @@ Downloads a maven artifact from a Maven repository
 ### mcopy
 
 ```
-Usage: mc-image-helper mcopy [-hz] [--file-is-listing] [--skip-existing]
-                             [--glob=GLOB] [--scope=<manifestId>] --to=<dest>
-                             SRC[,|<nl>SRC...]...
+Usage: mc-image-helper mcopy [-hz] [--file-is-listing]
+                             [--ignore-missing-sources] [--quiet-when-skipped]
+                             [--skip-existing] [--glob=GLOB]
+                             [--scope=<manifestId>] --to=<dest> SRC[,
+                             |<nl>SRC...]...
 Multi-source file copy operation with with managed cleanup. Supports
 auto-detected sourcing from file list, directories, and URLs
       SRC[,|<nl>SRC...]...   Any mix of source file, directory, or URLs.
@@ -865,6 +867,10 @@ auto-detected sourcing from file list, directories, and URLs
       --glob=GLOB            When a source is a directory, this filename glob
                                will be applied to select files.
   -h, --help
+      --ignore-missing-sources
+                             Don't log or fail exit code when any or all
+                               sources are missing
+      --quiet-when-skipped   Don't log when file exists or is up to date
       --scope, --manifest-id=<manifestId>
                              If managed cleanup is required, this is the
                                identifier used for qualifying manifest filename
