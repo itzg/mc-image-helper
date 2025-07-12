@@ -219,11 +219,15 @@ public class OutputToDirectoryFetchBuilder extends FetchBuilderBase<OutputToDire
                         .map(instant -> reqBuilder.setHeader("If-Modified-Since", httpDateTimeFormatter.format(instant)))
                         .then(
                             Mono.<Path>create(sink -> {
-                                getHcAsyncClient().execute(
-                                    SimpleRequestProducer.create(reqBuilder.build()),
-                                    new ResponseToFileConsumer(outputFile),
-                                    new MonoSinkFutureCallbackAdapter<>(sink)
-                                );
+                                useHcAsyncClient((hcClient, close) -> {
+                                    sink.onDispose(close::run);
+
+                                    hcClient.execute(
+                                        SimpleRequestProducer.create(reqBuilder.build()),
+                                        new ResponseToFileConsumer(outputFile),
+                                        new MonoSinkFutureCallbackAdapter<>(sink)
+                                    );
+                                });
                             })
                         );
             })
