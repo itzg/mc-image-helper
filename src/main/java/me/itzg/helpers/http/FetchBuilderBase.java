@@ -145,6 +145,16 @@ public class FetchBuilderBase<SELF extends FetchBuilderBase<SELF>> {
         return state.uri;
     }
 
+    protected URI uriForFile() {
+        if (state.sharedFetch == null) {
+            return state.uri;
+        }
+
+        final URI filesViaUrl = state.sharedFetch.getFilesViaUrl();
+        return filesViaUrl != null ? filesViaUrl.resolve(state.uri.getPath())
+            : state.uri;
+    }
+
     public Set<String> getAcceptContentTypes() {
         return state.acceptContentTypes;
     }

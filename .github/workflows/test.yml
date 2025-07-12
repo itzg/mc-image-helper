@@ -18,3 +18,4 @@ jobs:
     with:
       arguments: test
       include-test-report: true
+      retest-showing-standard-streams: true

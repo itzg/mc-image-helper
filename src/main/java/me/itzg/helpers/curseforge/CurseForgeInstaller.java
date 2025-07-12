@@ -8,6 +8,7 @@ import static me.itzg.helpers.curseforge.CurseForgeApiClient.modFileDownloadStat
 import static me.itzg.helpers.singles.MoreCollections.safeStreamFrom;
 
 import com.fasterxml.jackson.databind.JsonMappingException;
+import io.netty.channel.ChannelException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -753,10 +754,12 @@ public class CurseForgeInstaller {
             )
             // retry the deferred part above if one of the expected failure cases
             .retryWhen(
-                Retry.fixedDelay(BAD_FILE_ATTEMPTS, BAD_FILE_DELAY)
+                Retry.backoff(BAD_FILE_ATTEMPTS, BAD_FILE_DELAY)
                     .filter(throwable ->
                         throwable instanceof FileHashInvalidException ||
-                            throwable instanceof FailedRequestException
+                            throwable instanceof FailedRequestException ||
+                            throwable instanceof IOException ||
+                            throwable instanceof ChannelException
                     )
                     .doBeforeRetry(retrySignal ->
                         log.warn("Retrying to download {} @ {}:{}",

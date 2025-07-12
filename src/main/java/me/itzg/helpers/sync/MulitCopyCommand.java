@@ -17,11 +17,13 @@ import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.files.Manifests;
+import me.itzg.helpers.http.FailedRequestException;
 import me.itzg.helpers.http.Fetch;
 import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.http.Uris;
 import org.jetbrains.annotations.Blocking;
 import org.reactivestreams.Publisher;
+import org.slf4j.event.Level;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.Option;
@@ -61,6 +63,12 @@ public class MulitCopyCommand implements Callable<Integer> {
 
     @Option(names = "--skip-existing", defaultValue = "false")
     boolean skipExisting;
+
+    @Option(names = "--quiet-when-skipped", description = "Don't log when file exists or is up to date")
+    boolean quietWhenSkipped;
+
+    @Option(names = "--ignore-missing-sources", description = "Don't log or fail exit code when any or all sources are missing")
+    boolean ignoreMissingSources;
 
     @Parameters(split = SPLIT_COMMA_NL, splitSynopsisLabel = SPLIT_SYNOPSIS_COMMA_NL, arity = "1..*",
         paramLabel = "SRC",
@@ -228,25 +236,30 @@ public class MulitCopyCommand implements Callable<Integer> {
             .toDirectory(dest)
             .skipUpToDate(skipUpToDate)
             .skipExisting(skipExisting)
-            .handleDownloaded((downloaded, uri, size) -> {
-                log.debug("Downloaded {} from {} ({} bytes)", downloaded, uri, size);
-            })
+            .handleDownloaded((downloaded, uri, size) ->
+                log.debug("Downloaded {} from {} ({} bytes)", downloaded, uri, size)
+            )
             .handleStatus((status, uri, file) -> {
                 switch (status) {
                     case DOWNLOADING:
                         log.info("Downloading {} from {}", file, uri);
                         break;
                     case SKIP_FILE_UP_TO_DATE:
-                        log.info("The file {} is already up to date", file);
+                        log.atLevel(quietWhenSkipped ? Level.DEBUG : Level.INFO)
+                            .log("The file {} is already up to date", file);
                         break;
                     case SKIP_FILE_EXISTS:
-                        log.info("The file {} already exists", file);
+                        log.atLevel(quietWhenSkipped ? Level.DEBUG : Level.INFO)
+                            .log("The file {} already exists", file);
                         break;
                     case DOWNLOADED:
                         break;
                 }
             })
             .assemble()
+            .onErrorResume(throwable -> ignoreMissingSources && FailedRequestException.isNotFound(throwable),
+                throwable -> Mono.empty()
+            )
             .checkpoint("Retrieving " + source, true);
     }
 

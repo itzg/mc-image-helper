@@ -7,8 +7,11 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.ToString;
 import me.itzg.helpers.errors.InvalidParameterException;
@@ -22,10 +25,13 @@ public class ProjectRef {
     private static final Pattern MODPACK_PAGE_URL = Pattern.compile(
         "https://modrinth.com/modpack/(?<slug>.+?)(/version/(?<versionName>.+))?"
     );
-    private static final Pattern PROJECT_REF = Pattern.compile("(?<datapack>datapack:)?(?<idSlug>[^:]+?)(:(?<version>[^:]+))?");
+    private static final Set<String> VALID_LOADERS = Arrays.stream(Loader.values())
+        .map(Enum::name)
+        .map(String::toLowerCase)
+        .collect(Collectors.toSet());
 
     private final String idOrSlug;
-    private final boolean datapack;
+    private final Loader loader;
 
     /**
      * Either a remote URI or a file URI for a locally provided file
@@ -36,16 +42,39 @@ public class ProjectRef {
     private final String versionNumber;
 
     public static ProjectRef parse(String projectRef) {
-        final Matcher m = PROJECT_REF.matcher(projectRef);
-        if (!m.matches()) {
-            throw new InvalidParameterException("Invalid project reference: " + projectRef);
+        final String[] parts = projectRef.split(":", 3);
+        
+        // Handle cases with no colon
+        if (parts.length == 1) {
+            return new ProjectRef(parts[0], null, null);
         }
-
-        return new ProjectRef(
-            m.group("idSlug"),
-            m.group("version"),
-            m.group("datapack") != null
-        );
+        
+        // Check if first part is a valid loader
+        Loader loader = null;
+        int idIndex = 0;
+        if (VALID_LOADERS.contains(parts[0].toLowerCase())) {
+            loader = Loader.valueOf(parts[0].toLowerCase());
+            idIndex = 1;
+        }
+        
+        // Handle remaining parts
+        if (parts.length == 2) {
+            // Either loader:id or id:version
+            if (loader != null) {
+                return new ProjectRef(parts[1], null, loader);
+            } else {
+                return new ProjectRef(parts[0], parts[1], null);
+            }
+        } 
+        else if (parts.length == 3) {
+            // Must be loader:id:version
+            if (loader == null) {
+                throw new InvalidParameterException("Invalid loader in project reference: " + parts[0]);
+            }
+            return new ProjectRef(parts[1], parts[2], loader);
+        }
+        
+        throw new InvalidParameterException("Invalid project reference: " + projectRef);
     }
 
     /**
@@ -53,15 +82,15 @@ public class ProjectRef {
      * @param version can be a {@link VersionType}, ID, or name/number
      */
     public ProjectRef(String projectSlug, String version) {
-        this(projectSlug, version, false);
+        this(projectSlug, version, null);
     }
 
     /**
      * @param version  can be a {@link VersionType}, ID, or name/number
      */
-    public ProjectRef(String projectSlug, @Nullable String version, boolean datapack) {
+    public ProjectRef(String projectSlug, @Nullable String version, Loader loader) {
         this.idOrSlug = projectSlug;
-        this.datapack = datapack;
+        this.loader = loader;
         this.projectUri = null;
         this.versionType = parseVersionType(version);
         if (this.versionType == null) {
@@ -81,7 +110,7 @@ public class ProjectRef {
     }
 
     public ProjectRef(URI projectUri, String versionId) {
-        this.datapack = false;
+        this.loader = null;
         this.projectUri = projectUri;
 
         final String filename = extractFilename(projectUri);
@@ -103,37 +132,40 @@ public class ProjectRef {
             String possibleUrl, String defaultVersion)
     {
         // First, see if it is a modrinth page URL
+        try {
+            final Matcher m = MODPACK_PAGE_URL.matcher(possibleUrl);
+            if(m.matches()) {
+                String projectSlug = m.group("slug");
+                String projectVersion = m.group("versionName") != null ?
+                    m.group("versionName") : defaultVersion;
+                return new ProjectRef(projectSlug, projectVersion);
+            } else {
+                try {
+                    // Might be custom URL, local file, or slug
+                    // ...try as a (remote or file) URL first
+                    return new ProjectRef(
+                        new URL(possibleUrl).toURI(), defaultVersion
+                    );
+                } catch(MalformedURLException | URISyntaxException e) {
+                    // Not a valid URL, so
+                    // narrow down if it is a file path by looking at suffix
+                    if (possibleUrl.endsWith(".mrpack")) {
+                        final Path path = Paths.get(possibleUrl);
+                        if (!Files.exists(path)) {
+                            throw new InvalidParameterException("Given modrinth project looks like a file, but doesn't exist");
+                        }
 
-        final Matcher m = MODPACK_PAGE_URL.matcher(possibleUrl);
-        if(m.matches()) {
-            String projectSlug = m.group("slug");
-            String projectVersion = m.group("versionName") != null ?
-                m.group("versionName") : defaultVersion;
-            return new ProjectRef(projectSlug, projectVersion);
-        } else {
-            try {
-                // Might be custom URL, local file, or slug
-                // ...try as a (remote or file) URL first
-                return new ProjectRef(
-                    new URL(possibleUrl).toURI(), defaultVersion
-                );
-            } catch(MalformedURLException | URISyntaxException e) {
-                // Not a valid URL, so
-                // narrow down if it is a file path by looking at suffix
-                if (possibleUrl.endsWith(".mrpack")) {
-                    final Path path = Paths.get(possibleUrl);
-                    if (!Files.exists(path)) {
-                        throw new InvalidParameterException("Given modrinth project looks like a file, but doesn't exist");
+                        return new ProjectRef(
+                            path.toUri(),
+                            defaultVersion
+                        );
                     }
 
-                    return new ProjectRef(
-                        path.toUri(),
-                        defaultVersion
-                    );
+                    return new ProjectRef(possibleUrl, defaultVersion);
                 }
-
-                return new ProjectRef(possibleUrl, defaultVersion);
             }
+        } catch (Exception e) {
+            throw new InvalidParameterException("Invalid project reference: " + possibleUrl, e);
         }
     }
 

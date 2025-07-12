@@ -3,6 +3,7 @@ package me.itzg.helpers.http;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import java.net.URI;
+import java.net.URISyntaxException;
 import lombok.Getter;
 import lombok.ToString;
 
@@ -19,12 +20,21 @@ public class FailedRequestException extends RuntimeException {
      */
     public FailedRequestException(HttpResponseStatus status, URI uri, String body, String msg, HttpHeaders headers) {
         super(
-            String.format("HTTP request of %s failed with %s: %s", uri, status, msg)
+            String.format("HTTP request of %s failed with %s: %s", obfuscate(uri), status, msg)
         );
         this.uri = uri;
         this.statusCode = status.code();
         this.body = body;
         this.headers = headers;
+    }
+
+    public static String obfuscate(URI uri) {
+        try {
+            return new URI(uri.getScheme(), uri.getUserInfo() != null ? "*:*" : null, uri.getHost(), uri.getPort(), uri.getPath(), uri.getQuery(), uri.getFragment())
+                .toString();
+        } catch (URISyntaxException e) {
+            return "???";
+        }
     }
 
     @SuppressWarnings("unused")

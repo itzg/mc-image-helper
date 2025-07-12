@@ -761,6 +761,7 @@ Usage: mc-image-helper manage-users [-fh] [--existing=<existingFileBehavior>]
                                     >] -t=<type>
                                     [--user-api-provider=<userApiProvider>]
                                     [--version=<version>]
+                                    [--offline]
                                     [[--http-response-timeout=DURATION]
                                     [--tls-handshake-timeout=DURATION]
                                     [--connection-pool-pending-acquire-timeout=D
@@ -768,8 +769,9 @@ Usage: mc-image-helper manage-users [-fh] [--existing=<existingFileBehavior>]
                                     [--connection-pool-max-idle-timeout=DURATION
                                     ]] [INPUT[,INPUT...]...]
       [INPUT[,INPUT...]...] One or more Mojang usernames, UUID, or ID (UUID
-                              without dashes); however, when offline, only
-                              UUID/IDs can be provided.
+                              without dashes); flags are listed after a colon
+                              separated by comma:
+                              <username/UUID/ID>:flag1,flag2
                             When input is a file, only one local file path or
                               URL can be provided
       --connection-pool-max-idle-timeout=DURATION
@@ -798,6 +800,8 @@ Usage: mc-image-helper manage-users [-fh] [--existing=<existingFileBehavior>]
                             Allowed: mojang, playerdb
       --version=<version>   Minecraft game version. If not provided, assumes
                               JSON format
+      --offline             Server is in offline mode, for users that have the
+                              offline flag the UUID is generated locally 
 ```
 
 ### maven-download
@@ -847,9 +851,11 @@ Downloads a maven artifact from a Maven repository
 ### mcopy
 
 ```
-Usage: mc-image-helper mcopy [-hz] [--file-is-listing] [--skip-existing]
-                             [--glob=GLOB] [--scope=<manifestId>] --to=<dest>
-                             SRC[,|<nl>SRC...]...
+Usage: mc-image-helper mcopy [-hz] [--file-is-listing]
+                             [--ignore-missing-sources] [--quiet-when-skipped]
+                             [--skip-existing] [--glob=GLOB]
+                             [--scope=<manifestId>] --to=<dest> SRC[,
+                             |<nl>SRC...]...
 Multi-source file copy operation with with managed cleanup. Supports
 auto-detected sourcing from file list, directories, and URLs
       SRC[,|<nl>SRC...]...   Any mix of source file, directory, or URLs.
@@ -861,6 +867,10 @@ auto-detected sourcing from file list, directories, and URLs
       --glob=GLOB            When a source is a directory, this filename glob
                                will be applied to select files.
   -h, --help
+      --ignore-missing-sources
+                             Don't log or fail exit code when any or all
+                               sources are missing
+      --quiet-when-skipped   Don't log when file exists or is up to date
       --scope, --manifest-id=<manifestId>
                              If managed cleanup is required, this is the
                                identifier used for qualifying manifest filename
