@@ -1,7 +1,6 @@
 package me.itzg.helpers.http;
 
 import io.netty.handler.codec.http.HttpHeaderNames;
-import java.io.IOException;
 import java.net.URI;
 import java.time.Duration;
 import java.util.HashMap;
@@ -13,8 +12,6 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.McImageHelper;
 import me.itzg.helpers.errors.GenericException;
-import org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient;
-import org.apache.hc.client5.http.impl.async.HttpAsyncClients;
 import reactor.netty.http.Http11SslContextSpec;
 import reactor.netty.http.client.HttpClient;
 import reactor.netty.resources.ConnectionProvider;
@@ -35,8 +32,6 @@ public class SharedFetch implements AutoCloseable {
     final LatchingUrisInterceptor latchingUrisInterceptor = new LatchingUrisInterceptor();
 
     private final HttpClient reactiveClient;
-    private final CloseableHttpAsyncClient hcAsyncClient;
-    private boolean hcAsyncClientStarted = false;
 
     private final URI filesViaUrl;
 
@@ -83,16 +78,6 @@ public class SharedFetch implements AutoCloseable {
         headers.put("x-fetch-session", fetchSessionId);
 
         this.filesViaUrl = options.getFilesViaUrl();
-
-        hcAsyncClient = HttpAsyncClients.createSystem();
-    }
-
-    public synchronized CloseableHttpAsyncClient getHcAsyncClient() {
-        if (!hcAsyncClientStarted) {
-            hcAsyncClient.start();
-            hcAsyncClientStarted = true;
-        }
-        return hcAsyncClient;
     }
 
     public FetchBuilderBase<?> fetch(URI uri) {
@@ -107,11 +92,6 @@ public class SharedFetch implements AutoCloseable {
 
     @Override
     public void close() {
-        try {
-            hcAsyncClient.close();
-        } catch (IOException e) {
-            log.warn("Failed to close async client for shared fetch", e);
-        }
     }
 
     @Builder
