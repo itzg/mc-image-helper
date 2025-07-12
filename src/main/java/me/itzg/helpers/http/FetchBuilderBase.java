@@ -29,8 +29,6 @@ import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.http.SharedFetch.Options;
 import me.itzg.helpers.json.ObjectMappers;
-import org.apache.hc.client5.http.async.methods.SimpleRequestBuilder;
-import org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient;
 import org.slf4j.Logger;
 import reactor.core.publisher.Mono;
 import reactor.netty.ByteBufMono;
@@ -199,25 +197,6 @@ public class FetchBuilderBase<SELF extends FetchBuilderBase<SELF>> {
         }
     }
 
-    @FunctionalInterface
-    protected interface HcAsyncClientUser<R> {
-        void use(CloseableHttpAsyncClient client, Runnable closer);
-    }
-
-    protected <R> void useHcAsyncClient(HcAsyncClientUser<R> user) {
-        if (state.sharedFetch != null) {
-            user.use(state.sharedFetch.getHcAsyncClient(), () -> {
-                }
-            );
-        }
-        else {
-            //noinspection resource since close callback will handle it
-            SharedFetch sharedFetch = new SharedFetch(state.userAgentCommand, Options.builder().build());
-
-            user.use(sharedFetch.getHcAsyncClient(), sharedFetch::close);
-        }
-    }
-
     protected static BiConsumer<? super HttpClientRequest, ? super Connection> debugLogRequest(
         Logger log, String operation
     ) {
@@ -310,25 +289,6 @@ public class FetchBuilderBase<SELF extends FetchBuilderBase<SELF>> {
         }
 
         state.requestHeaders.forEach(headers::set);
-    }
-
-    protected void applyHeaders(SimpleRequestBuilder requestBuilder) {
-        final Set<String> contentTypes = getAcceptContentTypes();
-        if (contentTypes != null && !contentTypes.isEmpty()) {
-            contentTypes.forEach(s -> requestBuilder.addHeader(ACCEPT.toString(), s));
-        }
-
-        if (state.userInfo != null) {
-            requestBuilder.setHeader(
-                AUTHORIZATION.toString(),
-                "Basic " +
-                    Base64.getEncoder().encodeToString(
-                        state.userInfo.getBytes(StandardCharsets.UTF_8)
-                    )
-            );
-        }
-
-        state.requestHeaders.forEach(requestBuilder::setHeader);
     }
 
     static String formatDuration(long millis) {
