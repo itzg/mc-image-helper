@@ -20,6 +20,7 @@ import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.http.FailedRequestException;
 import me.itzg.helpers.http.Fetch;
 import me.itzg.helpers.http.SharedFetch;
+import me.itzg.helpers.http.SharedFetch.Options;
 import me.itzg.helpers.http.Uris;
 import org.jetbrains.annotations.Blocking;
 import org.reactivestreams.Publisher;
@@ -82,13 +83,15 @@ public class MulitCopyCommand implements Callable<Integer> {
 
         Files.createDirectories(dest);
 
-        Flux.fromIterable(sources)
-            .map(String::trim)
-            .filter(s -> !s.isEmpty())
-            .flatMap(source -> processSource(source, fileIsListingOption))
-            .collectList()
-            .flatMap(this::cleanupAndSaveManifest)
-            .block();
+        try (SharedFetch sharedFetch = Fetch.sharedFetch("mcopy", Options.builder().build())) {
+            Flux.fromIterable(sources)
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .flatMap(source -> processSource(sharedFetch, source, fileIsListingOption))
+                .collectList()
+                .flatMap(this::cleanupAndSaveManifest)
+                .block();
+        }
 
         return ExitCode.OK;
     }
@@ -113,9 +116,9 @@ public class MulitCopyCommand implements Callable<Integer> {
             });
     }
 
-    private Publisher<Path> processSource(String source, boolean fileIsListing) {
+    private Publisher<Path> processSource(SharedFetch sharedFetch, String source, boolean fileIsListing) {
         if (Uris.isUri(source)) {
-            return fileIsListing ? processRemoteListingFile(source) : processRemoteSource(source);
+            return fileIsListing ? processRemoteListingFile(source) : processRemoteSource(sharedFetch, source);
         } else {
             final Path path = Paths.get(source);
             if (!Files.exists(path)) {
@@ -125,12 +128,12 @@ public class MulitCopyCommand implements Callable<Integer> {
             if (Files.isDirectory(path)) {
                 return processDirectory(path);
             } else {
-                return fileIsListing ? processListingFile(path) : processFile(path);
+                return fileIsListing ? processListingFile(sharedFetch, path) : processFile(path);
             }
         }
     }
 
-    private Flux<Path> processListingFile(Path listingFile) {
+    private Flux<Path> processListingFile(SharedFetch sharedFetch, Path listingFile) {
         return Mono.just(listingFile)
             .publishOn(Schedulers.boundedElastic())
             .flatMapMany(path -> {
@@ -139,7 +142,7 @@ public class MulitCopyCommand implements Callable<Integer> {
                     final List<String> lines = Files.readAllLines(path);
                     return Flux.fromIterable(lines)
                         .filter(this::isListingLine)
-                        .flatMap(src -> processSource(src,
+                        .flatMap(src -> processSource(sharedFetch, src,
                             // avoid recursive file-listing processing
                             false));
                 } catch (IOException e) {
@@ -230,8 +233,8 @@ public class MulitCopyCommand implements Callable<Integer> {
             });
     }
 
-    private Mono<Path> processRemoteSource(String source) {
-        return Fetch.fetch(URI.create(source))
+    private Mono<Path> processRemoteSource(SharedFetch sharedFetch, String source) {
+        return sharedFetch.fetch(URI.create(source))
             .userAgentCommand("mcopy")
             .toDirectory(dest)
             .skipUpToDate(skipUpToDate)
@@ -273,7 +276,7 @@ public class MulitCopyCommand implements Callable<Integer> {
                     .flatMapMany(content -> Flux.just(content.split("\\r?\\n")))
                     .filter(this::isListingLine)
             )
-            .flatMap(this::processRemoteSource)
+            .flatMap(sourceInListing -> processRemoteSource(sharedFetch, sourceInListing))
             .doOnTerminate(sharedFetch::close)
             .checkpoint("Processing remote listing at " + source, true);
     }
