@@ -9,6 +9,8 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import me.itzg.helpers.errors.ExceptionDetailer;
+import me.itzg.helpers.errors.InvalidParameterException;
 
 @Slf4j
 class SynchronizingFileVisitor implements FileVisitor<Path> {
@@ -24,9 +26,21 @@ class SynchronizingFileVisitor implements FileVisitor<Path> {
         this.fileProcessor = fileProcessor;
     }
 
+    /**
+     * Convenience method that processes each source path into the destination path by applying a {@link SynchronizingFileVisitor}
+     * to each source.
+     * @param srcDest source... dest
+     * @param skipNewerInDestination provided to {@link SynchronizingFileVisitor}
+     * @param fileProcessor provided to {@link SynchronizingFileVisitor}
+     * @return exit code style of 1 for failure, 0 for success
+     */
     static int walkDirectories(List<Path> srcDest, boolean skipNewerInDestination,
         FileProcessor fileProcessor
     ) {
+        if (srcDest.size() < 2) {
+            throw new InvalidParameterException("At least one source and destination path is required");
+        }
+
         // TODO can use getLast() with java 21
         final Path dest = srcDest.get(srcDest.size() - 1);
 
@@ -35,7 +49,7 @@ class SynchronizingFileVisitor implements FileVisitor<Path> {
                 try {
                     Files.walkFileTree(src, new SynchronizingFileVisitor(src, dest, skipNewerInDestination, fileProcessor));
                 } catch (IOException e) {
-                    log.error("Failed to sync and interpolate {} into {} : {}", src, dest, e.getMessage());
+                    log.error("Failed to sync and interpolate {} into {}: {}", src, dest, ExceptionDetailer.buildCausalMessages(e));
                     log.debug("Details", e);
                     return 1;
                 }
@@ -104,7 +118,7 @@ class SynchronizingFileVisitor implements FileVisitor<Path> {
 
     @Override
     public FileVisitResult visitFileFailed(Path file, IOException e) {
-        log.warn("Failed to visit file {} due to {}:{}", file, e.getClass(), e.getMessage());
+        log.warn("Failed to visit file {} due to {}", file, ExceptionDetailer.buildCausalMessages(e));
         log.debug("Details", e);
         return FileVisitResult.CONTINUE;
     }
