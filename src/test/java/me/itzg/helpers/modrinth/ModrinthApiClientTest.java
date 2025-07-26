@@ -45,32 +45,74 @@ class ModrinthApiClientTest {
         }
     }
 
-    @Test
-    void getVersionsForProject(WireMockRuntimeInfo wmInfo) {
+    @Nested
+    class getVersionsForProject {
+        @Test
+        void exactLoader(WireMockRuntimeInfo wmInfo) {
 
-        stubFor(get(urlPathMatching("/v2/project/(BITzwT7B|clickvillagers)/version"))
-            .withQueryParam("loaders", equalTo("[\"purpur\",\"paper\",\"spigot\"]"))
-            .withQueryParam("game_versions", equalTo("[\"1.20.1\"]"))
-            .willReturn(aResponse()
-                .withHeader("Content-Type", "application/json")
-                .withBodyFile("modrinth/project-BITzwT7B-version-resp.json")
-            )
-        );
+            stubFor(get(urlPathMatching("/v2/project/(BITzwT7B|clickvillagers)/version"))
+                .withQueryParam("loaders", equalTo("[\"purpur\"]"))
+                .withQueryParam("game_versions", equalTo("[\"1.20.1\"]"))
+                .willReturn(aResponse()
+                    .withHeader("Content-Type", "application/json")
+                    .withBodyFile("modrinth/project-BITzwT7B-version-resp.json")
+                )
+            );
 
-        try (ModrinthApiClient client = new ModrinthApiClient(wmInfo.getHttpBaseUrl(), "modrinth", Options.builder().build())) {
-            final List<Version> result = client.getVersionsForProject("BITzwT7B", Loader.purpur, "1.20.1")
-                .block();
+            try (ModrinthApiClient client = new ModrinthApiClient(wmInfo.getHttpBaseUrl(), "modrinth", Options.builder().build())) {
+                final List<Version> result = client.getVersionsForProject("BITzwT7B", Loader.purpur, "1.20.1")
+                    .block();
 
-            assertThat(result)
-                .hasSize(3)
-                .extracting(Version::getId)
-                .containsExactly(
-                    "O9nndrTu",
-                    "DfUyEmsH",
-                    "oUJMLDhz"
-                );
+                assertThat(result)
+                    .hasSize(3)
+                    .extracting(Version::getId)
+                    .containsExactly(
+                        "O9nndrTu",
+                        "DfUyEmsH",
+                        "oUJMLDhz"
+                    );
+            }
+        }
+
+        @Test
+        void fallbackToCompatibleLoader(WireMockRuntimeInfo wmInfo) {
+            stubFor(get(urlPathMatching("/v2/project/entityculling/version"))
+                .withQueryParam("loaders", equalTo("[\"neoforge\"]"))
+                .withQueryParam("game_versions", equalTo("[\"1.12.2\"]"))
+                .willReturn(aResponse()
+                    .withHeader("Content-Type", "application/json")
+                    .withBodyFile("modrinth/versions-entityculling-neoforge-not-forge.json")
+                )
+            );
+            stubFor(get(urlPathMatching("/v2/project/entityculling/version"))
+                .withQueryParam("loaders", equalTo("[\"forge\"]"))
+                .withQueryParam("game_versions", equalTo("[\"1.12.2\"]"))
+                .willReturn(aResponse()
+                    .withHeader("Content-Type", "application/json")
+                    .withBodyFile("modrinth/versions-entityculling-forge.json")
+                )
+            );
+
+            try (ModrinthApiClient client = new ModrinthApiClient(wmInfo.getHttpBaseUrl(), "modrinth",
+                Options.builder().build()
+            )) {
+                final List<Version> result = client.getVersionsForProject(
+                        "entityculling",
+                        Loader.neoforge,
+                        "1.12.2"
+                    )
+                    .block();
+
+                assertThat(result)
+                    .extracting(Version::getId)
+                    .containsExactly(
+                        "knltv3Vh"
+                    );
+            }
         }
     }
+
+
 
     @Nested
     class resolveProjectVersion {
@@ -142,7 +184,7 @@ class ModrinthApiClientTest {
         @Test
         void noApplicableVersionsOfType(WireMockRuntimeInfo wmInfo) {
             stubFor(get(urlPathMatching("/v2/project/(3wmN97b8|multiverse-core)/version"))
-                .withQueryParam("loaders", equalTo("[\"purpur\",\"paper\",\"spigot\"]"))
+                .withQueryParam("loaders", equalTo("[\"purpur\"]"))
                 .withQueryParam("game_versions", equalTo("[\"1.21.1\"]"))
                 .willReturn(aResponse()
                     .withHeader("Content-Type", "application/json")

@@ -14,8 +14,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
-import java.nio.file.Path;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.function.Consumer;
 import me.itzg.helpers.LatchingExecutionExceptionHandler;
@@ -167,7 +167,8 @@ class ModrinthCommandTest {
                 .put("project_id", requiredDepProjectId)
                 .put("dependency_type", "required");
         });
-        stubVersionRequestEmptyResponse(requiredDepProjectId);
+        stubVersionRequestEmptyResponse(requiredDepProjectId, "paper");
+        stubVersionRequestEmptyResponse(requiredDepProjectId, "spigot");
         stubGetProject(requiredDepProjectId, new Project().setProjectType(ProjectType.resourcepack));
 
         stubDownload();
@@ -462,7 +463,7 @@ class ModrinthCommandTest {
         depsAdder.accept(dependenciesArray);
 
         stubFor(get(urlPathEqualTo("/v2/project/" + projectId + "/version"))
-            .withQueryParam("loaders", equalTo("[\"paper\",\"spigot\"]"))
+            .withQueryParam("loaders", equalTo("[\"paper\"]"))
             .withQueryParam("game_versions", equalTo("[\"1.21.1\"]"))
             .willReturn(aResponse()
                 .withHeader("Content-Type", "application/json")
@@ -471,11 +472,11 @@ class ModrinthCommandTest {
         );
     }
 
-    private void stubVersionRequestEmptyResponse(String projectId) {
+    private void stubVersionRequestEmptyResponse(String projectId, String loader) {
         final ArrayNode versionResp = objectMapper.createArrayNode();
 
         stubFor(get(urlPathEqualTo("/v2/project/" + projectId + "/version"))
-            .withQueryParam("loaders", equalTo("[\"paper\",\"spigot\"]"))
+            .withQueryParam("loaders", equalTo("[\"" + loader + "\"]"))
             .withQueryParam("game_versions", equalTo("[\"1.21.1\"]"))
             .willReturn(aResponse()
                 .withHeader("Content-Type", "application/json")
