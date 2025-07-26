@@ -7,6 +7,7 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -181,31 +182,52 @@ public class ModrinthApiClient implements AutoCloseable {
     public Mono<List<Version>> getVersionsForProject(String projectIdOrSlug,
                                                      @Nullable Loader loader, String gameVersion
     ) {
-        return sharedFetch.fetch(
-                uriBuilder.resolve("/v2/project/{id|slug}/version",
-                    queryParameters()
-                        .addStringArray("loaders", expandCompatibleLoaders(loader))
-                        .addStringArray("game_versions", gameVersion),
-                    projectIdOrSlug
+        return getJustVersionsForProject(projectIdOrSlug, gameVersion,
+            loader != null ? Collections.singletonList(loader.toString()) : null
+        )
+            .switchIfEmpty(
+                getJustVersionsForProject(projectIdOrSlug, gameVersion,
+                    expandCompatibleLoaders(loader)
                 )
             )
-            .toObjectList(Version.class)
-            .assemble()
-            .flatMap(versions ->
-                versions.isEmpty() ?
-                    getProject(projectIdOrSlug)
-                        .flatMap(project -> Mono.error(new NoFilesAvailableException(project, loader, gameVersion)))
-                    : Mono.just(versions)
-                );
+            .switchIfEmpty(
+                getProject(projectIdOrSlug)
+                    .flatMap(project -> Mono.error(new NoFilesAvailableException(project, loader, gameVersion)))
+            );
     }
 
+    /**
+     * @return the non-empty list of versions or an empty mono
+     */
+    private Mono<List<Version>> getJustVersionsForProject(String projectIdOrSlug, String gameVersion,
+        Collection<String> loaderNames
+    ) {
+        return
+            loaderNames == null || loaderNames.isEmpty() ?
+                Mono.empty() :
+                sharedFetch.fetch(
+                        uriBuilder.resolve("/v2/project/{id|slug}/version",
+                            queryParameters()
+                                .addStringArray("loaders", loaderNames)
+                                .addStringArray("game_versions", gameVersion),
+                            projectIdOrSlug
+                        )
+                    )
+                    .toObjectList(Version.class)
+                    .assemble()
+                    .filter(versions -> !versions.isEmpty());
+    }
+
+    /**
+     * @param loader the target loader
+     * @return a list of the compatible loaders
+     */
     private List<String> expandCompatibleLoaders(@Nullable Loader loader) {
         if (loader == null) {
             return null;
         }
 
         final ArrayList<String> expanded = new ArrayList<>();
-        expanded.add(loader.toString());
         Loader compatibleWith = loader;
         while ((compatibleWith = compatibleWith.getCompatibleWith()) != null) {
             expanded.add(compatibleWith.toString());
