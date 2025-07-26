@@ -183,11 +183,13 @@ public class ModrinthApiClient implements AutoCloseable {
                                                      @Nullable Loader loader, String gameVersion
     ) {
         return getJustVersionsForProject(projectIdOrSlug, gameVersion,
-            loader != null ? Collections.singletonList(loader.toString()) : null
+            loader != null ? Collections.singletonList(loader.toString()) : null,
+            false
         )
             .switchIfEmpty(
                 getJustVersionsForProject(projectIdOrSlug, gameVersion,
-                    expandCompatibleLoaders(loader)
+                    expandCompatibleLoaders(loader),
+                    true
                 )
             )
             .switchIfEmpty(
@@ -199,11 +201,13 @@ public class ModrinthApiClient implements AutoCloseable {
     /**
      * @return the non-empty list of versions or an empty mono
      */
-    private Mono<List<Version>> getJustVersionsForProject(String projectIdOrSlug, String gameVersion,
-        Collection<String> loaderNames
+    private Mono<List<Version>> getJustVersionsForProject(
+        String projectIdOrSlug, String gameVersion,
+        Collection<String> loaderNames,
+        boolean skipEmptyLoaders
     ) {
         return
-            loaderNames == null || loaderNames.isEmpty() ?
+            skipEmptyLoaders && (loaderNames == null || loaderNames.isEmpty()) ?
                 Mono.empty() :
                 sharedFetch.fetch(
                         uriBuilder.resolve("/v2/project/{id|slug}/version",
