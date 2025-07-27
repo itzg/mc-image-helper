@@ -1,0 +1,44 @@
+[
+  {
+    "game_versions": [
+      "1.12.2"
+    ],
+    "loaders": [
+      "forge"
+    ],
+    "id": "knltv3Vh",
+    "project_id": "NNAgCjsB",
+    "author_id": "Qnt13hO8",
+    "featured": false,
+    "name": "1.6.3-1.12.2 - Forge",
+    "version_number": "1.6.3-1.12.2",
+    "changelog": "Initial backport to 1.12.2.",
+    "changelog_url": null,
+    "date_published": "2024-03-09T20:04:35.562295Z",
+    "downloads": 293074,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+      {
+        "hashes": {
+          "sha512": "97c4def2a2979a0ba61c0fb016762756cf8361cdff651558dbb91cbe3d8627c388436d31ec2b93ff62df99a7ff589033184db4e6f298f4b8fdd4acf4c83ba202",
+          "sha1": "fb22f03b297ca7b1bb7c6d5948e46c12e0a24446"
+        },
+        "url": "https://cdn.modrinth.com/data/NNAgCjsB/versions/knltv3Vh/entityculling-1.12.2-1.6.3.jar",
+        "filename": "entityculling-1.12.2-1.6.3.jar",
+        "primary": true,
+        "size": 41478,
+        "file_type": null
+      }
+    ],
+    "dependencies": [
+      {
+        "version_id": null,
+        "project_id": "G1ckZuWK",
+        "file_name": null,
+        "dependency_type": "required"
+      }
+    ]
+  }
+]
