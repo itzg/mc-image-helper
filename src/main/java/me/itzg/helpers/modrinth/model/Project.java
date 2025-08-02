@@ -2,12 +2,11 @@ package me.itzg.helpers.modrinth.model;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import java.util.List;
 import lombok.Data;
 
-import java.util.List;
-
 /**
- * <a href="https://docs.modrinth.com/api-spec/#tag/project_model">Spec</a>
+ * <a href="https://docs.modrinth.com/api/operations/getproject/#200">Spec</a>
  */
 @Data
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
@@ -23,4 +22,8 @@ public class Project {
   ServerSide serverSide;
 
   List<String> versions;
+
+  List<String> gameVersions;
+
+  List<String> loaders;
 }

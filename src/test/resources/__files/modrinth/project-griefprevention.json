@@ -1,0 +1,92 @@
+{
+  "client_side": "unsupported",
+  "server_side": "required",
+  "game_versions": [
+    "1.17",
+    "1.17.1",
+    "1.18",
+    "1.18.1",
+    "1.18.2",
+    "1.19",
+    "1.19.1",
+    "1.19.2",
+    "1.19.3",
+    "1.19.4",
+    "1.20",
+    "1.20.1",
+    "1.20.2",
+    "1.20.3",
+    "1.20.4",
+    "1.20.5",
+    "1.20.6",
+    "1.21",
+    "1.21.1",
+    "1.21.2",
+    "1.21.3",
+    "1.21.4",
+    "1.21.5",
+    "1.21.6",
+    "1.21.7"
+  ],
+  "id": "O4o4mKaq",
+  "slug": "griefprevention",
+  "project_type": "mod",
+  "team": "mNkX8VBQ",
+  "organization": null,
+  "title": "GriefPrevention",
+  "description": "The self-service anti-griefing Bukkit plugin for Minecraft servers since 2011.",
+  "body": "<center>\n  \n[![Discord][discord-shield]][discord-url]\n[![Docs][docs-shield]][docs-url]\n[![GitHub][github-shield]][github-url]\n[![IRC][irc-shield]][irc-url]\n[![Patreon][patreon-shield]][patreon-url]\n[![Downloads][downloads-shield]][bukkit-url]\n![GriefPrevention Logo][gp-logo]\n# The self-service anti-griefing plugin for Minecraft servers since 2011\n\n</center>\n\n<iframe width=\"560\" height=\"315\" src=\"https://www.youtube-nocookie.com/embed/hKrA6NXn7Sc\" title=\"YouTube video player\" frameborder=\"0\" allow=\"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share\" allowfullscreen></iframe>\n\n## Platforms\n#### Any stable CraftBukkit derivative ([Spigot][spigot-url], [Paper][paper-url], [Pufferfish][pufferfish-url], [Purpur][purpur-url], etc.)\nGriefPrevention is targeted to support the latest available version of these platforms. Older versions can be found on our [BukkitDev][bukkit-url].\n\n** _Note: Older versions are no longer updated and may not receive any support_\n\n\n## Support\n#### [Docs][docs-url] - Configuration, Commmands, Permissions, API, and more!\n#### [Issue Tracker][issues-url] - Report any problems or bugs\n#### [GitHub Discussions][discussions-url] - New ideas, Feature requests, and Other Discussions\n#### [IRC Chat][irc-url] or [Discord][discord-url] - Talk and get help from community!\n\n\n## Addons\n#### Addons provide additional features to GriefPrevention. Some community made addons have been listed in our [GitHub Discussions][addons-url] addons section.\n---\n\n[![GriefPrevention bStats info][bstats-svg]][bstats-url]\n\n---\n[gp-logo]: https://repository-images.githubusercontent.com/68339667/9b3f7c00-ce61-11ea-82d1-208eaa0606e8\n[issues-url]: https://github.com/GriefPrevention/GriefPrevention/issues\n[discussions-url]: https://github.com/GriefPrevention/GriefPrevention/discussions\n[addons-url]: https://github.com/TechFortress/GriefPrevention/discussions/categories/addons\n[spigot-url]: https://www.spigotmc.org\n[paper-url]: https://papermc.io\n[pufferfish-url]: https://pufferfish.host/downloads\n[purpur-url]: https://purpurmc.org\n\n\n[bstats-svg]: https://bstats.org/signatures/bukkit/GriefPrevention-legacy.svg\n[bstats-url]: https://bstats.org/plugin/bukkit/GriefPrevention-legacy\n\n[irc-shield]: https://img.shields.io/badge/IRC-E8E8E8?logo=livechat&logoColor=black&style=for-the-badge\n[irc-url]: https://griefprevention.com/chat/\n\n[docs-shield]:https://img.shields.io/badge/Docs-gray?logo=readthedocs&logoColor=white&style=for-the-badge\n[docs-url]: https://docs.griefprevention.com\n\n[discord-shield]: https://img.shields.io/badge/Discord-5865F2?logo=discord&logoColor=white&style=for-the-badge\n[discord-url]: https://r.griefprevention.com/discord/\n\n[github-shield]: https://img.shields.io/badge/Source-181717?logo=github&logoColor=white&style=for-the-badge\n[github-url]: https://github.com/GriefPrevention/GriefPrevention/\n\n[patreon-shield]: https://img.shields.io/badge/Patreon-000000?logo=patreon&logoColor=white&style=for-the-badge\n[patreon-url]: https://patreon.com/robomwm/\n\n[downloads-shield]: https://img.shields.io/badge/All%20Downloads-green?style=for-the-badge\n[bukkit-url]: https://dev.bukkit.org/projects/grief-prevention/files",
+  "body_url": null,
+  "published": "2023-06-24T07:08:46.379458Z",
+  "updated": "2024-06-29T03:52:13.803996Z",
+  "approved": "2023-06-25T02:28:30.098359Z",
+  "queued": "2023-06-24T07:27:22.301354Z",
+  "status": "approved",
+  "requested_status": "approved",
+  "moderator_message": null,
+  "license": {
+    "id": "GPL-3.0-only",
+    "name": "GNU General Public License v3.0 only",
+    "url": null
+  },
+  "downloads": 35952,
+  "followers": 114,
+  "categories": [
+    "management",
+    "utility"
+  ],
+  "additional_categories": [
+    "game-mechanics",
+    "social"
+  ],
+  "loaders": [
+    "bukkit",
+    "paper",
+    "purpur",
+    "spigot"
+  ],
+  "versions": [
+    "gNbluNbG",
+    "QYObZ1PL",
+    "DulfD6iE",
+    "S9WY4Kev",
+    "RQv9pNC6",
+    "ue7jAjJ5"
+  ],
+  "icon_url": "https://cdn.modrinth.com/data/O4o4mKaq/6aeade7ea5551c41dbe71e379ea893777356650d_96.webp",
+  "issues_url": "https://github.com/GriefPrevention/GriefPrevention/issues",
+  "source_url": "https://github.com/GriefPrevention/GriefPrevention",
+  "wiki_url": "https://docs.griefprevention.com/",
+  "discord_url": "https://r.griefprevention.com/dumcord",
+  "donation_urls": [
+    {
+      "id": "patreon",
+      "platform": "Patreon",
+      "url": "https://r.robomwm.com/patreon"
+    }
+  ],
+  "gallery": [],
+  "color": 613194,
+  "thread_id": "O4o4mKaq",
+  "monetization_status": "monetized"
+}

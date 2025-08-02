@@ -1100,6 +1100,40 @@ share code or pack file
 
 ```
 
+### version-from-modrinth-projects
+
+```
+Usage: mc-image-helper version-from-modrinth-projects
+       [--api-base-url=<baseUrl>] [--projects=[loader:]id|slug[:version][,|<nl>
+       [loader:]id|slug[:version]...]...]...
+       [[--connection-pool-pending-acquire-timeout=DURATION]
+       [--tls-handshake-timeout=DURATION]
+       [--connection-pool-max-idle-timeout=DURATION]
+       [--http-response-timeout=DURATION]]
+Finds a compatible Minecraft version across given Modrinth projects
+      --api-base-url=<baseUrl>
+         Default: https://api.modrinth.com
+      --connection-pool-max-idle-timeout=DURATION
+
+      --connection-pool-pending-acquire-timeout=DURATION
+
+      --http-response-timeout=DURATION
+         The response timeout to apply to HTTP operations. Parsed from ISO-8601
+           format. Default: PT30S
+      --projects=[loader:]id|slug[:version][,|<nl>[loader:]id|slug[:
+        version]...]...
+         Project ID or Slug. Can be <project ID>|<slug>, <loader>:<project
+           ID>|<slug>, <loader>:<project ID>|<slug>:<version ID|version
+           number|release type>, '@'<filename with ref per line (supports #
+           comments)>
+         Examples: fabric-api, fabric:fabric-api, fabric:fabric-api:0.76.1+1.
+           19.2, datapack:terralith, @/path/to/modrinth-mods.txt
+         Valid release types: release, beta, alpha
+         Valid loaders: fabric, forge, paper, datapack, etc.
+      --tls-handshake-timeout=DURATION
+         Default: PT30S
+```
+
 ### yaml-path
 
 ```
