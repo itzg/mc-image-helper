@@ -29,6 +29,7 @@ import me.itzg.helpers.get.GetCommand;
 import me.itzg.helpers.github.GithubCommands;
 import me.itzg.helpers.modrinth.InstallModrinthModpackCommand;
 import me.itzg.helpers.modrinth.ModrinthCommand;
+import me.itzg.helpers.modrinth.VersionFromModrinthProjectsCommand;
 import me.itzg.helpers.mvn.MavenDownloadCommand;
 import me.itzg.helpers.paper.InstallPaperCommand;
 import me.itzg.helpers.patch.PatchCommand;
@@ -93,8 +94,9 @@ import picocli.CommandLine.Spec;
         SyncAndInterpolate.class,
         TestLoggingCommand.class,
         TomlPathCommand.class,
-        YamlPathCommand.class,
         VanillaTweaksCommand.class,
+        VersionFromModrinthProjectsCommand.class,
+        YamlPathCommand.class
     }
 )
 @Slf4j
