@@ -13,6 +13,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipFile;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidParameterException;
@@ -21,6 +22,7 @@ import me.itzg.helpers.files.AntPathMatcher;
 import me.itzg.helpers.files.IoStreams;
 import me.itzg.helpers.forge.ForgeInstaller;
 import me.itzg.helpers.forge.ForgeInstallerResolver;
+import me.itzg.helpers.forge.ForgeUrlArgs;
 import me.itzg.helpers.forge.NeoForgeInstallerResolver;
 import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.http.SharedFetch.Options;
@@ -44,6 +46,8 @@ public class ModrinthPackInstaller {
     private final boolean forceModloaderReinstall;
     private final FileInclusionCalculator fileInclusionCalculator;
     private final Options sharedFetchOpts;
+    @Setter
+    private ForgeUrlArgs forgeUrlArgs = new ForgeUrlArgs();
 
     private AntPathMatcher overridesExclusions;
 
@@ -262,7 +266,9 @@ public class ModrinthPackInstaller {
 
     private void prepareForge(SharedFetch sharedFetch, String minecraftVersion, String version) {
         new ForgeInstaller(
-            new ForgeInstallerResolver(sharedFetch, minecraftVersion, version)
+            new ForgeInstallerResolver(sharedFetch, minecraftVersion, version,
+                forgeUrlArgs.getPromotionsUrl(), forgeUrlArgs.getMavenRepoUrl()
+                )
         )
             .install(
                 this.outputDirectory,

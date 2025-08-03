@@ -52,6 +52,7 @@ import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.files.ResultsFileWriter;
 import me.itzg.helpers.forge.ForgeInstaller;
 import me.itzg.helpers.forge.ForgeInstallerResolver;
+import me.itzg.helpers.forge.ForgeUrlArgs;
 import me.itzg.helpers.forge.NeoForgeInstallerResolver;
 import me.itzg.helpers.http.FailedRequestException;
 import me.itzg.helpers.http.Fetch;
@@ -128,6 +129,9 @@ public class CurseForgeInstaller {
 
     @Getter @Setter
     private CacheArgs cacheArgs;
+
+    @Getter @Setter
+    private ForgeUrlArgs forgeUrlArgs;
 
     /**
      */
@@ -971,7 +975,8 @@ public class CurseForgeInstaller {
     private void prepareForge(SharedFetch sharedFetch, String minecraftVersion, String loaderVersion) {
         new ForgeInstaller(
             new ForgeInstallerResolver(sharedFetch,
-                minecraftVersion, loaderVersion
+                minecraftVersion, loaderVersion,
+                forgeUrlArgs.getPromotionsUrl(), forgeUrlArgs.getMavenRepoUrl()
             )
         )
             .install(outputDir, resultsFile, forceReinstallModloader, "Forge");
