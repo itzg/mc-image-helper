@@ -21,7 +21,7 @@ public class ForgeInstallerResolver implements InstallerResolver {
     public static final String LATEST = "latest";
     public static final String RECOMMENDED = "recommended";
 
-    private final static String promotionsUrl = "https://files.minecraftforge.net/maven/net/minecraftforge/forge/promotions_slim.json";
+    private final static String promotionsUrl = "https://files.minecraftforge.net/net/minecraftforge/forge/promotions_slim.json";
     private final static String mavenRepoUrl = "https://maven.minecraftforge.net";
     private final SharedFetch sharedFetch;
     private final String requestedMinecraftVersion;
