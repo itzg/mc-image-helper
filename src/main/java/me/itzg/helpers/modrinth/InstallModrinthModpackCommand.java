@@ -12,6 +12,7 @@ import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.files.ResultsFileWriter;
+import me.itzg.helpers.forge.ForgeUrlArgs;
 import me.itzg.helpers.http.Fetch;
 import me.itzg.helpers.http.PathOrUri;
 import me.itzg.helpers.http.PathOrUriConverter;
@@ -21,6 +22,7 @@ import me.itzg.helpers.json.ObjectMappers;
 import me.itzg.helpers.modrinth.model.VersionType;
 import org.jetbrains.annotations.VisibleForTesting;
 import picocli.CommandLine;
+import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.Option;
 import reactor.core.publisher.Mono;
@@ -115,6 +117,9 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
 
     @CommandLine.ArgGroup(exclusive = false)
     SharedFetchArgs sharedFetchArgs = new SharedFetchArgs();
+
+    @ArgGroup(exclusive = false)
+    ForgeUrlArgs forgeUrlArgs = new ForgeUrlArgs();
 
     @Override
     public Integer call() throws IOException {
@@ -221,7 +226,8 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
             mrPackFile, this.outputDirectory, this.resultsFile,
             this.forceModloaderReinstall,
             fileInclusionCalculator
-        );
+        )
+            .setForgeUrlArgs(forgeUrlArgs);
 
     private Mono<Installation> processResultsFile(FetchedPack fetchedPack, Installation installation) {
         return Mono.fromCallable(() -> {

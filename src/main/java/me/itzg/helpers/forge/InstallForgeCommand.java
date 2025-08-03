@@ -68,7 +68,7 @@ public class InstallForgeCommand implements Callable<Integer> {
             this.version = version.toLowerCase();
         }
 
-        @Option(names = "--forge-installer", description = "Use a local forge installer")
+        @Option(names = "--forge-installer", description = "Use a local forge installer", paramLabel = "FILE")
         Path installer;
     }
 
@@ -89,6 +89,9 @@ public class InstallForgeCommand implements Callable<Integer> {
     @ArgGroup(exclusive = false)
     SharedFetchArgs sharedFetchArgs = new SharedFetchArgs();
 
+    @ArgGroup(exclusive = false)
+    ForgeUrlArgs forgeUrlArgs = new ForgeUrlArgs();
+
     @Override
     public Integer call() throws Exception {
         try (SharedFetch sharedFetch = Fetch.sharedFetch("install-forge", sharedFetchArgs.options())) {
@@ -96,7 +99,10 @@ public class InstallForgeCommand implements Callable<Integer> {
             final ForgeInstaller installer = new ForgeInstaller(
                 versionOrInstaller.installer != null ?
                     new ProvidedInstallerResolver(versionOrInstaller.installer)
-                    : new ForgeInstallerResolver(sharedFetch, minecraftVersion, versionOrInstaller.version)
+                    : new ForgeInstallerResolver(
+                        sharedFetch, minecraftVersion, versionOrInstaller.version,
+                        forgeUrlArgs.getPromotionsUrl(), forgeUrlArgs.getMavenRepoUrl()
+                        )
 
             );
 

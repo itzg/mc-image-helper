@@ -15,24 +15,31 @@ import me.itzg.helpers.forge.model.PromotionsSlim;
 import me.itzg.helpers.http.FailedRequestException;
 import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.http.Uris;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @Slf4j
 public class ForgeInstallerResolver implements InstallerResolver {
     public static final String LATEST = "latest";
     public static final String RECOMMENDED = "recommended";
+    public static final String DEFAULT_PROMOTIONS_URL = "https://files.minecraftforge.net/net/minecraftforge/forge/promotions_slim.json";
+    public static final String DEFAULT_MAVEN_REPO_URL = "https://maven.minecraftforge.net";
 
-    private final static String promotionsUrl = "https://files.minecraftforge.net/net/minecraftforge/forge/promotions_slim.json";
-    private final static String mavenRepoUrl = "https://maven.minecraftforge.net";
+    private final String promotionsUrl;
+    private final String mavenRepoUrl;
     private final SharedFetch sharedFetch;
     private final String requestedMinecraftVersion;
     private final String requestedForgeVersion;
 
     public ForgeInstallerResolver(SharedFetch sharedFetch,
-        String requestedMinecraftVersion, String requestedForgeVersion
+        String requestedMinecraftVersion, String requestedForgeVersion,
+        String promotionsUrl, String mavenRepoUrl
     ) {
         this.sharedFetch = sharedFetch;
         this.requestedMinecraftVersion = requestedMinecraftVersion;
         this.requestedForgeVersion = requestedForgeVersion;
+        this.promotionsUrl = promotionsUrl;
+        this.mavenRepoUrl = mavenRepoUrl;
     }
 
     @Override
@@ -62,41 +69,35 @@ public class ForgeInstallerResolver implements InstallerResolver {
             minecraftVersion, forgeVersion
         ) +".jar");
 
-        boolean success = false;
-        // every few major versions Forge would chane their version qualifier scheme :(
-        for (final String installerUrlVersion : new String[]{
-            String.join("-", minecraftVersion, forgeVersion),
-            String.join("-", minecraftVersion, forgeVersion, minecraftVersion),
-            String.join("-", minecraftVersion, forgeVersion, "mc172")
-        }) {
-            try {
-                sharedFetch.fetch(Uris.populateToUri(
-                    mavenRepoUrl
-                        + "/net/minecraftforge/forge/{version}/forge-{version}-installer.jar",
-                    installerUrlVersion, installerUrlVersion
-                ))
-                    .userAgentCommand("forge")
-                    .toFile(installerJar)
-                    .skipExisting(true)
-                    .acceptContentTypes(Collections.singletonList("application/java-archive"))
-                    .execute();
-                success = true;
-                break;
-            } catch (FailedRequestException e){
-                if (e.getStatusCode() != 404) {
-                    throw new RuntimeException("Trying to download forge installer", e);
-                }
-            }
-            catch (IOException e) {
-                throw new RuntimeException("Trying to download forge installer", e);
-            }
-        }
+        final Path result = Flux.just(
+                // every few major versions Forge changes their version qualifier scheme
+                String.join("-", minecraftVersion, forgeVersion),
+                String.join("-", minecraftVersion, forgeVersion, minecraftVersion),
+                String.join("-", minecraftVersion, forgeVersion, "mc172")
+            )
+            // concatMap ensures each is tried (to be found) before the next
+            .concatMap(versionToTry ->
+                    sharedFetch.fetch(Uris.populateToUri(
+                            mavenRepoUrl
+                                + "/net/minecraftforge/forge/{version}/forge-{version}-installer.jar",
+                            versionToTry, versionToTry
+                        ))
+                        .toFile(installerJar)
+                        .skipExisting(true)
+                        .acceptContentTypes(Collections.singletonList("application/java-archive"))
+                        .assemble()
+                        .checkpoint("downloading installer jar for " + versionToTry)
+                        // just skip this one if not found
+                        .onErrorResume(FailedRequestException::isNotFound, throwable -> Mono.empty())
+                )
+            .blockFirst();
 
-        if (!success) {
+        if (result == null) {
             throw new GenericException("Failed to locate forge installer");
         }
-
-        return installerJar;
+        else {
+            return result;
+        }
     }
 
     @Override

@@ -17,6 +17,7 @@ import me.itzg.helpers.cache.CacheArgs;
 import me.itzg.helpers.curseforge.ModpacksPageUrlParser.Parsed;
 import me.itzg.helpers.files.ResultsFileWriter;
 import me.itzg.helpers.files.TabularOutput;
+import me.itzg.helpers.forge.ForgeUrlArgs;
 import me.itzg.helpers.http.PathOrUri;
 import me.itzg.helpers.http.PathOrUriConverter;
 import me.itzg.helpers.http.SharedFetchArgs;
@@ -167,6 +168,9 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
     @ArgGroup(exclusive = false)
     CacheArgs cacheArgs;
 
+    @ArgGroup(exclusive = false)
+    ForgeUrlArgs forgeUrlArgs = new ForgeUrlArgs();
+
     @Override
     public Integer call() throws Exception {
         // https://www.curseforge.com/minecraft/modpacks/all-the-mods-8/files
@@ -203,7 +207,8 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
             .setApiKey(apiKey)
             .setDownloadsRepo(downloadsRepo)
             .setDisableApiCaching(disableApiCaching)
-            .setCacheArgs(cacheArgs);
+            .setCacheArgs(cacheArgs)
+            .setForgeUrlArgs(forgeUrlArgs);
 
         if (apiBaseUrl != null) {
             installer.setApiBaseUrl(apiBaseUrl);
