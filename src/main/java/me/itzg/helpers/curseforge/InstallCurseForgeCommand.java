@@ -171,6 +171,11 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
     @ArgGroup(exclusive = false)
     ForgeUrlArgs forgeUrlArgs = new ForgeUrlArgs();
 
+    @Option(names = {"--max-concurrent-downloads"}, defaultValue = "${env:CF_MAX_CONCURRENT_DOWNLOADS:-10}",
+        description = "Default is ${DEFAULT-VALUE}"
+    )
+    int maxConcurrentDownloads;
+
     @Override
     public Integer call() throws Exception {
         // https://www.curseforge.com/minecraft/modpacks/all-the-mods-8/files
@@ -208,7 +213,8 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
             .setDownloadsRepo(downloadsRepo)
             .setDisableApiCaching(disableApiCaching)
             .setCacheArgs(cacheArgs)
-            .setForgeUrlArgs(forgeUrlArgs);
+            .setForgeUrlArgs(forgeUrlArgs)
+            .setMaxConcurrentDownloads(maxConcurrentDownloads);
 
         if (apiBaseUrl != null) {
             installer.setApiBaseUrl(apiBaseUrl);
