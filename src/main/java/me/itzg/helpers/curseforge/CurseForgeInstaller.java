@@ -133,6 +133,9 @@ public class CurseForgeInstaller {
     @Getter @Setter
     private ForgeUrlArgs forgeUrlArgs;
 
+    @Getter @Setter
+    int maxConcurrentDownloads;
+
     /**
      */
     public void installFromModpackZip(Path modpackZip, String slug) {
@@ -546,6 +549,8 @@ public class CurseForgeInstaller {
         final ExcludeIncludeIds excludeIncludeIds = resolveExcludeIncludes(context);
         log.debug("Using {}", excludeIncludeIds);
 
+        log.debug("Max concurrent downloads is {}", maxConcurrentDownloads);
+
         // Go through all the files listed in modpack (given project ID + file ID)
         final List<PathWithInfo> modFiles = Flux.fromIterable(modpackManifest.getFiles())
             // ...does the modpack even say it's required?
@@ -577,7 +582,8 @@ public class CurseForgeInstaller {
                 processFileWithIds(context, outputSubdirResolver,
                     excludeIncludeIds.getForceIncludeIds(), fileRef.getProjectID(), fileRef.getFileID()
                 )
-                    .checkpoint()
+                    .checkpoint(),
+                maxConcurrentDownloads > 0 ? maxConcurrentDownloads : 10
             )
             .collectList()
             .block();

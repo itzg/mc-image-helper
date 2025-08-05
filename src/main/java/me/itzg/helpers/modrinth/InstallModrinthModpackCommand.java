@@ -121,6 +121,12 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
     @ArgGroup(exclusive = false)
     ForgeUrlArgs forgeUrlArgs = new ForgeUrlArgs();
 
+    @Option(names = {"--max-concurrent-downloads"}, defaultValue = "${env:MODRINTH_MAX_CONCURRENT_DOWNLOADS:-10}",
+        description = "Can also set env var MODRINTH_MAX_CONCURRENT_DOWNLOADS%n"
+            + "Default is ${DEFAULT-VALUE}"
+    )
+    int maxConcurrentDownloads;
+
     @Override
     public Integer call() throws IOException {
 
@@ -154,6 +160,7 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
                             )
                         )
                         .setOverridesExclusions(overridesExclusions)
+                        .setMaxConcurrentDownloads(maxConcurrentDownloads)
                         .processModpack(sharedFetch)
                         .flatMap(installation -> {
                             if (resultsFile != null) {

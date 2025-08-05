@@ -13,6 +13,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipFile;
+import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
@@ -46,8 +47,10 @@ public class ModrinthPackInstaller {
     private final boolean forceModloaderReinstall;
     private final FileInclusionCalculator fileInclusionCalculator;
     private final Options sharedFetchOpts;
-    @Setter
+    @Setter @Getter
     private ForgeUrlArgs forgeUrlArgs = new ForgeUrlArgs();
+    @Setter @Getter
+    private int maxConcurrentDownloads;
 
     private AntPathMatcher overridesExclusions;
 
@@ -169,7 +172,7 @@ public class ModrinthPackInstaller {
                     (uri, file, contentSizeBytes) ->
                         log.info("Downloaded {}", modpackFilePath)
                 );
-            });
+            }, maxConcurrentDownloads);
     }
 
     @SuppressWarnings("SameParameterValue")
