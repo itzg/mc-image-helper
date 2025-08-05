@@ -50,7 +50,7 @@ public class ModrinthPackInstaller {
     @Setter @Getter
     private ForgeUrlArgs forgeUrlArgs = new ForgeUrlArgs();
     @Setter @Getter
-    private int maxConcurrentDownloads;
+    private int maxConcurrentDownloads = 1;
 
     private AntPathMatcher overridesExclusions;
 

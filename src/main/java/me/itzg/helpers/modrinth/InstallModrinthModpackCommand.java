@@ -125,7 +125,7 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
         description = "Can also set env var MODRINTH_MAX_CONCURRENT_DOWNLOADS%n"
             + "Default is ${DEFAULT-VALUE}"
     )
-    int maxConcurrentDownloads;
+    int maxConcurrentDownloads = 1;
 
     @Override
     public Integer call() throws IOException {
