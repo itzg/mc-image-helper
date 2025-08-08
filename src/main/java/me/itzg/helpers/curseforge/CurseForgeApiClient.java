@@ -24,6 +24,7 @@ import me.itzg.helpers.curseforge.model.GetModFilesResponse;
 import me.itzg.helpers.curseforge.model.GetModResponse;
 import me.itzg.helpers.curseforge.model.ModsSearchResponse;
 import me.itzg.helpers.errors.GenericException;
+import me.itzg.helpers.errors.InvalidApiKeyException;
 import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.errors.RateLimitException;
 import me.itzg.helpers.http.FailedRequestException;
@@ -174,7 +175,12 @@ public class CurseForgeApiClient implements AutoCloseable {
                 )
             )
             .toObject(GetModFilesResponse.class)
-            .execute();
+            .assemble()
+            .onErrorMap(FailedRequestException::isForbidden, this::errorMapForbidden)
+            .block();
+        if (resp == null) {
+            throw new GenericException("Unable to resolve modpack's file");
+        }
 
         final List<CurseForgeFile> files = resp.getData();
 
@@ -313,7 +319,7 @@ public class CurseForgeApiClient implements AutoCloseable {
             return new RateLimitException(null, String.format("Access to %s has been rate-limited.", uriBuilder.getBaseUrl()), e);
         }
         else {
-            return new InvalidParameterException(String.format("Access to %s is forbidden or rate-limit has been exceeded."
+            return new InvalidApiKeyException(String.format("Access to %s is forbidden or rate-limit has been exceeded."
                     + " Ensure %s is set to a valid API key from %s or allow rate-limit to reset.",
                 uriBuilder.getBaseUrl(), API_KEY_VAR, ETERNAL_DEVELOPER_CONSOLE_URL
             ), e

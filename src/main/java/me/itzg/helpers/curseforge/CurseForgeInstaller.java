@@ -46,6 +46,7 @@ import me.itzg.helpers.curseforge.model.ManifestType;
 import me.itzg.helpers.curseforge.model.MinecraftModpackManifest;
 import me.itzg.helpers.curseforge.model.ModLoader;
 import me.itzg.helpers.errors.GenericException;
+import me.itzg.helpers.errors.InvalidApiKeyException;
 import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.fabric.FabricLauncherInstaller;
 import me.itzg.helpers.files.Manifests;
@@ -239,6 +240,9 @@ public class CurseForgeInstaller {
 
         } catch (IOException e) {
             throw new GenericException("File system issue during installation", e);
+        } catch (InvalidApiKeyException e) {
+            ApiKeyHelper.logKeyIssues(log, apiKey);
+            throw e;
         }
     }
 

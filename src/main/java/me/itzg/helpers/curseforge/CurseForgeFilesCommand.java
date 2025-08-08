@@ -24,6 +24,7 @@ import me.itzg.helpers.curseforge.model.CurseForgeMod;
 import me.itzg.helpers.curseforge.model.FileDependency;
 import me.itzg.helpers.curseforge.model.FileRelationType;
 import me.itzg.helpers.curseforge.model.ModLoaderType;
+import me.itzg.helpers.errors.InvalidApiKeyException;
 import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.http.SharedFetchArgs;
@@ -128,11 +129,14 @@ public class CurseForgeFilesCommand implements Callable<Integer> {
                 newManifest =
                     apiClient.loadCategoryInfo(Arrays.asList(CATEGORY_MC_MODS, CATEGORY_BUKKIT_PLUGINS))
                     .flatMap(categoryInfo ->
+
                         processModFileRefs(categoryInfo, previousFiles, apiClient)
                             .map(entries -> CurseForgeFilesManifest.builder()
                                 .entries(entries)
                                 .build()))
-                    .block();
+                        .doOnError(InvalidApiKeyException.class,
+                            throwable -> ApiKeyHelper.logKeyIssues(log, apiKey))
+                        .block();
             }
         }
         else {
