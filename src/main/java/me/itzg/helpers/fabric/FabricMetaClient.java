@@ -142,7 +142,8 @@ public class FabricMetaClient {
 
     public Mono<Path> downloadLauncher(
         Path outputDir, String minecraftVersion, String loaderVersion, String installerVersion,
-        FileDownloadStatusHandler statusHandler
+        FileDownloadStatusHandler statusHandler,
+        boolean skipValidation
     ) {
         return sharedFetch.fetch(
                 uriBuilder.resolve(
@@ -154,7 +155,8 @@ public class FabricMetaClient {
             .handleStatus(statusHandler)
             .assemble()
             .retryWhen(Retry.backoff(downloadRetryMaxAttempts, downloadRetryMinBackoff).filter(IOException.class::isInstance))
-            .flatMap(this::validateLauncherJar)
+            .flatMap(path -> skipValidation ? Mono.just(path) : validateLauncherJar(path))
+            .doOnError(InvalidContentException.class, e -> log.warn("Invalid launcher jar, will try again", e))
             .retryWhen(Retry.backoff(downloadRetryMaxAttempts, downloadRetryMinBackoff).filter(InvalidContentException.class::isInstance))
             .checkpoint("downloadLauncher");
     }
