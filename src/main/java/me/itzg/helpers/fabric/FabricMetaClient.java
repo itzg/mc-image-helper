@@ -1,20 +1,28 @@
 package me.itzg.helpers.fabric;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.List;
+import java.util.Properties;
 import java.util.function.Predicate;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
+import me.itzg.helpers.errors.InvalidContentException;
+import me.itzg.helpers.files.IoStreams;
 import me.itzg.helpers.http.FileDownloadStatusHandler;
 import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.http.UriBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 import reactor.util.retry.Retry;
 
+@Slf4j
 public class FabricMetaClient {
 
     private final SharedFetch sharedFetch;
@@ -32,7 +40,7 @@ public class FabricMetaClient {
     private Duration retryMinBackoff = Duration.ofMillis(500);
 
     @Setter
-    private int downloadRetryMaxAttempts = 5;
+    private int downloadRetryMaxAttempts = 10;
     @Setter
     private Duration downloadRetryMinBackoff = Duration.ofMillis(500);
 
@@ -146,7 +154,53 @@ public class FabricMetaClient {
             .handleStatus(statusHandler)
             .assemble()
             .retryWhen(Retry.backoff(downloadRetryMaxAttempts, downloadRetryMinBackoff).filter(IOException.class::isInstance))
+            .flatMap(this::validateLauncherJar)
+            .retryWhen(Retry.backoff(downloadRetryMaxAttempts, downloadRetryMinBackoff).filter(InvalidContentException.class::isInstance))
             .checkpoint("downloadLauncher");
+    }
+
+    private Mono<Path> validateLauncherJar(Path path) {
+        return Mono.fromCallable(() -> {
+                log.debug("Validating Fabric launcher file {}", path);
+
+                if (!path.toFile().isFile()) {
+                    throw new InvalidContentException("Downloaded launcher jar is not a file");
+                }
+                try {
+                    final Properties installProperties = IoStreams.readFileFromZip(path, "install.properties", in -> {
+                            Properties p = new Properties();
+                            p.load(in);
+                            return p;
+                        }
+                    );
+                    if (installProperties == null) {
+                        debugDownloadedContent(path);
+                        throw new InvalidContentException("Downloaded launcher jar does not contain an install.properties");
+                    }
+                    if (!installProperties.containsKey("game-version")) {
+                        debugDownloadedContent(path);
+                        throw new InvalidContentException("Downloaded launcher jar does not contain a valid install.properties");
+                    }
+                } catch (IOException e) {
+                    debugDownloadedContent(path);
+                    throw new InvalidContentException("Downloaded launcher jar could not be read as a jar/zip", e);
+                }
+
+                return path;
+            })
+            .subscribeOn(Schedulers.boundedElastic());
+    }
+
+    private static void debugDownloadedContent(Path path) {
+        if (log.isDebugEnabled()) {
+            try (BufferedReader reader = Files.newBufferedReader(path)) {
+                final char[] buf = new char[100];
+                final int amount = reader.read(buf);
+                log.debug("Downloaded launcher jar content starts with: {}", new String(buf, 0, amount));
+            } catch (IOException e) {
+                throw new GenericException("Failed to read downloaded launcher jar for debugging", e);
+            }
+        }
     }
 
     @NotNull
