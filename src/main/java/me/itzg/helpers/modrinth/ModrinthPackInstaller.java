@@ -260,6 +260,7 @@ public class ModrinthPackInstaller {
     private void prepareFabric(SharedFetch sharedFetch, String minecraftVersion, String fabricVersion) {
         new FabricLauncherInstaller(this.outputDirectory)
             .setResultsFile(this.resultsFile)
+            .setForceReinstall(forceModloaderReinstall)
             .installUsingVersions(
                 sharedFetchOpts, minecraftVersion,
                 fabricVersion,
