@@ -150,6 +150,8 @@ public class McImageHelper {
             if (Level.TRACE.isGreaterOrEqual(level)) {
                 ((Logger) LoggerFactory.getLogger("org.apache.hc.client5.http")).setLevel(
                     enabled ? level : Level.INFO);
+                ((Logger) LoggerFactory.getLogger("reactor.netty.http.client.HttpClient")).setLevel(
+                    enabled ? level : Level.INFO);
             }
         }
 

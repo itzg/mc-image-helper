@@ -22,9 +22,7 @@ public class ModrinthHttpPackFetcher implements ModrinthPackFetcher {
     @Override
     public Mono<FetchedPack> fetchModpack(ModrinthModpackManifest prevManifest) {
         return apiClient.downloadFileFromUrl(
-                destFilePath, modpackUri,
-                (uri, file, contentSizeBytes) ->
-                    log.info("Downloaded {}", destFilePath)
+                destFilePath, modpackUri
             )
             .map(mrPackFile -> new FetchedPack(mrPackFile, "custom", deriveVersionId(), deriveVersionName()));
     }

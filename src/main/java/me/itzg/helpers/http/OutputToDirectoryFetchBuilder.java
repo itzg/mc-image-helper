@@ -231,6 +231,10 @@ public class OutputToDirectoryFetchBuilder extends FetchBuilderBase<OutputToDire
                         return failedRequestMono(resp, byteBufFlux.aggregate(), "Downloading file");
                     }
 
+                    if (log.isTraceEnabled()) {
+                        resp.responseHeaders().forEach(header -> log.trace("Response header: {}={}", header.getKey(), header.getValue()));
+                    }
+
                     return copyBodyInputStreamToFile(byteBufFlux, outputFile);
                 })
                 .last()
