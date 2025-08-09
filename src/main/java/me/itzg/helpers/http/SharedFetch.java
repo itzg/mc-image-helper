@@ -12,9 +12,11 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.McImageHelper;
 import me.itzg.helpers.errors.GenericException;
-import reactor.netty.http.Http11SslContextSpec;
+import reactor.netty.http.Http2SslContextSpec;
+import reactor.netty.http.HttpProtocol;
 import reactor.netty.http.client.HttpClient;
 import reactor.netty.resources.ConnectionProvider;
+import reactor.netty.tcp.SslProvider.GenericSslContextSpec;
 
 /**
  * Provides an efficient way to make multiple web requests since a single client
@@ -58,6 +60,8 @@ public class SharedFetch implements AutoCloseable {
 
         reactiveClient = HttpClient.create(connectionProvider)
             .proxyWithSystemProperties()
+            // https://projectreactor.io/docs/netty/release/reference/http-client.html#HTTP2
+            .protocol(HttpProtocol.HTTP11, HttpProtocol.H2)
             .headers(headers -> {
                     headers
                         .set(HttpHeaderNames.USER_AGENT.toString(), userAgent)
@@ -69,11 +73,14 @@ public class SharedFetch implements AutoCloseable {
             )
             // Reference https://projectreactor.io/docs/netty/release/reference/index.html#response-timeout
             .responseTimeout(options.getResponseTimeout())
-            // Reference https://projectreactor.io/docs/netty/release/reference/index.html#ssl-tls-timeout
             .secure(spec ->
-                spec.sslContext(Http11SslContextSpec.forClient())
+                // Http2 SSL supports both HTTP/2 and HTTP/1.1
+                spec.sslContext((GenericSslContextSpec<?>) Http2SslContextSpec.forClient())
+                // Reference https://projectreactor.io/docs/netty/release/reference/index.html#ssl-tls-timeout
                 .handshakeTimeout(options.getTlsHandshakeTimeout())
-            );
+            )
+
+        ;
 
         headers.put("x-fetch-session", fetchSessionId);
 
