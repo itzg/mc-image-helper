@@ -20,7 +20,6 @@ import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.http.FailedRequestException;
 import me.itzg.helpers.http.Fetch;
-import me.itzg.helpers.http.FileDownloadedHandler;
 import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.http.SharedFetch.Options;
 import me.itzg.helpers.http.UriBuilder;
@@ -266,10 +265,10 @@ public class ModrinthApiClient implements AutoCloseable {
         sharedFetch.close();
     }
 
-    public Mono<Path> downloadFileFromUrl(Path outputFile, URI uri, FileDownloadedHandler fileDownloadedHandler) {
+    public Mono<Path> downloadFileFromUrl(Path outputFile, URI uri) {
         return sharedFetch.fetch(uri)
             .toFile(outputFile)
-            .handleDownloaded(fileDownloadedHandler)
+            .handleStatus(Fetch.loggingDownloadStatusHandler(log))
             .skipExisting(true)
             .assemble();
     }
