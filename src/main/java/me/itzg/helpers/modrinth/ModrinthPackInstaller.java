@@ -118,6 +118,8 @@ public class ModrinthPackInstaller {
                 ));
         }
 
+        log.info("Processing modpack files for {} {}", modpackIndex.getName(), modpackIndex.getVersionId());
+
         return processModFiles(modpackIndex)
             .collectList()
             .map(modFiles ->
@@ -168,9 +170,7 @@ public class ModrinthPackInstaller {
 
                 return this.apiClient.downloadFileFromUrl(
                     outFilePath,
-                    modpackFile.getDownloads().get(0),
-                    (uri, file, contentSizeBytes) ->
-                        log.info("Downloaded {}", modpackFilePath)
+                    modpackFile.getDownloads().get(0)
                 );
             }, maxConcurrentDownloads);
     }
