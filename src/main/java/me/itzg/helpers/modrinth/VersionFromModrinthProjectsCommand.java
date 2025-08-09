@@ -3,6 +3,7 @@ package me.itzg.helpers.modrinth;
 import static me.itzg.helpers.McImageHelper.SPLIT_COMMA_NL;
 import static me.itzg.helpers.McImageHelper.SPLIT_SYNOPSIS_COMMA_NL;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -86,31 +87,31 @@ public class VersionFromModrinthProjectsCommand implements Callable<Integer> {
 
         final int projectCount = allGameVersions.size();
 
+        // positions will start at the first usable position at end of each list and decrement
+        // and will become negative when finished traversing
         final int[] positions = new int[projectCount];
         for (int i = 0; i < projectCount; i++) {
-            positions[i] = allGameVersions.get(i).size();
+            positions[i] = allGameVersions.get(i).size() - 1;
         }
 
-        while (!finished(positions)) {
+        while (Arrays.stream(positions)
+            // while any position is still usable
+            .anyMatch(p -> p >= 0)
+        ) {
             for (int i = 0; i < projectCount; i++) {
-                final String version = allGameVersions.get(i).get(--positions[i]);
-                final Integer result = gameVersionCounts.compute(version, (k, count) -> count == null ? 1 : count + 1);
-                if (result == projectCount) {
-                    return version;
+                // still usable?
+                if (positions[i] >= 0) {
+                    final int position = positions[i]--;
+                    final String version = allGameVersions.get(i).get(position);
+                    final Integer result = gameVersionCounts.compute(version, (k, count) -> count == null ? 1 : count + 1);
+                    // did this version slot indicate match for all?
+                    if (result == projectCount) {
+                        return version;
+                    }
                 }
             }
         }
 
         return null;
-    }
-
-    static private boolean finished(int[] positions) {
-        for (final int position : positions) {
-            // since we pre-increment the positions
-            if (position <= 0) {
-                return true;
-            }
-        }
-        return false;
     }
 }

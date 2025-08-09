@@ -1,0 +1,127 @@
+{
+  "client_side": "unsupported",
+  "server_side": "required",
+  "game_versions": [
+    "1.21.4"
+  ],
+  "id": "GpxZbmCB",
+  "slug": "nucledoom",
+  "project_type": "mod",
+  "team": "5k7BjC9i",
+  "organization": null,
+  "title": "NucleDoom",
+  "description": "Play doom in Minecraft!",
+  "body": "# NucleDoom\nGot bored with modern games, but you are too lazy to leave Minecraft?\nThen it's time to play some REAL GAMES!\n\n![Doom running in NucleDoom](https://imgur.com/tlSf8zx.png)\n\nIntroducing NucleDoom, a perfect way to play the classic Doom (1993) in Minecraft!\nJust hop on a server and open the game.\n\nSupports sounds*!\n(Sound might not be accurate, but they are here!)\n\n## Active servers\n- `playdoom.pb4.eu` - Main server / Europe\n- `playdoom.modrinth.gg` - US server\n\n## Controls\n- Move with WSAD\n- Run with SHIFT\n- Mouse to look around\n- Left click to shoot\n- Right click to use\n- 1-7 to select weapon\n- F for pause/menu\n- SPACE to select\n- E to accept\n- Q to go back\n\n## Opening the game:\nLike any plasmid based game, you can use:\n- `/game open` as an administrator.\n- `/game portal open` as a player.\n\n## Hosting your own server:\nJust install this mod and run it!\nDepends on [Plasmid](https://modrinth.com/mod/plasmid),\n[Polymer](https://modrinth.com/mod/polymer) and [Fabric API](https://modrinth.com/mod/fabric-api)\n\n\n## Games included by default:\n- Doom (Shareware) by idSoftware\n- Freedoom Phase 1 and 2: https://freedoom.github.io/",
+  "body_url": null,
+  "published": "2025-04-01T09:34:09.560399Z",
+  "updated": "2025-04-03T20:55:12.720840Z",
+  "approved": "2025-04-04T05:40:50.174748Z",
+  "queued": "2025-04-01T09:37:37.299839Z",
+  "status": "approved",
+  "requested_status": "approved",
+  "moderator_message": null,
+  "license": {
+    "id": "LicenseRef-Various-licenses",
+    "name": "",
+    "url": "https://github.com/Patbox/nucledoom/blob/master/LICENSE"
+  },
+  "downloads": 248,
+  "followers": 10,
+  "categories": [
+    "adventure",
+    "cursed"
+  ],
+  "additional_categories": [
+    "technology"
+  ],
+  "loaders": [
+    "fabric"
+  ],
+  "versions": [
+    "bkO2SFBF",
+    "kaPx3ZLL"
+  ],
+  "icon_url": "https://cdn.modrinth.com/data/GpxZbmCB/73c6201277689dc500b6a34965b7796fd5af8941_96.webp",
+  "issues_url": "https://github.com/Patbox/nucledoom/issues",
+  "source_url": "https://github.com/Patbox/nucledoom",
+  "wiki_url": null,
+  "discord_url": "https://pb4.eu/discord",
+  "donation_urls": [],
+  "gallery": [
+    {
+      "url": "https://cdn.modrinth.com/data/GpxZbmCB/images/030c1b4ec769adfc19b190e77a372667ebb966e6_350.webp",
+      "raw_url": "https://cdn.modrinth.com/data/GpxZbmCB/images/030c1b4ec769adfc19b190e77a372667ebb966e6.png",
+      "featured": false,
+      "title": "Freedoom: Phase 2 - Title",
+      "description": null,
+      "created": "2025-04-14T21:17:45.491476Z",
+      "ordering": 0
+    },
+    {
+      "url": "https://cdn.modrinth.com/data/GpxZbmCB/images/375ac9459dc1d02937ccc17d85b16446a05d9cd8_350.webp",
+      "raw_url": "https://cdn.modrinth.com/data/GpxZbmCB/images/375ac9459dc1d02937ccc17d85b16446a05d9cd8.png",
+      "featured": false,
+      "title": "Freedoom: Phase 1",
+      "description": null,
+      "created": "2025-04-14T21:17:37.079483Z",
+      "ordering": 0
+    },
+    {
+      "url": "https://cdn.modrinth.com/data/GpxZbmCB/images/48342fb1a9492234f3a9fed67698b0d564d93f5f_350.webp",
+      "raw_url": "https://cdn.modrinth.com/data/GpxZbmCB/images/48342fb1a9492234f3a9fed67698b0d564d93f5f.png",
+      "featured": true,
+      "title": "Doom Shareware - Menu",
+      "description": null,
+      "created": "2025-04-14T21:15:44.793624Z",
+      "ordering": 0
+    },
+    {
+      "url": "https://cdn.modrinth.com/data/GpxZbmCB/images/c1f666e8b51dd5fd5390969dfc0909433b509c64_350.webp",
+      "raw_url": "https://cdn.modrinth.com/data/GpxZbmCB/images/c1f666e8b51dd5fd5390969dfc0909433b509c64.png",
+      "featured": false,
+      "title": "Freedoom: Phase 1",
+      "description": null,
+      "created": "2025-04-14T21:17:27.554587Z",
+      "ordering": 0
+    },
+    {
+      "url": "https://cdn.modrinth.com/data/GpxZbmCB/images/c8c3a37f2d3dbb77509e9a48440e47b57958ee21_350.webp",
+      "raw_url": "https://cdn.modrinth.com/data/GpxZbmCB/images/c8c3a37f2d3dbb77509e9a48440e47b57958ee21.png",
+      "featured": false,
+      "title": "Freedoom: Phase 2",
+      "description": null,
+      "created": "2025-04-14T21:18:04.481267Z",
+      "ordering": 0
+    },
+    {
+      "url": "https://cdn.modrinth.com/data/GpxZbmCB/images/ca8bbeb06b70c6de35d428fcbbe67363145d166b_350.webp",
+      "raw_url": "https://cdn.modrinth.com/data/GpxZbmCB/images/ca8bbeb06b70c6de35d428fcbbe67363145d166b.png",
+      "featured": false,
+      "title": "Freedoom: Phase 1",
+      "description": null,
+      "created": "2025-04-14T21:16:42.825362Z",
+      "ordering": 0
+    },
+    {
+      "url": "https://cdn.modrinth.com/data/GpxZbmCB/images/f0936a6d96da1e99766994657d91ffbbac46deac_350.webp",
+      "raw_url": "https://cdn.modrinth.com/data/GpxZbmCB/images/f0936a6d96da1e99766994657d91ffbbac46deac.png",
+      "featured": false,
+      "title": "Doom (Shareware)",
+      "description": null,
+      "created": "2025-04-14T21:16:17.204819Z",
+      "ordering": 0
+    },
+    {
+      "url": "https://cdn.modrinth.com/data/GpxZbmCB/images/f4a768a213c56ffa71f027932211d4aca02fa1c0_350.webp",
+      "raw_url": "https://cdn.modrinth.com/data/GpxZbmCB/images/f4a768a213c56ffa71f027932211d4aca02fa1c0.png",
+      "featured": false,
+      "title": "Freedoom: Phase 1",
+      "description": null,
+      "created": "2025-04-14T21:17:19.886366Z",
+      "ordering": 0
+    }
+  ],
+  "color": 529425,
+  "thread_id": "Pa4qGVIO",
+  "monetization_status": "monetized"
+}
