@@ -12,6 +12,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.McImageHelper;
 import me.itzg.helpers.errors.GenericException;
+import reactor.netty.http.Http11SslContextSpec;
 import reactor.netty.http.Http2SslContextSpec;
 import reactor.netty.http.HttpProtocol;
 import reactor.netty.http.client.HttpClient;
@@ -60,8 +61,6 @@ public class SharedFetch implements AutoCloseable {
 
         reactiveClient = HttpClient.create(connectionProvider)
             .proxyWithSystemProperties()
-            // https://projectreactor.io/docs/netty/release/reference/http-client.html#HTTP2
-            .protocol(HttpProtocol.HTTP11, HttpProtocol.H2)
             .headers(headers -> {
                     headers
                         .set(HttpHeaderNames.USER_AGENT.toString(), userAgent)
@@ -72,15 +71,29 @@ public class SharedFetch implements AutoCloseable {
                 }
             )
             // Reference https://projectreactor.io/docs/netty/release/reference/index.html#response-timeout
-            .responseTimeout(options.getResponseTimeout())
-            .secure(spec ->
-                // Http2 SSL supports both HTTP/2 and HTTP/1.1
-                spec.sslContext((GenericSslContextSpec<?>) Http2SslContextSpec.forClient())
-                // Reference https://projectreactor.io/docs/netty/release/reference/index.html#ssl-tls-timeout
-                .handshakeTimeout(options.getTlsHandshakeTimeout())
-            )
+            .responseTimeout(options.getResponseTimeout());
 
-        ;
+        if (options.isUseHttp2()) {
+            log.debug("Using HTTP/2");
+            reactiveClient
+                // https://projectreactor.io/docs/netty/release/reference/http-client.html#HTTP2
+                .protocol(HttpProtocol.HTTP11, HttpProtocol.H2)
+                .secure(spec ->
+                    // Http2 SSL supports both HTTP/2 and HTTP/1.1
+                    spec.sslContext((GenericSslContextSpec<?>) Http2SslContextSpec.forClient())
+                        // Reference https://projectreactor.io/docs/netty/release/reference/index.html#ssl-tls-timeout
+                        .handshakeTimeout(options.getTlsHandshakeTimeout())
+                );
+        }
+        else {
+            log.debug("Using HTTP/1.1");
+            reactiveClient
+                .secure(spec ->
+                    spec.sslContext((GenericSslContextSpec<?>) Http11SslContextSpec.forClient())
+                        // Reference https://projectreactor.io/docs/netty/release/reference/index.html#ssl-tls-timeout
+                        .handshakeTimeout(options.getTlsHandshakeTimeout())
+                );
+        }
 
         headers.put("x-fetch-session", fetchSessionId);
 
@@ -135,6 +148,9 @@ public class SharedFetch implements AutoCloseable {
          */
         private final URI filesViaUrl;
 
+        @Default
+        private final boolean useHttp2 = true;
+
         public Options withHeader(String key, String value) {
             final Map<String, String> newHeaders = extraHeaders != null ?
                 new HashMap<>(extraHeaders) : new HashMap<>();
@@ -142,7 +158,7 @@ public class SharedFetch implements AutoCloseable {
 
             return new Options(
                 responseTimeout, tlsHandshakeTimeout, maxIdleTimeout, pendingAcquireTimeout,
-                newHeaders, filesViaUrl
+                newHeaders, filesViaUrl, useHttp2
             );
         }
     }

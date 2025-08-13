@@ -48,6 +48,13 @@ public class SharedFetchArgs {
         optionsBuilder.pendingAcquireTimeout(timeout);
     }
 
+    @Option(names = "--use-http2", defaultValue = "${env:FETCH_USE_HTTP2:-true}",
+        description = "Whether to use HTTP/2. Default: ${DEFAULT-VALUE}"
+    )
+    public void setUseHttp2(boolean useHttp2) {
+        optionsBuilder.useHttp2(useHttp2);
+    }
+
     public Options options() {
         return optionsBuilder.build();
     }

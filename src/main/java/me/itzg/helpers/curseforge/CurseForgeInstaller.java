@@ -384,6 +384,8 @@ public class CurseForgeInstaller {
             }
         }
         else {
+            log.info("Downloading modpack zip for {}", modFile.getDisplayName());
+
             modpackZip = context.cfApi.downloadTemp(modFile, ".zip",
                     (status, uri, file) ->
                         log.debug("Modpack file retrieval: status={} uri={} file={}", status, uri, file)
