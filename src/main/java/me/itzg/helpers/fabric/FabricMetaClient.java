@@ -208,7 +208,7 @@ public class FabricMetaClient {
                 log.debug("Downloaded launcher jar content starts with: {}",
                     Hex.encodeHexString(ByteBuffer.wrap(buf, 0, amount))
                 );
-            } catch (IOException e) {
+            } catch (IOException|IndexOutOfBoundsException e) {
                 log.warn("Failed to debug content of launcher jar", e);
             }
         }

@@ -1,6 +1,6 @@
 package me.itzg.helpers.files;
 
-import java.io.IOException;
+import io.netty.buffer.ByteBuf;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -8,10 +8,10 @@ import java.nio.file.StandardOpenOption;
 import java.time.Instant;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import reactor.core.Exceptions;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import reactor.netty.ByteBufFlux;
+import reactor.util.function.Tuple2;
 
 @Slf4j
 public class ReactiveFileUtils {
@@ -42,36 +42,46 @@ public class ReactiveFileUtils {
     }
 
     public static Mono<Long> writeByteBufFluxToFile(ByteBufFlux byteBufFlux, Path file) {
-        return Mono.fromCallable(() -> {
-                    log.trace("Opening {} for writing", file);
-                    return FileChannel.open(file,
-                        StandardOpenOption.WRITE,
-                        StandardOpenOption.CREATE,
-                        StandardOpenOption.TRUNCATE_EXISTING
-                    );
-                }
-            )
-            .subscribeOn(Schedulers.boundedElastic())
-            .flatMap(outChannel ->
+        final ByteBufQueue byteBufQueue = new ByteBufQueue();
+
+        // Separate this into a pair of concurrent mono's
+        return Mono.zip(
+                // ...file writer
+                Mono.fromCallable(() -> {
+                        try (FileChannel channel = FileChannel.open(file,
+                            StandardOpenOption.WRITE,
+                            StandardOpenOption.CREATE,
+                            StandardOpenOption.TRUNCATE_EXISTING
+                        )) {
+                            ByteBuf byteBuf;
+                            while ((byteBuf = byteBufQueue.take()) != null) {
+                                try {
+                                    //noinspection ResultOfMethodCallIgnored
+                                    channel.write(byteBuf.nioBuffer());
+                                } finally {
+                                    byteBuf.release();
+                                }
+                            }
+
+                            return file;
+                        }
+                    })
+                    // ...which runs in a separate thread
+                    .subscribeOn(Schedulers.boundedElastic()),
+                // ...and the network consumer flux
                 byteBufFlux
-                    .asByteBuffer()
-                    .subscribeOn(Schedulers.boundedElastic())
-                    .<Integer>handle((byteBuffer, sink) -> {
-                        try {
-                            sink.next(outChannel.write(byteBuffer));
-                        } catch (IOException e) {
-                            sink.error(Exceptions.propagate(e));
-                        }
+                    // Mark the bytebufs as retained so they can be released after
+                    // they are written by the mono above
+                    .retain()
+                    .map(byteBuf -> {
+                        final int amount = byteBuf.readableBytes();
+                        byteBufQueue.add(byteBuf);
+                        return amount;
                     })
-                    .doOnTerminate(() -> {
-                        try {
-                            outChannel.close();
-                            log.trace("Closed {}", file);
-                        } catch (IOException e) {
-                            log.warn("Failed to close {}", file, e);
-                        }
-                    })
+                    .doOnTerminate(byteBufQueue::finish)
                     .collect(Collectors.<Integer>summingLong(value -> value))
-            );
+            )
+            // Just expose the total bytes read from network
+            .map(Tuple2::getT2);
     }
 }
