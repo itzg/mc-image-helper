@@ -59,23 +59,40 @@ public class SharedFetch implements AutoCloseable {
             .pendingAcquireTimeout(options.getPendingAcquireTimeout())
             .build();
 
-        reactiveClient = HttpClient.create(connectionProvider)
-            .proxyWithSystemProperties()
-            .headers(headers -> {
-                    headers
-                        .set(HttpHeaderNames.USER_AGENT.toString(), userAgent)
-                        .set("x-fetch-session", fetchSessionId);
-                    if (options.getExtraHeaders() != null) {
-                        options.getExtraHeaders().forEach(headers::set);
-                    }
-                }
-            )
-            // Reference https://projectreactor.io/docs/netty/release/reference/index.html#response-timeout
-            .responseTimeout(options.getResponseTimeout());
+        reactiveClient =
+            applyWiretap(
+                applyUseHttp2(
+                    HttpClient.create(connectionProvider)
+                        .proxyWithSystemProperties()
+                        .headers(headers -> {
+                                headers
+                                    .set(HttpHeaderNames.USER_AGENT.toString(), userAgent)
+                                    .set("x-fetch-session", fetchSessionId);
+                                if (options.getExtraHeaders() != null) {
+                                    options.getExtraHeaders().forEach(headers::set);
+                                }
+                            }
+                        )
+                        // Reference https://projectreactor.io/docs/netty/release/reference/index.html#response-timeout
+                        .responseTimeout(options.getResponseTimeout()),
+                    options
+                ),
+                options
+            );
 
+        headers.put("x-fetch-session", fetchSessionId);
+
+        this.filesViaUrl = options.getFilesViaUrl();
+    }
+
+    private HttpClient applyWiretap(HttpClient c, Options options) {
+        return options.isWiretap() ? c.wiretap(true) : c;
+    }
+
+    private HttpClient applyUseHttp2(HttpClient c, Options options) {
         if (options.isUseHttp2()) {
             log.debug("Using HTTP/2");
-            reactiveClient
+            return c
                 // https://projectreactor.io/docs/netty/release/reference/http-client.html#HTTP2
                 .protocol(HttpProtocol.HTTP11, HttpProtocol.H2)
                 .secure(spec ->
@@ -87,7 +104,7 @@ public class SharedFetch implements AutoCloseable {
         }
         else {
             log.debug("Using HTTP/1.1");
-            reactiveClient
+            return c
                 .secure(spec ->
                     spec.sslContext((GenericSslContextSpec<?>) Http11SslContextSpec.forClient())
                         // Reference https://projectreactor.io/docs/netty/release/reference/index.html#ssl-tls-timeout
@@ -95,9 +112,6 @@ public class SharedFetch implements AutoCloseable {
                 );
         }
 
-        headers.put("x-fetch-session", fetchSessionId);
-
-        this.filesViaUrl = options.getFilesViaUrl();
     }
 
     public FetchBuilderBase<?> fetch(URI uri) {
@@ -151,6 +165,8 @@ public class SharedFetch implements AutoCloseable {
         @Default
         private final boolean useHttp2 = true;
 
+        private final boolean wiretap;
+
         public Options withHeader(String key, String value) {
             final Map<String, String> newHeaders = extraHeaders != null ?
                 new HashMap<>(extraHeaders) : new HashMap<>();
@@ -158,7 +174,7 @@ public class SharedFetch implements AutoCloseable {
 
             return new Options(
                 responseTimeout, tlsHandshakeTimeout, maxIdleTimeout, pendingAcquireTimeout,
-                newHeaders, filesViaUrl, useHttp2
+                newHeaders, filesViaUrl, useHttp2, wiretap
             );
         }
     }

@@ -55,6 +55,13 @@ public class SharedFetchArgs {
         optionsBuilder.useHttp2(useHttp2);
     }
 
+    @Option(names = "--wiretap", defaultValue = "${env:FETCH_WIRETAP:-false}",
+        description = "Whether to enable Reactor Netty wiretap logging. Default: ${DEFAULT-VALUE}"
+    )
+    public void setWiretap(boolean wiretap) {
+        optionsBuilder.wiretap(wiretap);
+    }
+
     public Options options() {
         return optionsBuilder.build();
     }
