@@ -49,13 +49,13 @@ public class FileInclusionCalculator {
     }
 
     boolean includeModFile(ModpackIndex.ModpackFile modFile) {
-        return (
+        return shouldForceIncludeFile(modFile.getPath())
+            || (
             // env is optional
-            modFile.getEnv() == null
-                || modFile.getEnv().get(Env.server) != EnvType.unsupported
-                || shouldForceIncludeFile(modFile.getPath())
-        )
-            && !shouldExcludeFile(modFile.getPath());
+            (modFile.getEnv() == null
+                || modFile.getEnv().get(Env.server) != EnvType.unsupported)
+                && !shouldExcludeFile(modFile.getPath())
+        );
     }
 
     private boolean shouldForceIncludeFile(String modPath) {
