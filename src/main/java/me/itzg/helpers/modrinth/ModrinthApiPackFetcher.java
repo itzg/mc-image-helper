@@ -61,6 +61,7 @@ public class ModrinthApiPackFetcher implements ModrinthPackFetcher {
                             modpackProjectRef, modLoaderType, gameVersion, defaultVersionType
                     ))))
                     .filter(version -> needsInstall(prevManifest, project.getSlug(), version))
+                    .doOnNext(version -> log.info("Downloading modpack for {} {}", project.getTitle(), version.getName()))
                     .flatMap(version ->
                         apiClient.downloadMrPack(ModrinthApiClient.pickVersionFile(version))
                             .map(mrPackFile -> new FetchedPack(
