@@ -50,6 +50,7 @@ import me.itzg.helpers.errors.InvalidApiKeyException;
 import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.fabric.FabricLauncherInstaller;
 import me.itzg.helpers.files.Manifests;
+import me.itzg.helpers.files.ReactiveFileUtils;
 import me.itzg.helpers.files.ResultsFileWriter;
 import me.itzg.helpers.forge.ForgeInstaller;
 import me.itzg.helpers.forge.ForgeInstallerResolver;
@@ -763,12 +764,14 @@ public class CurseForgeInstaller {
     private  Mono<DownloadOrResolveResult> buildRetryableDownload(InstallContext context,
         CurseForgeMod modInfo, CurseForgeFile cfFile, boolean isWorld, Path outputSubdir
     ) {
+        final Path outputFile = resolveOutputFile(outputSubdir, cfFile);
+
         // use defer so that the download mono is rebuilt on each retry
         return Mono.defer(() ->
                 downloadOrResolveFile(context, modInfo, isWorld, outputSubdir, cfFile)
                     .checkpoint()
                     .onErrorResume(throwable ->
-                        removeFailedDownload(throwable, outputSubdir, cfFile)
+                        ReactiveFileUtils.removeFailedDownload(throwable, outputFile)
                     )
             )
             // retry the deferred part above if one of the expected failure cases
@@ -787,24 +790,6 @@ public class CurseForgeInstaller {
                         )
                     )
             );
-    }
-
-    private Mono<DownloadOrResolveResult> removeFailedDownload(
-        Throwable throwable, Path outputSubdir, CurseForgeFile cfFile
-    ) {
-        final Path outputFile = resolveOutputFile(outputSubdir, cfFile);
-        return Mono.<DownloadOrResolveResult>create(sink -> {
-                try {
-                    log.trace("Removing failed download of {}", outputFile);
-                    if (Files.deleteIfExists(outputFile)) {
-                        log.debug("Removed failed download of {}", outputFile);
-                    }
-                } catch (IOException e) {
-                    log.error("Unable to remove failed download of {}", outputFile, e);
-                }
-                sink.error(throwable);
-            })
-            .subscribeOn(Schedulers.boundedElastic());
     }
 
     @RequiredArgsConstructor

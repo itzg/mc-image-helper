@@ -1,6 +1,7 @@
 package me.itzg.helpers.files;
 
 import io.netty.buffer.ByteBuf;
+import java.io.IOException;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -83,5 +84,27 @@ public class ReactiveFileUtils {
             )
             // Just expose the total bytes read from network
             .map(Tuple2::getT2);
+    }
+
+    /**
+     * Used with {@link reactor.core.publisher.Mono#onErrorResume(java.util.function.Function)}
+     * @param throwable the throwable to pass to the returned mono
+     * @param outputFile the file to remove, if present
+     * @return an error mono with the given throwable as cause
+     * @param <T> the type of the surrounding reactive chain
+     */
+    public static <T> Mono<T> removeFailedDownload(Throwable throwable, Path outputFile) {
+        return Mono.<T>create(sink -> {
+                try {
+                    log.trace("Removing failed download of {}", outputFile);
+                    if (Files.deleteIfExists(outputFile)) {
+                        log.debug("Removed failed download of {}", outputFile);
+                    }
+                } catch (IOException e) {
+                    log.error("Unable to remove failed download of {}", outputFile, e);
+                }
+                sink.error(throwable);
+            })
+            .subscribeOn(Schedulers.boundedElastic());
     }
 }
