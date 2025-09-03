@@ -50,6 +50,7 @@ import me.itzg.helpers.errors.InvalidApiKeyException;
 import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.fabric.FabricLauncherInstaller;
 import me.itzg.helpers.files.Manifests;
+import me.itzg.helpers.files.ReactiveFileUtils;
 import me.itzg.helpers.files.ResultsFileWriter;
 import me.itzg.helpers.forge.ForgeInstaller;
 import me.itzg.helpers.forge.ForgeInstallerResolver;
@@ -763,10 +764,15 @@ public class CurseForgeInstaller {
     private  Mono<DownloadOrResolveResult> buildRetryableDownload(InstallContext context,
         CurseForgeMod modInfo, CurseForgeFile cfFile, boolean isWorld, Path outputSubdir
     ) {
+        final Path outputFile = resolveOutputFile(outputSubdir, cfFile);
+
         // use defer so that the download mono is rebuilt on each retry
         return Mono.defer(() ->
                 downloadOrResolveFile(context, modInfo, isWorld, outputSubdir, cfFile)
                     .checkpoint()
+                    .onErrorResume(throwable ->
+                        ReactiveFileUtils.removeFailedDownload(throwable, outputFile)
+                    )
             )
             // retry the deferred part above if one of the expected failure cases
             .retryWhen(
@@ -778,8 +784,10 @@ public class CurseForgeInstaller {
                             throwable instanceof ChannelException
                     )
                     .doBeforeRetry(retrySignal ->
-                        log.warn("Retrying to download {} @ {}:{}",
-                            cfFile.getFileName(), modInfo.getName(), cfFile.getDisplayName()
+                        log.warn("Retry #{} download of {} @ {}:{} due to {}",
+                            retrySignal.totalRetries() + 1,
+                            cfFile.getFileName(), modInfo.getName(), cfFile.getDisplayName(),
+                            retrySignal.failure().getClass().getSimpleName()
                         )
                     )
             );
@@ -799,7 +807,7 @@ public class CurseForgeInstaller {
     private Mono<DownloadOrResolveResult> downloadOrResolveFile(InstallContext context, CurseForgeMod modInfo,
         boolean isWorld, Path outputSubdir, CurseForgeFile cfFile
     ) {
-        final Path outputFile = outputSubdir.resolve(cfFile.getFileName());
+        final Path outputFile = resolveOutputFile(outputSubdir, cfFile);
 
         // Will try to locate an existing file by alternate names that browser might create,
         // but only for non-world files of the modpack
@@ -827,6 +835,10 @@ public class CurseForgeInstaller {
                     failedRequestException -> handleFileNeedingManualDownload(modInfo, isWorld, cfFile, outputFile)
                 );
         }
+    }
+
+    private static @NotNull Path resolveOutputFile(Path outputSubdir, CurseForgeFile cfFile) {
+        return outputSubdir.resolve(cfFile.getFileName());
     }
 
     /**
