@@ -784,7 +784,8 @@ public class CurseForgeInstaller {
                             throwable instanceof ChannelException
                     )
                     .doBeforeRetry(retrySignal ->
-                        log.warn("Retrying download of {} @ {}:{} due to {}",
+                        log.warn("Retry #{} download of {} @ {}:{} due to {}",
+                            retrySignal.totalRetries() + 1,
                             cfFile.getFileName(), modInfo.getName(), cfFile.getDisplayName(),
                             retrySignal.failure().getClass().getSimpleName()
                         )
