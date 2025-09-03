@@ -66,12 +66,14 @@ public class FabricLauncherInstaller {
 
                             fabricMetaClient.resolveInstallerVersion(installerVersion)
                                 .doOnNext(v -> log.debug("Resolved installer version {} from {}", v, installerVersion))
-                                .flatMap(resolvedInstallerVersion -> downloadResolvedLauncher(
-                                    fabricMetaClient,
-                                    resolvedMinecraftVersion,
-                                    resolvedLoaderVersion,
-                                    resolvedInstallerVersion
-                                ))
+                                .flatMap(resolvedInstallerVersion ->
+                                    downloadResolvedLauncher(
+                                        fabricMetaClient,
+                                        resolvedMinecraftVersion,
+                                        resolvedLoaderVersion,
+                                        resolvedInstallerVersion
+                                    )
+                                )
                                 .checkpoint("downloadResolvedLauncher")
                         )
                 )
