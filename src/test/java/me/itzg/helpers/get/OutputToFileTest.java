@@ -231,29 +231,28 @@ class OutputToFileTest {
   }
 
   @Test
-  void successfulWithTemporaryDirectory(@TempDir Path tempDir) throws MalformedURLException, IOException {
+  void successfulWithTemporaryFile(@TempDir Path tempDir) throws MalformedURLException, IOException {
     mock.expectRequest("GET", "/downloadsToFile.txt",
         response()
             .withBody("Response content to file", MediaType.TEXT_PLAIN)
     );
 
     final Path expectedFile = tempDir.resolve("out.txt");
-    final Path downloadingDir = tempDir.resolve("downloading");
-    Files.createDirectory(downloadingDir);
 
     final int status =
         new CommandLine(new GetCommand())
             .execute(
                 "-o",
                 expectedFile.toString(),
-                "--use-temp-dir",
-                downloadingDir.toString(),
+                "--use-temp-file",
                 mock.buildMockedUrl("/downloadsToFile.txt").toString()
             );
 
     assertThat(status).isEqualTo(0);
     assertThat(expectedFile).exists();
     assertThat(expectedFile).hasContent("Response content to file");
+    // The temporary file with .download extension should no longer exist after successful download
+    assertThat(tempDir.resolve("out.txt.download")).doesNotExist();
   }
 
 }

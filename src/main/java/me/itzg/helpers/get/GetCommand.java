@@ -134,10 +134,10 @@ public class GetCommand implements Callable<Integer> {
     @Option(names = "--retry-delay", description = "in seconds", defaultValue = "2")
     int retryDelay;
 
-    @Option(names = {"--use-temp-dir"},
-        description = "Specifies the name of a directory to use for downloading to a temporary file, before it is copied to the final destination",
-        paramLabel = "DIR")
-    Path tempDir;
+    @Option(names = {"--use-temp-file"},
+        description = "Download to a temporary file in the same directory with .download extension, then rename to the final destination when complete",
+        defaultValue = "false")
+    boolean useTempFile;
 
     @Parameters(split = OPTION_SPLIT_COMMAS, paramLabel = "URI",
         description = "The URI of the resource to retrieve. When the output is a directory,"
@@ -162,10 +162,6 @@ public class GetCommand implements Callable<Integer> {
         }
         if (uris == null || uris.isEmpty()) {
             throw new ParameterException(spec.commandLine(), "No URIs were given");
-        }
-
-        if (tempDir != null && !Files.isDirectory(tempDir)) {
-            throw new ParameterException(spec.commandLine(), "The supplied temporary directory does not exist");
         }
 
         final LatchingUrisInterceptor interceptor = new LatchingUrisInterceptor();
@@ -229,7 +225,7 @@ public class GetCommand implements Callable<Integer> {
                             }
                         })
                         .execute();
-                    if (tempDir != null) {
+                    if (useTempFile) {
                         Files.move(saveToFile, outputFile);
                     }
                     if (this.outputFilename) {
@@ -491,7 +487,9 @@ public class GetCommand implements Callable<Integer> {
     }
 
     private Path getSaveToFile() {
-        return tempDir == null ? outputFile : tempDir.resolve(outputFile.getFileName());
+        return useTempFile ? 
+            Paths.get(outputFile.toString() + ".download") : 
+            outputFile;
     }
 
 }

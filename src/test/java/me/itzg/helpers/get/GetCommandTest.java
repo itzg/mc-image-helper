@@ -225,49 +225,4 @@ class GetCommandTest {
         // See https://wiremock.org/docs/https/#common-https-issues
         assertThat(err).contains("unable to find valid certification path to requested target");
     }
-
-    @Test
-    void failWhenSuppliedTempDirDoesntExist() throws Exception {
-        final String stderr = tapSystemErrNormalized(() -> {
-
-            final int status =
-                new CommandLine(new GetCommand())
-                    .execute(
-                        "--use-temp-dir",
-                        "non-existent-temp-directory",
-                        "-o",
-                        "unused.out",
-                        "http://unused"
-                    );
-
-            assertThat(status).isEqualTo(ExitCode.USAGE);
-        });
-
-        assertThat(stderr)
-            .contains("The supplied temporary directory does not exist");
-    }
-
-    @Test
-    void failWhenSuppliedTempDirIsAFile(@TempDir Path tempDir) throws Exception {
-        final Path expectedFile = tempDir.resolve("isafile");
-        Files.createFile(expectedFile);
-
-        final String stderr = tapSystemErrNormalized(() -> {
-
-            final int status =
-                new CommandLine(new GetCommand())
-                    .execute(
-                        "--use-temp-dir",
-                        expectedFile.toString(),
-                        "-o",
-                        "unused.out",
-                        "http://unused"
-                    );
-
-            assertThat(status).isEqualTo(ExitCode.USAGE);
-        });
-
-        assertThat(stderr)
-            .contains("The supplied temporary directory does not exist");
-    }
 }
