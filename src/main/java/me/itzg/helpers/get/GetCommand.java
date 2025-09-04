@@ -215,21 +215,35 @@ public class GetCommand implements Callable<Integer> {
                     }
                 } else {
                     final Path saveToFile = getSaveToFile();
-                    final Path file = fetch(uris.get(0))
-                        .toFile(saveToFile)
-                        .skipUpToDate(skipUpToDate)
-                        .acceptContentTypes(acceptContentTypes)
-                        .handleDownloaded((uri, f, contentSizeBytes) -> {
-                            if (logProgressEach) {
-                                log.info("Downloaded {}", f);
+                    try {
+                        final Path file = fetch(uris.get(0))
+                            .toFile(saveToFile)
+                            .skipUpToDate(skipUpToDate)
+                            .acceptContentTypes(acceptContentTypes)
+                            .handleDownloaded((uri, f, contentSizeBytes) -> {
+                                if (logProgressEach) {
+                                    log.info("Downloaded {}", f);
+                                }
+                            })
+                            .execute();
+                        if (useTempFile) {
+                            Files.move(saveToFile, outputFile);
+                        }
+                        if (this.outputFilename) {
+                            stdout.println(file);
+                        }
+                    } catch (Exception e) {
+                        // Clean up temp file if download fails
+                        if (useTempFile && Files.exists(saveToFile)) {
+                            try {
+                                Files.delete(saveToFile);
+                                log.debug("Cleaned up temporary file {} after failed download", saveToFile);
+                            } catch (IOException cleanupEx) {
+                                log.warn("Failed to clean up temporary file {} after failed download", 
+                                    saveToFile, cleanupEx);
                             }
-                        })
-                        .execute();
-                    if (useTempFile) {
-                        Files.move(saveToFile, outputFile);
-                    }
-                    if (this.outputFilename) {
-                        stdout.println(file);
+                        }
+                        throw e; // Re-throw the original exception
                     }
                 }
             }
