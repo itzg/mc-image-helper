@@ -134,6 +134,11 @@ public class GetCommand implements Callable<Integer> {
     @Option(names = "--retry-delay", description = "in seconds", defaultValue = "2")
     int retryDelay;
 
+    @Option(names = {"--use-temp-file"},
+        description = "Download to a temporary file in the same directory with .download extension, then rename to the final destination when complete",
+        defaultValue = "false")
+    boolean useTempFile;
+
     @Parameters(split = OPTION_SPLIT_COMMAS, paramLabel = "URI",
         description = "The URI of the resource to retrieve. When the output is a directory,"
             + " more than one URI can be requested.",
@@ -209,18 +214,36 @@ public class GetCommand implements Callable<Integer> {
                         stdout.println(outputFile);
                     }
                 } else {
-                    final Path file = fetch(uris.get(0))
-                        .toFile(outputFile)
-                        .skipUpToDate(skipUpToDate)
-                        .acceptContentTypes(acceptContentTypes)
-                        .handleDownloaded((uri, f, contentSizeBytes) -> {
-                            if (logProgressEach) {
-                                log.info("Downloaded {}", f);
+                    final Path saveToFile = getSaveToFile();
+                    try {
+                        final Path file = fetch(uris.get(0))
+                            .toFile(saveToFile)
+                            .skipUpToDate(skipUpToDate)
+                            .acceptContentTypes(acceptContentTypes)
+                            .handleDownloaded((uri, f, contentSizeBytes) -> {
+                                if (logProgressEach) {
+                                    log.info("Downloaded {}", f);
+                                }
+                            })
+                            .execute();
+                        if (useTempFile) {
+                            Files.move(saveToFile, outputFile);
+                        }
+                        if (this.outputFilename) {
+                            stdout.println(file);
+                        }
+                    } catch (Exception e) {
+                        // Clean up temp file if download fails
+                        if (useTempFile && Files.exists(saveToFile)) {
+                            try {
+                                Files.delete(saveToFile);
+                                log.debug("Cleaned up temporary file {} after failed download", saveToFile);
+                            } catch (IOException cleanupEx) {
+                                log.warn("Failed to clean up temporary file {} after failed download", 
+                                    saveToFile, cleanupEx);
                             }
-                        })
-                        .execute();
-                    if (this.outputFilename) {
-                        stdout.println(file);
+                        }
+                        throw e; // Re-throw the original exception
                     }
                 }
             }
@@ -477,5 +500,10 @@ public class GetCommand implements Callable<Integer> {
         );
     }
 
+    private Path getSaveToFile() {
+        return useTempFile ? 
+            Paths.get(outputFile.toString() + ".download") : 
+            outputFile;
+    }
 
 }
