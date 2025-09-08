@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -176,6 +177,16 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
     )
     int maxConcurrentDownloads;
 
+    @Option(names = "--file-download-retries", paramLabel = "COUNT",
+        description = "Default is ${DEFAULT-VALUE}"
+    )
+    int fileDownloadRetries = 5;
+
+    @Option(names = "--file-download-retry-min-delay", paramLabel = "DURATION",
+        description = "Default is ${DEFAULT-VALUE}"
+    )
+    Duration fileDownloadRetryMinDelay = Duration.ofSeconds(5);
+
     @Override
     public Integer call() throws Exception {
         // https://www.curseforge.com/minecraft/modpacks/all-the-mods-8/files
@@ -214,7 +225,9 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
             .setDisableApiCaching(disableApiCaching)
             .setCacheArgs(cacheArgs)
             .setForgeUrlArgs(forgeUrlArgs)
-            .setMaxConcurrentDownloads(maxConcurrentDownloads);
+            .setMaxConcurrentDownloads(maxConcurrentDownloads)
+            .setFileDownloadRetries(fileDownloadRetries)
+            .setFileDownloadRetryMinDelay(fileDownloadRetryMinDelay);
 
         if (apiBaseUrl != null) {
             installer.setApiBaseUrl(apiBaseUrl);
