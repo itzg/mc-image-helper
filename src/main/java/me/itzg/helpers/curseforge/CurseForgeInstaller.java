@@ -81,8 +81,6 @@ public class CurseForgeInstaller {
     public static final String REPO_SUBDIR_MODPACKS = "modpacks";
     public static final String REPO_SUBDIR_MODS = "mods";
     public static final String REPO_SUBDIR_WORLDS = "worlds";
-    private static final Duration BAD_FILE_DELAY = Duration.ofSeconds(5);
-    public static final int BAD_FILE_ATTEMPTS = 3;
 
     private final Path outputDir;
     private final Path resultsFile;
@@ -137,6 +135,12 @@ public class CurseForgeInstaller {
 
     @Getter @Setter
     int maxConcurrentDownloads;
+
+    @Getter @Setter
+    int fileDownloadRetries = 5;
+
+    @Getter @Setter
+    Duration fileDownloadRetryMinDelay = Duration.ofSeconds(5);
 
     /**
      */
@@ -776,7 +780,7 @@ public class CurseForgeInstaller {
             )
             // retry the deferred part above if one of the expected failure cases
             .retryWhen(
-                Retry.backoff(BAD_FILE_ATTEMPTS, BAD_FILE_DELAY)
+                Retry.backoff(fileDownloadRetries, fileDownloadRetryMinDelay)
                     .filter(throwable ->
                         throwable instanceof FileHashInvalidException ||
                             throwable instanceof FailedRequestException ||
@@ -784,10 +788,11 @@ public class CurseForgeInstaller {
                             throwable instanceof ChannelException
                     )
                     .doBeforeRetry(retrySignal ->
-                        log.warn("Retry #{} download of {} @ {}:{} due to {}",
+                        log.warn("Retry #{} download of {} @ {}:{} due to {}: {}",
                             retrySignal.totalRetries() + 1,
                             cfFile.getFileName(), modInfo.getName(), cfFile.getDisplayName(),
-                            retrySignal.failure().getClass().getSimpleName()
+                            retrySignal.failure().getClass().getSimpleName(),
+                            retrySignal.failure().getMessage()
                         )
                     )
             );
