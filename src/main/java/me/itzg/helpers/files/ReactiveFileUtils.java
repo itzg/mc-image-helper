@@ -5,8 +5,10 @@ import java.io.IOException;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.time.Instant;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
@@ -104,6 +106,15 @@ public class ReactiveFileUtils {
                     log.error("Unable to remove failed download of {}", outputFile, e);
                 }
                 sink.error(throwable);
+            })
+            .subscribeOn(Schedulers.boundedElastic());
+    }
+
+    public static Function<Path, Mono<Path>> moveTo(Path to) {
+        return from -> Mono.fromCallable(() -> {
+                log.debug("Moving {} to {}", from, to);
+                Files.move(from, to, StandardCopyOption.REPLACE_EXISTING);
+                return to;
             })
             .subscribeOn(Schedulers.boundedElastic());
     }

@@ -64,6 +64,7 @@ public class SpecificFileFetchBuilder extends FetchBuilderBase<SpecificFileFetch
 
         final boolean useIfModifiedSince = skipUpToDate && Files.exists(file);
 
+        final Path tempDownloadFile = file.getParent().resolve(file.getFileName() + ".download");
         return useReactiveClient(client ->
             client
                 .doOnRequest((httpClientRequest, connection) ->
@@ -107,7 +108,7 @@ public class SpecificFileFetchBuilder extends FetchBuilderBase<SpecificFileFetch
                         return failedContentTypeMono(resp);
                     }
 
-                    return ReactiveFileUtils.writeByteBufFluxToFile(byteBufFlux, file)
+                    return ReactiveFileUtils.writeByteBufFluxToFile(byteBufFlux, tempDownloadFile)
                         .flatMap(fileSize -> {
                             statusHandler.call(FileDownloadStatus.DOWNLOADED, uri, file);
                             downloadedHandler.call(uri, file, fileSize);
@@ -120,12 +121,13 @@ public class SpecificFileFetchBuilder extends FetchBuilderBase<SpecificFileFetch
                                             uri, formatDuration(durationMillis), transferRate(durationMillis, fileSize)
                                         );
                                     }
-                                    return Mono.just(file);
+                                    return Mono.just(tempDownloadFile);
                                 });
                         });
 
                 })
                 .last()
+                .flatMap(ReactiveFileUtils.moveTo(file))
                 .contextWrite(context -> context.put("downloadStart", currentTimeMillis()))
         );
     }

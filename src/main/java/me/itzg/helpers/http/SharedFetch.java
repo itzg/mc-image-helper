@@ -163,7 +163,7 @@ public class SharedFetch implements AutoCloseable {
         private final URI filesViaUrl;
 
         @Default
-        private final boolean useHttp2 = true;
+        private final boolean useHttp2 = false;
 
         private final boolean wiretap;
 
