@@ -64,7 +64,7 @@ public class SpecificFileFetchBuilder extends FetchBuilderBase<SpecificFileFetch
 
         final boolean useIfModifiedSince = skipUpToDate && Files.exists(file);
 
-        final Path tempDownloadFile = file.getParent().resolve(file.getFileName() + ".download");
+        final Path tempDownloadFile = file.resolveSibling(file.getFileName() + ".download");
         return useReactiveClient(client ->
             client
                 .doOnRequest((httpClientRequest, connection) ->
