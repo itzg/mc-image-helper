@@ -3,8 +3,6 @@ package me.itzg.helpers.modrinth;
 import static com.github.stefanbirkner.systemlambda.SystemLambda.tapSystemErrNormalized;
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
-import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
-import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -24,6 +22,7 @@ import me.itzg.helpers.json.ObjectMappers;
 import me.itzg.helpers.modrinth.ModrinthCommand.DownloadDependencies;
 import me.itzg.helpers.modrinth.model.Project;
 import me.itzg.helpers.modrinth.model.ProjectType;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.assertj.core.api.AbstractPathAssert;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
@@ -47,6 +46,8 @@ class ModrinthCommandTest {
         )
         .configureStaticDsl(true)
         .build();
+
+    private final RandomStringUtils randomStringUtils = RandomStringUtils.insecure();
 
     @Test
     void commaNewlineDelimited(@TempDir Path tempDir) {
@@ -153,6 +154,15 @@ class ModrinthCommandTest {
         }
     }
 
+    private String randomAlphanumeric(int n) {
+        return randomStringUtils.nextAlphanumeric(n);
+    }
+
+    @SuppressWarnings("SameParameterValue")
+    private String randomAlphabetic(int n) {
+        return randomStringUtils.nextAlphabetic(n);
+    }
+
     @Test
     void failsWhenNoDependenciesForModLoader(@TempDir Path tempDir) throws JsonProcessingException {
         final String projectId = randomAlphanumeric(6);
@@ -162,11 +172,11 @@ class ModrinthCommandTest {
 
         stubProjectBulkRequest(projectId, projectSlug);
 
-        stubVersionRequest(projectId, versionId, deps -> {
+        stubVersionRequest(projectId, versionId, deps ->
             deps.addObject()
-                .put("project_id", requiredDepProjectId)
-                .put("dependency_type", "required");
-        });
+            .put("project_id", requiredDepProjectId)
+            .put("dependency_type", "required")
+        );
         stubVersionRequestEmptyResponse(requiredDepProjectId, "paper");
         stubVersionRequestEmptyResponse(requiredDepProjectId, "spigot");
         stubGetProject(requiredDepProjectId, new Project().setProjectType(ProjectType.resourcepack));
@@ -277,7 +287,6 @@ class ModrinthCommandTest {
 
         stubProjectBulkRequest(projectId, projectSlug);
 
-        final ArrayNode versionResp = objectMapper.createArrayNode();
         final ObjectNode versionNode = objectMapper.createObjectNode()
             .put("id", versionId)
             .put("project_id", projectId)
@@ -410,6 +419,51 @@ class ModrinthCommandTest {
 
         assertThat(tempDir.resolve("mods/fabric-api-0.76.1+1.19.2.jar")).exists();
         assertThat(tempDir.resolve("mods/cloth-config-8.3.103-fabric.jar")).exists();
+    }
+
+    @Test
+    void removesAllWhenEmpty(@TempDir Path tempDir) {
+        setupStubs();
+
+        {
+            final int exitCode = new CommandLine(
+                new ModrinthCommand()
+            )
+                .execute(
+                    "--api-base-url", wm.getRuntimeInfo().getHttpBaseUrl(),
+                    "--output-directory", tempDir.toString(),
+                    "--game-version", "1.19.2",
+                    "--loader", "fabric",
+                    "--projects", "fabric-api,cloth-config"
+                );
+
+            assertThat(exitCode).isEqualTo(ExitCode.OK);
+
+            assertThat(tempDir.resolve("mods/fabric-api-0.76.1+1.19.2.jar")).exists();
+            assertThat(tempDir.resolve("mods/cloth-config-8.3.103-fabric.jar")).exists();
+        }
+
+        // now process an empty projects list to uninstall all
+        {
+            final int exitCode = new CommandLine(
+                new ModrinthCommand()
+            )
+                .execute(
+                    "--api-base-url", wm.getRuntimeInfo().getHttpBaseUrl(),
+                    "--output-directory", tempDir.toString(),
+                    "--game-version", "1.19.2",
+                    "--loader", "fabric",
+                    "--projects", ""
+                );
+
+            assertThat(exitCode).isEqualTo(ExitCode.OK);
+
+            // assert files now do NOT exist
+            assertThat(tempDir.resolve("mods/fabric-api-0.76.1+1.19.2.jar"))
+                .doesNotExist();
+            assertThat(tempDir.resolve("mods/cloth-config-8.3.103-fabric.jar"))
+                .doesNotExist();
+        }
     }
 
     @NotNull

@@ -111,23 +111,38 @@ public class ModrinthCommand implements Callable<Integer> {
     public Integer call() throws Exception {
         Files.createDirectories(outputDirectory);
 
-        final ModrinthManifest prevManifest = loadManifest();
+        // Unlike @Parameters, the argument of @Option could be a list with a single empty string
+        // when --projects="". So, trim away any blanks.
+        final List<String> trimmedProjects = projects == null ? Collections.emptyList() :
+            projects.stream()
+                .filter(s -> !s.trim().isEmpty())
+                .collect(Collectors.toList());
 
-        final List<Path> outputFiles = processProjects(projects);
+        final List<Path> outputFiles = processProjects(trimmedProjects);
 
         final ModrinthManifest newManifest = ModrinthManifest.builder()
             .files(Manifests.relativizeAll(outputDirectory, outputFiles))
             .projects(projects)
             .build();
 
+        final ModrinthManifest prevManifest = loadManifest();
         Manifests.cleanup(outputDirectory, prevManifest, newManifest, log);
 
-        Manifests.save(outputDirectory, ModrinthManifest.ID, newManifest);
+        if (!outputFiles.isEmpty()) {
+            Manifests.save(outputDirectory, ModrinthManifest.ID, newManifest);
+        }
+        else {
+            Manifests.remove(outputDirectory, ModrinthManifest.ID);
+        }
 
         return ExitCode.OK;
     }
 
     private List<Path> processProjects(List<String> projects) {
+        if (projects == null || projects.isEmpty()) {
+            return Collections.emptyList();
+        }
+
         try (ModrinthApiClient modrinthApiClient = new ModrinthApiClient(baseUrl, "modrinth", sharedFetchArgs.options())) {
             //noinspection DataFlowIssue since it thinks block() may return null
             return
