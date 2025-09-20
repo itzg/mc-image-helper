@@ -61,7 +61,7 @@ public class InstallPaperCommand implements Callable<Integer> {
             @Option(names = "--project", defaultValue = "paper")
             String project;
 
-            private static final Pattern ALLOWED_VERSIONS = Pattern.compile("latest|\\d+\\.\\d+(\\.\\d+)?(-SNAPSHOT)?",
+            private static final Pattern ALLOWED_VERSIONS = Pattern.compile("latest|\\d+\\.\\d+(\\.\\d+)?(-SNAPSHOT|-pre\\d+)?",
                 Pattern.CASE_INSENSITIVE
             );
 
