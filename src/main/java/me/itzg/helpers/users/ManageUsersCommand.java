@@ -1,14 +1,18 @@
 package me.itzg.helpers.users;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -17,7 +21,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
-
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidParameterException;
@@ -29,10 +32,7 @@ import me.itzg.helpers.json.ObjectMappers;
 import me.itzg.helpers.users.model.JavaOp;
 import me.itzg.helpers.users.model.JavaUser;
 import me.itzg.helpers.users.model.UserDef;
-
-import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.maven.artifact.versioning.ComparableVersion;
-
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.ExitCode;
@@ -53,7 +53,7 @@ public class ManageUsersCommand implements Callable<Integer> {
     @Option(names = {"--help", "-h"}, usageHelp = true)
     boolean help;
 
-    @Option(names = {"--offline"}, required = false, description = "Use for offline server, UUIDs are generated")
+    @Option(names = {"--offline"}, description = "Use for offline server, UUIDs are generated")
     boolean offline;
 
     @Option(names = "--output-directory", defaultValue = ".")
@@ -117,7 +117,7 @@ public class ManageUsersCommand implements Callable<Integer> {
     }
 
     private void processJavaUserIdList(SharedFetch sharedFetch, List<String> inputs) throws IOException {
-        List<UserDef> userDefs = inputs.stream().map(input -> new UserDef(input)).collect(Collectors.toList());
+        List<UserDef> userDefs = inputs.stream().map(UserDef::new).collect(Collectors.toList());
         if (usesTextUserList()) {
             verifyNotUuids(userDefs);
 
@@ -268,18 +268,7 @@ public class ManageUsersCommand implements Callable<Integer> {
                     }
                 }
 
-                final UserApi userApi;
-                switch (userApiProvider) {
-                    case mojang:
-                        userApi = new MojangUserApi(sharedFetch, mojangApiBaseUrl);
-                        break;
-                    case playerdb:
-                        userApi = new PlayerdbUserApi(sharedFetch, playerdbApiBaseUrl);
-                        break;
-                    default:
-                        throw new GenericException("User API provider was not specified");
-                }
-                JavaUser apiUser = userApi.resolveUser(user.getName());
+                final JavaUser apiUser = getJavaUser(sharedFetch, user);
 
                 if (finalUser != null) {
                     return finalUser.setUuid(apiUser.getUuid());
@@ -291,16 +280,35 @@ public class ManageUsersCommand implements Callable<Integer> {
 
     }
 
+    private JavaUser getJavaUser(SharedFetch sharedFetch, UserDef user) {
+        final UserApi userApi;
+        switch (userApiProvider) {
+            case mojang:
+                userApi = new MojangUserApi(sharedFetch, mojangApiBaseUrl);
+                break;
+            case playerdb:
+                userApi = new PlayerdbUserApi(sharedFetch, playerdbApiBaseUrl);
+                break;
+            default:
+                throw new GenericException("User API provider was not specified");
+        }
+        return userApi.resolveUser(user.getName());
+    }
+
     private List<? extends JavaUser> loadExistingJavaJson(Path userFile) throws IOException {
         if (!Files.exists(userFile)) {
             return Collections.emptyList();
         }
 
-        if (type == Type.JAVA_OPS) {
-            return objectMapper.readValue(userFile.toFile(), LIST_OF_JAVA_OP);
-        }
-        else {
-            return objectMapper.readValue(userFile.toFile(), LIST_OF_JAVA_USER);
+        try {
+            if (type == Type.JAVA_OPS) {
+                return objectMapper.readValue(userFile.toFile(), LIST_OF_JAVA_OP);
+            }
+            else {
+                return objectMapper.readValue(userFile.toFile(), LIST_OF_JAVA_USER);
+            }
+        } catch (JsonProcessingException e) {
+            throw new GenericException("Failed to parse existing file " + userFile + ", fix or remove it", e);
         }
     }
 
@@ -365,27 +373,14 @@ public class ManageUsersCommand implements Callable<Integer> {
     }
 
     private static String getOfflineUUID(String username) {
-        byte[] bytes = DigestUtils.md5("OfflinePlayer:" + username);
-
-        // Force version = 3 (bits 12-15 of time_hi_and_version)
-        bytes[6] &= 0x0F;
-        bytes[6] |= 0x30;
-
-        // Force variant = 2 (bits 6-7 of clock_seq_hi_and_reserved)
-        bytes[8] &= 0x3F;
-        bytes[8] |= 0x80;
-
-        long msb = 0;
-        long lsb = 0;
-
-        for (int i = 0; i < 8; i++) {
-            msb = (msb << 8) | (bytes[i] & 0xFF);
+        final MessageDigest digester;
+        try {
+            digester = MessageDigest.getInstance("MD5");
+        } catch (NoSuchAlgorithmException e) {
+            throw new GenericException("Failed to create MD5 digester to generate offline player UUID", e);
         }
+        final byte[] bytes = digester.digest(("OfflinePlayer:"+username).getBytes(StandardCharsets.UTF_8));
 
-        for (int i = 8; i < 16; i++) {
-            lsb = (lsb << 8) | (bytes[i] & 0xFF);
-        }
-
-        return new UUID(msb, lsb).toString();
+        return UUID.nameUUIDFromBytes(bytes).toString();
     }
 }
