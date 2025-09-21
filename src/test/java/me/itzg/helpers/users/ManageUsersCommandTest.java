@@ -25,10 +25,10 @@ class ManageUsersCommandTest {
 
     private static final String USER1_ID = "3f5f20286a85445fa7b46100e70c2b3a";
     private static final String USER1_UUID = "3f5f2028-6a85-445f-a7b4-6100e70c2b3a";
-    private static final String USER1_OFFLINE_UUID = "fb4cdad9-642b-358f-8f6f-717981c9f42b";
+    private static final String USER1_OFFLINE_UUID = "95825a72-847d-3e1f-983a-e144b90ec1c9";
     private static final String USER2_ID = "5e5a1b2294b14f5892466062597e4c91";
     private static final String USER2_UUID = "5e5a1b22-94b1-4f58-9246-6062597e4c91";
-    private static final String USER2_OFFLINE_UUID = "6e7d9aa0-0da2-390c-ab6a-377df9d77518";
+    private static final String USER2_OFFLINE_UUID = "357f8b0a-3577-32e9-aafd-6602bb4b6cbf";
 
     @TempDir
     Path tempDir;
