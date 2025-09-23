@@ -44,7 +44,7 @@ public class MulitCopyCommand implements Callable<Integer> {
     )
     String manifestId;
 
-    @Option(names = {"--to", "--output-directory"}, required = true)
+    @Option(names = {"--to", "--output-directory"})
     Path dest;
 
     @Option(names = "--glob", defaultValue = "*", paramLabel = "GLOB",
@@ -70,22 +70,25 @@ public class MulitCopyCommand implements Callable<Integer> {
     @Option(names = "--ignore-missing-sources", description = "Don't log or fail exit code when any or all sources are missing")
     boolean ignoreMissingSources;
 
+    @Option(names = "--delimiter", defaultValue = "@",
+        description = "When using per-file destinations, which symbol should be used to delimit destination<delimiter>source"
+    )
+    String stringDelimiter;
+
     @Parameters(split = SPLIT_COMMA_NL, splitSynopsisLabel = SPLIT_SYNOPSIS_COMMA_NL, arity = "1..*",
         paramLabel = "SRC",
         description = "Any mix of source file, directory, or URLs."
             + "%nCan be optionally comma or newline separated."
+            + "%nPer-file destinations can be assigned by destination@source"
     )
     List<String> sources;
 
     @Override
     public Integer call() throws Exception {
-
-        Files.createDirectories(dest);
-
         Flux.fromIterable(sources)
             .map(String::trim)
             .filter(s -> !s.isEmpty())
-            .flatMap(source -> processSource(source, fileIsListingOption))
+            .flatMap(source -> processSource(source, fileIsListingOption, null))
             .collectList()
             .flatMap(this::cleanupAndSaveManifest)
             .block();
@@ -113,9 +116,52 @@ public class MulitCopyCommand implements Callable<Integer> {
             });
     }
 
-    private Publisher<Path> processSource(String source, boolean fileIsListing) {
+    @SuppressWarnings("BlockingMethodInNonBlockingContext") // idk if that is a good idea
+    private Publisher<Path> processSource(String source, boolean fileIsListing, Path parentDestination) {
+        Path destination = dest;
+
+        if (parentDestination != null) {
+            destination = parentDestination;
+        }
+
+        if (source.contains(stringDelimiter)) {
+            if (manifestId != null) {
+                throw new GenericException("Manifests cannot be used with inline destinations");
+            }
+
+            String[] split = source.split(stringDelimiter);
+            destination = Paths.get(split[0]);
+            source = split[1];
+        }
+
+        if (fileIsListing) {
+            if (Uris.isUri(source)) {
+                return processRemoteListingFile(source, destination);
+            } else {
+                final Path path = Paths.get(source);
+                if (Files.isDirectory(path)) {
+                    throw new GenericException(String.format("Specified listing file '%s' is a directory", source));
+                }
+                if (!Files.exists(path)) {
+                    throw new GenericException(String.format("Source file '%s' does not exist", source));
+                }
+                return processListingFile(path, destination);
+            }
+        }
+
+        if (destination == null) {
+            // maybe there is a way to print the --to flag documentation
+            throw new GenericException(String.format("No destination for source '%s' specified. Either use --to flag or prepend destination to the source with '%s' as delimiter", source, stringDelimiter));
+        }
+
+        try {
+            Files.createDirectories(destination);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
         if (Uris.isUri(source)) {
-            return fileIsListing ? processRemoteListingFile(source) : processRemoteSource(source);
+            return processRemoteSource(source, destination);
         } else {
             final Path path = Paths.get(source);
             if (!Files.exists(path)) {
@@ -123,14 +169,14 @@ public class MulitCopyCommand implements Callable<Integer> {
             }
 
             if (Files.isDirectory(path)) {
-                return processDirectory(path);
+                return processDirectory(path, destination);
             } else {
-                return fileIsListing ? processListingFile(path) : processFile(path);
+                return processFile(path, destination);
             }
         }
     }
 
-    private Flux<Path> processListingFile(Path listingFile) {
+    private Flux<Path> processListingFile(Path listingFile, Path destination) {
         return Mono.just(listingFile)
             .publishOn(Schedulers.boundedElastic())
             .flatMapMany(path -> {
@@ -141,22 +187,23 @@ public class MulitCopyCommand implements Callable<Integer> {
                         .filter(this::isListingLine)
                         .flatMap(src -> processSource(src,
                             // avoid recursive file-listing processing
-                            false));
+                            false,
+                            destination));
                 } catch (IOException e) {
                     return Mono.error(new GenericException("Failed to read file listing from " + path));
                 }
             });
     }
 
-    private Mono<Path> processFile(Path source) {
+    private Mono<Path> processFile(Path source, Path destination) {
 
         return Mono.just(source)
             .publishOn(Schedulers.boundedElastic())
-            .map(path -> processFileImmediate(source, dest));
+            .map(path -> processFileImmediate(source, destination));
     }
 
     /**
-     * Non-mono version of {@link #processFile(Path)}
+     * Non-mono version of {@link #processFile(Path, Path)}
      *
      * @param scopedDest allows for sub-directory destinations
      */
@@ -203,7 +250,7 @@ public class MulitCopyCommand implements Callable<Integer> {
         return destFile;
     }
 
-    private Flux<Path> processDirectory(Path srcDir) {
+    private Flux<Path> processDirectory(Path srcDir, Path destination) {
         return Mono.just(srcDir)
             .publishOn(Schedulers.boundedElastic())
             .flatMapMany(path -> {
@@ -220,7 +267,7 @@ public class MulitCopyCommand implements Callable<Integer> {
                     try (DirectoryStream<Path> files = Files.newDirectoryStream(srcDir, fileGlob)) {
                         for (final Path file : files) {
                             //noinspection BlockingMethodInNonBlockingContext because IntelliJ is confused
-                            results.add(processFileImmediate(file, dest));
+                            results.add(processFileImmediate(file, destination));
                         }
                     }
                     return Flux.fromIterable(results);
@@ -230,10 +277,10 @@ public class MulitCopyCommand implements Callable<Integer> {
             });
     }
 
-    private Mono<Path> processRemoteSource(String source) {
+    private Mono<Path> processRemoteSource(String source, Path destination) {
         return Fetch.fetch(URI.create(source))
             .userAgentCommand("mcopy")
-            .toDirectory(dest)
+            .toDirectory(destination)
             .skipUpToDate(skipUpToDate)
             .skipExisting(skipExisting)
             .handleDownloaded((downloaded, uri, size) ->
@@ -263,7 +310,7 @@ public class MulitCopyCommand implements Callable<Integer> {
             .checkpoint("Retrieving " + source, true);
     }
 
-    private Flux<Path> processRemoteListingFile(String source) {
+    private Flux<Path> processRemoteListingFile(String source, Path destination) {
         @SuppressWarnings("resource") // closed on terminate
         SharedFetch sharedFetch = Fetch.sharedFetch("mcopy", SharedFetch.Options.builder().build());
         return Mono.just(source)
@@ -273,7 +320,7 @@ public class MulitCopyCommand implements Callable<Integer> {
                     .flatMapMany(content -> Flux.just(content.split("\\r?\\n")))
                     .filter(this::isListingLine)
             )
-            .flatMap(this::processRemoteSource)
+            .flatMap(url -> processSource(url, false, destination))
             .doOnTerminate(sharedFetch::close)
             .checkpoint("Processing remote listing at " + source, true);
     }
