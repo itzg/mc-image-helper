@@ -2,7 +2,7 @@
 [![test](https://github.com/itzg/mc-image-helper/actions/workflows/test.yml/badge.svg)](https://github.com/itzg/mc-image-helper/actions/workflows/test.yml)
 ![LOC](https://img.shields.io/endpoint?url=https%3A%2F%2Fshields-codetab-code-loc-bridge.vercel.app%2Fapi%2Fcodeloc%3Fgithub%3Ditzg%2Fmc-image-helper%26language%3Djava)
 
-This tool does the complicated bits for the [itzg/minecraft-server](https://github.com/itzg/docker-minecraft-server) and [itzg/bungeecord](https://github.com/itzg/docker-bungeecord/) Docker images.
+This tool does the complicated bits for the [itzg/minecraft-server](https://github.com/itzg/docker-minecraft-server) and [itzg/docker-mc-proxy](https://github.com/itzg/docker-mc-proxy) Docker images.
 
 ## Usage
 
