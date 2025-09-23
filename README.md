@@ -868,7 +868,7 @@ Downloads a maven artifact from a Maven repository
 Usage: mc-image-helper mcopy [-hz] [--file-is-listing]
                              [--ignore-missing-sources] [--quiet-when-skipped]
                              [--skip-existing] [--delimiter=<stringDelimiter>]
-                             [--glob=GLOB] [--scope=<manifestId>] [--to=<dest>]
+                             [--glob=GLOB] [--scope=<manifestId>] --to=<dest>
                              SRC[,|<nl>SRC...]...
 Multi-source file copy operation with with managed cleanup. Supports
 auto-detected sourcing from file list, directories, and URLs
