@@ -272,8 +272,6 @@ class MulitCopyCommandTest {
                 .hasContent("updated");
         }
 
-        // NOTE: Having multiple destinations conflicts with the idea of manifests.
-        // Therefore, manifests are not supported when using them
         @Test
         void managedWithManifest() throws IOException {
             final Path srcDir = Files.createDirectories(tempDir.resolve("srcDir"));
@@ -308,6 +306,50 @@ class MulitCopyCommandTest {
 
             assertThat(destTxt)
                 .doesNotExist();
+        }
+
+        @Test
+        void managedWithManifestAndMultipleDest() throws IOException {
+            final Path srcDir = Files.createDirectories(tempDir.resolve("srcDir"));
+            final Path srcTxt = writeLine(srcDir, "one.txt", "one");
+            final Path srcJar = writeLine(srcDir, "two.jar", "two");
+
+            final Path destDir1 = tempDir.resolve("dest1");
+            final Path destDir2 = tempDir.resolve("dest2");
+            final Path destTxt = destDir1.resolve("one.txt");
+            final Path destJar = destDir2.resolve("two.jar");
+
+            final int exitCode = new CommandLine(new MulitCopyCommand())
+                .execute(
+                    "--to", tempDir.toString(),
+                    "--scope", "managedWithManifest",
+                    destDir1 + "@" + srcTxt + "," + destDir2 + "@" + srcJar
+                );
+            assertThat(exitCode).isEqualTo(CommandLine.ExitCode.OK);
+
+            assertThat(destTxt)
+                .hasSameTextualContentAs(srcTxt);
+            assertThat(destJar)
+                .hasSameTextualContentAs(srcJar);
+            assertThat(destDir1.resolve("one.txt"))
+                .hasSameTextualContentAs(srcTxt);
+            assertThat(destDir2.resolve("two.jar"))
+                .hasSameTextualContentAs(srcJar);
+
+            Files.delete(srcTxt);
+            assertThat(
+                new CommandLine(new MulitCopyCommand())
+                    .execute(
+                        "--to", tempDir.toString(),
+                        "--scope", "managedWithManifest",
+                        destDir2 + "@" + srcJar
+                    )
+            ).isEqualTo(CommandLine.ExitCode.OK);
+
+            assertThat(destTxt)
+                .doesNotExist();
+            assertThat(destDir2.resolve("two.jar"))
+                .hasSameTextualContentAs(srcJar);
         }
 
         @Test

@@ -125,10 +125,6 @@ public class MulitCopyCommand implements Callable<Integer> {
         }
 
         if (source.contains(stringDelimiter)) {
-            if (manifestId != null) {
-                throw new GenericException("Manifests cannot be used with inline destinations");
-            }
-
             String[] split = source.split(stringDelimiter);
             destination = destination.resolve(Paths.get(split[0]));
             source = split[1];
