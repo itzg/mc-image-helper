@@ -9,71 +9,85 @@ This tool does the complicated bits for the [itzg/minecraft-server](https://gith
 > **NOTE** The following documentation may not always be up-to-date. Please be sure to use `-h` or `--help` after any subcommand to view the current usage.
 
 ```
-Usage: mc-image-helper [-hs] [--debug] [COMMAND]
-      --debug    Enable debug output. Can also set environment variable
-                   DEBUG_HELPER
-  -h, --help     Show this usage and exit
-  -s, --silent   Don't output logs even if there's an error
+Usage: mc-image-helper [-hsV] [--debug | --logging=<loggingLevel>] [COMMAND]
+      --debug     Enable debug output. Can also set environment variables
+                    DEBUG_HELPER or DEBUG
+  -h, --help      Show this usage and exit
+      --logging=<loggingLevel>
+                  Set logging to specific level.
+                  Valid values:
+  -s, --silent    Don't output logs even if there's an error
+  -V, --version
 Commands:
-  asciify                    Converts UTF-8 on stdin to ASCII by escaping
-                               Unicode characters
-  assert                     Provides assertion operators for verifying
-                               container setup
-  compare-versions           Used for shell scripting, exits with success(0)
-                               when comparison is satisfied or 1 when not
-  curseforge-files           Download and manage individual mod/plugin files
-                               from CurseForge
-  find                       Specialized replacement for GNU's find
-  get                        Download a file
+  asciify                         Converts UTF-8 on stdin to ASCII by escaping
+                                    Unicode characters
+  assert                          Provides assertion operators for verifying
+                                    container setup
+  compare-versions                Used for shell scripting, exits with success
+                                    (0) when comparison is satisfied or 1 when
+                                    not
+  curseforge-files                Download and manage individual mod/plugin
+                                    files from CurseForge
+  find                            Specialized replacement for GNU's find
+  get                             Download a file
   github
-  hash                       Outputs an MD5 hash of the standard input
-  install-curseforge         Downloads, installs, and upgrades CurseForge
-                               modpacks
-  install-fabric-loader      Provides a few ways to obtain a Fabric loader with
-                               simple cleanup of previous loader instances
-  install-forge              Downloads and installs a requested version of Forge
-  install-modrinth-modpack   Supports installation of Modrinth modpacks along
-                               with the associated mod loader
-  install-neoforge           Downloads and installs a requested version of
-                               NeoForge
-  install-paper              Installs selected PaperMC
-  install-purpur             Downloads latest or selected version of Purpur
-  install-quilt              Installs Quilt mod loader
-  interpolate                Interpolates existing files in one or more
-                               directories
-  java-release               Outputs the Java release number, such as 8, 11, 17
+  hash                            Outputs an MD5 hash of the standard input
+  install-curseforge              Downloads, installs, and upgrades CurseForge
+                                    modpacks
+  install-fabric-loader           Provides a few ways to obtain a Fabric loader
+                                    with simple cleanup of previous loader
+                                    instances
+  install-forge                   Downloads and installs a requested version of
+                                    Forge
+  install-modrinth-modpack        Supports installation of Modrinth modpacks
+                                    along with the associated mod loader
+  install-neoforge                Downloads and installs a requested version of
+                                    NeoForge
+  install-paper                   Installs selected PaperMC
+  install-purpur                  Downloads latest or selected version of Purpur
+  install-quilt                   Installs Quilt mod loader
+  interpolate                     Interpolates existing files in one or more
+                                    directories
+  java-release                    Outputs the Java release number, such as 8,
+                                    11, 17
   manage-users
-  maven-download             Downloads a maven artifact from a Maven repository
-  modrinth                   Automates downloading of modrinth resources
-  mcopy                      Multi-source file copy operation with with managed
-                               cleanup. Supports auto-detected sourcing from
-                               file list, directories, and URLs
-  network-interfaces         Provides simple operations to list network
-                               interface names and check existence
-  patch                      Patches one or more existing files using JSON path
-                               based operations
-                             Supports the file formats:
-                             - JSON
-                             - JSON5
-                             - Yaml
-                             - TOML, but processed output is not pretty
-  resolve-minecraft-version  Resolves and validate latest, snapshot, and
-                               specific versions
-  set-properties             Maps environment variables to a properties file
-  show-all-subcommand-usage  Renders all of the subcommand usage as markdown
-                               sections for README
-  sync                       Synchronizes the contents of one directory to
-                               another.
-  sync-and-interpolate       Synchronizes the contents of one directory to
-                               another with conditional variable interpolation.
+  maven-download                  Downloads a maven artifact from a Maven
+                                    repository
+  modrinth                        Automates downloading of modrinth resources
+  mcopy                           Multi-source file copy operation with with
+                                    managed cleanup. Supports auto-detected
+                                    sourcing from file list, directories, and
+                                    URLs
+  network-interfaces              Provides simple operations to list network
+                                    interface names and check existence
+  patch                           Patches one or more existing files using JSON
+                                    path based operations
+                                  Supports the file formats:
+                                  - JSON
+                                  - JSON5
+                                  - Yaml
+                                  - TOML, but processed output is not pretty
+  resolve-minecraft-version       Resolves and validate latest, snapshot, and
+                                    specific versions
+  set-properties                  Maps environment variables to a properties
+                                    file
+  show-all-subcommand-usage       Renders all of the subcommand usage as
+                                    markdown sections for README
+  sync                            Synchronizes the contents of one directory to
+                                    another.
+  sync-and-interpolate            Synchronizes the contents of one directory to
+                                    another with conditional variable
+                                    interpolation.
   test-logging-levels
-  toml-path                  Extracts a path from a TOML file using json-path
-                               syntax
-  yaml-path                  Extracts a path from a YAML file using json-path
-                               syntax
-  vanillatweaks              Downloads Vanilla Tweaks resource packs, data
-                               packs, or crafting tweaks given a share code or
-                               pack file
+  toml-path                       Extracts a path from a TOML file using
+                                    json-path syntax
+  vanillatweaks                   Downloads Vanilla Tweaks resource packs, data
+                                    packs, or crafting tweaks given a share
+                                    code or pack file
+  version-from-modrinth-projects  Finds a compatible Minecraft version across
+                                    given Modrinth projects
+  yaml-path                       Extracts a path from a YAML file using
+                                    json-path syntax
 ```
 
 For [patch](#patch) command [see below](#patch-schemas) for a description of [PatchSet](#patchset) and [PatchDefinition](#patchdefinition) JSON schemas.
@@ -853,13 +867,19 @@ Downloads a maven artifact from a Maven repository
 ```
 Usage: mc-image-helper mcopy [-hz] [--file-is-listing]
                              [--ignore-missing-sources] [--quiet-when-skipped]
-                             [--skip-existing] [--glob=GLOB]
-                             [--scope=<manifestId>] --to=<dest> SRC[,
-                             |<nl>SRC...]...
+                             [--skip-existing] [--delimiter=<stringDelimiter>]
+                             [--glob=GLOB] [--scope=<manifestId>] [--to=<dest>]
+                             SRC[,|<nl>SRC...]...
 Multi-source file copy operation with with managed cleanup. Supports
 auto-detected sourcing from file list, directories, and URLs
       SRC[,|<nl>SRC...]...   Any mix of source file, directory, or URLs.
                              Can be optionally comma or newline separated.
+                             Per-file destinations can be assigned by
+                               destination@source
+      --delimiter=<stringDelimiter>
+                             When using per-file destinations, which symbol
+                               should be used to delimit
+                               destination<delimiter>source
       --file-is-listing      Source files or URLs are processed as a line
                                delimited list of sources.
                              For remote listing files, the contents must all be
