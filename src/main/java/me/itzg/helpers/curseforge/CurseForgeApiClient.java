@@ -1,7 +1,5 @@
 package me.itzg.helpers.curseforge;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
@@ -12,6 +10,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import org.slf4j.Logger;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.cache.ApiCaching;
 import me.itzg.helpers.curseforge.model.Category;
@@ -34,7 +38,6 @@ import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.http.SharedFetch.Options;
 import me.itzg.helpers.http.UriBuilder;
 import me.itzg.helpers.json.ObjectMappers;
-import org.slf4j.Logger;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
@@ -99,6 +102,8 @@ public class CurseForgeApiClient implements AutoCloseable {
                     break;
                 case DOWNLOADED:
                     log.info("Downloaded mod file {}", outputDir.relativize(f));
+                    break;
+                default:
                     break;
             }
         };
@@ -312,19 +317,39 @@ public class CurseForgeApiClient implements AutoCloseable {
 
     public Throwable errorMapForbidden(Throwable throwable) {
         final FailedRequestException e = (FailedRequestException) throwable;
+        final String body = e.getBody();
 
         log.debug("Failed request details: {}", e.toString());
 
-        if (e.getBody().contains("There might be too much traffic")) {
-            return new RateLimitException(null, String.format("Access to %s has been rate-limited.", uriBuilder.getBaseUrl()), e);
-        }
-        else {
-            return new InvalidApiKeyException(String.format("Access to %s is forbidden or rate-limit has been exceeded."
-                    + " Ensure %s is set to a valid API key from %s or allow rate-limit to reset.",
-                uriBuilder.getBaseUrl(), API_KEY_VAR, ETERNAL_DEVELOPER_CONSOLE_URL
-            ), e
+        try {
+            final CurseForgeResponse<Void> resp = ObjectMappers.defaultMapper().readValue(
+                body, new TypeReference<CurseForgeResponse<Void>>() {}
             );
+            final String errorMsg = resp.getError();
+
+            if (errorMsg != null) {
+                if (errorMsg.toLowerCase().contains("api key") || errorMsg.toLowerCase().contains("invalid key")) {
+                    return new InvalidApiKeyException(String.format("Access to %s is forbidden due to invalid API key."
+                            + " Ensure %s is set to a valid API key from %s.",
+                        uriBuilder.getBaseUrl(), API_KEY_VAR, ETERNAL_DEVELOPER_CONSOLE_URL
+                    ), e);
+                } else if (errorMsg.toLowerCase().contains("traffic") || errorMsg.toLowerCase().contains("rate limit")) {
+                    return new RateLimitException(null, String.format("Access to %s has been rate-limited: %s", uriBuilder.getBaseUrl(), errorMsg), e);
+                } else {
+                    return new GenericException(String.format("CurseForge API forbidden response: %s", errorMsg), e);
+                }
+            }
+        } catch (JsonProcessingException ex) {
+            // Fall back to string check if not valid JSON
         }
 
+        // Fallback checks
+        if (body.contains("There might be too much traffic")) {
+            return new RateLimitException(null, String.format("Access to %s has been rate-limited.", uriBuilder.getBaseUrl()), e);
+        } else if (body.contains("Fetching object content")) {
+            return new GenericException("CurseForge API returned forbidden for file metadata. This may indicate a temporary issue or unavailable file content.", e);
+        } else {
+            return new GenericException(String.format("Access to %s forbidden with message: %s", uriBuilder.getBaseUrl(), body), e);
+        }
     }
 }

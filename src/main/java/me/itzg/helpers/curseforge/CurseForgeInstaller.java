@@ -1,14 +1,5 @@
 package me.itzg.helpers.curseforge;
 
-import static java.util.Collections.emptySet;
-import static java.util.Objects.requireNonNull;
-import static java.util.Optional.ofNullable;
-import static me.itzg.helpers.curseforge.CurseForgeApiClient.CACHING_NAMESPACE;
-import static me.itzg.helpers.curseforge.CurseForgeApiClient.modFileDownloadStatusHandler;
-import static me.itzg.helpers.singles.MoreCollections.safeStreamFrom;
-
-import com.fasterxml.jackson.databind.JsonMappingException;
-import io.netty.channel.ChannelException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,18 +7,35 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import static java.util.Collections.emptySet;
+import java.util.Comparator;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Objects;
+import static java.util.Objects.requireNonNull;
 import java.util.Optional;
+import static java.util.Optional.ofNullable;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipFile;
+import org.jetbrains.annotations.Blocking;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import com.fasterxml.jackson.databind.JsonMappingException;
+
+import io.netty.channel.ChannelException;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -37,6 +45,8 @@ import me.itzg.helpers.cache.ApiCaching;
 import me.itzg.helpers.cache.ApiCachingDisabled;
 import me.itzg.helpers.cache.ApiCachingImpl;
 import me.itzg.helpers.cache.CacheArgs;
+import static me.itzg.helpers.curseforge.CurseForgeApiClient.CACHING_NAMESPACE;
+import static me.itzg.helpers.curseforge.CurseForgeApiClient.modFileDownloadStatusHandler;
 import me.itzg.helpers.curseforge.ExcludeIncludesContent.ExcludeIncludes;
 import me.itzg.helpers.curseforge.OverridesApplier.Result;
 import me.itzg.helpers.curseforge.model.CurseForgeFile;
@@ -61,11 +71,7 @@ import me.itzg.helpers.http.Fetch;
 import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.http.Uris;
 import me.itzg.helpers.json.ObjectMappers;
-import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
-import org.apache.commons.compress.archivers.zip.ZipFile;
-import org.jetbrains.annotations.Blocking;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import static me.itzg.helpers.singles.MoreCollections.safeStreamFrom;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -546,6 +552,12 @@ public class CurseForgeInstaller {
     private ModPackResults processModpack(InstallContext context,
         MinecraftModpackManifest modpackManifest, OverridesApplier overridesApplier
     ) throws IOException {
+        return processModpack(context, modpackManifest, overridesApplier, Optional.empty());
+    }
+
+    private ModPackResults processModpack(InstallContext context,
+        MinecraftModpackManifest modpackManifest, OverridesApplier overridesApplier, Optional<Path> modpackZipOpt
+    ) throws IOException {
         if (modpackManifest.getManifestType() != ManifestType.minecraftModpack) {
             throw new InvalidParameterException("The zip file provided does not seem to be a Minecraft modpack");
         }
@@ -562,42 +574,126 @@ public class CurseForgeInstaller {
 
         log.debug("Max concurrent downloads is {}", maxConcurrentDownloads);
 
-        // Go through all the files listed in modpack (given project ID + file ID)
-        final List<PathWithInfo> modFiles = Flux.fromIterable(modpackManifest.getFiles())
-            // ...does the modpack even say it's required?
-            .filter(ManifestFileRef::isRequired)
-            // ...is this mod file excluded because it is a client mod that didn't declare as such
-            .filterWhen(manifestFileRef -> {
-                final int projectID = manifestFileRef.getProjectID();
-                final boolean exclude = excludeIncludeIds.getExcludeIds().contains(projectID);
-                final boolean forceInclude = excludeIncludeIds.getForceIncludeIds().contains(projectID);
+        List<PathWithInfo> modFiles;
+        if (modpackZipOpt.isPresent()) {
+            Path modpackZip = modpackZipOpt.get();
+            Path tempModsDir = Files.createTempDirectory("modpack-mods");
+            ZipFile zipFile = null;
+            try {
+                zipFile = ZipFile.builder().setPath(modpackZip).get();
 
-                log.debug("Evaluating projectId={} with exclude={} and forceInclude={}",
-                    projectID, exclude, forceInclude
-                );
+                // Extract mods/ entries to temp dir
+                Enumeration<ZipArchiveEntry> entries = zipFile.getEntries();
+                while (entries.hasMoreElements()) {
+                    ZipArchiveEntry entry = entries.nextElement();
+                    if (entry.getName().startsWith("mods/") && !entry.isDirectory()) {
+                        String relative = entry.getName().substring(5);
+                        Path target = tempModsDir.resolve(relative);
+                        Files.createDirectories(target.getParent());
+                        try (InputStream is = zipFile.getInputStream(entry)) {
+                            Files.copy(is, target, StandardCopyOption.REPLACE_EXISTING);
+                        }
+                    }
+                }
 
-                return Mono.just(forceInclude || !exclude)
-                    .flatMap(proceed -> proceed ? Mono.just(true)
-                        : context.cfApi.getModInfo(projectID)
-                            .map(mod -> {
-                                log.info("Excluding mod file '{}' ({}) due to configuration",
-                                    mod.getName(), mod.getSlug()
-                                );
-                                // and filter away
-                                return false;
-                            })
+                modFiles = new ArrayList<>();
+                for (ManifestFileRef fileRef : modpackManifest.getFiles()) {
+                    if (!fileRef.isRequired()) continue;
+
+                    int projectID = fileRef.getProjectID();
+                    int fileID = fileRef.getFileID();
+
+                    // Check exclude first
+                    boolean exclude = excludeIncludeIds.getExcludeIds().contains(projectID);
+                    boolean forceInclude = excludeIncludeIds.getForceIncludeIds().contains(projectID);
+                    if (exclude && !forceInclude) {
+                        // Get mod info for logging
+                        CurseForgeMod mod = context.cfApi.getModInfo(projectID).block();
+                        if (mod != null) {
+                            log.info("Excluding mod file '{}' ({}) due to configuration", mod.getName(), mod.getSlug());
+                        }
+                        continue;
+                    }
+
+                    // Process file with standard logic, but check ZIP first
+                    Mono<PathWithInfo> fileMono = processFileWithIds(context, outputSubdirResolver,
+                        excludeIncludeIds.getForceIncludeIds(), projectID, fileID);
+
+                    // Check if file exists in extracted ZIP
+                    PathWithInfo result = fileMono.block();
+                    if (result != null && result.getCurseForgeFile() != null) {
+                        CurseForgeFile cfFile = result.getCurseForgeFile();
+                        Path extractedFile = tempModsDir.resolve(cfFile.getFileName());
+
+                        if (Files.exists(extractedFile)) {
+                            // Verify hash
+                            Mono<Path> verifyMono = verifyHash(cfFile, extractedFile);
+                            Path verified = verifyMono.block();
+                            if (verified != null && verified.equals(extractedFile)) {
+                                // Use extracted file instead of downloaded one
+                                Path outputFile = result.getPath();
+                                Files.createDirectories(outputFile.getParent());
+                                Files.copy(extractedFile, outputFile, StandardCopyOption.REPLACE_EXISTING);
+                                result.setDownloadNeeded(false);
+                                log.info("Extracted server mod {} from modpack ZIP", cfFile.getFileName());
+                            }
+                        }
+                    }
+
+                    modFiles.add(result);
+                }
+            } finally {
+                if (zipFile != null) {
+                    try {
+                        zipFile.close();
+                    } catch (IOException e) {
+                        log.warn("Failed to close ZIP", e);
+                    }
+                }
+                // Cleanup temp dir
+                try (Stream<Path> walk = Files.walk(tempModsDir)) {
+                    walk.sorted(Comparator.reverseOrder())
+                        .map(Path::toFile)
+                        .forEach(File::delete);
+                } catch (IOException e) {
+                    log.warn("Failed to cleanup temp mods dir", e);
+                }
+            }
+        } else {
+            // Original logic without ZIP optimization
+            modFiles = Flux.fromIterable(modpackManifest.getFiles())
+                .filter(ManifestFileRef::isRequired)
+                .filterWhen(manifestFileRef -> {
+                    final int projectID = manifestFileRef.getProjectID();
+                    final boolean exclude = excludeIncludeIds.getExcludeIds().contains(projectID);
+                    final boolean forceInclude = excludeIncludeIds.getForceIncludeIds().contains(projectID);
+
+                    log.debug("Evaluating projectId={} with exclude={} and forceInclude={}",
+                        projectID, exclude, forceInclude
                     );
-            })
-            // ...download and possibly unzip world file
-            .flatMap(fileRef ->
-                processFileWithIds(context, outputSubdirResolver,
-                    excludeIncludeIds.getForceIncludeIds(), fileRef.getProjectID(), fileRef.getFileID()
+
+                    return Mono.just(forceInclude || !exclude)
+                        .flatMap(proceed -> proceed ? Mono.just(true)
+                            : context.cfApi.getModInfo(projectID)
+                                .map(mod -> {
+                                    log.info("Excluding mod file '{}' ({}) due to configuration",
+                                        mod.getName(), mod.getSlug()
+                                    );
+                                    // and filter away
+                                    return false;
+                                })
+                        );
+                })
+                .flatMap(fileRef ->
+                    processFileWithIds(context, outputSubdirResolver,
+                        excludeIncludeIds.getForceIncludeIds(), fileRef.getProjectID(), fileRef.getFileID()
+                    )
+                        .checkpoint(),
+                    maxConcurrentDownloads > 0 ? maxConcurrentDownloads : 10
                 )
-                    .checkpoint(),
-                maxConcurrentDownloads > 0 ? maxConcurrentDownloads : 10
-            )
-            .collectList()
-            .block();
+                .collectList()
+                .block();
+        }
 
         final Result overridesResult = overridesApplier.apply();
 
@@ -785,7 +881,8 @@ public class CurseForgeInstaller {
                         throwable instanceof FileHashInvalidException ||
                             throwable instanceof FailedRequestException ||
                             throwable instanceof IOException ||
-                            throwable instanceof ChannelException
+                            throwable instanceof ChannelException ||
+                            throwable instanceof reactor.netty.http.client.PrematureCloseException
                     )
                     .doBeforeRetry(retrySignal ->
                         log.warn("Retry #{} download of {} @ {}:{} due to {}: {}",
