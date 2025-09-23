@@ -54,6 +54,7 @@ class MulitCopyCommandTest {
 
             final int exitCode = new CommandLine(new MulitCopyCommand())
                 .execute(
+                    "--to", tempDir.toString(),
                     destDir + "@" +srcFile.toString()
                 );
             assertThat(exitCode).isEqualTo(CommandLine.ExitCode.OK);
@@ -95,9 +96,35 @@ class MulitCopyCommandTest {
 
             final int exitCode = new CommandLine(new MulitCopyCommand())
                 .execute(
+                    "--to", tempDir.toString(),
                     String.join(",",
                         destDir1 + "@" + srcTxt.toString(),
                         destDir2 + "@" + srcJar.toString()
+                    )
+                );
+            assertThat(exitCode).isEqualTo(CommandLine.ExitCode.OK);
+
+            assertThat(destDir1.resolve("one.txt"))
+                .hasSameTextualContentAs(srcTxt);
+            assertThat(destDir2.resolve("two.jar"))
+                .hasSameTextualContentAs(srcJar);
+        }
+
+        @Test
+        void commaDelimitedRelativeDest() throws IOException {
+            final Path srcDir = Files.createDirectories(tempDir.resolve("srcDir"));
+            final Path srcTxt = writeLine(srcDir, "one.txt", "one");
+            final Path srcJar = writeLine(srcDir, "two.jar", "two");
+
+            final Path destDir1 = tempDir.resolve("dest1");
+            final Path destDir2 = tempDir.resolve("dest2");
+
+            final int exitCode = new CommandLine(new MulitCopyCommand())
+                .execute(
+                    "--to", tempDir.toString(),
+                    String.join(",",
+                        "./dest1@" + srcTxt.toString(),
+                        "./dest2@" + srcJar.toString()
                     )
                 );
             assertThat(exitCode).isEqualTo(CommandLine.ExitCode.OK);
@@ -153,6 +180,7 @@ class MulitCopyCommandTest {
 
             final int exitCode = new CommandLine(new MulitCopyCommand())
                 .execute(
+                    "--to", tempDir.toString(),
                     "--file-is-listing",
                     listing.toString()
                 );
@@ -198,6 +226,7 @@ class MulitCopyCommandTest {
 
             final int exitCode = new CommandLine(new MulitCopyCommand())
                 .execute(
+                    "--to", tempDir.toString(),
                     destDir + "@" + srcDir
                 );
             assertThat(exitCode).isEqualTo(CommandLine.ExitCode.OK);
@@ -332,6 +361,7 @@ class MulitCopyCommandTest {
 
             final int exitCode = new CommandLine(new MulitCopyCommand())
                 .execute(
+                    "--to", tempDir.toString(),
                     destDir + "@" + wmInfo.getHttpBaseUrl() + "/file.jar"
                 );
             assertThat(exitCode).isEqualTo(CommandLine.ExitCode.OK);
@@ -381,6 +411,7 @@ class MulitCopyCommandTest {
 
             final int exitCode = new CommandLine(new MulitCopyCommand())
                 .execute(
+                    "--to", tempDir.toString(),
                     "--file-is-listing",
                     listing.toString()
                 );
@@ -431,6 +462,7 @@ class MulitCopyCommandTest {
 
             final int exitCode = new CommandLine(new MulitCopyCommand())
                 .execute(
+                    "--to", tempDir.toString(),
                     "--file-is-listing",
                     wmInfo.getHttpBaseUrl() + "/listing.txt"
                 );
@@ -485,6 +517,7 @@ class MulitCopyCommandTest {
 
             final int exitCode = new CommandLine(new MulitCopyCommand())
                 .execute(
+                    "--to", tempDir.toString(),
                     "--file-is-listing",
                     wmInfo.getHttpBaseUrl() + "/listing.txt"
                 );

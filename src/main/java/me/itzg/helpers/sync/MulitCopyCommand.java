@@ -44,7 +44,7 @@ public class MulitCopyCommand implements Callable<Integer> {
     )
     String manifestId;
 
-    @Option(names = {"--to", "--output-directory"})
+    @Option(names = {"--to", "--output-directory"}, required = true)
     Path dest;
 
     @Option(names = "--glob", defaultValue = "*", paramLabel = "GLOB",
@@ -130,7 +130,7 @@ public class MulitCopyCommand implements Callable<Integer> {
             }
 
             String[] split = source.split(stringDelimiter);
-            destination = Paths.get(split[0]);
+            destination = destination.resolve(Paths.get(split[0]));
             source = split[1];
         }
 
@@ -147,11 +147,6 @@ public class MulitCopyCommand implements Callable<Integer> {
                 }
                 return processListingFile(path, destination);
             }
-        }
-
-        if (destination == null) {
-            // maybe there is a way to print the --to flag documentation
-            throw new GenericException(String.format("No destination for source '%s' specified. Either use --to flag or prepend destination to the source with '%s' as delimiter", source, stringDelimiter));
         }
 
         try {
