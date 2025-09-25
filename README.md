@@ -865,21 +865,17 @@ Downloads a maven artifact from a Maven repository
 ### mcopy
 
 ```
-Usage: mc-image-helper mcopy [-hz] [--file-is-listing]
+Usage: mc-image-helper mcopy [-hz] [--file-is-listing]                                                                                                                                                                                                                                                                                                                                                                            
                              [--ignore-missing-sources] [--quiet-when-skipped]
-                             [--skip-existing] [--delimiter=<stringDelimiter>]
-                             [--glob=GLOB] [--scope=<manifestId>] --to=<dest>
-                             SRC[,|<nl>SRC...]...
+                             [--skip-existing] [--glob=GLOB]
+                             [--scope=<manifestId>] --to=<dest> SRC[,
+                             |<nl>SRC...]...
 Multi-source file copy operation with with managed cleanup. Supports
 auto-detected sourcing from file list, directories, and URLs
       SRC[,|<nl>SRC...]...   Any mix of source file, directory, or URLs.
                              Can be optionally comma or newline separated.
                              Per-file destinations can be assigned by
-                               destination@source
-      --delimiter=<stringDelimiter>
-                             When using per-file destinations, which symbol
-                               should be used to delimit
-                               destination<delimiter>source
+                               destination<source
       --file-is-listing      Source files or URLs are processed as a line
                                delimited list of sources.
                              For remote listing files, the contents must all be
@@ -899,6 +895,7 @@ auto-detected sourcing from file list, directories, and URLs
       --to, --output-directory=<dest>
 
   -z, --skip-up-to-date
+
 ```
 
 ### modrinth

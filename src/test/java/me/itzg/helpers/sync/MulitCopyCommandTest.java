@@ -55,7 +55,7 @@ class MulitCopyCommandTest {
             final int exitCode = new CommandLine(new MulitCopyCommand())
                 .execute(
                     "--to", tempDir.toString(),
-                    "dest@" +srcFile.toString()
+                    "dest<" +srcFile.toString()
                 );
             assertThat(exitCode).isEqualTo(CommandLine.ExitCode.OK);
 
@@ -98,8 +98,8 @@ class MulitCopyCommandTest {
                 .execute(
                     "--to", tempDir.toString(),
                     String.join(",",
-                        "dest1@" + srcTxt.toString(),
-                        "dest2@" + srcJar.toString()
+                        "dest1<" + srcTxt.toString(),
+                        "dest2<" + srcJar.toString()
                     )
                 );
             assertThat(exitCode).isEqualTo(CommandLine.ExitCode.OK);
@@ -123,8 +123,8 @@ class MulitCopyCommandTest {
                 .execute(
                     "--to", tempDir.toString(),
                     String.join(",",
-                        "./dest1@" + srcTxt.toString(),
-                        "./dest2@" + srcJar.toString()
+                        "./dest1<" + srcTxt.toString(),
+                        "./dest2<" + srcJar.toString()
                     )
                 );
             assertThat(exitCode).isEqualTo(CommandLine.ExitCode.OK);
@@ -174,8 +174,8 @@ class MulitCopyCommandTest {
             final Path destDir2 = tempDir.resolve("dest2");
 
             final Path listing = Files.write(tempDir.resolve("listing.txt"), Arrays.asList(
-                destDir1 + "@" + srcTxt.toString(),
-                destDir2 + "@" + srcJar.toString()
+                "dest1<" + srcTxt.toString(),
+                "dest2<" + srcJar.toString()
             ));
 
             final int exitCode = new CommandLine(new MulitCopyCommand())
@@ -227,7 +227,7 @@ class MulitCopyCommandTest {
             final int exitCode = new CommandLine(new MulitCopyCommand())
                 .execute(
                     "--to", tempDir.toString(),
-                    "dest@" + srcDir
+                    "dest<" + srcDir
                 );
             assertThat(exitCode).isEqualTo(CommandLine.ExitCode.OK);
 
@@ -323,7 +323,7 @@ class MulitCopyCommandTest {
                 .execute(
                     "--to", tempDir.toString(),
                     "--scope", "managedWithManifest",
-                    "dest1@" + srcTxt + "," + "dest2@" + srcJar
+                    "dest1<" + srcTxt + "," + "dest2<" + srcJar
                 );
             assertThat(exitCode).isEqualTo(CommandLine.ExitCode.OK);
 
@@ -342,7 +342,7 @@ class MulitCopyCommandTest {
                     .execute(
                         "--to", tempDir.toString(),
                         "--scope", "managedWithManifest",
-                        destDir2 + "@" + srcJar
+                        destDir2 + "<" + srcJar
                     )
             ).isEqualTo(CommandLine.ExitCode.OK);
 
@@ -404,7 +404,7 @@ class MulitCopyCommandTest {
             final int exitCode = new CommandLine(new MulitCopyCommand())
                 .execute(
                     "--to", tempDir.toString(),
-                    "dest@" + wmInfo.getHttpBaseUrl() + "/file.jar"
+                    "dest<" + wmInfo.getHttpBaseUrl() + "/file.jar"
                 );
             assertThat(exitCode).isEqualTo(CommandLine.ExitCode.OK);
 
@@ -447,8 +447,8 @@ class MulitCopyCommandTest {
             final Path destDir2 = tempDir.resolve("dest2");
 
             final Path listing = Files.write(tempDir.resolve("listing.txt"), Arrays.asList(
-                "dest1@" + wmInfo.getHttpBaseUrl() + "/file1.jar",
-                "dest2@" +wmInfo.getHttpBaseUrl() + "/file2.jar"
+                "dest1<" + wmInfo.getHttpBaseUrl() + "/file1.jar",
+                "dest2<" +wmInfo.getHttpBaseUrl() + "/file2.jar"
             ));
 
             final int exitCode = new CommandLine(new MulitCopyCommand())
@@ -496,8 +496,8 @@ class MulitCopyCommandTest {
             final Path destDir2 = tempDir.resolve("dest2");
 
             stubRemoteSrc("listing.txt",
-                "dest1@" + wmInfo.getHttpBaseUrl() + "/file1.jar\n" +
-                    "dest2@" + wmInfo.getHttpBaseUrl() + "/file2.jar\n"
+                "dest1<" + wmInfo.getHttpBaseUrl() + "/file1.jar\n" +
+                    "dest2<" + wmInfo.getHttpBaseUrl() + "/file2.jar\n"
             );
             stubRemoteSrc("file1.jar", "one");
             stubRemoteSrc("file2.jar", "two");
@@ -553,8 +553,8 @@ class MulitCopyCommandTest {
             final Path srcJar = writeLine(srcDir, "two.jar", "two");
 
             stubRemoteSrc("listing.txt",
-                "dest1@" + srcTxt + "\n" +
-                    "dest2@" +  srcJar + "\n"
+                "dest1<" + srcTxt + "\n" +
+                    "dest2<" +  srcJar + "\n"
             );
 
             final int exitCode = new CommandLine(new MulitCopyCommand())
@@ -585,14 +585,14 @@ class MulitCopyCommandTest {
             stubRemoteSrc("listing.txt",
                 srcTxt + "\n" +
                     srcJar + "\n" +
-                    destDir3 + "@" +  srcYaml + "\n"
+                    destDir3 + "<" +  srcYaml + "\n"
             );
 
             final int exitCode = new CommandLine(new MulitCopyCommand())
                 .execute(
                     "--to", destDir1.toString(),
                     "--file-is-listing",
-                    destDir2 + "@" + wmInfo.getHttpBaseUrl() + "/listing.txt"
+                    destDir2 + "<" + wmInfo.getHttpBaseUrl() + "/listing.txt"
                 );
             assertThat(exitCode).isEqualTo(CommandLine.ExitCode.OK);
 

@@ -70,18 +70,15 @@ public class MulitCopyCommand implements Callable<Integer> {
     @Option(names = "--ignore-missing-sources", description = "Don't log or fail exit code when any or all sources are missing")
     boolean ignoreMissingSources;
 
-    @Option(names = "--delimiter", defaultValue = "@",
-        description = "When using per-file destinations, which symbol should be used to delimit destination<delimiter>source"
-    )
-    String destinationDelimiter;
-
     @Parameters(split = SPLIT_COMMA_NL, splitSynopsisLabel = SPLIT_SYNOPSIS_COMMA_NL, arity = "1..*",
         paramLabel = "SRC",
         description = "Any mix of source file, directory, or URLs."
             + "%nCan be optionally comma or newline separated."
-            + "%nPer-file destinations can be assigned by destination@source"
+            + "%nPer-file destinations can be assigned by destination<source"
     )
     List<String> sources;
+
+    private final static String destinationDelimiter = "<";
 
     @Override
     public Integer call() throws Exception {
