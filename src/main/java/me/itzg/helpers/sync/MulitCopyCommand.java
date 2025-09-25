@@ -73,7 +73,7 @@ public class MulitCopyCommand implements Callable<Integer> {
     @Option(names = "--delimiter", defaultValue = "@",
         description = "When using per-file destinations, which symbol should be used to delimit destination<delimiter>source"
     )
-    String stringDelimiter;
+    String destinationDelimiter;
 
     @Parameters(split = SPLIT_COMMA_NL, splitSynopsisLabel = SPLIT_SYNOPSIS_COMMA_NL, arity = "1..*",
         paramLabel = "SRC",
@@ -88,7 +88,7 @@ public class MulitCopyCommand implements Callable<Integer> {
         Flux.fromIterable(sources)
             .map(String::trim)
             .filter(s -> !s.isEmpty())
-            .flatMap(source -> processSource(source, fileIsListingOption, null))
+            .flatMap(source -> processSource(source, fileIsListingOption, dest))
             .collectList()
             .flatMap(this::cleanupAndSaveManifest)
             .block();
@@ -118,16 +118,12 @@ public class MulitCopyCommand implements Callable<Integer> {
 
     @SuppressWarnings("BlockingMethodInNonBlockingContext") // idk if that is a good idea
     private Publisher<Path> processSource(String source, boolean fileIsListing, Path parentDestination) {
-        Path destination = dest;
+        Path destination = parentDestination;
 
-        if (parentDestination != null) {
-            destination = parentDestination;
-        }
-
-        if (source.contains(stringDelimiter)) {
-            String[] split = source.split(stringDelimiter);
-            destination = destination.resolve(Paths.get(split[0]));
-            source = split[1];
+        final int delimiterPos = source.indexOf(destinationDelimiter);
+        if (delimiterPos > 0) {
+            destination = destination.resolve(Paths.get(source.substring(0, delimiterPos)));
+            source = source.substring(delimiterPos + 1);
         }
 
         if (fileIsListing) {
