@@ -17,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.files.Manifests;
+import me.itzg.helpers.files.ReactiveFileUtils;
 import me.itzg.helpers.http.FailedRequestException;
 import me.itzg.helpers.http.Fetch;
 import me.itzg.helpers.http.SharedFetch;
@@ -113,51 +114,52 @@ public class MulitCopyCommand implements Callable<Integer> {
             });
     }
 
-    @SuppressWarnings("BlockingMethodInNonBlockingContext") // idk if that is a good idea
     private Publisher<Path> processSource(String source, boolean fileIsListing, Path parentDestination) {
-        Path destination = parentDestination;
+        final Path destination;
+        final String resolvedSource;
 
         final int delimiterPos = source.indexOf(destinationDelimiter);
         if (delimiterPos > 0) {
-            destination = destination.resolve(Paths.get(source.substring(0, delimiterPos)));
-            source = source.substring(delimiterPos + 1);
+            destination = parentDestination.resolve(Paths.get(source.substring(0, delimiterPos)));
+            resolvedSource = source.substring(delimiterPos + 1);
+        }
+        else {
+            destination = parentDestination;
+            resolvedSource = source;
         }
 
         if (fileIsListing) {
-            if (Uris.isUri(source)) {
-                return processRemoteListingFile(source, destination);
+            if (Uris.isUri(resolvedSource)) {
+                return processRemoteListingFile(resolvedSource, destination);
             } else {
-                final Path path = Paths.get(source);
+                final Path path = Paths.get(resolvedSource);
                 if (Files.isDirectory(path)) {
-                    throw new GenericException(String.format("Specified listing file '%s' is a directory", source));
+                    throw new GenericException(String.format("Specified listing file '%s' is a directory", resolvedSource));
                 }
                 if (!Files.exists(path)) {
-                    throw new GenericException(String.format("Source file '%s' does not exist", source));
+                    throw new GenericException(String.format("Source file '%s' does not exist", resolvedSource));
                 }
                 return processListingFile(path, destination);
             }
         }
 
-        try {
-            Files.createDirectories(destination);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        return ReactiveFileUtils.createDirectories(destination)
+            .flatMapMany(ignored -> {
+                if (Uris.isUri(resolvedSource)) {
+                    return processRemoteSource(resolvedSource, destination);
+                } else {
+                    final Path path = Paths.get(resolvedSource);
+                    if (!Files.exists(path)) {
+                        return Mono.error(new GenericException(String.format("Source file '%s' does not exist", resolvedSource)));
+                    }
 
-        if (Uris.isUri(source)) {
-            return processRemoteSource(source, destination);
-        } else {
-            final Path path = Paths.get(source);
-            if (!Files.exists(path)) {
-                throw new GenericException(String.format("Source file '%s' does not exist", source));
-            }
-
-            if (Files.isDirectory(path)) {
-                return processDirectory(path, destination);
-            } else {
-                return processFile(path, destination);
-            }
-        }
+                    if (Files.isDirectory(path)) {
+                        return processDirectory(path, destination);
+                    } else {
+                        return processFile(path, destination);
+                    }
+                }
+            });
     }
 
     private Flux<Path> processListingFile(Path listingFile, Path destination) {
