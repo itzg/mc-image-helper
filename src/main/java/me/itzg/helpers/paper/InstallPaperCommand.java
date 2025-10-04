@@ -120,12 +120,14 @@ public class InstallPaperCommand implements Callable<Integer> {
             else {
                 if (requestCheckUpdates) {
                     return checkForUpdates(client, oldManifest,
-                        inputs.coordinates.project, inputs.coordinates.version, inputs.coordinates.build
+                        inputs.coordinates.project, inputs.coordinates.version, inputs.coordinates.build,
+                        inputs.coordinates.channel
                     );
                 }
 
                 result = downloadUsingCoordinates(client, inputs.coordinates.project,
-                    inputs.coordinates.version, inputs.coordinates.build
+                    inputs.coordinates.version, inputs.coordinates.build,
+                    inputs.coordinates.channel
                 )
                     .block();
             }
@@ -151,7 +153,8 @@ public class InstallPaperCommand implements Callable<Integer> {
     }
 
     private Integer checkForUpdates(PaperDownloadsClient client, PaperManifest oldManifest,
-        String project, String version, Integer build
+        String project, String version, Integer build,
+        RequestedChannel channel
     ) {
         if (oldManifest != null && oldManifest.getCustomDownloadUrl() != null) {
             log.info("Using custom download URL before");
@@ -184,7 +187,7 @@ public class InstallPaperCommand implements Callable<Integer> {
             }
         }
         else {
-            return client.getLatestVersionBuild(project)
+            return client.getLatestVersionBuild(project, channel)
                 .map(versionBuild -> {
                     if (oldManifest == null) {
                         return logVersion(project, versionBuild.getVersion(), versionBuild.getBuild());
@@ -223,10 +226,11 @@ public class InstallPaperCommand implements Callable<Integer> {
     }
 
     private Mono<Result> downloadUsingCoordinates(PaperDownloadsClient client, String project,
-        String version, Integer build
+        String version, Integer build,
+        RequestedChannel channel
     ) {
         return
-            assembleDownload(client, project, version, build)
+            assembleDownload(client, project, version, build, channel)
             .map(result ->
                 Result.builder()
                     .newManifest(
@@ -244,7 +248,8 @@ public class InstallPaperCommand implements Callable<Integer> {
     }
 
     private Mono<VersionBuildFile> assembleDownload(PaperDownloadsClient client, String project, String version,
-        Integer build
+        Integer build,
+        RequestedChannel channel
     ) {
         final FileDownloadStatusHandler downloadStatusHandler = Fetch.loggingDownloadStatusHandler(log);
 
@@ -257,7 +262,7 @@ public class InstallPaperCommand implements Callable<Integer> {
             }
         }
         else {
-            return client.downloadLatest(project, outputDirectory, downloadStatusHandler);
+            return client.downloadLatest(project, channel, outputDirectory, downloadStatusHandler);
         }
     }
 

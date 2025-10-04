@@ -1,0 +1,22 @@
+{
+  "id": 36,
+  "time": "2025-09-30T13:38:40.064Z",
+  "channel": "ALPHA",
+  "commits": [
+    {
+      "sha": "5b6165c48d64b4daa44ac5f498bc11ee928e4637",
+      "time": "2025-09-30T13:26:15Z",
+      "message": "Add spawnreason for building copper golems (#13112)\n\n"
+    }
+  ],
+  "downloads": {
+    "server:default": {
+      "name": "paper-1.21.9-rc1-36.jar",
+      "checksums": {
+        "sha256": "f737c4ce0afd8ca897c5330188634859148419c6c2d2e172c65f581c47430ab1"
+      },
+      "size": 52515036,
+      "url": "https://fill-data.papermc.io/v1/objects/f737c4ce0afd8ca897c5330188634859148419c6c2d2e172c65f581c47430ab1/paper-1.21.9-rc1-36.jar"
+    }
+  }
+}

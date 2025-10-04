@@ -7,36 +7,66 @@ import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import java.net.URI;
 import java.nio.file.Path;
+import java.util.stream.Stream;
 import me.itzg.helpers.http.FileDownloadStatusHandler;
 import me.itzg.helpers.http.SharedFetch.Options;
 import me.itzg.helpers.paper.PaperDownloadsClient.VersionBuild;
 import me.itzg.helpers.paper.PaperDownloadsClient.VersionBuildFile;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
 
 @WireMockTest
 class PaperDownloadsClientTest {
 
-    @Test
-    void latestVersionBuild(WireMockRuntimeInfo wmInfo) {
+    public static Stream<Arguments> latestVersionBuild_args() {
+        return Stream.of(
+            Arguments.arguments(RequestedChannel.DEFAULT, "1.21.8", 60),
+            Arguments.arguments(RequestedChannel.EXPERIMENTAL, "1.21.9", 49)
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("latestVersionBuild_args")
+    void latestVersionBuild(RequestedChannel requestedChannel, String expectedVersion, int expectedBuild, WireMockRuntimeInfo wmInfo) {
         //TODO use urlPathTemplate with Wiremock 3.x
         stubFor(get(urlPathEqualTo("/v3/projects/paper/versions"))
             .willReturn(aResponse()
                 .withHeader("Content-Type", "application/json")
-                .withBodyFile("paper/v3/response_paper_project.json")
+                .withBodyFile("paper/v3/projects_paper_versions_with_alphas.json")
+            )
+        );
+        stubFor(get(urlPathEqualTo("/v3/projects/paper/versions/1.21.9/builds/49"))
+            .willReturn(aResponse()
+                .withHeader("Content-Type", "application/json")
+                .withBodyFile("paper/v3/projects_paper_1_21_9_builds_49.json")
+            )
+        );
+        stubFor(get(urlPathEqualTo("/v3/projects/paper/versions/1.21.9-rc1/builds/36"))
+            .willReturn(aResponse()
+                .withHeader("Content-Type", "application/json")
+                .withBodyFile("paper/v3/projects_paper_1_21_9-rc1_builds_36.json")
+            )
+        );
+        stubFor(get(urlPathEqualTo("/v3/projects/paper/versions/1.21.8/builds/60"))
+            .willReturn(aResponse()
+                .withHeader("Content-Type", "application/json")
+                .withBodyFile("paper/v3/projects_paper_1_21_8_builds_60.json")
             )
         );
 
         try (PaperDownloadsClient client = new PaperDownloadsClient(wmInfo.getHttpBaseUrl(),
             Options.builder().build()
         )) {
-            final VersionBuild result = client.getLatestVersionBuild("paper")
+            final VersionBuild result = client.getLatestVersionBuild("paper", requestedChannel)
                 .block();
 
             assertThat(result).isNotNull();
-            assertThat(result.getVersion()).isEqualTo("1.21.6");
-            assertThat(result.getBuild()).isEqualTo(46);
+            assertThat(result.getVersion()).isEqualTo(expectedVersion);
+            assertThat(result.getBuild()).isEqualTo(expectedBuild);
         }
 
     }
@@ -46,7 +76,7 @@ class PaperDownloadsClientTest {
         stubFor(get(urlPathEqualTo("/v3/projects/paper/versions/1.21.6/builds/latest"))
             .willReturn(aResponse()
                 .withHeader("Content-Type", "application/json")
-                .withBodyFile("paper/v3/response_paper_build_response.json")
+                .withBodyFile("paper/v3/projects_paper_1_21_6_builds_46.json")
             )
         );
 
@@ -66,7 +96,7 @@ class PaperDownloadsClientTest {
         stubFor(get(urlPathEqualTo("/v3/projects/paper/versions/1.21.6/builds/46"))
             .willReturn(aResponse()
                 .withHeader("Content-Type", "application/json")
-                .withBodyFile("paper/v3/response_paper_build_response.json")
+                .withBodyFile("paper/v3/projects_paper_1_21_6_builds_46.json")
             )
         );
 
@@ -112,7 +142,7 @@ class PaperDownloadsClientTest {
         stubFor(get(urlPathEqualTo("/v3/projects/paper/versions/1.21.6/builds/46"))
             .willReturn(aResponse()
                 .withHeader("Content-Type", "application/json")
-                .withBodyFile("paper/v3/response_paper_build_response.json")
+                .withBodyFile("paper/v3/projects_paper_1_21_6_builds_46.json")
             )
         );
         stubFor(get(urlPathEqualTo("/v1/objects/bfca155b4a6b45644bfc1766f4e02a83c736e45fcc060e8788c71d6e7b3d56f6/paper-1.21.6-46.jar"))
@@ -129,7 +159,7 @@ class PaperDownloadsClientTest {
                 .filesViaUrl(URI.create(wmInfo.getHttpBaseUrl()))
                 .build()
         )) {
-            final VersionBuildFile result = client.downloadLatest("paper", tempDir, statusHandler)
+            final VersionBuildFile result = client.downloadLatest("paper", RequestedChannel.DEFAULT, tempDir, statusHandler)
                 .block();
 
             assertThat(result).isNotNull();
@@ -151,7 +181,7 @@ class PaperDownloadsClientTest {
         stubFor(get(urlPathEqualTo("/v3/projects/paper/versions/1.21.6/builds/latest"))
             .willReturn(aResponse()
                 .withHeader("Content-Type", "application/json")
-                .withBodyFile("paper/v3/response_paper_build_response.json")
+                .withBodyFile("paper/v3/projects_paper_1_21_6_builds_46.json")
             )
         );
         stubFor(get(urlPathEqualTo("/v1/objects/bfca155b4a6b45644bfc1766f4e02a83c736e45fcc060e8788c71d6e7b3d56f6/paper-1.21.6-46.jar"))

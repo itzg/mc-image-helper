@@ -3,6 +3,7 @@ package me.itzg.helpers.paper;
 import java.net.URI;
 import java.nio.file.Path;
 import lombok.Data;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidParameterException;
@@ -12,10 +13,11 @@ import me.itzg.helpers.http.FileDownloadStatusHandler;
 import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.http.UriBuilder;
 import me.itzg.helpers.paper.model.BuildResponse;
+import me.itzg.helpers.paper.model.Channel;
 import me.itzg.helpers.paper.model.Download;
 import me.itzg.helpers.paper.model.ProjectResponse;
-import me.itzg.helpers.paper.model.Version;
 import me.itzg.helpers.paper.model.VersionResponse;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
@@ -45,10 +47,10 @@ public class PaperDownloadsClient implements AutoCloseable{
         final Path file;
     }
 
-    public Mono<VersionBuild> getLatestVersionBuild(String project) {
+    public Mono<VersionBuild> getLatestVersionBuild(String project, RequestedChannel requestedChannel) {
         return getProjectVersions(project)
             .flatMap(projectResponse ->
-                extractVersionBuild(project, projectResponse)
+                extractLatestVersionBuild(project, requestedChannel, projectResponse)
             );
     }
 
@@ -68,12 +70,12 @@ public class PaperDownloadsClient implements AutoCloseable{
             .map(BuildResponse::getId);
     }
 
-    public Mono<VersionBuildFile> downloadLatest(String project,
+    public Mono<VersionBuildFile> downloadLatest(String project, RequestedChannel requestedChannel,
         Path outputDirectory, FileDownloadStatusHandler downloadStatusHandler
     ) {
         return getProjectVersions(project)
             .flatMap(projectResponse ->
-                extractVersionBuild(project, projectResponse)
+                extractLatestVersionBuild(project, requestedChannel, projectResponse)
                     .flatMap(versionBuild ->
                         download(project, outputDirectory, downloadStatusHandler,
                             versionBuild.getVersion(),
@@ -111,6 +113,15 @@ public class PaperDownloadsClient implements AutoCloseable{
         String version,
         int build
     ) {
+        return getBuild(project, version, build)
+            .flatMap(buildResponse ->
+                downloadWithBuildResponse(outputDirectory, downloadStatusHandler, version, buildResponse)
+                    .map(path -> new VersionBuildFile(version, build, path))
+            );
+    }
+
+    private Mono<BuildResponse> getBuild(String project, String version, int build) {
+
         return sharedFetch.fetch(
                 uriBuilder.resolve("/v3/projects/{project}/versions/{version}/builds/{build}",
                     project, version, build
@@ -122,10 +133,6 @@ public class PaperDownloadsClient implements AutoCloseable{
                 FailedRequestException::isNotFound,
                 throwable -> new InvalidParameterException(
                     String.format("Requested version %s, build %d is not available", version, build))
-            )
-            .flatMap(buildResponse ->
-                downloadWithBuildResponse(outputDirectory, downloadStatusHandler, version, buildResponse)
-                    .map(path -> new VersionBuildFile(version, build, path))
             );
     }
 
@@ -142,26 +149,37 @@ public class PaperDownloadsClient implements AutoCloseable{
             );
     }
 
-    private Mono<VersionBuild> extractVersionBuild(String project, ProjectResponse projectResponse) {
+    @RequiredArgsConstructor
+    private static class VersionAndBuildResponse {
+        final VersionResponse versionResponse;
+        final BuildResponse buildResponse;
+    }
+
+    private Mono<VersionBuild> extractLatestVersionBuild(String project, RequestedChannel requestedChannel, ProjectResponse projectResponse) {
         if (projectResponse.getVersions() == null ||
             projectResponse.getVersions().isEmpty()) {
             log.warn("No versions found for project={}", project);
             return Mono.error(() -> new InvalidParameterException("No versions found for project"));
         }
 
-        final VersionResponse versionResponse = projectResponse.getVersions().get(0);
-        final Version version = versionResponse.getVersion();
-        if (versionResponse.getBuilds() == null ||
-            versionResponse.getBuilds().isEmpty()) {
-            log.warn("No builds found for project={} version={}", project, version.getId());
-            return Mono.error(() -> new InvalidParameterException(
-                String.format("No builds found for project version %s",  version.getId()))
-            );
-        }
+        return Flux.fromIterable(projectResponse.getVersions())
+            .filter(versionResponse -> versionResponse.getBuilds() != null && !versionResponse.getBuilds().isEmpty())
+            .concatMap(versionResponse ->
+                getBuild(project, versionResponse.getVersion().getId(), versionResponse.getBuilds().get(0))
+                    .map(buildResponse -> new VersionAndBuildResponse(versionResponse, buildResponse))
+                )
+            .takeUntil(vAndB -> acceptableChannel(vAndB.buildResponse.getChannel(), requestedChannel))
+            .last()
+            .map(vAndB -> new VersionBuild(vAndB.versionResponse.getVersion().getId(), vAndB.buildResponse.getId()));
+    }
 
-        return Mono.just(
-            new VersionBuild(version.getId(), versionResponse.getBuilds().get(0))
-        );
+    private boolean acceptableChannel(Channel channel, RequestedChannel requestedChannel) {
+        for (final Channel mapped : requestedChannel.getMappedTo()) {
+            if (mapped.equals(channel)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private Mono<Path> downloadWithBuildResponse(Path outputDirectory, FileDownloadStatusHandler downloadStatusHandler,
