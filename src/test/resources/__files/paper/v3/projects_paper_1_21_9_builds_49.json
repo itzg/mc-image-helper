@@ -1,0 +1,22 @@
+{
+  "id": 49,
+  "time": "2025-10-04T18:54:19.646Z",
+  "channel": "ALPHA",
+  "commits": [
+    {
+      "sha": "a4a7461cefdeaa6d230c411e54ae0c26a5a942e3",
+      "time": "2025-10-04T18:41:00Z",
+      "message": "Rebase fixups\n\nOops\n"
+    }
+  ],
+  "downloads": {
+    "server:default": {
+      "name": "paper-1.21.9-49.jar",
+      "checksums": {
+        "sha256": "4cac1132df2c0998cdcd150a7b201acfea55ebe60b3325d388597934aa2bb1c7"
+      },
+      "size": 52528557,
+      "url": "https://fill-data.papermc.io/v1/objects/4cac1132df2c0998cdcd150a7b201acfea55ebe60b3325d388597934aa2bb1c7/paper-1.21.9-49.jar"
+    }
+  }
+}

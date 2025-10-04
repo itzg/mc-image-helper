@@ -1,0 +1,22 @@
+{
+  "id": 60,
+  "time": "2025-09-06T21:50:11.982Z",
+  "channel": "STABLE",
+  "commits": [
+    {
+      "sha": "29c8822d90899c89d2689338e81a98f690bcba12",
+      "time": "2025-09-06T21:38:29Z",
+      "message": "Remove no longer needed MC-210802 fix (#13059)\n\n"
+    }
+  ],
+  "downloads": {
+    "server:default": {
+      "name": "paper-1.21.8-60.jar",
+      "checksums": {
+        "sha256": "8de7c52c3b02403503d16fac58003f1efef7dd7a0256786843927fa92ee57f1e"
+      },
+      "size": 52811717,
+      "url": "https://fill-data.papermc.io/v1/objects/8de7c52c3b02403503d16fac58003f1efef7dd7a0256786843927fa92ee57f1e/paper-1.21.8-60.jar"
+    }
+  }
+}

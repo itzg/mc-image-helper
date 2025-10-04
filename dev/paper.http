@@ -1,2 +1,9 @@
+@project =paper
+@version =1.21.9
+@build =49
+
 ###
-GET https://api.papermc.io/v2/projects/paper
+GET https://fill.papermc.io/v3/projects/paper/versions
+
+###
+GET https://fill.papermc.io/v3/projects/{{project}}/versions/{{version}}/builds/{{build}}
