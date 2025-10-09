@@ -53,7 +53,8 @@ public class ForgeInstaller {
 
         final VersionPair resolved = installerResolver.resolve();
         if (resolved == null) {
-            throw new InvalidParameterException("Unable to find suitable version");
+            throw new InvalidParameterException("Unable to find suitable version for " +
+                installerResolver.getDescription());
         }
         log.debug("Resolved installer version={}", resolved);
 

@@ -50,6 +50,11 @@ public class ProvidedInstallerResolver implements InstallerResolver {
         // nothing needed
     }
 
+    @Override
+    public String getDescription() {
+        return String.format("Provided installer %s", forgeInstaller.toString());
+    }
+
     private VersionPair extractVersion(Path forgeInstaller) throws IOException {
 
         final VersionPair fromVersionJson = IoStreams.readFileFromZip(forgeInstaller, "version.json",
