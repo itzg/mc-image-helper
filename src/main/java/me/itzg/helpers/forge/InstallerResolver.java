@@ -9,4 +9,6 @@ public interface InstallerResolver {
     Path download(String minecraftVersion, String forgeVersion, Path outputDir);
 
     void cleanup(Path forgeInstallerJar);
+
+    String getDescription();
 }

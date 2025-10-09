@@ -223,4 +223,9 @@ public class NeoForgeInstallerResolver implements InstallerResolver {
             log.warn("Failed to delete NeoForge installer", e);
         }
     }
+
+    @Override
+    public String getDescription() {
+        return String.format("Minecraft %s NeoForge %s", requestedMinecraftVersion, requestedNeoForgeVersion);
+    }
 }

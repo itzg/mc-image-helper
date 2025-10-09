@@ -28,8 +28,8 @@ public class ExceptionHandler implements IExecutionExceptionHandler {
                 log.debug("Invalid parameter details", e);
             }
             else if (e instanceof FailedRequestException) {
-                logUnexpectedException(e, commandLine);
-                log.debug("Failed request details: {}", e.toString());
+                logExceptionWithoutStacktrace(e, commandLine);
+                log.debug("Failed request details", e);
             }
             else if (e instanceof RateLimitException) {
                 logUnexpectedException(e, commandLine);
@@ -53,6 +53,14 @@ public class ExceptionHandler implements IExecutionExceptionHandler {
             commandLine.getCommandName(),
             McImageHelper.getVersion(),
             e
+        );
+    }
+
+    private static void logExceptionWithoutStacktrace(Exception e, CommandLine commandLine) {
+        log.error("'{}' command failed. Version is {}: {}",
+            commandLine.getCommandName(),
+            McImageHelper.getVersion(),
+            ExceptionDetailer.buildCausalMessages(e)
         );
     }
 }

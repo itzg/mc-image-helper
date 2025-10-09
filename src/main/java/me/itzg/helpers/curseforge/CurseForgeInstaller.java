@@ -971,11 +971,12 @@ public class CurseForgeInstaller {
             throw new GenericException("Unknown modloader ID: " + id);
         }
 
+        final String provider = parts[0];
         final String loaderVersion = parts.length == 2 ? parts[1] : parts[2];
 
         try (SharedFetch sharedFetch = Fetch.sharedFetch("install-curseforge", sharedFetchOptions)) {
 
-            switch (parts[0]) {
+            switch (provider) {
                 case "forge":
                     prepareForge(sharedFetch, minecraftVersion, loaderVersion);
                     break;
@@ -989,8 +990,11 @@ public class CurseForgeInstaller {
                     break;
 
                 default:
-                    throw new InvalidParameterException(String.format("ModLoader %s is not yet supported", parts[0]));
+                    throw new InvalidParameterException(String.format("ModLoader %s is not yet supported", provider));
             }
+        } catch (InvalidParameterException e) {
+            throw new GenericException("Unable to prepare modpack's mod loader "
+                + provider + " " + loaderVersion + " for Minecraft " + minecraftVersion, e);
         }
     }
 

@@ -109,6 +109,11 @@ public class ForgeInstallerResolver implements InstallerResolver {
         }
     }
 
+    @Override
+    public String getDescription() {
+        return String.format("Minecraft %s Forge %s", requestedMinecraftVersion, requestedForgeVersion);
+    }
+
     private PromotionsSlim loadPromotions() {
         return sharedFetch.fetch(URI.create(promotionsUrl))
             .userAgentCommand("forge")
