@@ -14,6 +14,7 @@ import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.mvn.MavenMetadata;
 import me.itzg.helpers.mvn.MavenRepoApi;
+import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -126,7 +127,10 @@ public class NeoForgeInstallerResolver implements InstallerResolver {
                     }
                 }
             })
-            .reduce((s, s2) -> s2)
+            // pick the highest version from a or b
+            .reduce((a, b) ->
+                new ComparableVersion(a).compareTo(new ComparableVersion(b)) > 0 ? a : b
+            )
             .orElse(null);
 
         return result != null ? new VersionPair(deriveMinecraftVersion(result), result) : null;
