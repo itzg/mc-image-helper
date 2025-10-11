@@ -4,6 +4,7 @@ import static me.itzg.helpers.singles.NormalizeOptions.normalizeOptionList;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
 import lombok.AccessLevel;
@@ -97,7 +98,7 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
     public void setExcludeFiles(List<String> excludeFiles) {
         this.excludeFiles = normalizeOptionList(excludeFiles);
     }
-    List<String> excludeFiles;
+    private List<String> excludeFiles = Collections.emptyList();
 
     @Option(names = "--force-include-files",
         split = McImageHelper.SPLIT_COMMA_NL, splitSynopsisLabel = McImageHelper.SPLIT_SYNOPSIS_COMMA_NL,
@@ -107,7 +108,7 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
     public void setForceIncludeFiles(List<String> forceIncludeFiles) {
         this.forceIncludeFiles = normalizeOptionList(forceIncludeFiles);
     }
-    List<String> forceIncludeFiles;
+    private List<String> forceIncludeFiles = Collections.emptyList();
 
     @Option(names = "--overrides-exclusions",
         split = "\n|,", splitSynopsisLabel = "NL or ,",
@@ -117,7 +118,10 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
             + "?  : matches one character"
             + "%nEmbedded comments are allowed."
     )
-    List<String> overridesExclusions;
+    public void setOverridesExclusions(List<String> overridesExclusions) {
+        this.overridesExclusions = normalizeOptionList(overridesExclusions);
+    }
+    private List<String> overridesExclusions = Collections.emptyList();
 
     @Option(names = "--default-exclude-includes", paramLabel = "FILE|URI",
         description = "A JSON file that contains global and per modpack exclude/include declarations. "

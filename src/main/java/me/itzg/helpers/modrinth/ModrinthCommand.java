@@ -3,6 +3,7 @@ package me.itzg.helpers.modrinth;
 import static me.itzg.helpers.McImageHelper.SPLIT_COMMA_NL;
 import static me.itzg.helpers.McImageHelper.SPLIT_SYNOPSIS_COMMA_NL;
 import static me.itzg.helpers.http.Fetch.fetch;
+import static me.itzg.helpers.singles.NormalizeOptions.normalizeOptionList;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
@@ -34,7 +35,6 @@ import me.itzg.helpers.modrinth.model.Version;
 import me.itzg.helpers.modrinth.model.VersionDependency;
 import me.itzg.helpers.modrinth.model.VersionFile;
 import me.itzg.helpers.modrinth.model.VersionType;
-import me.itzg.helpers.singles.NormalizeOptions;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.ExitCode;
@@ -62,9 +62,9 @@ public class ModrinthCommand implements Callable<Integer> {
         paramLabel = "[loader:]id|slug[:version]"
     )
     public void setProjects(List<String> projects) {
-        this.projects = NormalizeOptions.normalizeOptionList(projects);
+        this.projects = normalizeOptionList(projects);
     }
-    private List<String> projects;
+    private List<String> projects = Collections.emptyList();
 
     @Option(names = "--game-version", description = "Applicable Minecraft version", required = true)
     String gameVersion;

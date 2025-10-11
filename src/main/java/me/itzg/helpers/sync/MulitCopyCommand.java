@@ -2,6 +2,7 @@ package me.itzg.helpers.sync;
 
 import static me.itzg.helpers.McImageHelper.SPLIT_COMMA_NL;
 import static me.itzg.helpers.McImageHelper.SPLIT_SYNOPSIS_COMMA_NL;
+import static me.itzg.helpers.singles.NormalizeOptions.normalizeOptionList;
 
 import java.io.IOException;
 import java.net.URI;
@@ -11,6 +12,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
 import lombok.extern.slf4j.Slf4j;
@@ -22,7 +24,6 @@ import me.itzg.helpers.http.FailedRequestException;
 import me.itzg.helpers.http.Fetch;
 import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.http.Uris;
-import me.itzg.helpers.singles.NormalizeOptions;
 import org.jetbrains.annotations.Blocking;
 import org.reactivestreams.Publisher;
 import org.slf4j.event.Level;
@@ -79,9 +80,9 @@ public class MulitCopyCommand implements Callable<Integer> {
             + "%nEmbedded comments are allowed."
     )
     public void setSources(List<String> sources) {
-        this.sources = NormalizeOptions.normalizeOptionList(sources);
+        this.sources = normalizeOptionList(sources);
     }
-    List<String> sources;
+    List<String> sources = Collections.emptyList();
 
     private final static String destinationDelimiter = "<";
 

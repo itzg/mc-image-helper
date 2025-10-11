@@ -2,6 +2,7 @@ package me.itzg.helpers.curseforge;
 
 import static me.itzg.helpers.curseforge.CurseForgeApiClient.*;
 import static me.itzg.helpers.curseforge.ModFileRefResolver.idsFrom;
+import static me.itzg.helpers.singles.NormalizeOptions.normalizeOptionList;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -29,7 +30,6 @@ import me.itzg.helpers.errors.InvalidApiKeyException;
 import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.http.SharedFetchArgs;
-import me.itzg.helpers.singles.NormalizeOptions;
 import org.jetbrains.annotations.NotNull;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
@@ -108,9 +108,9 @@ public class CurseForgeFilesCommand implements Callable<Integer> {
             + "%nIf not specified, any previous mod/plugin files are removed."
             + "%Embedded comments are allowed")
     public void setModFileRefs(List<String> modFileRefs) {
-        this.modFileRefs = NormalizeOptions.normalizeOptionList(modFileRefs);
+        this.modFileRefs = normalizeOptionList(modFileRefs);
     }
-    private List<String> modFileRefs;
+    private List<String> modFileRefs = Collections.emptyList();
 
     @Override
     public Integer call() throws Exception {
@@ -159,8 +159,7 @@ public class CurseForgeFilesCommand implements Callable<Integer> {
     private Mono<List<FileEntry>> processModFileRefs(CategoryInfo categoryInfo,
         Map<ModFileIds, FileEntry> previousFiles, CurseForgeApiClient apiClient
     ) {
-        final List<String> normalizedRefs = NormalizeOptions.normalizeOptionList(modFileRefs);
-        if (normalizedRefs.isEmpty()) {
+        if (modFileRefs.isEmpty()) {
             return Mono.just(Collections.emptyList());
         }
 
@@ -169,7 +168,7 @@ public class CurseForgeFilesCommand implements Callable<Integer> {
         final OutputSubdirResolver outputSubdirResolver = new OutputSubdirResolver(outputDir, categoryInfo);
 
         return
-            modFileRefResolver.resolveModFiles(normalizedRefs, defaultCategory, gameVersion, modLoaderType)
+            modFileRefResolver.resolveModFiles(modFileRefs, defaultCategory, gameVersion, modLoaderType)
             .flatMapMany(modFiles ->
                 {
                     final Set<Integer> requestedModIds = modFiles.stream()
