@@ -34,6 +34,7 @@ import me.itzg.helpers.modrinth.model.Version;
 import me.itzg.helpers.modrinth.model.VersionDependency;
 import me.itzg.helpers.modrinth.model.VersionFile;
 import me.itzg.helpers.modrinth.model.VersionType;
+import me.itzg.helpers.singles.NormalizeOptions;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.ExitCode;
@@ -54,12 +55,16 @@ public class ModrinthCommand implements Callable<Integer> {
             + "%nExamples: fabric-api, fabric:fabric-api, fabric:fabric-api:0.76.1+1.19.2,"
             + " datapack:terralith, @/path/to/modrinth-mods.txt"
             + "%nValid release types: release, beta, alpha"
-            + "%nValid loaders: fabric, forge, paper, datapack, etc.",
+            + "%nValid loaders: fabric, forge, paper, datapack, etc."
+            + "%nEmbedded comments are allowed.",
         split = SPLIT_COMMA_NL,
         splitSynopsisLabel = SPLIT_SYNOPSIS_COMMA_NL,
         paramLabel = "[loader:]id|slug[:version]"
     )
-    List<String> projects;
+    public void setProjects(List<String> projects) {
+        this.projects = NormalizeOptions.normalizeOptionList(projects);
+    }
+    private List<String> projects;
 
     @Option(names = "--game-version", description = "Applicable Minecraft version", required = true)
     String gameVersion;
@@ -111,14 +116,7 @@ public class ModrinthCommand implements Callable<Integer> {
     public Integer call() throws Exception {
         Files.createDirectories(outputDirectory);
 
-        // Unlike @Parameters, the argument of @Option could be a list with a single empty string
-        // when --projects="". So, trim away any blanks.
-        final List<String> trimmedProjects = projects == null ? Collections.emptyList() :
-            projects.stream()
-                .filter(s -> !s.trim().isEmpty())
-                .collect(Collectors.toList());
-
-        final List<Path> outputFiles = processProjects(trimmedProjects);
+        final List<Path> outputFiles = processProjects(projects);
 
         final ModrinthManifest newManifest = ModrinthManifest.builder()
             .files(Manifests.relativizeAll(outputDirectory, outputFiles))
@@ -127,13 +125,7 @@ public class ModrinthCommand implements Callable<Integer> {
 
         final ModrinthManifest prevManifest = loadManifest();
         Manifests.cleanup(outputDirectory, prevManifest, newManifest, log);
-
-        if (!outputFiles.isEmpty()) {
-            Manifests.save(outputDirectory, ModrinthManifest.ID, newManifest);
-        }
-        else {
-            Manifests.remove(outputDirectory, ModrinthManifest.ID);
-        }
+        Manifests.apply(outputDirectory, ModrinthManifest.ID, newManifest);
 
         return ExitCode.OK;
     }
@@ -148,7 +140,6 @@ public class ModrinthCommand implements Callable<Integer> {
             return
                 modrinthApiClient.bulkGetProjects(
                     expandProjectListings(projects).stream()
-                        .filter(s -> !s.trim().isEmpty())
                         .map(ProjectRef::parse)
                 )
                 .defaultIfEmpty(Collections.emptyList())

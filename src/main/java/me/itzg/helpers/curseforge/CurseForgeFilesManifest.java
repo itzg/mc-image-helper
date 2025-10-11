@@ -1,6 +1,9 @@
 package me.itzg.helpers.curseforge;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
@@ -24,4 +27,12 @@ public class CurseForgeFilesManifest extends BaseManifest {
     }
 
     List<FileEntry> entries;
+
+    @Override
+    public Collection<String> getFiles() {
+        return entries != null ? entries.stream()
+            .map(FileEntry::getFilePath)
+            .collect(Collectors.toList())
+            : Collections.emptyList();
+    }
 }

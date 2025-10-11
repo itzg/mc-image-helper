@@ -2,6 +2,7 @@ package me.itzg.helpers.get;
 
 import static me.itzg.helpers.McImageHelper.OPTION_SPLIT_COMMAS;
 import static me.itzg.helpers.http.Fetch.fetch;
+import static me.itzg.helpers.singles.NormalizeOptions.normalizeStream;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -271,9 +272,7 @@ public class GetCommand implements Callable<Integer> {
 
         final LenientUriConverter uriConverter = new LenientUriConverter();
 
-        Files.readAllLines(urisFile).stream()
-            .filter(line -> !line.startsWith("#"))
-            .filter(line -> !line.trim().isEmpty())
+        normalizeStream(Files.readAllLines(urisFile).stream())
             .map(line -> {
                 try {
                     return uriConverter.convert(line);

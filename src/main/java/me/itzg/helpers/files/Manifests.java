@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -59,11 +60,12 @@ public class Manifests {
      * @param oldManifest can be null
      * @param removeListener passed the path of a file being removed. Useful for debug logging as removed.
      */
-    public static void cleanup(Path baseDir, BaseManifest oldManifest, BaseManifest newManifest,
+    public static void cleanup(Path baseDir, @Nullable BaseManifest oldManifest, @Nullable BaseManifest newManifest,
         Consumer<String> removeListener
     ) throws IOException {
         if (oldManifest != null && oldManifest.getFiles() != null) {
-            cleanup(baseDir, oldManifest.getFiles(), newManifest.getFiles(), removeListener);
+            cleanup(baseDir, oldManifest.getFiles(), newManifest != null ? newManifest.getFiles() : Collections.emptyList(),
+                removeListener);
         }
     }
 
@@ -158,12 +160,30 @@ public class Manifests {
         ));
     }
 
-    public static <M extends BaseManifest> Path save(Path outputDir, String id, M manifest) {
+    /**
+     * Given a resulting ("new") manifest, it will save it when the file listing is non-empty or remove
+     * an existing manifest file if the listing is empty.
+     * @param outputDir directory to place the manifest file
+     * @param id manifest identifier, such as "fabric"
+     * @param manifest the resulting/new manifest
+     */
+    public static <M extends BaseManifest> void apply(Path outputDir, String id, M manifest) {
+        if (manifest == null) {
+            remove(outputDir, id);
+        }
+        else if (manifest.getFiles() == null || manifest.getFiles().isEmpty()) {
+            remove(outputDir, id);
+        }
+        else {
+            save(outputDir, id, manifest);
+        }
+    }
+
+    public static <M extends BaseManifest> void save(Path outputDir, String id, M manifest) {
         final Path manifestPath = buildManifestPath(outputDir, id);
 
         try {
             ObjectMappers.defaultMapper().writeValue(manifestPath.toFile(), manifest);
-            return manifestPath;
         } catch (IOException e) {
             throw new ManifestException("Failed to save manifest", e);
         }

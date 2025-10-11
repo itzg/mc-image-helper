@@ -1,12 +1,10 @@
 package me.itzg.helpers.sync;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
-import picocli.CommandLine;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -15,12 +13,16 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
-
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
-import static org.assertj.core.api.Assertions.assertThat;
+import me.itzg.helpers.files.Manifests;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import picocli.CommandLine;
 
 class MulitCopyCommandTest {
 
+    private final RandomStringUtils randomStringUtils = RandomStringUtils.insecure();
     @TempDir
     Path tempDir;
 
@@ -45,6 +47,47 @@ class MulitCopyCommandTest {
             assertThat(destDir.resolve("source.txt"))
                 .exists()
                 .hasSameTextualContentAs(srcFile);
+        }
+
+        @Test
+        void oneThenRemove() throws IOException {
+            final Path srcFile = writeLine(tempDir, "source.txt", "content");
+            final Path destDir = tempDir.resolve("dest");
+            final String manifestId = randomStringUtils.nextAlphabetic(10);
+
+            {
+                final int exitCode = new CommandLine(new MulitCopyCommand())
+                    .execute(
+                        "--to", destDir.toString(),
+                        "--manifest-id", manifestId,
+                        srcFile.toString()
+                    );
+                assertThat(exitCode).isEqualTo(CommandLine.ExitCode.OK);
+
+                assertThat(destDir.resolve("source.txt"))
+                    .exists()
+                    .hasSameTextualContentAs(srcFile);
+
+                assertThat(Manifests.buildManifestPath(destDir, manifestId)).exists();
+            }
+
+            {
+                final int exitCode = new CommandLine(new MulitCopyCommand())
+                    .execute(
+                        "--to", destDir.toString(),
+                        "--manifest-id", manifestId
+                        // no entries
+                    );
+                assertThat(exitCode).isEqualTo(CommandLine.ExitCode.OK);
+
+                assertThat(destDir.resolve("source.txt"))
+                    .doesNotExist();
+
+                assertThat(Manifests.buildManifestPath(destDir, manifestId))
+                    .doesNotExist();
+            }
+
+
         }
 
         @Test

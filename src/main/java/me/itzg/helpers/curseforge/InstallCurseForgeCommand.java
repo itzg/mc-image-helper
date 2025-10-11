@@ -1,6 +1,7 @@
 package me.itzg.helpers.curseforge;
 
 import static me.itzg.helpers.http.Fetch.fetch;
+import static me.itzg.helpers.singles.NormalizeOptions.normalizeOptionSet;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -103,19 +104,24 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
         PathOrUri excludeIncludeFile;
 
         static class Listed {
-            @Option(names = "--exclude-mods", paramLabel = "PROJECT_ID|SLUG",
-                split = McImageHelper.SPLIT_COMMA_WS, splitSynopsisLabel = McImageHelper.SPLIT_SYNOPSIS_COMMA_WS,
+            @Option(names = {"--exclude-mods", "--excludes"}, paramLabel = "PROJECT_ID|SLUG",
+                split = McImageHelper.SPLIT_COMMA_NL, splitSynopsisLabel = McImageHelper.SPLIT_SYNOPSIS_COMMA_NL,
                 description = "For mods that need to be excluded from server deployments, such as those that don't label as client"
             )
-            Set<String> excludedMods;
+            public void setExcludedMods(Set<String> excludedMods) {
+                this.excludedMods = normalizeOptionSet(excludedMods);
+            }
+            private Set<String> excludedMods;
 
-            @Option(names = "--force-include-mods", paramLabel = "PROJECT_ID|SLUG",
-                split = McImageHelper.SPLIT_COMMA_WS, splitSynopsisLabel = McImageHelper.SPLIT_SYNOPSIS_COMMA_WS,
+            @Option(names = {"--force-include-mods", "--force-includes"}, paramLabel = "PROJECT_ID|SLUG",
+                split = McImageHelper.SPLIT_COMMA_NL, splitSynopsisLabel = McImageHelper.SPLIT_SYNOPSIS_COMMA_NL,
                 description = "Some mods incorrectly declare client-only support, but still need to be included in a server deploy."
                     + "%nThis can also be used to selectively override exclusions."
             )
+            public void setForceIncludeMods(Set<String> forceIncludeMods) {
+                this.forceIncludeMods = normalizeOptionSet(forceIncludeMods);
+            }
             Set<String> forceIncludeMods;
-
         }
     }
 

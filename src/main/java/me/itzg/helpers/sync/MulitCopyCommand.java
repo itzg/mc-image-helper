@@ -22,6 +22,7 @@ import me.itzg.helpers.http.FailedRequestException;
 import me.itzg.helpers.http.Fetch;
 import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.http.Uris;
+import me.itzg.helpers.singles.NormalizeOptions;
 import org.jetbrains.annotations.Blocking;
 import org.reactivestreams.Publisher;
 import org.slf4j.event.Level;
@@ -71,47 +72,49 @@ public class MulitCopyCommand implements Callable<Integer> {
     @Option(names = "--ignore-missing-sources", description = "Don't log or fail exit code when any or all sources are missing")
     boolean ignoreMissingSources;
 
-    @Parameters(split = SPLIT_COMMA_NL, splitSynopsisLabel = SPLIT_SYNOPSIS_COMMA_NL, arity = "1..*",
+    @Parameters(split = SPLIT_COMMA_NL, splitSynopsisLabel = SPLIT_SYNOPSIS_COMMA_NL,
         paramLabel = "SRC",
-        description = "Any mix of source file, directory, or URLs."
-            + "%nCan be optionally comma or newline separated."
+        description = "Any mix of source file, directory, or URLs delimited by commas or newlines"
             + "%nPer-file destinations can be assigned by destination<source"
+            + "%nEmbedded comments are allowed."
     )
+    public void setSources(List<String> sources) {
+        this.sources = NormalizeOptions.normalizeOptionList(sources);
+    }
     List<String> sources;
 
     private final static String destinationDelimiter = "<";
 
     @Override
     public Integer call() throws Exception {
-        Flux.fromIterable(sources)
+        final List<Path> results = Flux.fromIterable(sources)
             .map(String::trim)
             .filter(s -> !s.isEmpty())
             .flatMap(source -> processSource(source, fileIsListingOption, dest))
             .collectList()
-            .flatMap(this::cleanupAndSaveManifest)
             .block();
+
+        cleanupAndSaveManifest(results);
 
         return ExitCode.OK;
     }
 
-    private Mono<?> cleanupAndSaveManifest(List<Path> paths) {
-        return Mono.justOrEmpty(manifestId)
-            .publishOn(Schedulers.boundedElastic())
-            .map(s -> {
-                final MultiCopyManifest prevManifest = Manifests.load(dest, manifestId, MultiCopyManifest.class);
+    private void cleanupAndSaveManifest(List<Path> paths) {
+        if (manifestId != null) {
+            final MultiCopyManifest prevManifest = Manifests.load(dest, manifestId, MultiCopyManifest.class);
 
-                final MultiCopyManifest newManifest = MultiCopyManifest.builder()
-                    .files(Manifests.relativizeAll(dest, paths))
-                    .build();
+            final MultiCopyManifest newManifest = MultiCopyManifest.builder()
+                .files(Manifests.relativizeAll(dest, paths))
+                .build();
 
-                try {
-                    Manifests.cleanup(dest, prevManifest, newManifest, log);
-                } catch (IOException e) {
-                    log.warn("Failed to cleanup from previous manifest");
-                }
+            try {
+                Manifests.cleanup(dest, prevManifest, newManifest, log);
+            } catch (IOException e) {
+                log.warn("Failed to cleanup from previous manifest");
+            }
 
-                return Manifests.save(dest, manifestId, newManifest);
-            });
+            Manifests.apply(dest, manifestId, newManifest);
+        }
     }
 
     private Publisher<Path> processSource(String source, boolean fileIsListing, Path parentDestination) {

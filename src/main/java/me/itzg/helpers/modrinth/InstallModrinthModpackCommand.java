@@ -1,5 +1,7 @@
 package me.itzg.helpers.modrinth;
 
+import static me.itzg.helpers.singles.NormalizeOptions.normalizeOptionList;
+
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
@@ -90,13 +92,21 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
     @Option(names = "--exclude-files",
         split = McImageHelper.SPLIT_COMMA_NL, splitSynopsisLabel = McImageHelper.SPLIT_SYNOPSIS_COMMA_NL,
         description = "Files to exclude, such as improperly declared client mods. It will match any part of the file's name/path."
+            + "%nEmbedded comments are allowed."
     )
+    public void setExcludeFiles(List<String> excludeFiles) {
+        this.excludeFiles = normalizeOptionList(excludeFiles);
+    }
     List<String> excludeFiles;
 
     @Option(names = "--force-include-files",
         split = McImageHelper.SPLIT_COMMA_NL, splitSynopsisLabel = McImageHelper.SPLIT_SYNOPSIS_COMMA_NL,
         description = "Files to force include that were marked as non-server mods. It will match any part of the file's name/path."
+            + "%nEmbedded comments are allowed."
     )
+    public void setForceIncludeFiles(List<String> forceIncludeFiles) {
+        this.forceIncludeFiles = normalizeOptionList(forceIncludeFiles);
+    }
     List<String> forceIncludeFiles;
 
     @Option(names = "--overrides-exclusions",
@@ -105,6 +115,7 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
             + "*  : matches any non-slash characters\n"
             + "** : matches any characters\n"
             + "?  : matches one character"
+            + "%nEmbedded comments are allowed."
     )
     List<String> overridesExclusions;
 
@@ -159,7 +170,7 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
                                 sharedFetch
                             )
                         )
-                        .setOverridesExclusions(overridesExclusions)
+                        .setOverridesExclusions(normalizeOptionList(overridesExclusions))
                         .setMaxConcurrentDownloads(maxConcurrentDownloads)
                         .processModpack(sharedFetch)
                         .flatMap(installation -> {

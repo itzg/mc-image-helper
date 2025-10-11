@@ -85,13 +85,36 @@ class CurseForgeFilesCommandTest {
                 "--api-base-url", wm.baseUrl(),
                 "--api-key", "test",
                 "--output-directory", tempDir.toString(),
-                "--default-category", "mc-mods"
+                "--default-category", "mc-mods",
+                ""
             );
 
         assertThat(exitCode).isEqualTo(0);
 
         assertThat(tempDir.resolve("mods/jei-1.18.2-forge-10.2.1.1005.jar")).doesNotExist();
         assertThat(tempDir.resolve("plugins/worldguard-bukkit-7.0.7-dist.jar")).doesNotExist();
+        assertThat(Manifests.buildManifestPath(tempDir, CurseForgeFilesManifest.ID)).doesNotExist();
+    }
+
+    @Test
+    void multiLineOneWithComments() {
+        int exitCode = new CommandLine(
+            new CurseForgeFilesCommand()
+        )
+            .execute(
+                "--api-base-url", wm.baseUrl(),
+                "--api-key", "test",
+                "--output-directory", tempDir.toString(),
+                "--default-category", "mc-mods",
+                "jei:4434385 # inline comment"
+                    + "\n# Some comment"
+                    + "\nhttps://www.curseforge.com/minecraft/bukkit-plugins/worldguard/files/3677516"
+            );
+
+        assertThat(exitCode).isEqualTo(0);
+
+        assertThat(tempDir.resolve("mods/jei-1.18.2-forge-10.2.1.1003.jar")).exists();
+        assertThat(tempDir.resolve("plugins/worldguard-bukkit-7.0.7-dist.jar")).exists();
     }
 
     @Test
