@@ -2,6 +2,7 @@ package me.itzg.helpers.singles;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -18,11 +19,15 @@ public class MoreCollections {
     }
 
     @SuppressWarnings("unused")
-    public static <T> Set<T> combine(Set<T> in1, Set<T> in2) {
+    public static <T> List<T> combineToList(Collection<T> in1, Collection<T> in2) {
+        return combineToStream(in1, in2)
+            .collect(Collectors.toList());
+    }
+
+    private static <T> Stream<T> combineToStream(Collection<T> in1, Collection<T> in2) {
         return Stream.of(in1, in2)
             .filter(Objects::nonNull)
-            .flatMap(Collection::stream)
-            .collect(Collectors.toSet());
+            .flatMap(Collection::stream);
     }
 
     /**

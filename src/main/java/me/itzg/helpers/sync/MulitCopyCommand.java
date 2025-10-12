@@ -2,6 +2,7 @@ package me.itzg.helpers.sync;
 
 import static me.itzg.helpers.McImageHelper.SPLIT_COMMA_NL;
 import static me.itzg.helpers.McImageHelper.SPLIT_SYNOPSIS_COMMA_NL;
+import static me.itzg.helpers.singles.NormalizeOptions.normalizeOptionList;
 
 import java.io.IOException;
 import java.net.URI;
@@ -11,6 +12,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
 import lombok.extern.slf4j.Slf4j;
@@ -71,47 +73,49 @@ public class MulitCopyCommand implements Callable<Integer> {
     @Option(names = "--ignore-missing-sources", description = "Don't log or fail exit code when any or all sources are missing")
     boolean ignoreMissingSources;
 
-    @Parameters(split = SPLIT_COMMA_NL, splitSynopsisLabel = SPLIT_SYNOPSIS_COMMA_NL, arity = "1..*",
+    @Parameters(split = SPLIT_COMMA_NL, splitSynopsisLabel = SPLIT_SYNOPSIS_COMMA_NL,
         paramLabel = "SRC",
-        description = "Any mix of source file, directory, or URLs."
-            + "%nCan be optionally comma or newline separated."
+        description = "Any mix of source file, directory, or URLs delimited by commas or newlines"
             + "%nPer-file destinations can be assigned by destination<source"
+            + "%nEmbedded comments are allowed."
     )
-    List<String> sources;
+    public void setSources(List<String> sources) {
+        this.sources = normalizeOptionList(sources);
+    }
+    List<String> sources = Collections.emptyList();
 
     private final static String destinationDelimiter = "<";
 
     @Override
     public Integer call() throws Exception {
-        Flux.fromIterable(sources)
+        final List<Path> results = Flux.fromIterable(sources)
             .map(String::trim)
             .filter(s -> !s.isEmpty())
             .flatMap(source -> processSource(source, fileIsListingOption, dest))
             .collectList()
-            .flatMap(this::cleanupAndSaveManifest)
             .block();
+
+        cleanupAndSaveManifest(results);
 
         return ExitCode.OK;
     }
 
-    private Mono<?> cleanupAndSaveManifest(List<Path> paths) {
-        return Mono.justOrEmpty(manifestId)
-            .publishOn(Schedulers.boundedElastic())
-            .map(s -> {
-                final MultiCopyManifest prevManifest = Manifests.load(dest, manifestId, MultiCopyManifest.class);
+    private void cleanupAndSaveManifest(List<Path> paths) {
+        if (manifestId != null) {
+            final MultiCopyManifest prevManifest = Manifests.load(dest, manifestId, MultiCopyManifest.class);
 
-                final MultiCopyManifest newManifest = MultiCopyManifest.builder()
-                    .files(Manifests.relativizeAll(dest, paths))
-                    .build();
+            final MultiCopyManifest newManifest = MultiCopyManifest.builder()
+                .files(Manifests.relativizeAll(dest, paths))
+                .build();
 
-                try {
-                    Manifests.cleanup(dest, prevManifest, newManifest, log);
-                } catch (IOException e) {
-                    log.warn("Failed to cleanup from previous manifest");
-                }
+            try {
+                Manifests.cleanup(dest, prevManifest, newManifest, log);
+            } catch (IOException e) {
+                log.warn("Failed to cleanup from previous manifest");
+            }
 
-                return Manifests.save(dest, manifestId, newManifest);
-            });
+            Manifests.apply(dest, manifestId, newManifest);
+        }
     }
 
     private Publisher<Path> processSource(String source, boolean fileIsListing, Path parentDestination) {

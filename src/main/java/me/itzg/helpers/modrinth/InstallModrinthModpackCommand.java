@@ -1,7 +1,10 @@
 package me.itzg.helpers.modrinth;
 
+import static me.itzg.helpers.singles.NormalizeOptions.normalizeOptionList;
+
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
 import lombok.AccessLevel;
@@ -90,14 +93,22 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
     @Option(names = "--exclude-files",
         split = McImageHelper.SPLIT_COMMA_NL, splitSynopsisLabel = McImageHelper.SPLIT_SYNOPSIS_COMMA_NL,
         description = "Files to exclude, such as improperly declared client mods. It will match any part of the file's name/path."
+            + "%nEmbedded comments are allowed."
     )
-    List<String> excludeFiles;
+    public void setExcludeFiles(List<String> excludeFiles) {
+        this.excludeFiles = normalizeOptionList(excludeFiles);
+    }
+    private List<String> excludeFiles = Collections.emptyList();
 
     @Option(names = "--force-include-files",
         split = McImageHelper.SPLIT_COMMA_NL, splitSynopsisLabel = McImageHelper.SPLIT_SYNOPSIS_COMMA_NL,
         description = "Files to force include that were marked as non-server mods. It will match any part of the file's name/path."
+            + "%nEmbedded comments are allowed."
     )
-    List<String> forceIncludeFiles;
+    public void setForceIncludeFiles(List<String> forceIncludeFiles) {
+        this.forceIncludeFiles = normalizeOptionList(forceIncludeFiles);
+    }
+    private List<String> forceIncludeFiles = Collections.emptyList();
 
     @Option(names = "--overrides-exclusions",
         split = "\n|,", splitSynopsisLabel = "NL or ,",
@@ -105,8 +116,12 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
             + "*  : matches any non-slash characters\n"
             + "** : matches any characters\n"
             + "?  : matches one character"
+            + "%nEmbedded comments are allowed."
     )
-    List<String> overridesExclusions;
+    public void setOverridesExclusions(List<String> overridesExclusions) {
+        this.overridesExclusions = normalizeOptionList(overridesExclusions);
+    }
+    private List<String> overridesExclusions = Collections.emptyList();
 
     @Option(names = "--default-exclude-includes", paramLabel = "FILE|URI",
         description = "A JSON file that contains global and per modpack exclude/include declarations. "
@@ -159,7 +174,7 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
                                 sharedFetch
                             )
                         )
-                        .setOverridesExclusions(overridesExclusions)
+                        .setOverridesExclusions(normalizeOptionList(overridesExclusions))
                         .setMaxConcurrentDownloads(maxConcurrentDownloads)
                         .processModpack(sharedFetch)
                         .flatMap(installation -> {

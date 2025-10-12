@@ -37,9 +37,8 @@ class FabricLauncherInstallerTest {
             .files(Collections.singletonList("fabric-server-mc.1.19.2-loader.0.14.11-launcher.0.11.1.jar"))
             .build();
 
-        final Path manifestPath = Manifests.save(tempDir, "fabric", manifest);
-        assertThat(manifestPath.toString())
-            .contains("fabric");
+        Manifests.save(tempDir, "fabric", manifest);
+        assertThat(tempDir.resolve(".fabric-manifest.json")).exists();
 
         final FabricManifest loaded = Manifests.load(tempDir, "fabric", FabricManifest.class);
 

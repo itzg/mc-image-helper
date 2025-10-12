@@ -2,6 +2,7 @@ package me.itzg.helpers.curseforge;
 
 import static me.itzg.helpers.curseforge.CurseForgeApiClient.*;
 import static me.itzg.helpers.curseforge.ModFileRefResolver.idsFrom;
+import static me.itzg.helpers.singles.NormalizeOptions.normalizeOptionList;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -13,6 +14,7 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import me.itzg.helpers.McImageHelper;
 import me.itzg.helpers.cache.ApiCaching;
 import me.itzg.helpers.cache.ApiCachingDisabled;
 import me.itzg.helpers.cache.ApiCachingImpl;
@@ -96,14 +98,19 @@ public class CurseForgeFilesCommand implements Callable<Integer> {
     @ArgGroup(exclusive = false)
     SharedFetchArgs sharedFetchArgs = new SharedFetchArgs();
 
-    @Parameters(split = ",", paramLabel = "REF",
+    @Parameters(paramLabel = "REF",
+        split = McImageHelper.SPLIT_COMMA_NL, splitSynopsisLabel = McImageHelper.SPLIT_SYNOPSIS_COMMA_NL,
         description = "Can be <project ID>|<slug>':'<file ID>,"
             + " <project ID>|<slug>'@'<filename matcher>,"
             + " <project ID>|<slug>,"
             + " project page URL, file page URL,"
             + " '@'<filename with ref per line>"
-            + "%nIf not specified, any previous mod/plugin files are removed")
-    List<String> modFileRefs;
+            + "%nIf not specified, any previous mod/plugin files are removed."
+            + "%Embedded comments are allowed")
+    public void setModFileRefs(List<String> modFileRefs) {
+        this.modFileRefs = normalizeOptionList(modFileRefs);
+    }
+    private List<String> modFileRefs = Collections.emptyList();
 
     @Override
     public Integer call() throws Exception {
@@ -114,7 +121,6 @@ public class CurseForgeFilesCommand implements Callable<Integer> {
         final Map<ModFileIds, FileEntry> previousFiles = buildPreviousFilesFromManifest(oldManifest);
 
         final CurseForgeFilesManifest newManifest;
-
         if (modFileRefs != null && !modFileRefs.isEmpty()) {
             try (
                 final ApiCaching apiCaching = disableApiCaching ? new ApiCachingDisabled()
@@ -128,37 +134,23 @@ public class CurseForgeFilesCommand implements Callable<Integer> {
             ) {
                 newManifest =
                     apiClient.loadCategoryInfo(Arrays.asList(CATEGORY_MC_MODS, CATEGORY_BUKKIT_PLUGINS))
-                    .flatMap(categoryInfo ->
+                        .flatMap(categoryInfo ->
 
-                        processModFileRefs(categoryInfo, previousFiles, apiClient)
-                            .map(entries -> CurseForgeFilesManifest.builder()
-                                .entries(entries)
-                                .build()))
+                            processModFileRefs(categoryInfo, previousFiles, apiClient)
+                                .map(entries -> CurseForgeFilesManifest.builder()
+                                    .entries(entries)
+                                    .build()))
                         .doOnError(InvalidApiKeyException.class,
                             throwable -> ApiKeyHelper.logKeyIssues(log, apiKey))
                         .block();
             }
         }
         else {
-            // nothing to install or requesting full cleanup
             newManifest = null;
         }
 
-        if (oldManifest != null) {
-            Manifests.cleanup(outputDir,
-                mapFilePathsFromEntries(oldManifest),
-                mapFilePathsFromEntries(newManifest),
-                s -> log.info("Removing old file {}", s)
-            );
-        }
-        if (newManifest != null && newManifest.getEntries() != null
-            && !newManifest.getEntries().isEmpty()
-        ) {
-            Manifests.save(outputDir, CurseForgeFilesManifest.ID, newManifest);
-        }
-        else {
-            Manifests.remove(outputDir, CurseForgeFilesManifest.ID);
-        }
+        Manifests.cleanup(outputDir, oldManifest, newManifest, log);
+        Manifests.apply(outputDir, CurseForgeFilesManifest.ID, newManifest);
 
         return ExitCode.OK;
     }
@@ -167,7 +159,7 @@ public class CurseForgeFilesCommand implements Callable<Integer> {
     private Mono<List<FileEntry>> processModFileRefs(CategoryInfo categoryInfo,
         Map<ModFileIds, FileEntry> previousFiles, CurseForgeApiClient apiClient
     ) {
-        if (modFileRefs == null || modFileRefs.isEmpty()) {
+        if (modFileRefs.isEmpty()) {
             return Mono.just(Collections.emptyList());
         }
 
@@ -287,13 +279,6 @@ public class CurseForgeFilesCommand implements Callable<Integer> {
                     }
                 ))
             : Collections.emptyMap();
-    }
-
-    private static List<String> mapFilePathsFromEntries(CurseForgeFilesManifest oldManifest) {
-        return
-            oldManifest != null ?
-            oldManifest.entries.stream().map(FileEntry::getFilePath).collect(Collectors.toList())
-            : null;
     }
 
 }
