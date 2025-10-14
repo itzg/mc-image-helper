@@ -27,6 +27,7 @@ import me.itzg.helpers.http.Uris;
 import org.jetbrains.annotations.Blocking;
 import org.reactivestreams.Publisher;
 import org.slf4j.event.Level;
+import org.slf4j.spi.LoggingEventBuilder;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.Option;
@@ -39,6 +40,7 @@ import reactor.core.scheduler.Schedulers;
     + "Supports auto-detected sourcing from file list, directories, and URLs")
 @Slf4j
 public class MulitCopyCommand implements Callable<Integer> {
+    @SuppressWarnings("unused")
     @Option(names = {"--help", "-h"}, usageHelp = true)
     boolean showHelp;
 
@@ -154,7 +156,7 @@ public class MulitCopyCommand implements Callable<Integer> {
                 } else {
                     final Path path = Paths.get(resolvedSource);
                     if (!Files.exists(path)) {
-                        return Mono.error(new GenericException(String.format("Source file '%s' does not exist", resolvedSource)));
+                        return Mono.error(new InvalidParameterException(String.format("Source file '%s' does not exist", resolvedSource)));
                     }
 
                     if (Files.isDirectory(path)) {
@@ -209,27 +211,23 @@ public class MulitCopyCommand implements Callable<Integer> {
             try {
                 if (Files.size(source) != Files.size(destFile)) {
                     if (Files.getLastModifiedTime(source).compareTo(Files.getLastModifiedTime(destFile)) > 0) {
-                        log.debug("Copying over existing={} file since source={} file is newer",
+                        log.info("Copying over existing file {} since {} is newer",
                             destFile, source
                         );
 
                         Files.copy(source, destFile, StandardCopyOption.REPLACE_EXISTING);
                     } else {
-                        log.debug("Skipping existing={} since it is newer than source={}",
-                            destFile, source
-                        );
+                        forSkipped().log("Skipping existing={} since it is newer than source={}", destFile, source);
                     }
                 } else {
-                    log.debug("Skipping existing={} since it has same size as source={}",
-                        destFile, source
-                    );
+                    forSkipped().log("Skipping existing={} since it has same size as source={}", destFile, source);
                 }
             } catch (IOException e) {
                 throw new GenericException("Failed to evaluate/copy existing file", e);
             }
         } else {
             try {
-                log.debug("Copying new file from={} to={}", source, destFile);
+                log.info("Copying new file from {} to {}", source, destFile);
 
                 Files.copy(source, destFile);
             } catch (IOException e) {
@@ -279,17 +277,15 @@ public class MulitCopyCommand implements Callable<Integer> {
             .handleStatus((status, uri, file) -> {
                 switch (status) {
                     case DOWNLOADING:
-                        log.info("Downloading {} from {}", file, uri);
                         break;
                     case SKIP_FILE_UP_TO_DATE:
-                        log.atLevel(quietWhenSkipped ? Level.DEBUG : Level.INFO)
-                            .log("The file {} is already up to date", file);
+                        forSkipped().log("The file {} is already up to date", file);
                         break;
                     case SKIP_FILE_EXISTS:
-                        log.atLevel(quietWhenSkipped ? Level.DEBUG : Level.INFO)
-                            .log("The file {} already exists", file);
+                        forSkipped().log("The file {} already exists", file);
                         break;
                     case DOWNLOADED:
+                        log.info("Downloaded {} from {}", file, uri);
                         break;
                 }
             })
@@ -298,6 +294,10 @@ public class MulitCopyCommand implements Callable<Integer> {
                 throwable -> Mono.empty()
             )
             .checkpoint("Retrieving " + source, true);
+    }
+
+    private LoggingEventBuilder forSkipped() {
+        return log.atLevel(quietWhenSkipped ? Level.DEBUG : Level.INFO);
     }
 
     private Flux<Path> processRemoteListingFile(String source, Path destination) {
