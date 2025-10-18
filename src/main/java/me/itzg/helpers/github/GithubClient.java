@@ -28,10 +28,12 @@ public class GithubClient {
 
     private final SharedFetch sharedFetch;
     private final UriBuilder uriBuilder;
+    private final String token;
 
-    public GithubClient(SharedFetch sharedFetch, String apiBaseUrl) {
+    public GithubClient(SharedFetch sharedFetch, String apiBaseUrl, @Nullable String token) {
         this.sharedFetch = sharedFetch;
         this.uriBuilder = UriBuilder.withBaseUrl(apiBaseUrl);
+        this.token = token;
     }
 
     public Mono<Path> downloadLatestAsset(String org, String repo, @Nullable Pattern namePattern, Path outputDirectory) {
@@ -39,6 +41,7 @@ public class GithubClient {
                 uriBuilder.resolve("/repos/{org}/{repo}/releases/latest", org, repo)
             )
             .acceptContentTypes(Collections.singletonList("application/vnd.github+json"))
+            .withAuthorization("Bearer", token)
             .toObject(Release.class)
             .assemble()
             .onErrorResume(throwable -> {

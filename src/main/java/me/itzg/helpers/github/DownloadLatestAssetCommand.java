@@ -13,6 +13,7 @@ import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
+import picocli.CommandLine.ParentCommand;
 
 @Command(name = "download-latest-asset",
     description = "From the latest release, downloads the first matching asset, and outputs the downloaded filename"
@@ -29,8 +30,8 @@ public class DownloadLatestAssetCommand implements Callable<Integer> {
     @Option(names = "--output-directory", defaultValue = ".")
     Path outputDirectory;
 
-    @Option(names = "--api-base-url", defaultValue = GithubClient.DEFAULT_API_BASE_URL)
-    String apiBaseUrl;
+    @ParentCommand
+    GithubCommands parent;
 
     @Parameters(arity = "1", paramLabel = "org/repo")
     public void setOrgRepo(String input) {
@@ -50,7 +51,7 @@ public class DownloadLatestAssetCommand implements Callable<Integer> {
 
         try (SharedFetch sharedFetch = Fetch.sharedFetch("github download-latest-asset", sharedFetchArgs.options())) {
 
-            final GithubClient client = new GithubClient(sharedFetch, apiBaseUrl);
+            final GithubClient client = new GithubClient(sharedFetch, parent.getApiBaseUrl(), parent.getToken());
             final Path result = client.downloadLatestAsset(organization, repo, namePattern, outputDirectory)
                 .block();
 

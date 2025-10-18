@@ -29,6 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.http.SharedFetch.Options;
 import me.itzg.helpers.json.ObjectMappers;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import reactor.core.publisher.Mono;
 import reactor.netty.ByteBufMono;
@@ -170,6 +171,15 @@ public class FetchBuilderBase<SELF extends FetchBuilderBase<SELF>> {
     public SELF header(String name, String value) {
         state.requestHeaders.put(name, value);
         return self();
+    }
+
+    public SELF withAuthorization(String authorizationType, String credentials) {
+        if (StringUtils.isNotBlank(authorizationType) && StringUtils.isNotBlank(credentials)) {
+            return header(AUTHORIZATION.toString(), authorizationType + " " + credentials);
+        }
+        else {
+            return self();
+        }
     }
 
     /**

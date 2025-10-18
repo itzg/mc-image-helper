@@ -118,12 +118,6 @@ public class SharedFetch implements AutoCloseable {
         return new FetchBuilderBase<>(uri, this);
     }
 
-    @SuppressWarnings("unused")
-    public SharedFetch addHeader(String name, String value) {
-        headers.put(name, value);
-        return this;
-    }
-
     @Override
     public void close() {
     }
