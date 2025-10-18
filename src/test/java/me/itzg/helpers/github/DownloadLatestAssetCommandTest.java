@@ -31,10 +31,12 @@ class DownloadLatestAssetCommandTest {
         .configureStaticDsl(true)
         .build();
 
+    private final RandomStringUtils randomStringUtils = RandomStringUtils.insecure();
+
     @Test
     void usingNamePattern(@TempDir Path tempDir, WireMockRuntimeInfo wmInfo) {
-        final String filename = RandomStringUtils.randomAlphabetic(10) + ".jar";
-        final String fileContent = RandomStringUtils.randomAlphabetic(20);
+        final String filename = randomStringUtils.nextAlphabetic(10) + ".jar";
+        final String fileContent = randomStringUtils.nextAlphabetic(20);
 
         stubFor(get("/repos/org/repo/releases/latest")
             .willReturn(ok()
@@ -58,9 +60,10 @@ class DownloadLatestAssetCommandTest {
             )
         );
 
-        final int exitCode = new CommandLine(new DownloadLatestAssetCommand())
+        final int exitCode = new CommandLine(new GithubCommands())
             .execute(
                 "--api-base-url", wmInfo.getHttpBaseUrl(),
+                "download-latest-asset",
                 "--name-pattern", "app-.+?(?<!-sources)\\.jar",
                 "--output-directory", tempDir.toString(),
                 "org/repo"
@@ -94,6 +97,7 @@ class DownloadLatestAssetCommandTest {
         final Instant expectedDelayUntil = Instant.now()
             .plusSeconds(1);
 
+        //noinspection UastIncorrectHttpHeaderInspection custom declared by Github
         stubFor(get(anyUrl())
             .willReturn(forbidden()
                 .withHeader("x-ratelimit-reset", String.valueOf(expectedDelayUntil.getEpochSecond()))
@@ -102,10 +106,11 @@ class DownloadLatestAssetCommandTest {
 
         final LatchingExecutionExceptionHandler executionExceptionHandler = new LatchingExecutionExceptionHandler();
 
-        final int exitCode = new CommandLine(new DownloadLatestAssetCommand())
+        final int exitCode = new CommandLine(new GithubCommands())
             .setExecutionExceptionHandler(executionExceptionHandler)
             .execute(
                 "--api-base-url", wmInfo.getHttpBaseUrl(),
+                "download-latest-asset",
                 "--output-directory", tempDir.toString(),
                 "org/repo"
             );
