@@ -165,12 +165,18 @@ public class PaperDownloadsClient implements AutoCloseable{
         return Flux.fromIterable(projectResponse.getVersions())
             .filter(versionResponse -> versionResponse.getBuilds() != null && !versionResponse.getBuilds().isEmpty())
             .concatMap(versionResponse ->
-                getBuild(project, versionResponse.getVersion().getId(), versionResponse.getBuilds().get(0))
+                getBuild(project, versionResponse.getVersion().getId(), getLatestBuild(versionResponse))
                     .map(buildResponse -> new VersionAndBuildResponse(versionResponse, buildResponse))
                 )
             .takeUntil(vAndB -> acceptableChannel(vAndB.buildResponse.getChannel(), requestedChannel))
             .last()
             .map(vAndB -> new VersionBuild(vAndB.versionResponse.getVersion().getId(), vAndB.buildResponse.getId()));
+    }
+
+    private static Integer getLatestBuild(VersionResponse versionResponse) {
+        return versionResponse.getBuilds().stream()
+            .max(Integer::compare)
+            .orElseThrow(() -> new GenericException("No builds found for version " + versionResponse.getVersion().getId()));
     }
 
     private boolean acceptableChannel(Channel channel, RequestedChannel requestedChannel) {
