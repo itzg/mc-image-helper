@@ -21,7 +21,6 @@ public class CurseForgeFile {
 	private List<FileModule> modules;
 	private List<FileDependency> dependencies;
 	private long fileFingerprint;
-	private FileStatus fileStatus;
 	private boolean isServerPack;
 	private FileReleaseType releaseType;
 	private List<FileHash> hashes;
