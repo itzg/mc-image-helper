@@ -2,8 +2,12 @@ package me.itzg.helpers.files;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.PathMatcher;
+import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -121,12 +125,28 @@ public class Manifests {
      * @param ignoreMissingFiles relative paths of files to ignore if they're missing
      */
     public static boolean allFilesPresent(Path basePath, BaseManifest manifest, @Nullable List<String> ignoreMissingFiles) {
+        if (ignoreMissingFiles == null || ignoreMissingFiles.isEmpty()) {
+            return manifest.getFiles().stream()
+                .allMatch(p -> Files.exists(basePath.resolve(p)));
+        }
+
+        if (ignoreMissingFiles.stream().anyMatch(s -> s.equals("*"))) {
+            return true;
+        }
+
+        FileSystem fs = FileSystems.getDefault();
+        List<PathMatcher> matchers = ignoreMissingFiles.stream()
+            .map(pattern -> fs.getPathMatcher("glob:" + pattern))
+            .collect(Collectors.toList());
+
         return manifest.getFiles().stream()
-            .allMatch(p ->
-                    (ignoreMissingFiles != null && ignoreMissingFiles.contains(p))
-                || Files.exists(basePath.resolve(p))
-            );
+            .allMatch(p -> {
+                Path file = Paths.get(p);
+                boolean ignored = matchers.stream().anyMatch(m -> m.matches(file));
+                return ignored || Files.exists(basePath.resolve(p));
+            });
     }
+
 
     /**
      *
