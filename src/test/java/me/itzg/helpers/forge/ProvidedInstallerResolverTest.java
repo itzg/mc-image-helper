@@ -23,7 +23,7 @@ class ProvidedInstallerResolverTest {
         final ProvidedInstallerResolver resolver = new ProvidedInstallerResolver(
             Paths.get(installerUrl.toURI()));
 
-        final VersionPair versions = resolver.resolve();
+        final VersionPair versions = resolver.resolve(null);
 
         assertThat(versions.minecraft).isEqualTo("1.20.2");
         assertThat(versions.forge).isEqualTo("48.1.0");

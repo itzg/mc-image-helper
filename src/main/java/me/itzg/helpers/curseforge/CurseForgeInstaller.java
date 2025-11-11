@@ -52,7 +52,7 @@ import me.itzg.helpers.fabric.FabricLauncherInstaller;
 import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.files.ReactiveFileUtils;
 import me.itzg.helpers.files.ResultsFileWriter;
-import me.itzg.helpers.forge.ForgeInstaller;
+import me.itzg.helpers.forge.ForgeLikeInstaller;
 import me.itzg.helpers.forge.ForgeInstallerResolver;
 import me.itzg.helpers.forge.ForgeUrlArgs;
 import me.itzg.helpers.forge.NeoForgeInstallerResolver;
@@ -1006,7 +1006,7 @@ public class CurseForgeInstaller {
     }
 
     private void prepareForge(SharedFetch sharedFetch, String minecraftVersion, String loaderVersion) {
-        new ForgeInstaller(
+        new ForgeLikeInstaller(
             new ForgeInstallerResolver(sharedFetch,
                 minecraftVersion, loaderVersion,
                 forgeUrlArgs.getPromotionsUrl(), forgeUrlArgs.getMavenRepoUrl()
@@ -1016,7 +1016,7 @@ public class CurseForgeInstaller {
     }
 
     private void prepareNeoForge(SharedFetch sharedFetch, String minecraftVersion, String loaderVersion) {
-        new ForgeInstaller(
+        new ForgeLikeInstaller(
             new NeoForgeInstallerResolver(sharedFetch,
                 minecraftVersion, loaderVersion
             )

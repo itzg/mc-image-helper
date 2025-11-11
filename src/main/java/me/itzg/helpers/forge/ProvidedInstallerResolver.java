@@ -26,7 +26,7 @@ public class ProvidedInstallerResolver implements InstallerResolver {
     }
 
     @Override
-    public VersionPair resolve() {
+    public VersionPair resolve(ForgeManifest prevManifest) {
         final VersionPair versions;
         try {
             versions = extractVersion(forgeInstaller);

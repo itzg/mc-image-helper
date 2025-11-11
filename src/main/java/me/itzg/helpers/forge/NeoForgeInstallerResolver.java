@@ -25,6 +25,7 @@ public class NeoForgeInstallerResolver implements InstallerResolver {
     public static final String ARTIFACT_ID_FORGE_LIKE = "forge";
     public static final String ARTIFACT_ID = "neoforge";
     public static final String FORGE_LIKE_VERSION = "1.20.1";
+    public static final String DEFAULT_MVN_URL = "https://maven.neoforged.net/releases";
 
     private final MavenRepoApi mavenRepoApi;
     private final String requestedMinecraftVersion;
@@ -36,7 +37,7 @@ public class NeoForgeInstallerResolver implements InstallerResolver {
         @Nullable
         String requestedNeoForgeVersion
     ) {
-        this(sharedFetch, requestedMinecraftVersion, requestedNeoForgeVersion, "https://maven.neoforged.net/releases");
+        this(sharedFetch, requestedMinecraftVersion, requestedNeoForgeVersion, DEFAULT_MVN_URL);
     }
 
     NeoForgeInstallerResolver(SharedFetch sharedFetch,
@@ -60,7 +61,7 @@ public class NeoForgeInstallerResolver implements InstallerResolver {
     }
 
     @Override
-    public VersionPair resolve() {
+    public VersionPair resolve(ForgeManifest prevManifest) {
         if (useForgeArtifactId(requestedMinecraftVersion)) {
             return resolveForgeLike();
         }
@@ -83,6 +84,14 @@ public class NeoForgeInstallerResolver implements InstallerResolver {
             neoforgeVersion = splitNeoforgeVersion(requestedNeoForgeVersion);
             if (neoforgeVersion.length < 3) {
                 throw new InvalidParameterException("Malformed NeoForge version: " + requestedNeoForgeVersion);
+            }
+
+            if (prevManifest != null) {
+                if (prevManifest.getMinecraftVersion().equals(requestedMinecraftVersion)
+                    && prevManifest.getForgeVersion().equals(requestedNeoForgeVersion)) {
+                    return new VersionPair(requestedMinecraftVersion, requestedNeoForgeVersion);
+                }
+
             }
         }
 

@@ -25,7 +25,7 @@ import me.itzg.helpers.json.ObjectMappers;
 import org.jetbrains.annotations.Nullable;
 
 @Slf4j
-public class ForgeInstaller {
+public class ForgeLikeInstaller {
 
     private static final Pattern RESULT_INFO = Pattern.compile(
         "Exec:\\s+(?<exec>.+)"
@@ -33,7 +33,7 @@ public class ForgeInstaller {
 
     private final InstallerResolver installerResolver;
 
-    public ForgeInstaller(InstallerResolver installerResolver) {
+    public ForgeLikeInstaller(InstallerResolver installerResolver) {
         this.installerResolver = installerResolver;
     }
 
@@ -51,7 +51,7 @@ public class ForgeInstaller {
             throw new GenericException("Failed to load existing forge manifest", e);
         }
 
-        final VersionPair resolved = installerResolver.resolve();
+        final VersionPair resolved = installerResolver.resolve(prevManifest);
         if (resolved == null) {
             throw new InvalidParameterException("Unable to find suitable version for " +
                 installerResolver.getDescription());
