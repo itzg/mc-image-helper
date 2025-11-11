@@ -43,7 +43,17 @@ public class ForgeInstallerResolver implements InstallerResolver {
     }
 
     @Override
-    public VersionPair resolve() {
+    public VersionPair resolve(ForgeManifest prevManifest) {
+        if (prevManifest != null) {
+            final String prevMinecraftVersion = prevManifest.getMinecraftVersion();
+            final String prevForgeVersion = prevManifest.getForgeVersion();
+            if (prevMinecraftVersion.equals(requestedMinecraftVersion)
+                && prevForgeVersion.equals(requestedForgeVersion)) {
+                log.debug("Resolved Minecraft {} Forge {} from previous manifest", prevMinecraftVersion, prevForgeVersion);
+                return new VersionPair(requestedMinecraftVersion, requestedForgeVersion);
+            }
+        }
+
         final PromotionsSlim promotionsSlim = loadPromotions();
         if (promotionsSlim.getPromos().isEmpty()) {
             throw new GenericException("No versions were available in Forge promotions");

@@ -4,12 +4,14 @@ import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
+import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import java.util.stream.Stream;
 import me.itzg.helpers.http.Fetch;
 import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.http.SharedFetch.Options;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -57,7 +59,7 @@ class NeoForgeInstallerResolverTest {
                 )
             );
 
-            final VersionPair versionPair = resolver.resolve();
+            final VersionPair versionPair = resolver.resolve(null);
             if (expectedNeoforgeVersion == null) {
                 assertThat(versionPair).isNull();
             }
@@ -70,4 +72,32 @@ class NeoForgeInstallerResolverTest {
         }
     }
 
+    @Test
+    void resolveSkipsLookupWhenExists(WireMockRuntimeInfo wmInfo) {
+        final String minecraftVersion = "1.21.1";
+        final String neoforgeVersion = "21.1.215";
+
+        try (SharedFetch sharedFetch = Fetch.sharedFetch("install-neoforge", Options.builder().build())) {
+            final NeoForgeInstallerResolver resolver = new NeoForgeInstallerResolver(
+                sharedFetch,
+                minecraftVersion, neoforgeVersion,
+                wmInfo.getHttpBaseUrl()
+            );
+
+            // purposely no stub of wiremock to verify no network calls are made
+
+            final ForgeManifest manifest = ForgeManifest.builder()
+                .minecraftVersion(minecraftVersion)
+                .forgeVersion(neoforgeVersion)
+                .build();
+
+            final VersionPair versionPair = resolver.resolve(manifest);
+
+            assertThat(versionPair).isNotNull();
+            assertThat(versionPair.minecraft).isEqualTo(minecraftVersion);
+            assertThat(versionPair.forge).isEqualTo(neoforgeVersion);
+
+            WireMock.verify(0, getRequestedFor(WireMock.anyUrl()));
+        }
+    }
 }
