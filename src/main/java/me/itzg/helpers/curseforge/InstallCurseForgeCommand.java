@@ -89,6 +89,21 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
     )
     String apiKey;
 
+    @Option(names = "--fabric-loader-version", paramLabel = "VERSION",
+        description = "Override the Fabric Loader version specified in the modpack"
+    )
+    String fabricLoaderVersion;
+
+    @Option(names = "--forge-version", paramLabel = "VERSION",
+        description = "Override the Forge version specified in the modpack"
+    )
+    String forgeVersion;
+
+    @Option(names = "--neoforge-version", paramLabel = "VERSION",
+        description = "Override the NeoForge version specified in the modpack"
+    )
+    String neoforgeVersion;
+
     @ArgGroup(exclusive = false)
     ExcludeIncludeArgs excludeIncludeArgs = new ExcludeIncludeArgs();
 
@@ -233,7 +248,10 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
             .setForgeUrlArgs(forgeUrlArgs)
             .setMaxConcurrentDownloads(maxConcurrentDownloads)
             .setFileDownloadRetries(fileDownloadRetries)
-            .setFileDownloadRetryMinDelay(fileDownloadRetryMinDelay);
+            .setFileDownloadRetryMinDelay(fileDownloadRetryMinDelay)
+            .setCustomFabricLoaderVersion(fabricLoaderVersion)
+            .setCustomForgeVersion(forgeVersion)
+            .setCustomNeoForgeVersion(neoforgeVersion);
 
         if (apiBaseUrl != null) {
             installer.setApiBaseUrl(apiBaseUrl);

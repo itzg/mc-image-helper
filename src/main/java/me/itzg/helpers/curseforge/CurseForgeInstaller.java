@@ -142,6 +142,15 @@ public class CurseForgeInstaller {
     @Getter @Setter
     Duration fileDownloadRetryMinDelay = Duration.ofSeconds(5);
 
+    @Getter @Setter
+    private String customFabricLoaderVersion;
+
+    @Getter @Setter
+    private String customForgeVersion;
+
+    @Getter @Setter
+    private String customNeoForgeVersion;
+
     /**
      */
     public void installFromModpackZip(Path modpackZip, String slug) {
@@ -972,7 +981,29 @@ public class CurseForgeInstaller {
         }
 
         final String provider = parts[0];
-        final String loaderVersion = parts.length == 2 ? parts[1] : parts[2];
+        String loaderVersion = parts.length == 2 ? parts[1] : parts[2];
+
+        // Override with custom versions if provided
+        switch (provider) {
+            case "fabric":
+                if (customFabricLoaderVersion != null) {
+                    log.info("Overriding Fabric loader version from {} to {}", loaderVersion, customFabricLoaderVersion);
+                    loaderVersion = customFabricLoaderVersion;
+                }
+                break;
+            case "forge":
+                if (customForgeVersion != null) {
+                    log.info("Overriding Forge version from {} to {}", loaderVersion, customForgeVersion);
+                    loaderVersion = customForgeVersion;
+                }
+                break;
+            case "neoforge":
+                if (customNeoForgeVersion != null) {
+                    log.info("Overriding NeoForge version from {} to {}", loaderVersion, customNeoForgeVersion);
+                    loaderVersion = customNeoForgeVersion;
+                }
+                break;
+        }
 
         try (SharedFetch sharedFetch = Fetch.sharedFetch("install-curseforge", sharedFetchOptions)) {
 
