@@ -142,6 +142,9 @@ public class CurseForgeInstaller {
     @Getter @Setter
     Duration fileDownloadRetryMinDelay = Duration.ofSeconds(5);
 
+    @Getter @Setter
+    private String customModLoaderVersion;
+
     /**
      */
     public void installFromModpackZip(Path modpackZip, String slug) {
@@ -972,7 +975,13 @@ public class CurseForgeInstaller {
         }
 
         final String provider = parts[0];
-        final String loaderVersion = parts.length == 2 ? parts[1] : parts[2];
+        String loaderVersion = parts.length == 2 ? parts[1] : parts[2];
+
+        // Override with custom versions if provided
+        if (customModLoaderVersion != null) {
+            log.info("Overriding mod loader version from {} to {}", loaderVersion, customModLoaderVersion);
+            loaderVersion = customModLoaderVersion;
+        }
 
         try (SharedFetch sharedFetch = Fetch.sharedFetch("install-curseforge", sharedFetchOptions)) {
 
