@@ -103,7 +103,9 @@ public class ForgeInstallerResolver implements InstallerResolver {
             .blockFirst();
 
         if (result == null) {
-            throw new GenericException("Failed to locate forge installer");
+            throw new GenericException(String.format(
+                "Failed to locate forge installer for Minecraft %s Forge %s", minecraftVersion, forgeVersion
+            ));
         }
         else {
             return result;
