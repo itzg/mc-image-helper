@@ -1,0 +1,1 @@
+mv /Users/jackhicks/op-servers/mc-image-helper/build/distributions/mc-image-helper-0.0.0-master-SNAPSHOT.tgz /Users/jackhicks/op-servers/modpack-test/docker-minecraft-server/mc-image-helper-0.0.0-master-SNAPSHOT.tgz
