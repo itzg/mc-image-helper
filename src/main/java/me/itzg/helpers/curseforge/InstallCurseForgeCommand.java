@@ -104,12 +104,6 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
         PathOrUri excludeIncludeFile;
 
         static class Listed {
-            @Option(
-                names = "--exclude-all-mods",
-                description = "Exclude all mods regardless of manifest contents"
-            )
-            boolean excludeAllMods;
-
             @Option(names = {"--exclude-mods", "--excludes"}, paramLabel = "PROJECT_ID|SLUG",
                 split = McImageHelper.SPLIT_COMMA_NL, splitSynopsisLabel = McImageHelper.SPLIT_SYNOPSIS_COMMA_NL,
                 description = "For mods that need to be excluded from server deployments, such as those that don't label as client"
@@ -129,6 +123,12 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
             }
             Set<String> forceIncludeMods;
         }
+
+        @Option(
+            names = "--exclude-all-mods",
+            description = "Exclude all mods regardless of manifest contents"
+        )
+        boolean excludeAllMods;
     }
 
     @Option(names = "--filename-matcher", paramLabel = "STR",
@@ -240,7 +240,7 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
             .setMaxConcurrentDownloads(maxConcurrentDownloads)
             .setFileDownloadRetries(fileDownloadRetries)
             .setFileDownloadRetryMinDelay(fileDownloadRetryMinDelay)
-            .setExcludeAllMods(excludeIncludeArgs.listed.excludeAllMods);
+            .setExcludeAllMods(excludeIncludeArgs.excludeAllMods);
 
 
         if (apiBaseUrl != null) {
