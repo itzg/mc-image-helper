@@ -549,7 +549,6 @@ public class CurseForgeInstaller {
 
     private List<PathWithInfo> getModFiles(InstallContext context, MinecraftModpackManifest modpackManifest, OutputSubdirResolver outputSubdirResolver) {
         if (excludeAllMods) {
-            log.debug("Excluding all mods!");
             return new ArrayList<>();
         }
 
