@@ -53,7 +53,7 @@ import me.itzg.helpers.fabric.FabricLauncherInstaller;
 import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.files.ReactiveFileUtils;
 import me.itzg.helpers.files.ResultsFileWriter;
-import me.itzg.helpers.forge.ForgeInstaller;
+import me.itzg.helpers.forge.ForgeLikeInstaller;
 import me.itzg.helpers.forge.ForgeInstallerResolver;
 import me.itzg.helpers.forge.ForgeUrlArgs;
 import me.itzg.helpers.forge.NeoForgeInstallerResolver;
@@ -142,6 +142,9 @@ public class CurseForgeInstaller {
 
     @Getter @Setter
     Duration fileDownloadRetryMinDelay = Duration.ofSeconds(5);
+
+    @Getter @Setter
+    private String customModLoaderVersion;
 
     @Getter @Setter
     private boolean excludeAllMods;
@@ -986,7 +989,13 @@ public class CurseForgeInstaller {
         }
 
         final String provider = parts[0];
-        final String loaderVersion = parts.length == 2 ? parts[1] : parts[2];
+        String loaderVersion = parts.length == 2 ? parts[1] : parts[2];
+
+        // Override with custom versions if provided
+        if (customModLoaderVersion != null) {
+            log.info("Overriding mod loader version from {} to {}", loaderVersion, customModLoaderVersion);
+            loaderVersion = customModLoaderVersion;
+        }
 
         try (SharedFetch sharedFetch = Fetch.sharedFetch("install-curseforge", sharedFetchOptions)) {
 
@@ -1020,7 +1029,7 @@ public class CurseForgeInstaller {
     }
 
     private void prepareForge(SharedFetch sharedFetch, String minecraftVersion, String loaderVersion) {
-        new ForgeInstaller(
+        new ForgeLikeInstaller(
             new ForgeInstallerResolver(sharedFetch,
                 minecraftVersion, loaderVersion,
                 forgeUrlArgs.getPromotionsUrl(), forgeUrlArgs.getMavenRepoUrl()
@@ -1030,7 +1039,7 @@ public class CurseForgeInstaller {
     }
 
     private void prepareNeoForge(SharedFetch sharedFetch, String minecraftVersion, String loaderVersion) {
-        new ForgeInstaller(
+        new ForgeLikeInstaller(
             new NeoForgeInstallerResolver(sharedFetch,
                 minecraftVersion, loaderVersion
             )

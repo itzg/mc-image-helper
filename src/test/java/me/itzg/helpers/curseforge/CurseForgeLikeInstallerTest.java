@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.api.io.TempDir;
 
-class CurseForgeInstallerTest {
+class CurseForgeLikeInstallerTest {
     @TempDir
     Path tempDir;
 

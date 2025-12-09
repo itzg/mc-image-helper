@@ -89,6 +89,11 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
     )
     String apiKey;
 
+    @Option(names = "--mod-loader-version", paramLabel = "VERSION",
+        description = "Override the mod loader version specified in the modpack"
+    )
+    String modLoaderVersion;
+
     @ArgGroup(exclusive = false)
     ExcludeIncludeArgs excludeIncludeArgs = new ExcludeIncludeArgs();
 
@@ -240,8 +245,8 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
             .setMaxConcurrentDownloads(maxConcurrentDownloads)
             .setFileDownloadRetries(fileDownloadRetries)
             .setFileDownloadRetryMinDelay(fileDownloadRetryMinDelay)
+            .setCustomModLoaderVersion(modLoaderVersion)
             .setExcludeAllMods(excludeIncludeArgs.excludeAllMods);
-
 
         if (apiBaseUrl != null) {
             installer.setApiBaseUrl(apiBaseUrl);

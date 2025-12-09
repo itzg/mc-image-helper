@@ -71,6 +71,10 @@ public class MavenRepoApi {
             )
             .toObject(MavenMetadata.class, xmlMapper)
             .assemble()
+            .doOnSubscribe(s ->
+                log.debug("Fetching maven metadata for {}:{} from {}",
+                    groupId, artifactId, uriBuilder.getBaseUrl())
+            )
             .checkpoint(String.format("fetching metadata for %s:%s", groupId, artifactId));
     }
 

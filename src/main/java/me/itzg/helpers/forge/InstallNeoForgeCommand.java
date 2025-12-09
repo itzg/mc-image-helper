@@ -22,6 +22,7 @@ public class InstallNeoForgeCommand implements Callable<Integer> {
     @Spec
     CommandLine.Model.CommandSpec spec;
 
+    @SuppressWarnings("unused")
     @Option(names = {"--help", "-h"}, usageHelp = true)
     boolean help;
 
@@ -81,7 +82,7 @@ public class InstallNeoForgeCommand implements Callable<Integer> {
     public Integer call() throws Exception {
         try (SharedFetch sharedFetch = Fetch.sharedFetch("install-neoforge", sharedFetchArgs.options())) {
 
-            new ForgeInstaller(
+            new ForgeLikeInstaller(
                 new NeoForgeInstallerResolver(sharedFetch, minecraftVersion, neoForgeVersion)
             )
                 .install(outputDirectory, resultsFile, forceReinstall, "NeoForge");

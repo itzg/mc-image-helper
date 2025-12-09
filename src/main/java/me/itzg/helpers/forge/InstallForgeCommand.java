@@ -22,6 +22,7 @@ public class InstallForgeCommand implements Callable<Integer> {
     @Spec
     CommandLine.Model.CommandSpec spec;
 
+    @SuppressWarnings("unused")
     @Option(names = {"--help", "-h"}, usageHelp = true)
     boolean help;
 
@@ -96,7 +97,7 @@ public class InstallForgeCommand implements Callable<Integer> {
     public Integer call() throws Exception {
         try (SharedFetch sharedFetch = Fetch.sharedFetch("install-forge", sharedFetchArgs.options())) {
 
-            final ForgeInstaller installer = new ForgeInstaller(
+            final ForgeLikeInstaller installer = new ForgeLikeInstaller(
                 versionOrInstaller.installer != null ?
                     new ProvidedInstallerResolver(versionOrInstaller.installer)
                     : new ForgeInstallerResolver(
