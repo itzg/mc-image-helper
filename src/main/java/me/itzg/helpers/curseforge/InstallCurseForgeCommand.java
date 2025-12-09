@@ -128,6 +128,12 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
             }
             Set<String> forceIncludeMods;
         }
+
+        @Option(
+            names = "--exclude-all-mods",
+            description = "Exclude all mods regardless of manifest contents"
+        )
+        boolean excludeAllMods;
     }
 
     @Option(names = "--filename-matcher", paramLabel = "STR",
@@ -239,7 +245,8 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
             .setMaxConcurrentDownloads(maxConcurrentDownloads)
             .setFileDownloadRetries(fileDownloadRetries)
             .setFileDownloadRetryMinDelay(fileDownloadRetryMinDelay)
-            .setCustomModLoaderVersion(modLoaderVersion);
+            .setCustomModLoaderVersion(modLoaderVersion)
+            .setExcludeAllMods(excludeIncludeArgs.excludeAllMods);
 
         if (apiBaseUrl != null) {
             installer.setApiBaseUrl(apiBaseUrl);

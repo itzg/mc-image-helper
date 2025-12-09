@@ -17,6 +17,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -144,6 +145,9 @@ public class CurseForgeInstaller {
 
     @Getter @Setter
     private String customModLoaderVersion;
+
+    @Getter @Setter
+    private boolean excludeAllMods;
 
     /**
      */
@@ -546,19 +550,10 @@ public class CurseForgeInstaller {
         });
     }
 
-    private ModPackResults processModpack(InstallContext context,
-        MinecraftModpackManifest modpackManifest, OverridesApplier overridesApplier
-    ) throws IOException {
-        if (modpackManifest.getManifestType() != ManifestType.minecraftModpack) {
-            throw new InvalidParameterException("The zip file provided does not seem to be a Minecraft modpack");
+    private List<PathWithInfo> getModFiles(InstallContext context, MinecraftModpackManifest modpackManifest, OutputSubdirResolver outputSubdirResolver) {
+        if (excludeAllMods) {
+            return new ArrayList<>();
         }
-
-        final ModLoader modLoader = modpackManifest.getMinecraft().getModLoaders().stream()
-            .filter(ModLoader::isPrimary)
-            .findFirst()
-            .orElseThrow(() -> new GenericException("Unable to find primary mod loader in modpack"));
-
-        final OutputSubdirResolver outputSubdirResolver = new OutputSubdirResolver(outputDir, context.categoryInfo);
 
         final ExcludeIncludeIds excludeIncludeIds = resolveExcludeIncludes(context);
         log.debug("Using {}", excludeIncludeIds);
@@ -601,6 +596,25 @@ public class CurseForgeInstaller {
             )
             .collectList()
             .block();
+
+        return modFiles;
+    }
+
+    private ModPackResults processModpack(InstallContext context,
+        MinecraftModpackManifest modpackManifest, OverridesApplier overridesApplier
+    ) throws IOException {
+        if (modpackManifest.getManifestType() != ManifestType.minecraftModpack) {
+            throw new InvalidParameterException("The zip file provided does not seem to be a Minecraft modpack");
+        }
+
+        final ModLoader modLoader = modpackManifest.getMinecraft().getModLoaders().stream()
+            .filter(ModLoader::isPrimary)
+            .findFirst()
+            .orElseThrow(() -> new GenericException("Unable to find primary mod loader in modpack"));
+
+        final OutputSubdirResolver outputSubdirResolver = new OutputSubdirResolver(outputDir, context.categoryInfo);
+
+        final List<PathWithInfo> modFiles = getModFiles(context, modpackManifest, outputSubdirResolver);
 
         final Result overridesResult = overridesApplier.apply();
 
