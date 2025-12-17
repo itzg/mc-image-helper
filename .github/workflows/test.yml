@@ -16,6 +16,7 @@ jobs:
   test:
     uses: itzg/github-workflows/.github/workflows/gradle-build.yml@main
     with:
+      java-version: '25'
       arguments: test
       include-test-report: true
       retest-showing-standard-streams: true
