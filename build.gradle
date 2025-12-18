@@ -46,7 +46,7 @@ jar {
 
 java {
   // Specify to gradle that the project expects to be built with java 21, but produce output compatible with Java 8
-  sourceCompatibility = JavaVersion.VERSION_1_8
+  sourceCompatibility = JavaVersion.VERSION_11
   toolchain.languageVersion = JavaLanguageVersion.of(21)
 }
 
@@ -60,6 +60,10 @@ test {
 
 application {
   mainClass = 'me.itzg.helpers.McImageHelper'
+
+  // Enable native access due to
+  // WARNING: java.lang.System::loadLibrary has been called by io.netty.util.internal.NativeLibraryUtil in an unnamed module (file:/Users/geoff/.gradle/caches/modules-2/files-2.1/io.netty/netty-common/4.2.7.Final/11aa30df26af4fca3239ac1917f303a280f301e1/netty-common-4.2.7.Final.jar)
+  applicationDefaultJvmArgs = ['--enable-native-access=ALL-UNNAMED']
 }
 
 project.tasks.distTar {
