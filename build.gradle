@@ -100,9 +100,11 @@ dependencies {
     // http3/quic is not functional on Alpine due to absence of glibc/ld-linux
     // Error loading shared library ld-linux-x86-64.so.2:
     //    No such file or directory (needed by /tmp/libnetty_quiche42_linux_x86_641323735684306068308.so)
-    exclude group: 'io.netty', module: 'netty-codec-http3'
+    // Also needs to handle
+    // java.lang.NoClassDefFoundError: io/netty/handler/codec/quic/Quic
+    //	at reactor.netty.http.internal.Http3.isHttp3Available(Http3.java:35)
+    exclude group: 'io.netty', module: 'netty-codec-native-quic'
   }
-  implementation 'io.netty.incubator:netty-incubator-codec-native-quic:0.0.74.Final'
   implementation 'org.apache.maven:maven-artifact:3.9.12'
   implementation 'commons-codec:commons-codec:1.20.0'
   // for RFC5987 parsing of content-disposition filename*

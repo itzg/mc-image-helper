@@ -23,11 +23,13 @@ import me.itzg.helpers.files.ReactiveFileUtils;
 import me.itzg.helpers.http.FailedRequestException;
 import me.itzg.helpers.http.Fetch;
 import me.itzg.helpers.http.SharedFetch;
+import me.itzg.helpers.http.SharedFetchArgs;
 import me.itzg.helpers.http.Uris;
 import org.jetbrains.annotations.Blocking;
 import org.reactivestreams.Publisher;
 import org.slf4j.event.Level;
 import org.slf4j.spi.LoggingEventBuilder;
+import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.Option;
@@ -75,6 +77,9 @@ public class MulitCopyCommand implements Callable<Integer> {
     @Option(names = "--ignore-missing-sources", description = "Don't log or fail exit code when any or all sources are missing")
     boolean ignoreMissingSources;
 
+    @ArgGroup(exclusive = false)
+    SharedFetchArgs sharedFetchArgs = new SharedFetchArgs();
+
     @Parameters(split = SPLIT_COMMA_NL, splitSynopsisLabel = SPLIT_SYNOPSIS_COMMA_NL,
         paramLabel = "SRC",
         description = "Any mix of source file, directory, or URLs delimited by commas or newlines"
@@ -90,14 +95,17 @@ public class MulitCopyCommand implements Callable<Integer> {
 
     @Override
     public Integer call() throws Exception {
-        final List<Path> results = Flux.fromIterable(sources)
-            .map(String::trim)
-            .filter(s -> !s.isEmpty())
-            .flatMap(source -> processSource(source, fileIsListingOption, dest))
-            .collectList()
-            .block();
 
-        cleanupAndSaveManifest(results);
+        try (SharedFetch sharedFetch = Fetch.sharedFetch("mcopy", sharedFetchArgs.options())) {
+            final List<Path> results = Flux.fromIterable(sources)
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .flatMap(source -> processSource(sharedFetch, source, fileIsListingOption, dest))
+                .collectList()
+                .block();
+
+            cleanupAndSaveManifest(results);
+        }
 
         return ExitCode.OK;
     }
@@ -120,7 +128,7 @@ public class MulitCopyCommand implements Callable<Integer> {
         }
     }
 
-    private Publisher<Path> processSource(String source, boolean fileIsListing, Path parentDestination) {
+    private Publisher<Path> processSource(SharedFetch sharedFetch, String source, boolean fileIsListing, Path parentDestination) {
         final Path destination;
         final String resolvedSource;
 
@@ -136,7 +144,7 @@ public class MulitCopyCommand implements Callable<Integer> {
 
         if (fileIsListing) {
             if (Uris.isUri(resolvedSource)) {
-                return processRemoteListingFile(resolvedSource, destination);
+                return processRemoteListingFile(resolvedSource, destination, sharedFetch);
             } else {
                 final Path path = Paths.get(resolvedSource);
                 if (Files.isDirectory(path)) {
@@ -145,7 +153,7 @@ public class MulitCopyCommand implements Callable<Integer> {
                 if (!Files.exists(path)) {
                     throw new GenericException(String.format("Source file '%s' does not exist", resolvedSource));
                 }
-                return processListingFile(path, destination);
+                return processListingFile(sharedFetch, path, destination);
             }
         }
 
@@ -168,7 +176,7 @@ public class MulitCopyCommand implements Callable<Integer> {
             });
     }
 
-    private Flux<Path> processListingFile(Path listingFile, Path destination) {
+    private Flux<Path> processListingFile(SharedFetch sharedFetch, Path listingFile, Path destination) {
         return Mono.just(listingFile)
             .publishOn(Schedulers.boundedElastic())
             .flatMapMany(path -> {
@@ -177,10 +185,11 @@ public class MulitCopyCommand implements Callable<Integer> {
                     final List<String> lines = Files.readAllLines(path);
                     return Flux.fromIterable(lines)
                         .filter(this::isListingLine)
-                        .flatMap(src -> processSource(src,
+                        .flatMap(src -> processSource(sharedFetch, src,
                             // avoid recursive file-listing processing
                             false,
-                            destination));
+                            destination
+                        ));
                 } catch (IOException e) {
                     return Mono.error(new GenericException("Failed to read file listing from " + path));
                 }
@@ -300,9 +309,7 @@ public class MulitCopyCommand implements Callable<Integer> {
         return log.atLevel(quietWhenSkipped ? Level.DEBUG : Level.INFO);
     }
 
-    private Flux<Path> processRemoteListingFile(String source, Path destination) {
-        @SuppressWarnings("resource") // closed on terminate
-        SharedFetch sharedFetch = Fetch.sharedFetch("mcopy", SharedFetch.Options.builder().build());
+    private Flux<Path> processRemoteListingFile(String source, Path destination, SharedFetch sharedFetch) {
         return Mono.just(source)
             .flatMapMany(s ->
                 sharedFetch.fetch(URI.create(source))
@@ -310,7 +317,7 @@ public class MulitCopyCommand implements Callable<Integer> {
                     .flatMapMany(content -> Flux.just(content.split("\\r?\\n")))
                     .filter(this::isListingLine)
             )
-            .flatMap(url -> processSource(url, false, destination))
+            .flatMap(url -> processSource(sharedFetch, url, false, destination))
             .doOnTerminate(sharedFetch::close)
             .checkpoint("Processing remote listing at " + source, true);
     }
