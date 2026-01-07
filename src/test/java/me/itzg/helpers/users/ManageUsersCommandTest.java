@@ -420,7 +420,6 @@ class ManageUsersCommandTest {
                 .execute(
                     "--mojang-api-base-url", wmInfo.getHttpBaseUrl(),
                     "--user-api-provider", "mojang",
-                    "--offline",
                     "--type", "JAVA_WHITELIST",
                     "--output-directory", tempDir.toString(),
                     "user1:offline", "user2:offline"
@@ -456,7 +455,6 @@ class ManageUsersCommandTest {
                 .execute(
                     "--mojang-api-base-url", wmInfo.getHttpBaseUrl(),
                     "--user-api-provider", "mojang",
-                    "--offline",
                     "--type", "JAVA_WHITELIST",
                     "--output-directory", tempDir.toString(),
                     "user1", "user2"
@@ -492,7 +490,6 @@ class ManageUsersCommandTest {
                 .execute(
                     "--mojang-api-base-url", wmInfo.getHttpBaseUrl(),
                     "--user-api-provider", "mojang",
-                    "--offline",
                     "--type", "JAVA_WHITELIST",
                     "--output-directory", tempDir.toString(),
                     "user1:offline", "user2"
@@ -538,7 +535,6 @@ class ManageUsersCommandTest {
                     "--user-api-provider", "mojang",
                     "--type", "JAVA_WHITELIST",
                     "--output-directory", tempDir.toString(),
-                    "--offline",
                     "user1:offline"
                 );
 
@@ -582,7 +578,6 @@ class ManageUsersCommandTest {
                     "--user-api-provider", "mojang",
                     "--type", "JAVA_WHITELIST",
                     "--output-directory", tempDir.toString(),
-                    "--offline",
                     "user1:offline", "user2"
                 );
 
