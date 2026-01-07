@@ -53,9 +53,6 @@ public class ManageUsersCommand implements Callable<Integer> {
     @Option(names = {"--help", "-h"}, usageHelp = true)
     boolean help;
 
-    @Option(names = {"--offline"}, description = "Use for offline server, UUIDs are generated")
-    boolean offline;
-
     @Option(names = "--output-directory", defaultValue = ".")
     Path outputDirectory;
 
@@ -245,7 +242,7 @@ public class ManageUsersCommand implements Callable<Integer> {
                 }
 
                 // User is not online, generating offline UUID
-                if (offline && user.getFlags().contains("offline")) {
+                if (user.getFlags().contains("offline")) {
                     log.debug("Resolved '{}' as offline user", user.getName());
                     // update UUID keeping the other fields in case of existing user
                     return finalUser.setUuid(getOfflineUUID(user.getName()));
