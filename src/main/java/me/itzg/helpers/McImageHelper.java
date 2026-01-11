@@ -20,6 +20,7 @@ import me.itzg.helpers.curseforge.InstallCurseForgeCommand;
 import me.itzg.helpers.errors.ExceptionHandler;
 import me.itzg.helpers.errors.ExitCodeMapper;
 import me.itzg.helpers.fabric.InstallFabricLoaderCommand;
+import me.itzg.helpers.files.IniPathCommand;
 import me.itzg.helpers.files.TomlPathCommand;
 import me.itzg.helpers.files.YamlPathCommand;
 import me.itzg.helpers.find.FindCommand;
@@ -71,6 +72,7 @@ import picocli.CommandLine.Spec;
         GetCommand.class,
         GithubCommands.class,
         HashCommand.class,
+        IniPathCommand.class,
         InstallCurseForgeCommand.class,
         InstallFabricLoaderCommand.class,
         InstallForgeCommand.class,

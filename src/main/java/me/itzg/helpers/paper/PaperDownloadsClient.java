@@ -149,7 +149,7 @@ public class PaperDownloadsClient implements AutoCloseable{
             );
     }
 
-    @RequiredArgsConstructor
+    @Data
     private static class VersionAndBuildResponse {
         final VersionResponse versionResponse;
         final BuildResponse buildResponse;
