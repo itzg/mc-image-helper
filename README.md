@@ -32,6 +32,7 @@ Commands:
   get                             Download a file
   github
   hash                            Outputs an MD5 hash of the standard input
+  ini-path                        Extracts a field from an INI file
   install-curseforge              Downloads, installs, and upgrades CurseForge
                                     modpacks
   install-fabric-loader           Provides a few ways to obtain a Fabric loader
@@ -138,19 +139,21 @@ Usage: mc-image-helper curseforge-files [-h] [--disable-api-caching]
                                         [--mod-loader=<modLoaderType>] [-o=DIR]
                                         [[--api-cache-ttl=OPERATION=DURATION]...
                                          [--api-cache-default-ttl=DURATION]]
-                                        [[--http-response-timeout=DURATION]
+                                        [[--connection-pool-pending-acquire-time
+                                        out=DURATION]
+                                        [--http-response-timeout=DURATION]
                                         [--tls-handshake-timeout=DURATION]
-                                        [--connection-pool-pending-acquire-timeo
-                                        ut=DURATION]
+                                        [--use-http2] [--wiretap]
                                         [--connection-pool-max-idle-timeout=DURA
-                                        TION]] [REF[,REF...]...]
+                                        TION]] [REF[,|<nl>REF...]...]
 Download and manage individual mod/plugin files from CurseForge
-      [REF[,REF...]...]    Can be <project ID>|<slug>':'<file ID>, <project
+      [REF[,|<nl>REF...]...]
+                           Can be <project ID>|<slug>':'<file ID>, <project
                              ID>|<slug>'@'<filename matcher>, <project
                              ID>|<slug>, project page URL, file page URL,
-                             '@'<filename with ref per line>
-                           If not specified, any previous mod/plugin files are
-                             removed
+                             '@'<filename with ref per line>%nIf not specified,
+                             any previous mod/plugin files are removed.%
+                             Embedded comments are allowed
       --api-base-url=<apiBaseUrl>
                            Allows for overriding the CurseForge Eternal API used
                            Can also be passed via CF_API_BASE_URL
@@ -185,6 +188,9 @@ Download and manage individual mod/plugin files from CurseForge
 
       --tls-handshake-timeout=DURATION
                            Default: PT30S
+      --use-http2          Whether to use HTTP/2. Default: false
+      --wiretap            Whether to enable Reactor Netty wiretap logging.
+                             Default: false
 ```
 
 ### find
@@ -291,7 +297,12 @@ Download a file
 ### github
 
 ```
-Usage: mc-image-helper github [COMMAND]
+Usage: mc-image-helper github [--api-base-url=<apiBaseUrl>] [--token=<token>]
+                              [COMMAND]
+      --api-base-url=<apiBaseUrl>
+
+      --token=<token>   An access token for GitHub to elevate rate limit vs
+                          anonymous access
 Commands:
   download-latest-asset  From the latest release, downloads the first matching
                            asset, and outputs the downloaded filename
@@ -304,27 +315,44 @@ Usage: mc-image-helper hash
 Outputs an MD5 hash of the standard input
 ```
 
+### ini-path
+
+```
+Usage: mc-image-helper ini-path [--file=FILE] ref
+Extracts a field from an INI file
+      ref           section/option, section/option[index], /option, /option
+                      [index]
+      --file=FILE   An INI file to query. If not set, reads stdin
+```
+
 ### install-curseforge
 
 ```
 Usage: mc-image-helper install-curseforge [-h] [--disable-api-caching]
        [--force-reinstall-modloader] [--force-synchronize]
        [--overrides-skip-existing] [--api-base-url=<apiBaseUrl>]
-       [--api-key=<apiKey>] [--downloads-repo=DIR] [--file-id=<fileId>]
-       [--filename-matcher=STR] [--missing-mods-filename=<missingModsFilename>]
-       [--modpack-manifest=PATH] [--modpack-page-url=URL] [--modpack-zip=PATH]
-       [-o=DIR] [--results-file=FILE] [--set-level-from=<levelFrom>]
-       [--slug=<slug>] [--ignore-missing-files=<ignoreMissingFiles>[,
+       [--api-key=<apiKey>] [--downloads-repo=DIR]
+       [--file-download-retries=COUNT]
+       [--file-download-retry-min-delay=DURATION] [--file-id=<fileId>]
+       [--filename-matcher=STR]
+       [--max-concurrent-downloads=<maxConcurrentDownloads>]
+       [--missing-mods-filename=<missingModsFilename>]
+       [--mod-loader-version=VERSION] [--modpack-manifest=PATH]
+       [--modpack-page-url=URL] [--modpack-zip=PATH] [-o=DIR]
+       [--results-file=FILE] [--set-level-from=<levelFrom>] [--slug=<slug>]
+       [--ignore-missing-files=<ignoreMissingFiles>[,
        |<nl><ignoreMissingFiles>...]]...
        [--overrides-exclusions=<overridesExclusions>[NL or ,
        <overridesExclusions>...]]... [[--exclude-include-file=FILE|URI]
-       [[--exclude-mods=PROJECT_ID|SLUG[,|<ws>PROJECT_ID|SLUG...]]...
-       [--force-include-mods=PROJECT_ID|SLUG[,|<ws>PROJECT_ID|SLUG...]]...]]
-       [[--http-response-timeout=DURATION] [--tls-handshake-timeout=DURATION]
-       [--connection-pool-pending-acquire-timeout=DURATION]
-       [--connection-pool-max-idle-timeout=DURATION]]
+       [--exclude-all-mods] [[--excludes=PROJECT_ID|SLUG[,
+       |<nl>PROJECT_ID|SLUG...]]... [--force-includes=PROJECT_ID|SLUG[,
+       |<nl>PROJECT_ID|SLUG...]]...]]
+       [[--connection-pool-pending-acquire-timeout=DURATION]
+       [--http-response-timeout=DURATION] [--tls-handshake-timeout=DURATION]
+       [--use-http2] [--wiretap] [--connection-pool-max-idle-timeout=DURATION]]
        [[--api-cache-ttl=OPERATION=DURATION]...
-       [--api-cache-default-ttl=DURATION]] [COMMAND]
+       [--api-cache-default-ttl=DURATION]] [[--forge-promotions-url=URL]
+       [--forge-maven-repo-url=URL]] [COMMAND]
 Downloads, installs, and upgrades CurseForge modpacks
       --api-base-url=<apiBaseUrl>
                              Allows for overriding the CurseForge Eternal API
@@ -348,17 +376,23 @@ Downloads, installs, and upgrades CurseForge modpacks
                                for automated download. The subdirectories mods,
                                modpacks, and worlds will also be consulted
                                accordingly.
+      --exclude-all-mods     Exclude all mods regardless of manifest contents
       --exclude-include-file=FILE|URI
                              A JSON file that contains global and per modpack
                                exclude/include declarations. See README for
                                schema.
-      --exclude-mods=PROJECT_ID|SLUG[,|<ws>PROJECT_ID|SLUG...]
+      --excludes, --exclude-mods=PROJECT_ID|SLUG[,|<nl>PROJECT_ID|SLUG...]
                              For mods that need to be excluded from server
                                deployments, such as those that don't label as
                                client
+      --file-download-retries=COUNT
+                             Default is 5
+      --file-download-retry-min-delay=DURATION
+                             Default is PT5S
       --file-id=<fileId>
       --filename-matcher=STR Substring to select specific modpack filename
-      --force-include-mods=PROJECT_ID|SLUG[,|<ws>PROJECT_ID|SLUG...]
+      --force-includes, --force-include-mods=PROJECT_ID|SLUG[,
+        |<nl>PROJECT_ID|SLUG...]
                              Some mods incorrectly declare client-only support,
                                but still need to be included in a server deploy.
                              This can also be used to selectively override
@@ -366,6 +400,16 @@ Downloads, installs, and upgrades CurseForge modpacks
       --force-reinstall-modloader
 
       --force-synchronize
+      --forge-maven-repo-url=URL
+                             URL for Forge Maven repository where installer is
+                               downloaded.
+                             Can also be set via env var FORGE_MAVEN_REPO_URL
+                             Default is https://maven.minecraftforge.net
+      --forge-promotions-url=URL
+                             URL for Forge promotions JSON.
+                             Can also be set via env var FORGE_PROMOTIONS_URL
+                             Default is https://files.minecraftforge.
+                               net/net/minecraftforge/forge/promotions_slim.json
   -h, --help
       --http-response-timeout=DURATION
                              The response timeout to apply to HTTP operations.
@@ -373,8 +417,13 @@ Downloads, installs, and upgrades CurseForge modpacks
       --ignore-missing-files=<ignoreMissingFiles>[,|<nl><ignoreMissingFiles>...]
                              These files will be ignored when evaluating if the
                                modpack is up to date
+      --max-concurrent-downloads=<maxConcurrentDownloads>
+                             Default is 10
       --missing-mods-filename=<missingModsFilename>
 
+      --mod-loader-version=VERSION
+                             Override the mod loader version specified in the
+                               modpack
       --modpack-manifest=PATH
                              Similar to --modpack-zip but provide the manifest.
                                json from the modpack.
@@ -418,6 +467,9 @@ Downloads, installs, and upgrades CurseForge modpacks
       --slug=<slug>          The short-URL identifier
       --tls-handshake-timeout=DURATION
                              Default: PT30S
+      --use-http2            Whether to use HTTP/2. Default: false
+      --wiretap              Whether to enable Reactor Netty wiretap logging.
+                               Default: false
 Commands:
   schemas  Output relevant JSON schemas
 ```
@@ -425,16 +477,28 @@ Commands:
 ### install-fabric-loader
 
 ```
-Usage: mc-image-helper install-fabric-loader [-h] [--output-directory=DIR]
-       [--results-file=FILE] [--from-local-file=FILE | --from-url=URL |
-       [[--minecraft-version=VERSION] [--installer-version=VERSION]
-       [--loader-version=VERSION]]]
+Usage: mc-image-helper install-fabric-loader [-h] [--force-reinstall]
+       [--output-directory=DIR] [--results-file=FILE] [--from-local-file=FILE |
+       --from-url=URL | [[--minecraft-version=VERSION]
+       [--installer-version=VERSION] [--loader-version=VERSION]]]
+       [[--connection-pool-pending-acquire-timeout=DURATION]
+       [--http-response-timeout=DURATION] [--tls-handshake-timeout=DURATION]
+       [--use-http2] [--wiretap] [--connection-pool-max-idle-timeout=DURATION]]
 Provides a few ways to obtain a Fabric loader with simple cleanup of previous
 loader instances
+      --connection-pool-max-idle-timeout=DURATION
+
+      --connection-pool-pending-acquire-timeout=DURATION
+
+      --force-reinstall     Force reinstall of the loader even if it already
+                              exists
       --from-local-file=FILE
 
       --from-url=URL
   -h, --help
+      --http-response-timeout=DURATION
+                            The response timeout to apply to HTTP operations.
+                              Parsed from ISO-8601 format. Default: PT30S
       --installer-version=VERSION
                             By default the latest installer version is used
       --loader-version=VERSION
@@ -446,6 +510,11 @@ loader instances
       --results-file=FILE   A key=value file suitable for scripted environment
                               variables. Currently includes
                               SERVER: the entry point jar or script
+      --tls-handshake-timeout=DURATION
+                            Default: PT30S
+      --use-http2           Whether to use HTTP/2. Default: false
+      --wiretap             Whether to enable Reactor Netty wiretap logging.
+                              Default: false
 ```
 
 ### install-forge
@@ -455,22 +524,35 @@ Usage: mc-image-helper install-forge [-h] [--force-reinstall]
                                      [--minecraft-version=VERSION]
                                      [--output-directory=DIR]
                                      [--results-file=FILE]
-                                     [--forge-installer=<installer> |
+                                     [--forge-installer=FILE |
                                      [--forge-version=<version>]]
-                                     [[--http-response-timeout=DURATION]
+                                     [[--connection-pool-pending-acquire-timeout
+                                     =DURATION]
+                                     [--http-response-timeout=DURATION]
                                      [--tls-handshake-timeout=DURATION]
-                                     [--connection-pool-pending-acquire-timeout=
-                                     DURATION]
+                                     [--use-http2] [--wiretap]
                                      [--connection-pool-max-idle-timeout=DURATIO
-                                     N]]
+                                     N]] [[--forge-promotions-url=URL]
+                                     [--forge-maven-repo-url=URL]]
 Downloads and installs a requested version of Forge
       --connection-pool-max-idle-timeout=DURATION
 
       --connection-pool-pending-acquire-timeout=DURATION
+[picocli WARN] Could not format 'Can be <project ID>|<slug>':'<file ID>, <project ID>|<slug>'@'<filename matcher>, <project ID>|<slug>, project page URL, file page URL, '@'<filename with ref per line>%nIf not specified, any previous mod/plugin files are removed.%Embedded comments are allowed' (Underlying error: Format specifier '%E'). Using raw String: '%n' format strings have not been replaced with newlines. Please ensure to escape '%' characters with another '%'.
 
       --force-reinstall
-      --forge-installer=<installer>
+      --forge-installer=FILE
                             Use a local forge installer
+      --forge-maven-repo-url=URL
+                            URL for Forge Maven repository where installer is
+                              downloaded.
+                            Can also be set via env var FORGE_MAVEN_REPO_URL
+                            Default is https://maven.minecraftforge.net
+      --forge-promotions-url=URL
+                            URL for Forge promotions JSON.
+                            Can also be set via env var FORGE_PROMOTIONS_URL
+                            Default is https://files.minecraftforge.
+                              net/net/minecraftforge/forge/promotions_slim.json
       --forge-version=<version>
                             A specific Forge version or to auto-resolve the
                               version provide 'latest' or 'recommended'.
@@ -489,6 +571,9 @@ Downloads and installs a requested version of Forge
                               SERVER: the entry point jar or script
       --tls-handshake-timeout=DURATION
                             Default: PT30S
+      --use-http2           Whether to use HTTP/2. Default: false
+      --wiretap             Whether to enable Reactor Netty wiretap logging.
+                              Default: false
 ```
 
 ### install-modrinth-modpack
@@ -498,6 +583,7 @@ Usage: mc-image-helper install-modrinth-modpack [--force-modloader-reinstall]
        [--force-synchronize] [--api-base-url=<baseUrl>]
        [--default-exclude-includes=FILE|URI] [--default-version-type=TYPE]
        [--game-version=<gameVersion>] [--loader=<loader>]
+       [--max-concurrent-downloads=<maxConcurrentDownloads>]
        [--output-directory=DIR] --project=<modpackProject>
        [--results-file=FILE] [--version=<version>]
        [--exclude-files=<excludeFiles>[,|<nl><excludeFiles>...]]...
@@ -506,10 +592,11 @@ Usage: mc-image-helper install-modrinth-modpack [--force-modloader-reinstall]
        [--ignore-missing-files=<ignoreMissingFiles>[,
        |<nl><ignoreMissingFiles>...]]...
        [--overrides-exclusions=<overridesExclusions>[NL or ,
-       <overridesExclusions>...]]... [[--http-response-timeout=DURATION]
-       [--tls-handshake-timeout=DURATION]
-       [--connection-pool-pending-acquire-timeout=DURATION]
-       [--connection-pool-max-idle-timeout=DURATION]]
+       <overridesExclusions>...]]...
+       [[--connection-pool-pending-acquire-timeout=DURATION]
+       [--http-response-timeout=DURATION] [--tls-handshake-timeout=DURATION]
+       [--use-http2] [--wiretap] [--connection-pool-max-idle-timeout=DURATION]]
+       [[--forge-promotions-url=URL] [--forge-maven-repo-url=URL]]
 Supports installation of Modrinth modpacks along with the associated mod loader
       --api-base-url=<baseUrl>
                             Default: https://api.modrinth.com
@@ -528,13 +615,25 @@ Supports installation of Modrinth modpacks along with the associated mod loader
                             Files to exclude, such as improperly declared
                               client mods. It will match any part of the file's
                               name/path.
+                            Embedded comments are allowed.
       --force-include-files=<forceIncludeFiles>[,|<nl><forceIncludeFiles>...]
                             Files to force include that were marked as
                               non-server mods. It will match any part of the
                               file's name/path.
+                            Embedded comments are allowed.
       --force-modloader-reinstall
 
       --force-synchronize
+      --forge-maven-repo-url=URL
+                            URL for Forge Maven repository where installer is
+                              downloaded.
+                            Can also be set via env var FORGE_MAVEN_REPO_URL
+                            Default is https://maven.minecraftforge.net
+      --forge-promotions-url=URL
+                            URL for Forge promotions JSON.
+                            Can also be set via env var FORGE_PROMOTIONS_URL
+                            Default is https://files.minecraftforge.
+                              net/net/minecraftforge/forge/promotions_slim.json
       --game-version=<gameVersion>
                             Applicable Minecraft version
                             Default: (any)
@@ -546,6 +645,10 @@ Supports installation of Modrinth modpacks along with the associated mod loader
                               modpack is up to date
       --loader=<loader>     Valid values: fabric, forge, quilt, neoforge
                             Default: (any)
+      --max-concurrent-downloads=<maxConcurrentDownloads>
+                            Can also set env var
+                              MODRINTH_MAX_CONCURRENT_DOWNLOADS
+                            Default is 10
       --output-directory=DIR
 
       --overrides-exclusions=<overridesExclusions>[NL or ,
@@ -555,6 +658,7 @@ Supports installation of Modrinth modpacks along with the associated mod loader
                             *  : matches any non-slash characters
                             ** : matches any characters
                             ?  : matches one character
+                            Embedded comments are allowed.
       --project=<modpackProject>
                             One of
                             - Project ID or slug
@@ -567,10 +671,13 @@ Supports installation of Modrinth modpacks along with the associated mod loader
                               SERVER: the entry point jar or script
       --tls-handshake-timeout=DURATION
                             Default: PT30S
+      --use-http2           Whether to use HTTP/2. Default: false
       --version, --version-id=<version>
                             Version ID, name, or number from the file's metadata
                             Default chooses newest file based on game version,
                               loader, and/or default version type
+      --wiretap             Whether to enable Reactor Netty wiretap logging.
+                              Default: false
 ```
 
 ### install-neoforge
@@ -581,10 +688,11 @@ Usage: mc-image-helper install-neoforge [-h] [--force-reinstall]
                                         [--neoforge-version=<version>]
                                         [--output-directory=DIR]
                                         [--results-file=FILE]
-                                        [[--http-response-timeout=DURATION]
+                                        [[--connection-pool-pending-acquire-time
+                                        out=DURATION]
+                                        [--http-response-timeout=DURATION]
                                         [--tls-handshake-timeout=DURATION]
-                                        [--connection-pool-pending-acquire-timeo
-                                        ut=DURATION]
+                                        [--use-http2] [--wiretap]
                                         [--connection-pool-max-idle-timeout=DURA
                                         TION]]
 Downloads and installs a requested version of NeoForge
@@ -610,6 +718,9 @@ Downloads and installs a requested version of NeoForge
                               SERVER: the entry point jar or script
       --tls-handshake-timeout=DURATION
                             Default: PT30S
+      --use-http2           Whether to use HTTP/2. Default: false
+      --wiretap             Whether to enable Reactor Netty wiretap logging.
+                              Default: false
 ```
 
 ### install-paper
@@ -621,16 +732,17 @@ Usage: mc-image-helper install-paper [--check-updates] [--base-url=<baseUrl>]
                                      | [[--project=<project>] [--build=<build>]
                                      [--channel=<channel>]
                                      [--version=<version>]]]
-                                     [[--http-response-timeout=DURATION] |
+                                     [--connection-pool-pending-acquire-timeout=
+                                     DURATION |
+                                     [--http-response-timeout=DURATION] |
                                      [--tls-handshake-timeout=DURATION] |
-                                     --connection-pool-pending-acquire-timeout=D
-                                     URATION |
-                                     --connection-pool-max-idle-timeout=DURATION
-                                     ]
+                                     [--use-http2] | [--wiretap] |
+                                     [--connection-pool-max-idle-timeout=DURATIO
+                                     N]]
 Installs selected PaperMC
       --base-url=<baseUrl>
       --build=<build>
-      --channel=<channel>
+      --channel=<channel>    This is ignored for now
       --check-updates        Check for updates and exit with status code 0 when
                                available
       --connection-pool-max-idle-timeout=DURATION
@@ -649,7 +761,10 @@ Installs selected PaperMC
       --tls-handshake-timeout=DURATION
                              Default: PT30S
       --url=<downloadUrl>    Use a custom URL location
+      --use-http2            Whether to use HTTP/2. Default: false
       --version=<version>    May be 'latest' or specific version
+      --wiretap              Whether to enable Reactor Netty wiretap logging.
+                               Default: false
 ```
 
 ### install-purpur
@@ -658,15 +773,15 @@ Installs selected PaperMC
 Usage: mc-image-helper install-purpur [--base-url=<baseUrl>]
                                       [-o=<outputDirectory>]
                                       [--results-file=FILE]
-                                      [--url=<downloadUrl> |
-                                      [[--version=<version>]
-                                      [--build=<build>]]]
-                                      [[--http-response-timeout=DURATION] |
+                                      [--url=<downloadUrl> | [[--build=<build>]
+                                      [--version=<version>]]]
+                                      [--connection-pool-pending-acquire-timeout
+                                      =DURATION |
+                                      [--http-response-timeout=DURATION] |
                                       [--tls-handshake-timeout=DURATION] |
-                                      --connection-pool-pending-acquire-timeout=
-                                      DURATION |
-                                      --connection-pool-max-idle-timeout=DURATIO
-                                      N]
+                                      [--use-http2] | [--wiretap] |
+                                      [--connection-pool-max-idle-timeout=DURATI
+                                      ON]]
 Downloads latest or selected version of Purpur
       --base-url=<baseUrl>
       --build=<build>
@@ -685,7 +800,10 @@ Downloads latest or selected version of Purpur
       --tls-handshake-timeout=DURATION
                              Default: PT30S
       --url=<downloadUrl>    Use a custom URL location
+      --use-http2            Whether to use HTTP/2. Default: false
       --version=<version>    May be 'latest' or specific version
+      --wiretap              Whether to enable Reactor Netty wiretap logging.
+                               Default: false
 ```
 
 ### install-quilt
@@ -698,10 +816,11 @@ Usage: mc-image-helper install-quilt [-h] [--force-reinstall]
                                      [--repo-url=<repoUrl>]
                                      [--results-file=FILE] [--installer-url=URL
                                      | --installer-version=VERSION]
-                                     [[--http-response-timeout=DURATION]
+                                     [[--connection-pool-pending-acquire-timeout
+                                     =DURATION]
+                                     [--http-response-timeout=DURATION]
                                      [--tls-handshake-timeout=DURATION]
-                                     [--connection-pool-pending-acquire-timeout=
-                                     DURATION]
+                                     [--use-http2] [--wiretap]
                                      [--connection-pool-max-idle-timeout=DURATIO
                                      N]]
 Installs Quilt mod loader
@@ -729,6 +848,9 @@ Installs Quilt mod loader
                                SERVER: the entry point jar or script
       --tls-handshake-timeout=DURATION
                              Default: PT30S
+      --use-http2            Whether to use HTTP/2. Default: false
+      --wiretap              Whether to enable Reactor Netty wiretap logging.
+                               Default: false
 ```
 
 ### interpolate
@@ -775,16 +897,16 @@ Usage: mc-image-helper manage-users [-fh] [--existing=<existingFileBehavior>]
                                     >] -t=<type>
                                     [--user-api-provider=<userApiProvider>]
                                     [--version=<version>]
-                                    [[--http-response-timeout=DURATION]
+                                    [[--connection-pool-pending-acquire-timeout=
+                                    DURATION]
+                                    [--http-response-timeout=DURATION]
                                     [--tls-handshake-timeout=DURATION]
-                                    [--connection-pool-pending-acquire-timeout=D
-                                    URATION]
+                                    [--use-http2] [--wiretap]
                                     [--connection-pool-max-idle-timeout=DURATION
                                     ]] [INPUT[,INPUT...]...]
       [INPUT[,INPUT...]...] One or more Mojang usernames, UUID, or ID (UUID
-                              without dashes); flags are listed after a colon
-                              separated by comma:
-                              <username/UUID/ID>:flag1,flag2
+                              without dashes); however, when offline, only
+                              UUID/IDs can be provided.
                             When input is a file, only one local file path or
                               URL can be provided
       --connection-pool-max-idle-timeout=DURATION
@@ -809,10 +931,13 @@ Usage: mc-image-helper manage-users [-fh] [--existing=<existingFileBehavior>]
   -t, --type=<type>         Allowed: JAVA_WHITELIST, JAVA_OPS
       --tls-handshake-timeout=DURATION
                             Default: PT30S
+      --use-http2           Whether to use HTTP/2. Default: false
       --user-api-provider=<userApiProvider>
                             Allowed: mojang, playerdb
       --version=<version>   Minecraft game version. If not provided, assumes
                               JSON format
+      --wiretap             Whether to enable Reactor Netty wiretap logging.
+                              Default: false
 ```
 
 ### maven-download
@@ -824,10 +949,11 @@ Usage: mc-image-helper maven-download [-h] [--print-filename] [--skip-existing]
                                       [--output-directory=<outputDirectory>]
                                       [--packaging=<packaging>]
                                       [-r=<mavenRepo>] [-v=<version>]
-                                      [[--http-response-timeout=DURATION]
+                                      [[--connection-pool-pending-acquire-timeou
+                                      t=DURATION]
+                                      [--http-response-timeout=DURATION]
                                       [--tls-handshake-timeout=DURATION]
-                                      [--connection-pool-pending-acquire-timeout
-                                      =DURATION]
+                                      [--use-http2] [--wiretap]
                                       [--connection-pool-max-idle-timeout=DURATI
                                       ON]]
 Downloads a maven artifact from a Maven repository
@@ -855,24 +981,37 @@ Downloads a maven artifact from a Maven repository
       --skip-up-to-date
       --tls-handshake-timeout=DURATION
                             Default: PT30S
+      --use-http2           Whether to use HTTP/2. Default: false
   -v, --version=<version>   A specific version, 'release', or 'latest'
                             Default: release
+      --wiretap             Whether to enable Reactor Netty wiretap logging.
+                              Default: false
 ```
 
 ### mcopy
 
 ```
-Usage: mc-image-helper mcopy [-hz] [--file-is-listing]                                                                                                                                                                                                                                                                                                                                                                            
+Usage: mc-image-helper mcopy [-hz] [--file-is-listing]
                              [--ignore-missing-sources] [--quiet-when-skipped]
                              [--skip-existing] [--glob=GLOB]
-                             [--scope=<manifestId>] --to=<dest> SRC[,
-                             |<nl>SRC...]...
+                             [--scope=<manifestId>] --to=<dest>
+                             [[--connection-pool-pending-acquire-timeout=DURATIO
+                             N] [--http-response-timeout=DURATION]
+                             [--tls-handshake-timeout=DURATION] [--use-http2]
+                             [--wiretap]
+                             [--connection-pool-max-idle-timeout=DURATION]] [SRC
+                             [,|<nl>SRC...]...]
 Multi-source file copy operation with with managed cleanup. Supports
 auto-detected sourcing from file list, directories, and URLs
-      SRC[,|<nl>SRC...]...   Any mix of source file, directory, or URLs.
-                             Can be optionally comma or newline separated.
+      [SRC[,|<nl>SRC...]...] Any mix of source file, directory, or URLs
+                               delimited by commas or newlines
                              Per-file destinations can be assigned by
                                destination<source
+                             Embedded comments are allowed.
+      --connection-pool-max-idle-timeout=DURATION
+
+      --connection-pool-pending-acquire-timeout=DURATION
+
       --file-is-listing      Source files or URLs are processed as a line
                                delimited list of sources.
                              For remote listing files, the contents must all be
@@ -880,6 +1019,9 @@ auto-detected sourcing from file list, directories, and URLs
       --glob=GLOB            When a source is a directory, this filename glob
                                will be applied to select files.
   -h, --help
+      --http-response-timeout=DURATION
+                             The response timeout to apply to HTTP operations.
+                               Parsed from ISO-8601 format. Default: PT30S
       --ignore-missing-sources
                              Don't log or fail exit code when any or all
                                sources are missing
@@ -889,10 +1031,14 @@ auto-detected sourcing from file list, directories, and URLs
                                identifier used for qualifying manifest filename
                                in destination
       --skip-existing
+      --tls-handshake-timeout=DURATION
+                             Default: PT30S
       --to, --output-directory=<dest>
 
+      --use-http2            Whether to use HTTP/2. Default: false
+      --wiretap              Whether to enable Reactor Netty wiretap logging.
+                               Default: false
   -z, --skip-up-to-date
-
 ```
 
 ### modrinth
@@ -905,11 +1051,12 @@ Usage: mc-image-helper modrinth [--skip-existing] [--skip-up-to-date]
                                  --game-version=<gameVersion> --loader=<loader>
                                 [--output-directory=DIR]
                                 [--world-directory=<worldDirectory>]
-                                [--projects=id|slug[,|<nl>id|slug...]]...
-                                [[--http-response-timeout=DURATION]
+                                [--projects=[loader:]id|slug[:version][,|<nl>
+                                [loader:]id|slug[:version]...]]...
+                                [[--connection-pool-pending-acquire-timeout=DURA
+                                TION] [--http-response-timeout=DURATION]
                                 [--tls-handshake-timeout=DURATION]
-                                [--connection-pool-pending-acquire-timeout=DURAT
-                                ION]
+                                [--use-http2] [--wiretap]
                                 [--connection-pool-max-idle-timeout=DURATION]]
 Automates downloading of modrinth resources
       --allowed-version-type=<defaultVersionType>
@@ -929,16 +1076,29 @@ Automates downloading of modrinth resources
                           The response timeout to apply to HTTP operations.
                             Parsed from ISO-8601 format. Default: PT30S
       --loader=<loader>   Valid values: fabric, quilt, forge, neoforge, bukkit,
-                            spigot, paper, pufferfish, purpur, bungeecord,
-                            velocity, datapack
+                            spigot, paper, folia, pufferfish, leaf, purpur,
+                            bungeecord, velocity, datapack
       --output-directory=DIR
 
-      --projects=id|slug[,|<nl>id|slug...]
-                          Project ID or Slug
+      --projects=[loader:]id|slug[:version][,|<nl>[loader:]id|slug[:version]...]
+                          Project ID or Slug. Can be <project ID>|<slug>,
+                            <loader>:<project ID>|<slug>, <loader>:<project
+                            ID>|<slug>:<version ID|version number|release
+                            type>, '@'<filename with ref per line (supports #
+                            comments)>
+                          Examples: fabric-api, fabric:fabric-api, fabric:
+                            fabric-api:0.76.1+1.19.2, datapack:terralith,
+                            @/path/to/modrinth-mods.txt
+                          Valid release types: release, beta, alpha
+                          Valid loaders: fabric, forge, paper, datapack, etc.
+                          Embedded comments are allowed.
       --skip-existing
       --skip-up-to-date
       --tls-handshake-timeout=DURATION
                           Default: PT30S
+      --use-http2         Whether to use HTTP/2. Default: false
+      --wiretap           Whether to enable Reactor Netty wiretap logging.
+                            Default: false
       --world-directory=<worldDirectory>
                           Used for datapacks, a path relative to the output
                             directory or an absolute path
@@ -971,7 +1131,8 @@ Supports the file formats:
                       PatchDefinition json files
   -h, --help        Show this usage and exit
       --json-allow-comments
-                    Whether to allow comments in JSON files. Env: PATCH_JSON_ALLOW_COMMENTS
+                    Whether to allow comments in JSON files. Env:
+                      PATCH_JSON_ALLOW_COMMENTS
                       Default: true
       --patch-env-prefix=<envPrefix>
                     Only placeholder variables with this prefix will be
@@ -983,9 +1144,10 @@ Supports the file formats:
 
 ```
 Usage: mc-image-helper resolve-minecraft-version
-       [[--http-response-timeout=DURATION] [--tls-handshake-timeout=DURATION]
-       [--connection-pool-pending-acquire-timeout=DURATION]
-       [--connection-pool-max-idle-timeout=DURATION]] <inputVersion>
+       [[--connection-pool-pending-acquire-timeout=DURATION]
+       [--http-response-timeout=DURATION] [--tls-handshake-timeout=DURATION]
+       [--use-http2] [--wiretap] [--connection-pool-max-idle-timeout=DURATION]]
+       <inputVersion>
 Resolves and validate latest, snapshot, and specific versions
       <inputVersion>
       --connection-pool-max-idle-timeout=DURATION
@@ -997,6 +1159,9 @@ Resolves and validate latest, snapshot, and specific versions
                          from ISO-8601 format. Default: PT30S
       --tls-handshake-timeout=DURATION
                        Default: PT30S
+      --use-http2      Whether to use HTTP/2. Default: false
+      --wiretap        Whether to enable Reactor Netty wiretap logging.
+                         Default: false
 ```
 
 ### set-properties
@@ -1025,10 +1190,11 @@ Renders all of the subcommand usage as markdown sections for README
 ### sync
 
 ```
-Usage: mc-image-helper sync [-h] [--skip-newer-in-destination] <src> <dest>
+Usage: mc-image-helper sync [-h] [--skip-newer-in-destination] <srcDest>[,
+                            |<nl><srcDest>...] <srcDest>[,|<nl><srcDest>...]...
 Synchronizes the contents of one directory to another.
-      <src>    source directory
-      <dest>   destination directory
+      <srcDest>[,|<nl><srcDest>...] <srcDest>[,|<nl><srcDest>...]...
+               src... dest directories
   -h, --help   Show this usage and exit
       --skip-newer-in-destination
                Skip any files that exist in the destination and have a newer
@@ -1042,11 +1208,12 @@ Usage: mc-image-helper sync-and-interpolate [-h] [--skip-newer-in-destination]
        ([--replace-env-prefix=<prefix>] [--replace-env-excludes=FILENAME[,
        FILENAME...]]... [--replace-env-exclude-paths=PATH[,PATH...]]...
        --replace-env-file-suffixes=PATH[,PATH...]
-       [--replace-env-file-suffixes=PATH[,PATH...]]...) <src> <dest>
+       [--replace-env-file-suffixes=PATH[,PATH...]]...) <srcDest>[,
+       |<nl><srcDest>...] <srcDest>[,|<nl><srcDest>...]...
 Synchronizes the contents of one directory to another with conditional variable
 interpolation.
-      <src>    source directory
-      <dest>   destination directory
+      <srcDest>[,|<nl><srcDest>...] <srcDest>[,|<nl><srcDest>...]...
+               src... dest directories
   -h, --help   Show this usage and exit
       --replace-env-exclude-paths=PATH[,PATH...]
                Destination paths that will be excluded from processing
@@ -1072,9 +1239,10 @@ Usage: mc-image-helper test-logging-levels
 ### toml-path
 
 ```
-Usage: mc-image-helper toml-path query [file]
-      query    JSON path expression where root element $ can be omitted
-      [file]   TOML file or reads stdin
+Usage: mc-image-helper toml-path [--file=FILE] query
+Extracts a path from a TOML file using json-path syntax
+      query         JSON path expression where root element $ can be omitted
+      --file=FILE   A TOML file to query. If not set, reads stdin
 ```
 
 ### vanillatweaks
@@ -1086,10 +1254,11 @@ Usage: mc-image-helper vanillatweaks [--force-synchronize]
                                      [--world-subdir=<worldSubdir>]
                                      [--pack-files=FILE[,|<nl>FILE...]]...
                                      [--share-codes=CODE[,|<nl>CODE...]]...
-                                     [[--http-response-timeout=DURATION]
+                                     [[--connection-pool-pending-acquire-timeout
+                                     =DURATION]
+                                     [--http-response-timeout=DURATION]
                                      [--tls-handshake-timeout=DURATION]
-                                     [--connection-pool-pending-acquire-timeout=
-                                     DURATION]
+                                     [--use-http2] [--wiretap]
                                      [--connection-pool-max-idle-timeout=DURATIO
                                      N]]
 Downloads Vanilla Tweaks resource packs, data packs, or crafting tweaks given a
@@ -1110,6 +1279,9 @@ share code or pack file
 
       --tls-handshake-timeout=DURATION
                              Default: PT30S
+      --use-http2            Whether to use HTTP/2. Default: false
+      --wiretap              Whether to enable Reactor Netty wiretap logging.
+                               Default: false
       --world-subdir=<worldSubdir>
 
 ```
@@ -1121,31 +1293,34 @@ Usage: mc-image-helper version-from-modrinth-projects
        [--api-base-url=<baseUrl>] [--projects=[loader:]id|slug[:version][,|<nl>
        [loader:]id|slug[:version]...]...]...
        [[--connection-pool-pending-acquire-timeout=DURATION]
-       [--tls-handshake-timeout=DURATION]
-       [--connection-pool-max-idle-timeout=DURATION]
-       [--http-response-timeout=DURATION]]
+       [--http-response-timeout=DURATION] [--tls-handshake-timeout=DURATION]
+       [--use-http2] [--wiretap] [--connection-pool-max-idle-timeout=DURATION]]
 Finds a compatible Minecraft version across given Modrinth projects
       --api-base-url=<baseUrl>
-         Default: https://api.modrinth.com
+                    Default: https://api.modrinth.com
       --connection-pool-max-idle-timeout=DURATION
 
       --connection-pool-pending-acquire-timeout=DURATION
 
       --http-response-timeout=DURATION
-         The response timeout to apply to HTTP operations. Parsed from ISO-8601
-           format. Default: PT30S
+                    The response timeout to apply to HTTP operations. Parsed
+                      from ISO-8601 format. Default: PT30S
       --projects=[loader:]id|slug[:version][,|<nl>[loader:]id|slug[:
         version]...]...
-         Project ID or Slug. Can be <project ID>|<slug>, <loader>:<project
-           ID>|<slug>, <loader>:<project ID>|<slug>:<version ID|version
-           number|release type>, '@'<filename with ref per line (supports #
-           comments)>
-         Examples: fabric-api, fabric:fabric-api, fabric:fabric-api:0.76.1+1.
-           19.2, datapack:terralith, @/path/to/modrinth-mods.txt
-         Valid release types: release, beta, alpha
-         Valid loaders: fabric, forge, paper, datapack, etc.
+                    Project ID or Slug. Can be <project ID>|<slug>, <loader>:
+                      <project ID>|<slug>, <loader>:<project ID>|<slug>:
+                      <version ID|version number|release type>, '@'<filename
+                      with ref per line (supports # comments)>
+                    Examples: fabric-api, fabric:fabric-api, fabric:fabric-api:
+                      0.76.1+1.19.2, datapack:terralith,
+                      @/path/to/modrinth-mods.txt
+                    Valid release types: release, beta, alpha
+                    Valid loaders: fabric, forge, paper, datapack, etc.
       --tls-handshake-timeout=DURATION
-         Default: PT30S
+                    Default: PT30S
+      --use-http2   Whether to use HTTP/2. Default: false
+      --wiretap     Whether to enable Reactor Netty wiretap logging. Default:
+                      false
 ```
 
 ### yaml-path
