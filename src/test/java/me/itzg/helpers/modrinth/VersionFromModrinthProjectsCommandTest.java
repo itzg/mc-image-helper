@@ -167,7 +167,7 @@ class VersionFromModrinthProjectsCommandTest {
             stubFor(get(urlPathEqualTo("/v2/project/" + project + "/version"))
                 .willReturn(aResponse()
                     .withHeader("Content-Type", "application/json")
-                    .withBodyFile("modrinth/project-" + project + ".json")
+                    .withBodyFile("modrinth/project-" + project + "-versions.json")
                 )
             );
         }
