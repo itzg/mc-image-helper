@@ -121,7 +121,7 @@ class VersionFromModrinthProjectsCommandTest {
                 .isEqualTo(ExitCode.OK);
         });
 
-        assertThat(out).isEqualToNormalizingNewlines("1.21.7\n");
+        assertThat(out).isEqualToNormalizingNewlines("1.21.10\n");
     }
 
     @Test
@@ -159,7 +159,7 @@ class VersionFromModrinthProjectsCommandTest {
                 .isEqualTo(ExitCode.OK);
         });
 
-        assertThat(out).isEqualToNormalizingNewlines("1.21.7\n");
+        assertThat(out).isEqualToNormalizingNewlines("1.21.10\n");
     }
 
     private void stubGetProjects(String... projects) {
