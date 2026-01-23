@@ -4,6 +4,7 @@ import static me.itzg.helpers.McImageHelper.SPLIT_COMMA_NL;
 import static me.itzg.helpers.McImageHelper.SPLIT_SYNOPSIS_COMMA_NL;
 
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -78,6 +79,7 @@ public class VersionFromModrinthProjectsCommand implements Callable<Integer> {
                 final Loader loader = projectRef.getLoader() != null ? projectRef.getLoader() : defaultLoader;
                 return modrinthApiClient.getVersionsForProject(projectRef.getIdOrSlug(), loader, null)
                     .map(versions -> versions.stream()
+                        .sorted(Comparator.comparing(Version::getDatePublished))
                         .filter(v -> v.getVersionType().sufficientFor(defaultVersionType))
                         .flatMap(v -> v.getGameVersions().stream())
                         .distinct()
