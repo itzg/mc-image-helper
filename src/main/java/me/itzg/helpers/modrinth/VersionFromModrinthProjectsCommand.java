@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
@@ -77,10 +78,30 @@ public class VersionFromModrinthProjectsCommand implements Callable<Integer> {
             .map(ProjectRef::parse)
             .flatMap(projectRef -> {
                 final Loader loader = projectRef.getLoader() != null ? projectRef.getLoader() : defaultLoader;
+
+                VersionType allowedVersionType = projectRef.hasVersionType()
+                    ? projectRef.getVersionType()
+                    : defaultVersionType;
+
+                String versionNumberFilter = null;
+                if (!projectRef.hasVersionType() && projectRef.hasVersionName()) {
+                    final String raw = projectRef.getVersionNumber();
+                    try {
+                        allowedVersionType = VersionType.valueOf(raw.toUpperCase(Locale.ROOT));
+                    } catch (IllegalArgumentException ignored) {
+                        versionNumberFilter = raw;
+                    }
+                }
+
+                final VersionType finalAllowedVersionType = allowedVersionType;
+                final String finalVersionNumberFilter = versionNumberFilter;
                 return modrinthApiClient.getVersionsForProject(projectRef.getIdOrSlug(), loader, null)
                     .map(versions -> versions.stream()
                         .sorted(Comparator.comparing(Version::getDatePublished))
-                        .filter(v -> v.getVersionType().sufficientFor(defaultVersionType))
+                        .filter(v -> v.getVersionType().sufficientFor(finalAllowedVersionType))
+                        .filter(v -> finalVersionNumberFilter == null
+                            || finalVersionNumberFilter.equals(v.getVersionNumber())
+                            || finalVersionNumberFilter.equals(v.getName()))
                         .flatMap(v -> v.getGameVersions().stream())
                         .distinct()
                         .collect(Collectors.toList())
