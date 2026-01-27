@@ -31,6 +31,11 @@ public class InstallFabricLoaderCommand implements Callable<Integer> {
     @Option(names = "--force-reinstall", description = "Force reinstall of the loader even if it already exists")
     boolean forceReinstall;
 
+    @Option(names = "--fabric-meta-base-url", 
+        defaultValue = "${env:FABRIC_META_BASE_URL:-https://meta.fabricmc.net}",
+        description = "Base URL for Fabric meta API. Default: ${DEFAULT-VALUE}")
+    String fabricMetaBaseUrl;
+
     @ArgGroup
     OriginOptions originOptions = new OriginOptions();
 
@@ -90,6 +95,10 @@ public class InstallFabricLoaderCommand implements Callable<Integer> {
         final FabricLauncherInstaller installer = new FabricLauncherInstaller(outputDirectory)
             .setResultsFile(resultsFile)
             .setForceReinstall(forceReinstall);
+        
+        if (fabricMetaBaseUrl != null) {
+            installer.setFabricMetaBaseUrl(fabricMetaBaseUrl);
+        }
 
         if (originOptions.fromUri != null) {
             installer.installUsingUri(sharedFetchArgs.options(), originOptions.fromUri);
