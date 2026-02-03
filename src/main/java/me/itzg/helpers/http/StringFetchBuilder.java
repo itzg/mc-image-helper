@@ -16,7 +16,8 @@ public class StringFetchBuilder extends FetchBuilderBase<StringFetchBuilder> {
             client
                 .headers(this::applyHeaders)
                 .followRedirect(true)
-                .doOnRequest(debugLogRequest(log, "json fetch"))
+                .doOnRequest(debugLogRequest(log, "string fetch"))
+                .doOnResponse(debugLogResponse(log, "string fetch"))
                 .get()
                 .uri(uri())
                 .responseSingle(this::handleResponse)

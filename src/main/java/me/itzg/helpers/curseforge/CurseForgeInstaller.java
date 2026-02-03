@@ -718,6 +718,11 @@ public class CurseForgeInstaller {
                         .map(CurseForgeMod::getId);
                 }
             })
+            .checkpoint()
+            .doOnError(UnknownModException.class, e -> {
+                log.warn("Unable to resolve {} for exclude/include", e.getSlug(), e);
+            })
+            .onErrorComplete(UnknownModException.class)
             .collect(Collectors.toSet());
     }
 

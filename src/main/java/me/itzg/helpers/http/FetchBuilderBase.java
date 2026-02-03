@@ -219,6 +219,16 @@ public class FetchBuilderBase<SELF extends FetchBuilderBase<SELF>> {
         };
     }
 
+    protected BiConsumer<? super HttpClientResponse, ? super Connection> debugLogResponse(Logger log, String operation) {
+        return (resp, connection) -> {
+            if (log.isDebugEnabled()) {
+                log.debug("{}: uri={} status={}",
+                    operation.toUpperCase(), resp.resourceUrl(), resp.status()
+                    );
+            }
+        };
+    }
+
     private static List<String> applyHeaderRedactions(HttpHeaders headers) {
         return headers.entries().stream()
                 .map(entry -> {
