@@ -148,7 +148,7 @@ public class CurseForgeApiClient implements AutoCloseable {
                     .assemble()
                     .flatMap(searchResponse -> {
                         if (searchResponse.getData() == null || searchResponse.getData().isEmpty()) {
-                            return Mono.error(new GenericException("No mods found with slug=" + slug));
+                            return Mono.error(new UnknownModException(slug));
                         }
                         else if (searchResponse.getData().size() > 1) {
                             return Mono.error(new GenericException("More than one mod found with slug=" + slug));
@@ -157,7 +157,8 @@ public class CurseForgeApiClient implements AutoCloseable {
                             return Mono.just(searchResponse.getData().get(0));
                         }
                     })
-                    .onErrorMap(FailedRequestException::isForbidden, this::errorMapForbidden),
+                    .onErrorMap(FailedRequestException::isForbidden, this::errorMapForbidden)
+                    .checkpoint("searchMod=" + slug + ":" + classId),
                 gameId, slug, classId
             );
     }

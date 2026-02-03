@@ -89,6 +89,7 @@ public class SpecificFileFetchBuilder extends FetchBuilderBase<SpecificFileFetch
                 })
                 .followRedirect(true)
                 .doOnRequest(debugLogRequest(log, "file fetch"))
+                .doOnResponse(debugLogResponse(log, "file fetch"))
                 .get()
                 .uri(uri)
                 .response((resp, byteBufFlux) -> {

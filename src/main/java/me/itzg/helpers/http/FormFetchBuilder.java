@@ -7,6 +7,7 @@ import java.util.function.Consumer;
 
 @Slf4j
 public class FormFetchBuilder extends FetchBuilderBase<FormFetchBuilder> {
+
     private final Consumer<HttpClientForm> formCallback;
 
     protected FormFetchBuilder(State state, Consumer<HttpClientForm> formCallback) {
@@ -15,10 +16,12 @@ public class FormFetchBuilder extends FetchBuilderBase<FormFetchBuilder> {
     }
 
     public <T> ObjectFetchBuilder<T> toObject(Class<T> type) {
+        final String OPERATION = "form post";
         return super.toObject(type, client -> client
                 .headers(this::applyHeaders)
                 .followRedirect(true)
-                .doOnRequest(debugLogRequest(log, "form post"))
+                .doOnRequest(debugLogRequest(log, OPERATION))
+                .doOnResponse(debugLogResponse(log, OPERATION))
                 .post()
                 .uri(uri())
                 .sendForm((httpClientRequest, httpClientForm) ->

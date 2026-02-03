@@ -59,10 +59,12 @@ public class ObjectFetchBuilder<T> extends FetchBuilderBase<ObjectFetchBuilder<T
     }
 
     private HttpClient.ResponseReceiver<?> assembleRequest(HttpClient client) {
+        final String OPERATION = "json fetch";
         return client
                 .headers(this::applyHeaders)
                 .followRedirect(true)
-                .doOnRequest(debugLogRequest(log, "json fetch"))
+                .doOnRequest(debugLogRequest(log, OPERATION))
+                .doOnResponse(debugLogResponse(log, OPERATION))
                 .get()
                 .uri(uri());
     }

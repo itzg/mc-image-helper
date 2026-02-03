@@ -72,6 +72,7 @@ public class OutputToDirectoryFetchBuilder extends FetchBuilderBase<OutputToDire
                 .headers(this::applyHeaders)
                 .followRedirect(true)
                 .doOnRequest(debugLogRequest(log, "file head fetch"))
+                .doOnResponse(debugLogResponse(log, "file head fetch"))
                 .head()
                 .uri(uri())
                 .responseSingle((resp, bodyMono) -> {
@@ -100,6 +101,7 @@ public class OutputToDirectoryFetchBuilder extends FetchBuilderBase<OutputToDire
         return client
             .followRedirect(true)
             .doOnRequest(debugLogRequest(log, "file get fetch"))
+            .doOnResponse(debugLogResponse(log, "file get fetch"))
             .get()
             .uri(uri())
             .response((resp, byteBufFlux) -> {
@@ -218,6 +220,7 @@ public class OutputToDirectoryFetchBuilder extends FetchBuilderBase<OutputToDire
                 .doOnRequest(debugLogRequest(log, "file fetch"))
                 .doOnRequest(
                     (httpClientRequest, connection) -> statusHandler.call(FileDownloadStatus.DOWNLOADING, uri(), outputFile))
+                .doOnResponse(debugLogResponse(log, "file fetch"))
                 .get()
                 .uri(resourceUrl)
                 .response((resp, byteBufFlux) -> {
