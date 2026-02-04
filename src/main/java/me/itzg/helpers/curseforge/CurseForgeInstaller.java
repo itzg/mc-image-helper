@@ -715,14 +715,14 @@ public class CurseForgeInstaller {
                     return Mono.just(id);
                 } catch (NumberFormatException e) {
                     return context.cfApi.searchMod(s, modsClassId)
-                        .map(CurseForgeMod::getId);
+                        .map(CurseForgeMod::getId)
+                        .doOnError(UnknownModException.class, ex -> {
+                            log.warn("Unable to resolve {} for exclude/include", ex.getSlug(), ex);
+                        })
+                        .onErrorComplete(UnknownModException.class);
                 }
             })
             .checkpoint()
-            .doOnError(UnknownModException.class, e -> {
-                log.warn("Unable to resolve {} for exclude/include", e.getSlug(), e);
-            })
-            .onErrorComplete(UnknownModException.class)
             .collect(Collectors.toSet());
     }
 
