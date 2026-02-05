@@ -1,12 +1,14 @@
 package me.itzg.helpers.http;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
+import java.nio.charset.IllegalCharsetNameException;
+import java.nio.charset.UnsupportedCharsetException;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.cxf.attachment.Rfc5987Util;
 import org.apache.hc.client5.http.HttpResponseException;
 import org.apache.hc.core5.http.ClassicHttpResponse;
 import org.apache.hc.core5.http.ContentType;
@@ -43,8 +45,8 @@ public class FilenameExtractor {
             final Matcher m = RFC_5987_ENCODED.matcher(filenameStar);
             if (m.matches()) {
                 try {
-                    return Rfc5987Util.decode(m.group(2), m.group(1));
-                } catch (UnsupportedEncodingException e) {
+                    return decodeRfc5987(m.group(2), m.group(1));
+                } catch (IllegalCharsetNameException | UnsupportedCharsetException e) {
                     log.warn("Failed to decode filename* from {}", headerValue);
                     return null;
                 }
@@ -90,5 +92,31 @@ public class FilenameExtractor {
         }
 
         return filename;
+    }
+
+
+    // Rfc 5987 decoder for "%" bytes.
+    // Referenced original source below, removes cxf lib dep.
+    // Source: https://github.com/apache/cxf/blob/main/core/src/main/java/org/apache/cxf/attachment/Rfc5987Util.java#L73
+    static String decodeRfc5987(String encoded, String charsetName) {
+        final Charset charset = Charset.forName(charsetName);
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream(); // decoded
+        final int len = encoded.length();
+        int i = 0;
+        while (i < len) {
+            char c = encoded.charAt(i);
+            if (c == '%' && i + 2 < len) {
+                int high = Character.digit(encoded.charAt(i + 1), 16);
+                int low = Character.digit(encoded.charAt(i + 2), 16);
+                if (high != -1 && low != -1) {
+                    baos.write((high << 4) + low); // reconstruct byte
+                    i += 3;
+                    continue;
+                }
+            }
+            baos.write(c);
+            i++;
+        }
+        return new String(baos.toByteArray(), charset); // back to string
     }
 }
