@@ -38,7 +38,9 @@ public class FabricLauncherInstaller {
     private Path resultsFile;
 
     @Getter @Setter
-    private String fabricMetaBaseUrl = "https://meta.fabricmc.net";
+    private String fabricMetaBaseUrl = System.getenv("FABRIC_META_BASE_URL") != null
+        ? System.getenv("FABRIC_META_BASE_URL")
+        : "https://meta.fabricmc.net";
 
     @Getter @Setter
     private boolean forceReinstall;
