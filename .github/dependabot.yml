@@ -17,7 +17,8 @@ updates:
   - package-ecosystem: gradle
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
+      day: "wednesday"
     target-branch: "java8"
     labels:
       - "java8"
