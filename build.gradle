@@ -104,7 +104,7 @@ dependencies {
   }
   implementation 'io.netty.incubator:netty-incubator-codec-native-quic:0.0.74.Final'
   implementation 'org.apache.maven:maven-artifact:3.9.11'
-  implementation 'commons-codec:commons-codec:1.20.0'
+  implementation 'commons-codec:commons-codec:1.21.0'
   // for RFC5987 parsing of content-disposition filename*
   // 3.5.x is last of Java8 compatible: https://cxf.apache.org/download.html
   implementation 'org.apache.cxf:cxf-core:[3.5.6,3.6.0)'
