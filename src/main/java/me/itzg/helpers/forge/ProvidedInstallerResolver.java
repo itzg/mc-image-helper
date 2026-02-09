@@ -17,6 +17,7 @@ public class ProvidedInstallerResolver implements InstallerResolver {
     public static final String PROP_ID = "id";
     public static final String PROP_INHERITS_FROM = "inheritsFrom";
     public static final String INSTALLER_ID_FORGE = "forge";
+    public static final String INSTALLER_ID_NEOFORGE = "neoforge";
     public static final String INSTALLER_ID_CLEANROOM = "cleanroom";
 
     private final Path forgeInstaller;
@@ -119,6 +120,9 @@ public class ProvidedInstallerResolver implements InstallerResolver {
         if (idParts.length >= 3) {
             if (idParts[1].equals(INSTALLER_ID_FORGE)) {
                 return new VersionPair(minecraftVersion, idParts[2]);
+            }
+            if (idParts[0].equals(INSTALLER_ID_NEOFORGE)) {
+                return new VersionPair(minecraftVersion, idParts[1]);
             }
             if (idParts[0].equals(INSTALLER_ID_CLEANROOM)) {
                 return new VersionPair(minecraftVersion, String.join("-", idParts[1], idParts[2]))
