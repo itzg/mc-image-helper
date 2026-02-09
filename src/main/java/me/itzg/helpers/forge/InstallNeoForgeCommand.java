@@ -73,21 +73,6 @@ public class InstallNeoForgeCommand implements Callable<Integer> {
         Path installer;
     }
 
-    // @Option(names = "--neoforge-version", required = true, defaultValue = "latest",
-    //     description = "A specific NeoForge version, 'latest', or 'beta'."
-    //         + " Default value is ${DEFAULT-VALUE}"
-    // )
-    // public void setVersion(String version) {
-    //     if (!ALLOWED_FORGE_VERSION.matcher(version).matches()) {
-    //         throw new ParameterException(spec.commandLine(),
-    //             "Invalid value for --forge-version: " + version
-    //         );
-    //     }
-    //     this.neoForgeVersion = version.toLowerCase();
-    // }
-    //
-    // private String neoForgeVersion;
-
     @ArgGroup
     VersionOrInstaller versionOrInstaller = new VersionOrInstaller();
 
