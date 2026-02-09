@@ -49,20 +49,32 @@ public class InstallNeoForgeCommand implements Callable<Integer> {
 
     String minecraftVersion;
 
-    @Option(names = "--neoforge-version", required = true, defaultValue = "latest",
-        description = "A specific NeoForge version, 'latest', or 'beta'."
+    static class VersionOrInstaller {
+
+        @Spec
+        CommandLine.Model.CommandSpec spec;
+
+        String version;
+
+        @Option(names = "--neoforge-version", required = true, defaultValue = "latest", 
+                description = "A specific NeoForge version, 'latest', or 'beta'."
             + " Default value is ${DEFAULT-VALUE}"
-    )
-    public void setVersion(String version) {
-        if (!ALLOWED_FORGE_VERSION.matcher(version).matches()) {
-            throw new ParameterException(spec.commandLine(),
-                "Invalid value for --forge-version: " + version
-            );
+        )
+        public void setVersion(String version) {
+            if (!ALLOWED_FORGE_VERSION.matcher(version).matches()) {
+                throw new ParameterException(spec.commandLine(),
+                    "Invalid value for --neoforge-version: " + version
+                );
+            }
+            this.version = version.toLowerCase();
         }
-        this.neoForgeVersion = version.toLowerCase();
+
+        @Option(names = "--neoforge-installer", description = "Use a local neoforge installer", paramLabel = "FILE")
+        Path installer;
     }
 
-    private String neoForgeVersion;
+    @ArgGroup
+    VersionOrInstaller versionOrInstaller = new VersionOrInstaller();
 
     @Option(names = "--output-directory", defaultValue = ".", paramLabel = "DIR")
     Path outputDirectory;
@@ -83,7 +95,10 @@ public class InstallNeoForgeCommand implements Callable<Integer> {
         try (SharedFetch sharedFetch = Fetch.sharedFetch("install-neoforge", sharedFetchArgs.options())) {
 
             new ForgeLikeInstaller(
-                new NeoForgeInstallerResolver(sharedFetch, minecraftVersion, neoForgeVersion)
+                versionOrInstaller.installer != null ?
+                    new ProvidedInstallerResolver(versionOrInstaller.installer)
+                    :
+                new NeoForgeInstallerResolver(sharedFetch, minecraftVersion, versionOrInstaller.version)
             )
                 .install(outputDirectory, resultsFile, forceReinstall, "NeoForge");
         }
