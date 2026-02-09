@@ -37,61 +37,67 @@ public class FabricLauncherInstaller {
     @Setter
     private Path resultsFile;
 
-    @Getter
-    @Setter
+    @Getter @Setter
     private String fabricMetaBaseUrl = "https://meta.fabricmc.net";
 
-    @Getter
-    @Setter
+    @Getter @Setter
     private boolean forceReinstall;
 
     /**
      * For testing purposes.
      */
-    @Getter
-    @Setter(AccessLevel.PACKAGE)
+    @Getter @Setter(AccessLevel.PACKAGE)
     private boolean skipValidation;
 
     public void installUsingVersions(
-            Options sharedFetchOptions, @NonNull String minecraftVersion,
-            @Nullable String loaderVersion,
-            @Nullable String installerVersion) {
+        Options sharedFetchOptions, @NonNull String minecraftVersion,
+        @Nullable String loaderVersion,
+        @Nullable String installerVersion
+    ) {
         try (SharedFetch sharedFetch = sharedFetch("fabric", sharedFetchOptions)) {
             final FabricMetaClient fabricMetaClient = new FabricMetaClient(sharedFetch, fabricMetaBaseUrl);
 
             fabricMetaClient.resolveMinecraftVersion(minecraftVersion)
-                    .doOnNext(v -> log.debug("Resolved minecraft version {} from {}", v, minecraftVersion))
-                    .flatMap(resolvedMinecraftVersion -> fabricMetaClient
-                            .resolveLoaderVersion(resolvedMinecraftVersion, loaderVersion)
-                            .doOnNext(v -> log.debug("Resolved loader version {} from {}", v, loaderVersion))
-                            .flatMap(resolvedLoaderVersion ->
+                .doOnNext(v -> log.debug("Resolved minecraft version {} from {}", v, minecraftVersion))
+                .flatMap(resolvedMinecraftVersion ->
+                    fabricMetaClient.resolveLoaderVersion(resolvedMinecraftVersion, loaderVersion)
+                        .doOnNext(v -> log.debug("Resolved loader version {} from {}", v, loaderVersion))
+                        .flatMap(resolvedLoaderVersion ->
 
                             fabricMetaClient.resolveInstallerVersion(installerVersion)
-                                    .doOnNext(v -> log.debug("Resolved installer version {} from {}", v,
-                                            installerVersion))
-                                    .flatMap(resolvedInstallerVersion -> downloadResolvedLauncher(
-                                            fabricMetaClient,
-                                            resolvedMinecraftVersion,
-                                            resolvedLoaderVersion,
-                                            resolvedInstallerVersion))
-                                    .checkpoint("downloadResolvedLauncher")))
-                    .block();
+                                .doOnNext(v -> log.debug("Resolved installer version {} from {}", v, installerVersion))
+                                .flatMap(resolvedInstallerVersion ->
+                                    downloadResolvedLauncher(
+                                        fabricMetaClient,
+                                        resolvedMinecraftVersion,
+                                        resolvedLoaderVersion,
+                                        resolvedInstallerVersion
+                                    )
+                                )
+                                .checkpoint("downloadResolvedLauncher")
+                        )
+                )
+                .block();
         }
+
 
     }
 
     private Mono<FabricManifest> downloadResolvedLauncher(FabricMetaClient fabricMetaClient,
-            String minecraftVersion, String loaderVersion, String installerVersion) {
+        String minecraftVersion, String loaderVersion, String installerVersion
+    ) {
         final FabricManifest prevManifest = Manifests.load(outputDir, FabricManifest.MANIFEST_ID,
-                FabricManifest.class);
+            FabricManifest.class
+        );
 
         final Versions expectedVersions = Versions.builder()
-                .game(minecraftVersion)
-                .loader(loaderVersion)
-                .installer(installerVersion)
-                .build();
+            .game(minecraftVersion)
+            .loader(loaderVersion)
+            .installer(installerVersion)
+            .build();
 
-        final boolean needsInstall = prevManifest == null
+        final boolean needsInstall =
+            prevManifest == null
                 || forceReinstall
                 || prevManifest.getOrigin() == null
                 || !prevManifest.getOrigin().equals(expectedVersions)
@@ -101,23 +107,28 @@ public class FabricLauncherInstaller {
             return fabricMetaClient.downloadLauncher(
                     outputDir, minecraftVersion, loaderVersion, installerVersion,
                     Fetch.loggingDownloadStatusHandler(log),
-                    skipValidation)
-                    .publishOn(Schedulers.boundedElastic())
-                    .flatMap(launcherPath -> {
+                    skipValidation
+                )
+                .publishOn(Schedulers.boundedElastic())
+                .flatMap(launcherPath ->
+                    {
                         try {
-                            // noinspection BlockingMethodInNonBlockingContext because IntelliJ is confused
+                            //noinspection BlockingMethodInNonBlockingContext because IntelliJ is confused
                             return finalizeResultsFileAndManifest(
-                                    prevManifest,
-                                    expectedVersions,
-                                    launcherPath);
+                                prevManifest,
+                                expectedVersions,
+                                launcherPath
+                            );
                         } catch (IOException e) {
                             return Mono.error(
-                                    new GenericException("Failed to finalize Fabric setup", e));
+                                new GenericException("Failed to finalize Fabric setup", e)
+                            );
                         }
                     }
 
-                    );
-        } else {
+                );
+        }
+        else {
             // For backward compatibility, need to re-write the results file
             if (resultsFile != null) {
                 try {
@@ -127,25 +138,26 @@ public class FabricLauncherInstaller {
                 }
             }
             log.info("Fabric launcher for minecraft {} loader {} is already available",
-                    minecraftVersion, loaderVersion);
+                minecraftVersion, loaderVersion
+            );
             return Mono.empty();
         }
     }
 
     @Blocking
-    private Mono<FabricManifest> finalizeResultsFileAndManifest(FabricManifest prevManifest, Versions versions,
-            Path launcherPath)
-            throws IOException {
+    private Mono<FabricManifest> finalizeResultsFileAndManifest(FabricManifest prevManifest, Versions versions, Path launcherPath)
+        throws IOException {
         if (resultsFile != null) {
             writeResultsFile(launcherPath, versions.getGame());
         }
 
         final FabricManifest newManifest = FabricManifest.builder()
-                .origin(versions)
-                .files(
-                        Manifests.relativizeAll(outputDir, launcherPath))
-                .launcherPath(launcherPath.toString())
-                .build();
+            .origin(versions)
+            .files(
+                Manifests.relativizeAll(outputDir, launcherPath)
+            )
+            .launcherPath(launcherPath.toString())
+            .build();
 
         Manifests.cleanup(outputDir, prevManifest, newManifest, log);
 
@@ -158,11 +170,11 @@ public class FabricLauncherInstaller {
         final Path launcherPath;
         try (SharedFetch sharedFetch = sharedFetch("fabric", sharedFetchOptions)) {
             launcherPath = sharedFetch.fetch(loaderUri)
-                    .toDirectory(outputDir)
-                    .skipUpToDate(true)
-                    .handleStatus(Fetch.loggingDownloadStatusHandler(log))
-                    .assemble()
-                    .block();
+                .toDirectory(outputDir)
+                .skipUpToDate(true)
+                .handleStatus(Fetch.loggingDownloadStatusHandler(log))
+                .assemble()
+                .block();
         }
 
         if (launcherPath == null) {
@@ -176,14 +188,16 @@ public class FabricLauncherInstaller {
         final FabricManifest prevManifest = Manifests.load(outputDir, FabricManifest.MANIFEST_ID, FabricManifest.class);
 
         final FabricManifest newManifest = FabricManifest.builder()
-                .origin(
-                        RemoteFile.builder()
-                                .uri(loaderUri.toString())
-                                .build())
-                .files(
-                        Manifests.relativizeAll(outputDir, launcherPath))
-                .launcherPath(launcherPath.toString())
-                .build();
+            .origin(
+                RemoteFile.builder()
+                    .uri(loaderUri.toString())
+                    .build()
+            )
+            .files(
+                Manifests.relativizeAll(outputDir, launcherPath)
+            )
+            .launcherPath(launcherPath.toString())
+            .build();
 
         Manifests.save(outputDir, FabricManifest.MANIFEST_ID, newManifest);
         Manifests.cleanup(outputDir, prevManifest, newManifest, log);
@@ -199,19 +213,21 @@ public class FabricLauncherInstaller {
         }
 
         Manifests.save(outputDir, FabricManifest.MANIFEST_ID,
-                FabricManifest.builder()
-                        .origin(LocalFile.builder().build())
-                        .launcherPath(launcherFile.toString())
-                        .build());
+            FabricManifest.builder()
+                .origin(LocalFile.builder().build())
+                .launcherPath(launcherFile.toString())
+                .build()
+            );
     }
 
     private void writeResultsFileFromLauncher(Path launcherPath) throws IOException {
         final Properties installProps = IoStreams.readFileFromZip(launcherPath,
-                "install.properties", in -> {
-                    final Properties p = new Properties();
-                    p.load(in);
-                    return p;
-                });
+            "install.properties", in -> {
+                final Properties p = new Properties();
+                p.load(in);
+                return p;
+            }
+        );
 
         if (installProps == null) {
             throw new GenericException("Failed to locate install.properties from launcher " + launcherPath);
