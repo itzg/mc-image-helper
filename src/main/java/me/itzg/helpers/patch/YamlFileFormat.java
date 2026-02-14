@@ -8,7 +8,7 @@ public class YamlFileFormat extends ObjectMapperFileFormat {
     public YamlFileFormat() {
         super(new YAMLMapper()
             .configure(YAMLGenerator.Feature.WRITE_DOC_START_MARKER, false)
-            .configure(YAMLGenerator.Feature.MINIMIZE_QUOTES, true),
+            .configure(YAMLGenerator.Feature.MINIMIZE_QUOTES, false),
             "yaml",
             "yaml", "yml"
             );
