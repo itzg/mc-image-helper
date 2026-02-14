@@ -154,6 +154,33 @@ class PatchSetProcessorTest {
     }
 
     @Test
+    void setInYamlWithUnderscores(@TempDir Path tempDir) throws IOException {
+        final Path src = tempDir.resolve("limbo.yml");
+        Files.copy(Paths.get("src/test/resources/patch/limbo.yml"), src);
+
+        final PatchSetProcessor processor = new PatchSetProcessor(
+                new Interpolator(environmentVariablesProvider, "CFG_")
+        );
+
+        processor.process(new PatchSet()
+                .setPatches(singletonList(
+                    new PatchDefinition()
+                        .setFile(src.toString())
+                        .setOps(singletonList(
+                            new PatchSetOperation()
+                                .setPath("$.main.prepare-min-version")
+                                .setValue(new TextNode("1_21_11"))
+                                .setValueType("string")
+                        ))
+                ))
+        );
+
+        assertThat(src).hasSameTextualContentAs(
+                Paths.get("src/test/resources/patch/expected-limbo.yml")
+        );
+    }
+
+    @Test
     void setInToml(@TempDir Path tempDir) throws IOException {
         final Path src = tempDir.resolve("testing.toml");
         Files.copy(Paths.get("src/test/resources/patch/testing.toml"), src);
