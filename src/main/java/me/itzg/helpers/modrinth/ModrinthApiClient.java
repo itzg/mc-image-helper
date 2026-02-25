@@ -9,6 +9,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -154,6 +155,24 @@ public class ModrinthApiClient implements AutoCloseable {
             return getVersionsForProject(project.getId(), loader, gameVersion)
                     .mapNotNull(versions -> pickVersion(project, versions, defaultVersionType));
         }
+    }
+
+    public Mono<List<String>> resolveProjectGameVersions(ProjectRef projectRef,
+                                                        @Nullable Loader loader,
+                                                        @Nullable String gameVersion,
+                                                        VersionType allowedVersionType) {
+
+        return getVersionsForProject(projectRef.getIdOrSlug(), loader, gameVersion)
+            .map(versions -> versions.stream()
+                .sorted(Comparator.comparing(Version::getDatePublished))
+                .filter(v -> v.getVersionType().sufficientFor(allowedVersionType))
+                .filter(v -> projectRef.getVersionNumber() == null
+                    || projectRef.getVersionNumber().equals(v.getVersionNumber())
+                    || projectRef.getVersionNumber().equals(v.getName()))
+                .flatMap(v -> v.getGameVersions().stream())
+                .distinct()
+                .collect(Collectors.toList())
+            );
     }
 
     public Mono<Path> downloadMrPack(VersionFile versionFile) {
