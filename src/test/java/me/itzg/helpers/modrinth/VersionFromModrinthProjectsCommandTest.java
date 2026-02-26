@@ -121,7 +121,7 @@ class VersionFromModrinthProjectsCommandTest {
                 .isEqualTo(ExitCode.OK);
         });
 
-        assertThat(out).isEqualToNormalizingNewlines("1.21.7\n");
+        assertThat(out).isEqualToNormalizingNewlines("1.21.10\n");
     }
 
     @Test
@@ -159,15 +159,15 @@ class VersionFromModrinthProjectsCommandTest {
                 .isEqualTo(ExitCode.OK);
         });
 
-        assertThat(out).isEqualToNormalizingNewlines("1.21.7\n");
+        assertThat(out).isEqualToNormalizingNewlines("1.21.10\n");
     }
 
     private void stubGetProjects(String... projects) {
         for (final String project : projects) {
-            stubFor(get(urlPathEqualTo("/v2/project/" + project))
+            stubFor(get(urlPathEqualTo("/v2/project/" + project + "/version"))
                 .willReturn(aResponse()
                     .withHeader("Content-Type", "application/json")
-                    .withBodyFile("modrinth/project-" + project + ".json")
+                    .withBodyFile("modrinth/project-" + project + "-versions.json")
                 )
             );
         }

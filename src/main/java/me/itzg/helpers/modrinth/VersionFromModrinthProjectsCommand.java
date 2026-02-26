@@ -4,13 +4,18 @@ import static me.itzg.helpers.McImageHelper.SPLIT_COMMA_NL;
 import static me.itzg.helpers.McImageHelper.SPLIT_SYNOPSIS_COMMA_NL;
 
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.http.SharedFetchArgs;
 import me.itzg.helpers.modrinth.model.Project;
+import me.itzg.helpers.modrinth.model.Version;
+import me.itzg.helpers.modrinth.model.VersionType;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.ExitCode;
@@ -38,6 +43,12 @@ public class VersionFromModrinthProjectsCommand implements Callable<Integer> {
     )
     List<String> projects;
 
+    @Option(names = "--loader", description = "Valid values: ${COMPLETION-CANDIDATES}")
+    Loader loader;
+
+    @Option(names = "--allowed-version-type", defaultValue = "release", description = "Valid values: ${COMPLETION-CANDIDATES}")
+    VersionType defaultVersionType;
+
     @Option(names = "--api-base-url", defaultValue = "${env:MODRINTH_API_BASE_URL:-https://api.modrinth.com}",
         description = "Default: ${DEFAULT-VALUE}"
     )
@@ -49,7 +60,7 @@ public class VersionFromModrinthProjectsCommand implements Callable<Integer> {
     @Override
     public Integer call() throws Exception {
         try (ModrinthApiClient modrinthApiClient = new ModrinthApiClient(baseUrl, "modrinth", sharedFetchArgs.options())) {
-            final String version = versionFromProjects(modrinthApiClient, projects);
+            final String version = versionFromProjects(modrinthApiClient, projects, loader, defaultVersionType);
 
             if (version != null) {
                 System.out.println(version);
@@ -62,15 +73,17 @@ public class VersionFromModrinthProjectsCommand implements Callable<Integer> {
         }
     }
 
-    static String versionFromProjects(ModrinthApiClient modrinthApiClient, List<String> projectRefs) {
-        final List<List<String>> allGameVersions = Flux.fromStream(
-                // extract just the id/slug from refs
-                projectRefs.stream()
-                    .map(ProjectRef::parse)
-                    .map(ProjectRef::getIdOrSlug)
-            )
-            .flatMap(modrinthApiClient::getProject)
-            .map(Project::getGameVersions)
+    static String versionFromProjects(ModrinthApiClient modrinthApiClient, List<String> projectRefs, Loader defaultLoader, VersionType defaultVersionType) {
+        final List<List<String>> allGameVersions = Flux.fromIterable(projectRefs)
+            .map(ProjectRef::parse)
+            .flatMap(projectRef -> {
+                final Loader loader = projectRef.getLoader() != null ? projectRef.getLoader() : defaultLoader;
+                final VersionType allowedVersionType = projectRef.hasVersionType()
+                    ? projectRef.getVersionType()
+                    : defaultVersionType;
+
+                return modrinthApiClient.resolveProjectGameVersions(projectRef, loader, null, allowedVersionType);
+            })
             .collectList()
             .block();
 
