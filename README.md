@@ -260,7 +260,7 @@ Download a file
                             Specifies the accepted content type(s) to use with
                               the request
       --apikey=<apikeyHeader>
-                            Specifies the accept header to use with the request
+                            Sets the x-api-key header to use with the request
       --exists              Test if the given URIs are retrievable
   -h, --help                Show this usage and exit
       --json-path=<jsonPath>

@@ -120,7 +120,7 @@ public class GetCommand implements Callable<Integer> {
     List<String> acceptContentTypes;
 
     @Option(names = "--apikey",
-        description = "Specifies the accept header to use with the request"
+        description = "Sets the x-api-key header to use with the request"
     )
     String apikeyHeader;
 
