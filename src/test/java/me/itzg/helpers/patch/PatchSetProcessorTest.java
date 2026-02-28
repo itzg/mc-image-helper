@@ -2,6 +2,7 @@ package me.itzg.helpers.patch;
 
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 import static uk.org.webcompere.modelassert.json.JsonAssertions.assertJson;
 import static uk.org.webcompere.modelassert.json.JsonAssertions.assertYaml;
@@ -18,8 +19,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.stream.Stream;
+import com.jayway.jsonpath.JsonPathException;
 import me.itzg.helpers.env.EnvironmentVariablesProvider;
 import me.itzg.helpers.env.Interpolator;
+import me.itzg.helpers.errors.GenericException;
+import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.patch.model.PatchAddOperation;
 import me.itzg.helpers.patch.model.PatchDefinition;
 import me.itzg.helpers.patch.model.PatchPutOperation;
@@ -74,6 +78,46 @@ class PatchSetProcessorTest {
         assertThat(src).hasSameTextualContentAs(
             Paths.get("src/test/resources/patch/expected-setInJson.json")
         );
+    }
+
+    @Test
+    void invalidPath(@TempDir Path tempDir) throws IOException {
+        final Path original = Paths.get("src/test/resources/patch/testing.json");
+        final Path src1 = tempDir.resolve("testing1.json");
+        final Path src2 = tempDir.resolve("testing2.json");
+        Files.copy(original, src1);
+        Files.copy(original, src2);
+
+        final PatchSetProcessor processor = new PatchSetProcessor(
+            new Interpolator(environmentVariablesProvider, "CFG_")
+        );
+
+        assertThatThrownBy(() -> {
+            processor.process(new PatchSet()
+                .setPatches(Arrays.asList(
+                    new PatchDefinition()
+                        .setFile(src1.toString())
+                        .setOps(singletonList(
+                            new PatchSetOperation()
+                                .setPath("$.outer.field1")
+                                .setValue(new TextNode("new value"))
+                        )),
+                    new PatchDefinition()
+                        .setFile(src2.toString())
+                        .setOps(singletonList(
+                            new PatchSetOperation()
+                                .setPath("$.invalid.path")
+                                .setValue(new TextNode("na"))
+                        ))
+                ))
+            );
+        })
+            .isInstanceOf(InvalidParameterException.class)
+            .hasMessageContaining("testing2.json")
+            .cause()
+            .isInstanceOf(PatchOperationException.class)
+            .hasMessageContaining("$.invalid.path")
+            .hasRootCauseInstanceOf(JsonPathException.class);
     }
 
     @Test
