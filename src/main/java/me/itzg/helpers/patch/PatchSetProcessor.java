@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
+import com.jayway.jsonpath.JsonPathException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
@@ -12,13 +13,11 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
-import com.jayway.jsonpath.JsonPathException;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.CharsetDetector;
 import me.itzg.helpers.env.Interpolator;
 import me.itzg.helpers.env.Interpolator.Result;
 import me.itzg.helpers.env.MissingVariablesException;
-import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.patch.model.PatchAddOperation;
 import me.itzg.helpers.patch.model.PatchDefinition;
@@ -71,7 +70,13 @@ public class PatchSetProcessor {
 
                     final Map<String, Object> data = fileFormat.decode(detected.getContent().toString());
                     if (patch.getOps() != null && !patch.getOps().isEmpty()) {
-                        applyOps(data, patch.getOps());
+                        try {
+                            applyOps(data, patch.getOps());
+                        } catch (PatchOperationException e) {
+                            throw new InvalidParameterException(String.format(
+                                "Failed to apply patch from %s to file %s", patch.getSrc(), filePath
+                            ), e, true);
+                        }
 
                         try (OutputStream out = Files.newOutputStream(filePath)) {
                             out.write(
@@ -84,12 +89,10 @@ public class PatchSetProcessor {
                 } catch (IOException e) {
                     log.warn("Failed to read content of {}: {}", filePath, e.getMessage());
                     log.debug("Details", e);
-                } catch (PatchOperationException e) {
-                    throw new InvalidParameterException("Failed to apply patch to file "+filePath, e);
                 }
             }
         } else {
-            log.warn("{} is not an existing file", filePath);
+            log.warn("Unable to patch {} it is not an existing file", filePath);
         }
     }
 

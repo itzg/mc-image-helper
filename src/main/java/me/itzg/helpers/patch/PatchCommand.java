@@ -77,6 +77,9 @@ public class PatchCommand implements Callable<Integer> {
         return 0;
     }
 
+    /**
+     * Looking at {@link #patches}, loads {@link PatchDefinition}s from a directory or a @{link PatchSet} from a file.
+     */
     private PatchSet loadPatchSet() throws IOException {
         if (Files.isDirectory(patches)) {
             final PatchSet patchSet = new PatchSet();
@@ -84,10 +87,12 @@ public class PatchCommand implements Callable<Integer> {
 
             try (DirectoryStream<Path> dir = Files.newDirectoryStream(patches)) {
                 for (Path entry : dir) {
+                    // Adds JSON patch definitions from matching files
                     if (Files.isRegularFile(entry)
                             && entry.getFileName().toString().endsWith(".json")) {
                         patchSet.getPatches().add(
                                 patchSetMapper.readValue(entry.toFile(), PatchDefinition.class)
+                                    .setSrc(entry)
                         );
                     }
                 }
@@ -96,7 +101,12 @@ public class PatchCommand implements Callable<Integer> {
             return patchSet;
         }
         else {
-            return patchSetMapper.readValue(patches.toFile(), PatchSet.class);
+            return setSource(patches, patchSetMapper.readValue(patches.toFile(), PatchSet.class));
         }
+    }
+
+    private PatchSet setSource(Path src, PatchSet patchSet) {
+        patchSet.getPatches().forEach(patch -> patch.setSrc(src));
+        return patchSet;
     }
 }

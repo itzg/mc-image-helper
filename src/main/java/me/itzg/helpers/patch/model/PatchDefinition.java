@@ -1,8 +1,10 @@
 package me.itzg.helpers.patch.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
+import java.nio.file.Path;
 import java.util.List;
 import lombok.Data;
 
@@ -20,4 +22,7 @@ public class PatchDefinition {
 
     @JsonProperty(required = true)
     List<PatchOperation> ops;
+
+    @JsonIgnore
+    Path src;
 }

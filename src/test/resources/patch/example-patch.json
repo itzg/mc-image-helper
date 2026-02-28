@@ -1,7 +1,7 @@
 {
   "patches": [
     {
-      "file": "patch/testing.yaml",
+      "file": "testing.yaml",
       "ops": [
         {
           "$set": {
