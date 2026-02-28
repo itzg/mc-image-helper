@@ -24,7 +24,12 @@ public class ExceptionHandler implements IExecutionExceptionHandler {
 
         if (!mcImageHelper.isSilent()) {
             if (e instanceof InvalidParameterException) {
-                log.error("Invalid parameter provided for '{}' command: {}", commandLine.getCommandName(), e.getMessage());
+                if (((InvalidParameterException) e).isShowCauses()) {
+                    logExceptionWithoutStacktrace(e, commandLine);
+                }
+                else {
+                    log.error("Invalid parameter provided for '{}' command: {}", commandLine.getCommandName(), e.getMessage());
+                }
                 log.debug("Invalid parameter details", e);
             }
             else if (e instanceof FailedRequestException) {

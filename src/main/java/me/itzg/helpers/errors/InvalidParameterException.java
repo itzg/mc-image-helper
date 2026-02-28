@@ -1,15 +1,32 @@
 package me.itzg.helpers.errors;
 
+import lombok.Getter;
 import picocli.CommandLine.ExitCode;
 
 @EmitsExitCode(ExitCode.USAGE)
 public class InvalidParameterException extends RuntimeException {
 
-  public InvalidParameterException(String message) {
-    super(message);
-  }
+    /**
+     * Indicates if the causal chain should be displayed by {@link ExceptionHandler} during non-debug logging.
+     */
+    @Getter
+    final boolean showCauses;
 
-  public InvalidParameterException(String message, Throwable cause) {
-    super(message, cause);
-  }
+    public InvalidParameterException(String message) {
+        this(message, false);
+    }
+
+    public InvalidParameterException(String message, boolean showCauses) {
+        super(message);
+        this.showCauses = showCauses;
+    }
+
+    public InvalidParameterException(String message, Throwable cause) {
+        this(message, cause, false);
+    }
+
+    public InvalidParameterException(String message, Throwable cause, boolean showCauses) {
+        super(message, cause);
+        this.showCauses = showCauses;
+    }
 }
