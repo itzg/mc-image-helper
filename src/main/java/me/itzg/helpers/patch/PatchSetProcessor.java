@@ -12,11 +12,14 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import com.jayway.jsonpath.JsonPathException;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.CharsetDetector;
 import me.itzg.helpers.env.Interpolator;
 import me.itzg.helpers.env.Interpolator.Result;
 import me.itzg.helpers.env.MissingVariablesException;
+import me.itzg.helpers.errors.GenericException;
+import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.patch.model.PatchAddOperation;
 import me.itzg.helpers.patch.model.PatchDefinition;
 import me.itzg.helpers.patch.model.PatchOperation;
@@ -81,6 +84,8 @@ public class PatchSetProcessor {
                 } catch (IOException e) {
                     log.warn("Failed to read content of {}: {}", filePath, e.getMessage());
                     log.debug("Details", e);
+                } catch (PatchOperationException e) {
+                    throw new InvalidParameterException("Failed to apply patch to file "+filePath, e);
                 }
             }
         } else {
@@ -138,28 +143,36 @@ public class PatchSetProcessor {
         final DocumentContext doc = JsonPath.parse(data);
 
         for (PatchOperation op : ops) {
-            if (op instanceof PatchSetOperation) {
-                final PatchSetOperation setOp = (PatchSetOperation) op;
-                processValueType(
-                        setOp.getValue(), setOp.getValueType(),
-                        "set", setOp.getPath(),
-                        obj -> doc.set(setOp.getPath(), obj)
-                );
-            } else if (op instanceof PatchPutOperation) {
-                final PatchPutOperation putOp = (PatchPutOperation) op;
-                processValueType(
-                        putOp.getValue(), putOp.getValueType(),
-                        "put", putOp + " at " + putOp.getPath(),
-                        obj -> doc.put(putOp.getPath(), putOp.getKey(), obj)
-                );
-            } else if (op instanceof PatchAddOperation) {
-                final PatchAddOperation addOp = (PatchAddOperation) op;
-                processValueType(
-                        addOp.getValue(), addOp.getValueType(),
-                        "add", addOp + " at " + addOp.getPath(),
-                        obj -> doc.add(addOp.getPath(), obj)
-                );
+            try {
+                processPatchOperation(op, doc);
+            } catch (JsonPathException e) {
+                throw new PatchOperationException(op, e);
             }
+        }
+    }
+
+    private void processPatchOperation(PatchOperation op, DocumentContext doc) throws IOException {
+        if (op instanceof PatchSetOperation) {
+            final PatchSetOperation setOp = (PatchSetOperation) op;
+            processValueType(
+                    setOp.getValue(), setOp.getValueType(),
+                    "set", setOp.getPath(),
+                    obj -> doc.set(setOp.getPath(), obj)
+            );
+        } else if (op instanceof PatchPutOperation) {
+            final PatchPutOperation putOp = (PatchPutOperation) op;
+            processValueType(
+                    putOp.getValue(), putOp.getValueType(),
+                    "put", putOp + " at " + putOp.getPath(),
+                    obj -> doc.put(putOp.getPath(), putOp.getKey(), obj)
+            );
+        } else if (op instanceof PatchAddOperation) {
+            final PatchAddOperation addOp = (PatchAddOperation) op;
+            processValueType(
+                    addOp.getValue(), addOp.getValueType(),
+                    "add", addOp + " at " + addOp.getPath(),
+                    obj -> doc.add(addOp.getPath(), obj)
+            );
         }
     }
 
