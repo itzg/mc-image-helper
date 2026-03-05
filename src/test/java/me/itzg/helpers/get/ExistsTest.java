@@ -1,83 +1,67 @@
 package me.itzg.helpers.get;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockserver.model.HttpResponse.response;
 
+import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
+import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import java.net.MalformedURLException;
-import me.itzg.helpers.TestLoggingAppender;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockserver.integration.ClientAndServer;
-import org.mockserver.junit.jupiter.MockServerExtension;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
 
-@ExtendWith(MockServerExtension.class)
+@WireMockTest
 class ExistsTest {
-  private final ClientAndServer client;
-  private final MockServerSupport mock;
 
-  ExistsTest(ClientAndServer client) {
-    this.client = client;
-    mock = new MockServerSupport(client);
-  }
+    @Test
+    void okWhenExists(WireMockRuntimeInfo wmRuntimeInfo) throws MalformedURLException {
+        stubFor(head(urlPathEqualTo("/exists"))
+            .willReturn(ok())
+        );
 
-  @AfterEach
-  void tearDown() {
-    client.reset();
-    TestLoggingAppender.reset();
-  }
+        final int status =
+            new CommandLine(new GetCommand())
+                .execute(
+                    "--exists",
+                    wmRuntimeInfo.getHttpBaseUrl() + "/exists"
+                );
 
+        assertThat(status).isEqualTo(0);
+    }
 
-  @Test
-  void okWhenExists() throws MalformedURLException {
-    mock.expectRequest("HEAD", "/exists",
-        response("Here!"));
+    @Test
+    void notOkWhenOneMissing(WireMockRuntimeInfo wm) throws MalformedURLException {
+        stubFor(head(urlPathEqualTo("/exists"))
+            .willReturn(ok()));
+        stubFor(head(urlPathEqualTo("/notHere"))
+            .willReturn(notFound()));
 
-    final int status =
-        new CommandLine(new GetCommand())
-            .execute(
-                "--exists",
-                mock.buildMockedUrl("/exists").toString()
-            );
+        final int status =
+            new CommandLine(new GetCommand())
+                .execute(
+                    "--exists",
+                    wm.getHttpBaseUrl() + "/exists",
+                    wm.getHttpBaseUrl() + "/notHere"
+                );
 
-    assertThat(status).isEqualTo(0);
-  }
+        assertThat(status).isEqualTo(ExitCode.SOFTWARE);
+    }
 
-  @Test
-  void notOkWhenOneMissing() throws MalformedURLException {
-    mock.expectRequest("HEAD", "/exists",
-        response("Here!"));
-    mock.expectRequest("HEAD", "/notHere",
-        response().withStatusCode(404));
+    @Test
+    void includesAcceptHeader(WireMockRuntimeInfo wm) throws MalformedURLException {
+        stubFor(head(urlPathEqualTo("/exists"))
+            .withHeader("accept", equalTo("text/plain"))
+            .willReturn(ok("Here!"))
+        );
 
-    final int status =
-        new CommandLine(new GetCommand())
-            .execute(
-                "--exists",
-                mock.buildMockedUrl("/exists").toString(),
-                mock.buildMockedUrl("/notHere").toString()
-            );
+        final int status =
+            new CommandLine(new GetCommand())
+                .execute(
+                    "--exists",
+                    "--accept", "text/plain",
+                    wm.getHttpBaseUrl() + "/exists"
+                );
 
-    assertThat(status).isEqualTo(ExitCode.SOFTWARE);
-  }
-
-  @Test
-  void includesAcceptHeader() throws MalformedURLException {
-    mock.expectRequest("HEAD", "/exists",
-        request -> request.withHeader("accept", "text/plain"),
-        response("Here!"));
-
-    final int status =
-        new CommandLine(new GetCommand())
-            .execute(
-                "--exists",
-                "--accept", "text/plain",
-                mock.buildMockedUrl("/exists").toString()
-            );
-
-    assertThat(status).isEqualTo(0);
-
-  }
+        assertThat(status).isEqualTo(0);
+    }
 }
