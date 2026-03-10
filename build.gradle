@@ -112,7 +112,7 @@ dependencies {
     //	at reactor.netty.http.internal.Http3.isHttp3Available(Http3.java:35)
     exclude group: 'io.netty', module: 'netty-codec-native-quic'
   }
-  implementation 'org.apache.maven:maven-artifact:3.9.12'
+  implementation 'org.apache.maven:maven-artifact:3.9.13'
   implementation 'commons-codec:commons-codec:1.21.0'
   implementation 'org.jetbrains:annotations:26.1.0'
 
