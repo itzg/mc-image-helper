@@ -370,13 +370,7 @@ public class ManageUsersCommand implements Callable<Integer> {
     }
 
     private static String getOfflineUUID(String username) {
-        final MessageDigest digester;
-        try {
-            digester = MessageDigest.getInstance("MD5");
-        } catch (NoSuchAlgorithmException e) {
-            throw new GenericException("Failed to create MD5 digester to generate offline player UUID", e);
-        }
-        final byte[] bytes = digester.digest(("OfflinePlayer:"+username).getBytes(StandardCharsets.UTF_8));
+        final byte[] bytes = ("OfflinePlayer:"+username).getBytes(StandardCharsets.UTF_8);
 
         return UUID.nameUUIDFromBytes(bytes).toString();
     }
