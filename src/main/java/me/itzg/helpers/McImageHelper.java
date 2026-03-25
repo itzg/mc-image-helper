@@ -32,6 +32,7 @@ import me.itzg.helpers.modrinth.InstallModrinthModpackCommand;
 import me.itzg.helpers.modrinth.ModrinthCommand;
 import me.itzg.helpers.modrinth.VersionFromModrinthProjectsCommand;
 import me.itzg.helpers.mvn.MavenDownloadCommand;
+import me.itzg.helpers.packwiz.InstallPackwizModpackCommand;
 import me.itzg.helpers.paper.InstallPaperCommand;
 import me.itzg.helpers.patch.PatchCommand;
 import me.itzg.helpers.properties.SetPropertiesCommand;
@@ -78,6 +79,7 @@ import picocli.CommandLine.Spec;
         InstallForgeCommand.class,
         InstallModrinthModpackCommand.class,
         InstallNeoForgeCommand.class,
+        InstallPackwizModpackCommand.class,
         InstallPaperCommand.class,
         InstallPurpurCommand.class,
         InstallQuiltCommand.class,
