@@ -41,40 +41,72 @@ public class ProjectRef {
     private final String versionId;
     private final String versionNumber;
 
+    /**
+     * When true, this project is optional and version-resolution failures
+     * should be logged as warnings instead of causing a hard error.
+     * Marked by appending {@code ?} to the project slug/ID in the input,
+     * e.g. {@code pl3xmap?} or {@code fabric:pl3xmap?:beta}.
+     */
+    private final boolean optional;
+
     public static ProjectRef parse(String projectRef) {
         final String[] parts = projectRef.split(":", 3);
         
         // Handle cases with no colon
         if (parts.length == 1) {
-            return new ProjectRef(parts[0], null, null);
+            final OptionalStrip stripped = stripOptionalMarker(parts[0]);
+            return new ProjectRef(stripped.value, null, null, stripped.optional);
         }
         
         // Check if first part is a valid loader
         Loader loader = null;
-        int idIndex = 0;
         if (VALID_LOADERS.contains(parts[0].toLowerCase())) {
             loader = Loader.valueOf(parts[0].toLowerCase());
-            idIndex = 1;
         }
         
         // Handle remaining parts
         if (parts.length == 2) {
             // Either loader:id or id:version
             if (loader != null) {
-                return new ProjectRef(parts[1], null, loader);
+                final OptionalStrip stripped = stripOptionalMarker(parts[1]);
+                return new ProjectRef(stripped.value, null, loader, stripped.optional);
             } else {
-                return new ProjectRef(parts[0], parts[1], null);
+                // id:version — the ? goes on the id part
+                final OptionalStrip stripped = stripOptionalMarker(parts[0]);
+                return new ProjectRef(stripped.value, parts[1], null, stripped.optional);
             }
-        } 
+        }
         else if (parts.length == 3) {
             // Must be loader:id:version
             if (loader == null) {
                 throw new InvalidParameterException("Invalid loader in project reference: " + parts[0]);
             }
-            return new ProjectRef(parts[1], parts[2], loader);
+            final OptionalStrip stripped = stripOptionalMarker(parts[1]);
+            return new ProjectRef(stripped.value, parts[2], loader, stripped.optional);
         }
         
         throw new InvalidParameterException("Invalid project reference: " + projectRef);
+    }
+
+    /**
+     * Strips a trailing {@code ?} from a project slug or ID and returns
+     * both the cleaned value and whether the marker was present.
+     */
+    private static OptionalStrip stripOptionalMarker(String value) {
+        if (value.endsWith("?")) {
+            return new OptionalStrip(value.substring(0, value.length() - 1), true);
+        }
+        return new OptionalStrip(value, false);
+    }
+
+    private static class OptionalStrip {
+        final String value;
+        final boolean optional;
+
+        OptionalStrip(String value, boolean optional) {
+            this.value = value;
+            this.optional = optional;
+        }
     }
 
     /**
@@ -82,16 +114,25 @@ public class ProjectRef {
      * @param version can be a {@link VersionType}, ID, or name/number
      */
     public ProjectRef(String projectSlug, String version) {
-        this(projectSlug, version, null);
+        this(projectSlug, version, null, false);
     }
 
     /**
      * @param version  can be a {@link VersionType}, ID, or name/number
      */
     public ProjectRef(String projectSlug, @Nullable String version, Loader loader) {
+        this(projectSlug, version, loader, false);
+    }
+
+    /**
+     * @param version  can be a {@link VersionType}, ID, or name/number
+     * @param optional whether the project is optional (skip on failure)
+     */
+    public ProjectRef(String projectSlug, @Nullable String version, Loader loader, boolean optional) {
         this.idOrSlug = projectSlug;
         this.loader = loader;
         this.projectUri = null;
+        this.optional = optional;
         this.versionType = parseVersionType(version);
         if (this.versionType == null) {
             if (isVersionId(version)) {
@@ -112,6 +153,7 @@ public class ProjectRef {
     public ProjectRef(URI projectUri, String versionId) {
         this.loader = null;
         this.projectUri = projectUri;
+        this.optional = false;
 
         final String filename = extractFilename(projectUri);
         this.idOrSlug = filename.endsWith(".mrpack") ?

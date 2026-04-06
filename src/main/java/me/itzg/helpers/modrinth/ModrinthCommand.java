@@ -52,14 +52,15 @@ public class ModrinthCommand implements Callable<Integer> {
             + " <loader>:<project ID>|<slug>,"
             + " <loader>:<project ID>|<slug>:<version ID|version number|release type>,"
             + " '@'<filename with ref per line (supports # comments)>"
+            + "%nAppend '?' to mark a project as optional (skipped with a warning if unavailable)."
             + "%nExamples: fabric-api, fabric:fabric-api, fabric:fabric-api:0.76.1+1.19.2,"
-            + " datapack:terralith, @/path/to/modrinth-mods.txt"
+            + " datapack:terralith, pl3xmap?, @/path/to/modrinth-mods.txt"
             + "%nValid release types: release, beta, alpha"
             + "%nValid loaders: fabric, forge, paper, datapack, etc."
             + "%nEmbedded comments are allowed.",
         split = SPLIT_COMMA_NL,
         splitSynopsisLabel = SPLIT_SYNOPSIS_COMMA_NL,
-        paramLabel = "[loader:]id|slug[:version]"
+        paramLabel = "[loader:]id|slug[?][:version]"
     )
     public void setProjects(List<String> projects) {
         this.projects = normalizeOptionList(projects);
@@ -135,16 +136,28 @@ public class ModrinthCommand implements Callable<Integer> {
             return Collections.emptyList();
         }
 
+        final List<String> expandedRefs = expandProjectListings(projects);
+
+        // Separate optional from required so that bulkGetProjects can handle
+        // unknown optional slugs gracefully.
+        final List<ProjectRef> allRefs = expandedRefs.stream()
+            .map(ProjectRef::parse)
+            .collect(Collectors.toList());
+
         try (ModrinthApiClient modrinthApiClient = new ModrinthApiClient(baseUrl, "modrinth", sharedFetchArgs.options())) {
             //noinspection DataFlowIssue since it thinks block() may return null
-            return
+            final List<ResolvedProject> resolvedProjects =
                 modrinthApiClient.bulkGetProjects(
-                    expandProjectListings(projects).stream()
-                        .map(ProjectRef::parse)
+                    allRefs.stream(),
+                    allRefs.stream()
+                        .filter(ProjectRef::isOptional)
+                        .map(ProjectRef::getIdOrSlug)
+                        .collect(Collectors.toSet())
                 )
                 .defaultIfEmpty(Collections.emptyList())
-                .block()
-                .stream()
+                .block();
+
+            return resolvedProjects.stream()
                 .flatMap(resolvedProject ->
                     processProject(
                         modrinthApiClient,
@@ -346,7 +359,7 @@ public class ModrinthCommand implements Callable<Integer> {
                 ));
         }
 
-        log.debug("Starting with project='{}' slug={}", project.getTitle(), project.getSlug());
+        log.debug("Starting with project='{}' slug={} optional={}", project.getTitle(), project.getSlug(), projectRef.isOptional());
 
         if (projectsProcessed.add(project.getId())) {
             final Loader effectiveLoader = projectRef.getLoader() != null
@@ -365,6 +378,11 @@ public class ModrinthCommand implements Callable<Integer> {
                     )
                     .block();
             } catch (NoApplicableVersionsException | NoFilesAvailableException e) {
+                if (projectRef.isOptional()) {
+                    log.warn("Optional project '{}' has no compatible version for {}/{} — skipping",
+                        project.getTitle(), gameVersion, effectiveLoader);
+                    return Stream.empty();
+                }
                 throw new InvalidParameterException(e.getMessage(), e);
             }
 
@@ -397,6 +415,11 @@ public class ModrinthCommand implements Callable<Integer> {
                             : expandIfZip(downloadedFile);
                     });
             } else {
+                if (projectRef.isOptional()) {
+                    log.warn("Optional project '{}' has no matching versions for loader {}, game version {} — skipping",
+                        projectRef, effectiveLoader, gameVersion);
+                    return Stream.empty();
+                }
                 throw new InvalidParameterException(
                     String.format(
                         "Project %s does not have any matching versions for loader %s, game version %s",
