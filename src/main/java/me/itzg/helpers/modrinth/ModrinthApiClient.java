@@ -13,6 +13,7 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -76,7 +77,22 @@ public class ModrinthApiClient implements AutoCloseable {
                 .assemble();
     }
 
+    /**
+     * Backward-compatible overload: all projects are required.
+     */
     public Mono<List<ResolvedProject>> bulkGetProjects(Stream<ProjectRef> projectRefs) {
+        return bulkGetProjects(projectRefs, Collections.emptySet());
+    }
+
+    /**
+     * Bulk-fetches projects from Modrinth. Projects whose slug/ID is in
+     * {@code optionalSlugs} will be silently skipped if not found, rather
+     * than causing an error.
+     *
+     * @param projectRefs     all project references to look up
+     * @param optionalSlugs   slugs/IDs that are allowed to be missing
+     */
+    public Mono<List<ResolvedProject>> bulkGetProjects(Stream<ProjectRef> projectRefs, Set<String> optionalSlugs) {
         final Map<String, ProjectRef> indexed = projectRefs
             .collect(Collectors.toMap(
                 ProjectRef::getIdOrSlug,
@@ -91,8 +107,7 @@ public class ModrinthApiClient implements AutoCloseable {
             .toObjectList(Project.class)
             .assemble()
             .flatMap(projects -> {
-                // Unknown project ID/slug will simply be absent from response,
-                // detect and error on missing ones.
+                // Unknown project ID/slug will simply be absent from response
                 if (indexed.size() > projects.size()) {
                     final HashSet<String> notFound = new HashSet<>(indexed.keySet());
                     for (final Project project : projects) {
@@ -102,7 +117,20 @@ public class ModrinthApiClient implements AutoCloseable {
                         }
                     }
 
-                    return Mono.error(new InvalidParameterException("Project(s) could not be located: " + notFound));
+                    // Separate truly missing from optionally missing
+                    final HashSet<String> requiredNotFound = new HashSet<>();
+                    for (final String slug : notFound) {
+                        if (optionalSlugs.contains(slug)) {
+                            log.warn("Optional project '{}' could not be found on Modrinth — skipping", slug);
+                        } else {
+                            requiredNotFound.add(slug);
+                        }
+                    }
+
+                    if (!requiredNotFound.isEmpty()) {
+                        return Mono.error(new InvalidParameterException(
+                            "Project(s) could not be located: " + requiredNotFound));
+                    }
                 }
 
                 return Mono.just(

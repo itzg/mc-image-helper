@@ -11,6 +11,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.http.SharedFetchArgs;
 import me.itzg.helpers.modrinth.model.Project;
@@ -23,6 +24,7 @@ import picocli.CommandLine.Option;
 import reactor.core.publisher.Flux;
 
 @Command(name = "version-from-modrinth-projects", description = "Finds a compatible Minecraft version across given Modrinth projects")
+@Slf4j
 public class VersionFromModrinthProjectsCommand implements Callable<Integer> {
 
     @Option(
@@ -31,13 +33,14 @@ public class VersionFromModrinthProjectsCommand implements Callable<Integer> {
             + " <loader>:<project ID>|<slug>,"
             + " <loader>:<project ID>|<slug>:<version ID|version number|release type>,"
             + " '@'<filename with ref per line (supports # comments)>"
+            + "%nAppend '?' to mark a project as optional (excluded from version resolution)."
             + "%nExamples: fabric-api, fabric:fabric-api, fabric:fabric-api:0.76.1+1.19.2,"
-            + " datapack:terralith, @/path/to/modrinth-mods.txt"
+            + " datapack:terralith, pl3xmap?, @/path/to/modrinth-mods.txt"
             + "%nValid release types: release, beta, alpha"
             + "%nValid loaders: fabric, forge, paper, datapack, etc.",
         split = SPLIT_COMMA_NL,
         splitSynopsisLabel = SPLIT_SYNOPSIS_COMMA_NL,
-        paramLabel = "[loader:]id|slug[:version]",
+        paramLabel = "[loader:]id|slug[?][:version]",
         // at least one is required
         arity = "1..*"
     )
@@ -74,8 +77,30 @@ public class VersionFromModrinthProjectsCommand implements Callable<Integer> {
     }
 
     static String versionFromProjects(ModrinthApiClient modrinthApiClient, List<String> projectRefs, Loader defaultLoader, VersionType defaultVersionType) {
-        final List<List<String>> allGameVersions = Flux.fromIterable(projectRefs)
+        // Parse all refs and separate optional from required
+        final List<ProjectRef> allRefs = projectRefs.stream()
             .map(ProjectRef::parse)
+            .collect(Collectors.toList());
+
+        final List<ProjectRef> requiredRefs = allRefs.stream()
+            .filter(ref -> !ref.isOptional())
+            .collect(Collectors.toList());
+
+        // Use required projects only for version resolution.
+        // If all projects are optional, fall back to using all of them.
+        final List<ProjectRef> effectiveRefs;
+        if (requiredRefs.isEmpty()) {
+            log.warn("All projects are marked as optional — using all for version resolution");
+            effectiveRefs = allRefs;
+        } else {
+            if (requiredRefs.size() < allRefs.size()) {
+                final long optionalCount = allRefs.size() - requiredRefs.size();
+                log.info("Excluding {} optional project(s) from Minecraft version resolution", optionalCount);
+            }
+            effectiveRefs = requiredRefs;
+        }
+
+        final List<List<String>> allGameVersions = Flux.fromIterable(effectiveRefs)
             .flatMap(projectRef -> {
                 final Loader loader = projectRef.getLoader() != null ? projectRef.getLoader() : defaultLoader;
                 final VersionType allowedVersionType = projectRef.hasVersionType()
