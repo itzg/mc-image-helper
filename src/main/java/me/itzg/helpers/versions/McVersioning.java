@@ -12,7 +12,7 @@ public class McVersioning {
     public static final String LATEST = "latest";
     public static final Pattern MC_VERSION_REGEX = Pattern.compile(
         LATEST + "|" + SNAPSHOT + "|"
-            + "[0-9]{2}w[0-9]{2}[a-z]|(?:[0-9]+\\\\.)+[0-9]+(?:-(?:pre|rc)[0-9]+)?|\\\\d+\\\\.\\\\d+|\\\\d+",
+            + "(?:[0-9]{2}w[0-9]{2}[a-z]|(?:[0-9]+\\.)+[0-9]+(?:-(?:pre|rc)[0-9]+)?|\\d+\\.\\d+|\\d+)",
         Pattern.CASE_INSENSITIVE
     );
 

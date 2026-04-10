@@ -58,7 +58,7 @@ public class InstallFabricLoaderCommand implements Callable<Integer> {
 
     static class VersionOptions {
         @Option(names = "--minecraft-version", defaultValue = "latest", paramLabel = "VERSION")
-            public void setMinecraftVersion(String minecraftVersion) {
+        public void setMinecraftVersion(String minecraftVersion) {
             this.minecraftVersion = validateMinecraftVersion(minecraftVersion);
         }
         String minecraftVersion;
