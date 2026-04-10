@@ -4,18 +4,14 @@ import static me.itzg.helpers.McImageHelper.SPLIT_COMMA_NL;
 import static me.itzg.helpers.McImageHelper.SPLIT_SYNOPSIS_COMMA_NL;
 
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.http.SharedFetchArgs;
-import me.itzg.helpers.modrinth.model.Project;
-import me.itzg.helpers.modrinth.model.Version;
 import me.itzg.helpers.modrinth.model.VersionType;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
@@ -90,12 +86,14 @@ public class VersionFromModrinthProjectsCommand implements Callable<Integer> {
         // If all projects are optional, fall back to using all of them.
         final List<ProjectRef> effectiveRefs;
         if (requiredRefs.isEmpty()) {
+            // warning logs go to stderr -- won't pollute stdout
             log.warn("All projects are marked as optional — using all for version resolution");
             effectiveRefs = allRefs;
         } else {
             if (requiredRefs.size() < allRefs.size()) {
                 final long optionalCount = allRefs.size() - requiredRefs.size();
-                log.info("Excluding {} optional project(s) from Minecraft version resolution", optionalCount);
+                // debug logs go to stderr -- won't pollute stdout
+                log.debug("Excluding {} optional project(s) from Minecraft version resolution", optionalCount);
             }
             effectiveRefs = requiredRefs;
         }

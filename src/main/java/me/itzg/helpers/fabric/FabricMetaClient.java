@@ -17,6 +17,7 @@ import me.itzg.helpers.files.IoStreams;
 import me.itzg.helpers.http.FileDownloadStatusHandler;
 import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.http.UriBuilder;
+import me.itzg.helpers.versions.McVersioning;
 import org.apache.commons.codec.binary.Hex;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -87,11 +88,11 @@ public class FabricMetaClient {
     }
 
     private static boolean isSnapshot(@Nullable String version) {
-        return version != null && version.equalsIgnoreCase("snapshot");
+        return version != null && version.equalsIgnoreCase(McVersioning.SNAPSHOT);
     }
 
     private static boolean isLatest(@Nullable String version) {
-        return version == null || version.equalsIgnoreCase("latest");
+        return version == null || version.equalsIgnoreCase(McVersioning.LATEST);
     }
 
     public Mono<String> resolveLoaderVersion(String minecraftVersion, String loaderVersion) {
