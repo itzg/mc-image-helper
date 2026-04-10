@@ -1,5 +1,8 @@
 package me.itzg.helpers.fabric;
 
+import static me.itzg.helpers.versions.McVersioning.isLatest;
+import static me.itzg.helpers.versions.McVersioning.isSnapshot;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -17,7 +20,6 @@ import me.itzg.helpers.files.IoStreams;
 import me.itzg.helpers.http.FileDownloadStatusHandler;
 import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.http.UriBuilder;
-import me.itzg.helpers.versions.McVersioning;
 import org.apache.commons.codec.binary.Hex;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -85,14 +87,6 @@ public class FabricMetaClient {
             })
             .retryWhen(Retry.backoff(retryMaxAttempts, retryMinBackoff).filter(IOException.class::isInstance))
             .checkpoint();
-    }
-
-    private static boolean isSnapshot(@Nullable String version) {
-        return version != null && version.equalsIgnoreCase(McVersioning.SNAPSHOT);
-    }
-
-    private static boolean isLatest(@Nullable String version) {
-        return version == null || version.equalsIgnoreCase(McVersioning.LATEST);
     }
 
     public Mono<String> resolveLoaderVersion(String minecraftVersion, String loaderVersion) {
