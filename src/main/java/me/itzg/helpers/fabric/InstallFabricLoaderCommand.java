@@ -1,5 +1,7 @@
 package me.itzg.helpers.fabric;
 
+import static me.itzg.helpers.versions.McVersioning.validateMinecraftVersion;
+
 import java.net.URI;
 import java.nio.file.Path;
 import java.util.concurrent.Callable;
@@ -19,6 +21,7 @@ import picocli.CommandLine.Option;
 @Slf4j
 public class InstallFabricLoaderCommand implements Callable<Integer> {
 
+    @SuppressWarnings("unused") // picocli uses it
     @Option(names = {"--help","-h"}, usageHelp = true)
     boolean help;
 
@@ -55,6 +58,9 @@ public class InstallFabricLoaderCommand implements Callable<Integer> {
 
     static class VersionOptions {
         @Option(names = "--minecraft-version", defaultValue = "latest", paramLabel = "VERSION")
+        public void setMinecraftVersion(String minecraftVersion) {
+            this.minecraftVersion = validateMinecraftVersion(minecraftVersion);
+        }
         String minecraftVersion;
 
         @Option(names = "--installer-version", paramLabel = "VERSION",
