@@ -5,9 +5,10 @@ import static java.util.Objects.requireNonNull;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidParameterException;
@@ -17,6 +18,7 @@ import me.itzg.helpers.mvn.MavenRepoApi;
 import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
 
 @Slf4j
 public class NeoForgeInstallerResolver implements InstallerResolver {
@@ -81,7 +83,7 @@ public class NeoForgeInstallerResolver implements InstallerResolver {
         }
         else {
             neoForgeVersionType = NeoForgeVersionType.SPECIFIC;
-            neoforgeVersion = splitNeoforgeVersion(requestedNeoForgeVersion);
+            neoforgeVersion = splitNeoforgeVersion(requestedNeoForgeVersion).getVersion();
             if (neoforgeVersion.length < 3) {
                 throw new InvalidParameterException("Malformed NeoForge version: " + requestedNeoForgeVersion);
             }
@@ -104,36 +106,28 @@ public class NeoForgeInstallerResolver implements InstallerResolver {
 
         final String result = metadata.getVersioning().getVersion().stream()
             .filter(s -> {
-                final String[] parts = splitNeoforgeVersion(s);
-                if (parts.length < 3) {
+                final @NotNull ParsedVersion parsed = splitNeoforgeVersion(s);
+                if (parsed.version.length < 3) {
                     log.debug("Skipping malformed version in metadata: {}", s);
+                    return false;
+                }
+                // consider only released and beta for now
+                if (!parsed.released && !parsed.beta) {
+                    log.debug("Skipping non-release/beta version in metadata: {}", s);
                     return false;
                 }
 
                 if (neoForgeVersionType == NeoForgeVersionType.SPECIFIC) {
                     // NOTE: ignores beta qualifier
-                    return IntStream.range(0, 3)
-                        .allMatch(i -> parts[i].equals(neoforgeVersion[i]));
+                    return Arrays.equals(parsed.version, neoforgeVersion);
                 }
                 else {
-                    // specific minecraft version
-                    if (minecraftVersion != null) {
-                        // minor.patch of minecraft version != major.minor of neoforge version
-                        final String minor = minecraftVersion[1];
-                        final String patch = minecraftVersion.length > 2 ? minecraftVersion[2] : "0";
-
-                        if (!(minor.equals(parts[0]) && patch.equals(parts[1]))) {
-                            return false;
-                        }
+                    if (notMatchingSpecific(minecraftVersion, parsed)) {
+                        return false;
                     }
 
-                    // If requesting a beta, then only match a beta version
-                    if (neoForgeVersionType == NeoForgeVersionType.BETA) {
-                        return parts.length >= 4 && parts[3].equals("beta");
-                    }
-                    else {
-                        return parts.length == 3;
-                    }
+                    // Match up request for beta or not
+                    return (neoForgeVersionType == NeoForgeVersionType.BETA) == parsed.beta;
                 }
             })
             // pick the highest version from a or b
@@ -145,23 +139,90 @@ public class NeoForgeInstallerResolver implements InstallerResolver {
         return result != null ? new VersionPair(deriveMinecraftVersion(result), result) : null;
     }
 
+    private static boolean notMatchingSpecific(String[] minecraftVersion, @NonNull ParsedVersion parsed) {
+        if (minecraftVersion != null) {
+            if (parsed.isYearBased()) {
+                // if minecraft version is 2-part, then it has dropped trailing ".0"
+                if (minecraftVersion.length == 2) {
+                    return !(minecraftVersion[0].equals(parsed.version[0])
+                        && minecraftVersion[1].equals(parsed.version[1])
+                        && parsed.version[2].equals("0")
+                    );
+                }
+                // else compare all three slots
+                else {
+                    return !(minecraftVersion[0].equals(parsed.version[0])
+                        && minecraftVersion[1].equals(parsed.version[1])
+                        && minecraftVersion[2].equals(parsed.version[2])
+                    );
+                }
+            }
+            // not year-based where minecraft version has a leading "1."
+            else {
+                // if minecraft version is 2-part, then it has dropped trailing ".0"
+                if (minecraftVersion.length == 2) {
+                    return !(minecraftVersion[1].equals(parsed.version[0])
+                        && parsed.version[1].equals("0")
+                    );
+                }
+                // else compare the minor and patch of minecraft version with first two of parsed
+                else {
+                    return !(minecraftVersion[1].equals(parsed.version[0])
+                        && minecraftVersion[2].equals(parsed.version[1])
+                    );
+                }
+            }
+        }
+        return false;
+    }
+
     private boolean useForgeArtifactId(String minecraftVersion) {
         return FORGE_LIKE_VERSION.equals(minecraftVersion);
     }
 
     @NotNull
     private static String deriveMinecraftVersion(String result) {
-        final String[] resolvedParts = splitNeoforgeVersion(result);
+        final @NotNull ParsedVersion resolved = splitNeoforgeVersion(result);
+        if (resolved.isYearBased()) {
+            // Minecraft versions never end with ".0"...they just leave it off
+            return resolved.version[2].equals("0") ?
+                String.join(".", resolved.version[0], resolved.version[1]) :
+                String.join(".", resolved.version[0], resolved.version[1], resolved.version[2]);
+        }
+        else {
+            // Minecraft versions never end with ".0"...they just leave it off
+            return resolved.version[1].equals("0") ? String.join(".", "1", resolved.version[0])
+                : String.join(".", "1", resolved.version[0], resolved.version[1]
+                );
+        }
+    }
 
-        // Minecraft versions never end with ".0"...they just leave it off
-        return resolvedParts[1].equals("0") ? String.join(".", "1", resolvedParts[0])
-                : String.join(".", "1", resolvedParts[0], resolvedParts[1]
-        );
+    @Data
+    static class ParsedVersion {
+        final String[] version;
+        final boolean released;
+        // 26.1.0.15-beta
+        // and not 26.1.0.0-alpha.15+pre-3
+        final boolean beta;
+
+        public boolean isYearBased() {
+            // Since NeoForge always includes ".0" for patch it is safe to conditionalize on slot count
+            // such as 26.1.1.0
+            return version.length == 4;
+        }
     }
 
     @NotNull
-    private static String[] splitNeoforgeVersion(String s) {
-        return s.split("[.-]", 4);
+    private static ParsedVersion splitNeoforgeVersion(String s) {
+        // pre 26.x has three numerical spots and optional "beta"
+        // post 26.x has four numerical spots and optional "beta"
+        final String[] versionAndBeta = s.split("-", 2);
+        final String[] version = versionAndBeta[0].split("\\.", 4);
+
+        return new ParsedVersion(version,
+            versionAndBeta.length == 1,
+            versionAndBeta.length > 1 && versionAndBeta[1].equalsIgnoreCase("beta")
+        );
     }
 
     @NotNull
