@@ -20,18 +20,24 @@ import org.junit.jupiter.params.provider.MethodSource;
 class NeoForgeInstallerResolverTest {
 
     public static Stream<Arguments> resolve_args() {
+        // minecraftVersion, neoforgeVersion, expectedMinecraftVersion, expectedNeoforgeVersion
         return Stream.of(
             arguments("1.20.4", "beta", "1.20.4", "20.4.166-beta"),
-            arguments("1.21.4", "latest", null, null),
-            arguments("1.20.2", "latest", "1.20.2", "20.2.88"),
+            // minecraft versions that is not supported by neoforge
+            arguments("1.22.1", "latest", null, null),
+            arguments("1.20.2", "latest", "1.20.2", "20.2.93"),
             arguments("1.20.2", "beta", "1.20.2", "20.2.85-beta"),
             arguments("1.20.3", "beta", "1.20.3", "20.3.8-beta"),
             arguments("latest", "20.2.85-beta", "1.20.2", "20.2.85-beta"),
             arguments("latest", "20.2.88", "1.20.2", "20.2.88"),
             arguments("1.20.1", "latest", "1.20.1", "47.1.84"),
             arguments("1.21", "beta", "1.21", "21.0.142-beta"),
-            arguments("latest", "beta", "1.21.4", "21.4.48-beta"),
-            arguments("latest", "latest", "1.21.3", "21.3.58")
+            arguments("latest", "beta", "26.1.2", "26.1.2.7-beta"),
+            arguments("latest", "latest", "1.21.11", "21.11.42"),
+            arguments("26.1", "26.1.0.19-beta", "26.1", "26.1.0.19-beta"),
+            arguments("26.1", "beta", "26.1", "26.1.0.19-beta"),
+            // only betas available for 26.1
+            arguments("26.1", "latest", null, null)
         );
     }
 
