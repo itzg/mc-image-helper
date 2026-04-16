@@ -8,6 +8,7 @@ import java.util.regex.Pattern;
 import me.itzg.helpers.http.Fetch;
 import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.http.SharedFetchArgs;
+import me.itzg.helpers.versions.McVersioning;
 import picocli.CommandLine;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
@@ -26,13 +27,8 @@ public class InstallNeoForgeCommand implements Callable<Integer> {
     @Option(names = {"--help", "-h"}, usageHelp = true)
     boolean help;
 
-    public static final Pattern ALLOWED_MINECRAFT_VERSION = Pattern.compile(
-        String.join("|", "latest", VERSION_REGEX),
-        Pattern.CASE_INSENSITIVE
-    );
-
     public static final Pattern ALLOWED_FORGE_VERSION = Pattern.compile(
-        String.join("|", "latest", "beta", VERSION_REGEX),
+        String.join("|", "latest", "beta", VERSION_REGEX + "(-beta)?"),
         Pattern.CASE_INSENSITIVE
     );
 
@@ -41,10 +37,7 @@ public class InstallNeoForgeCommand implements Callable<Integer> {
         description = "'latest', which is the default, or a specific version to narrow NeoForge version selection"
     )
     public void setMinecraftVersion(String minecraftVersion) {
-        if (!ALLOWED_MINECRAFT_VERSION.matcher(minecraftVersion).matches()) {
-            throw new ParameterException(spec.commandLine(), "Invalid value for minecraft version: " + minecraftVersion);
-        }
-        this.minecraftVersion = minecraftVersion;
+        this.minecraftVersion = McVersioning.validateMinecraftVersion(minecraftVersion, spec.commandLine());
     }
 
     String minecraftVersion;
