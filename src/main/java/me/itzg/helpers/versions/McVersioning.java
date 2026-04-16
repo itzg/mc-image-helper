@@ -5,6 +5,8 @@ import java.util.regex.Pattern;
 import lombok.experimental.UtilityClass;
 import me.itzg.helpers.errors.InvalidParameterException;
 import org.jspecify.annotations.Nullable;
+import picocli.CommandLine;
+import picocli.CommandLine.ParameterException;
 
 @UtilityClass
 public class McVersioning {
@@ -32,7 +34,15 @@ public class McVersioning {
         if (m.matches()) {
             return version;
         }
-        throw new InvalidParameterException(String.format("%s is not a valid minecraft version", version));
+        throw new InvalidParameterException("Invalid value for minecraft version: " + version);
+    }
+
+    public static String validateMinecraftVersion(String version, CommandLine commandLine) {
+        try {
+            return validateMinecraftVersion(version);
+        } catch (InvalidParameterException e) {
+            throw new ParameterException(commandLine, "Invalid value for minecraft version: " + version);
+        }
     }
 
     public static boolean isSnapshot(@Nullable String version) {
