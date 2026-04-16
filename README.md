@@ -745,6 +745,8 @@ Installs selected PaperMC
       --channel=<channel>    This is ignored for now
       --check-updates        Check for updates and exit with status code 0 when
                                available
+      --clean-libraries      Remove currently installed and not required
+                               libraries
       --connection-pool-max-idle-timeout=DURATION
 
       --connection-pool-pending-acquire-timeout=DURATION
@@ -1530,4 +1532,3 @@ One of the following identifiers or can be prefixed with `list of ` to indicate 
   }
 }
 ```
-
