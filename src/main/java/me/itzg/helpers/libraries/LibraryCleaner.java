@@ -147,6 +147,7 @@ public class LibraryCleaner {
 
         libs = Files.walk(libraryFolder)
                 .filter(Files::isRegularFile)
+                .filter(path -> path.getFileName().toString().endsWith(".jar"))
                 .map(libraryFolder::relativize)
                 .map(Path::toString)
                 .collect(Collectors.toList());
