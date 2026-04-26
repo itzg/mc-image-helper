@@ -1,6 +1,7 @@
 package me.itzg.helpers.libraries;
 
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -94,8 +95,22 @@ public class LibraryCleaner {
     private List<String> readJarLibraries(Path jarFile, LibraryListPaths libraryListPath) throws IOException {
         List<String> libs = new ArrayList<String>();
 
-        JarFile serverJar = new JarFile(jarFile.toString());
+        JarFile serverJar;
+
+        try {
+            serverJar = new JarFile(jarFile.toString());
+        } catch (Exception e) {
+            log.error("Failed to read server jar {} {}", jarFile.toString(), e);
+            return libs;
+        }
+
         JarEntry libraryList = serverJar.getJarEntry(libraryListPath.getPath());
+
+        if (libraryList == null) {
+            log.error("Failed to read library List {} for server type {}", libraryListPath.getPath(), libraryListPath.name());
+            serverJar.close();
+            return libs;
+        }
 
         InputStream is = serverJar.getInputStream(libraryList);
         InputStreamReader isr = new InputStreamReader(is);
