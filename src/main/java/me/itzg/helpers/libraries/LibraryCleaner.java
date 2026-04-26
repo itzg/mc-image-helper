@@ -109,6 +109,18 @@ public class LibraryCleaner {
                     InputStreamReader isr = new InputStreamReader(is);
                     BufferedReader br = new BufferedReader(isr);) {
 
+                // Libraries List file contains rows of entries, split into three columns
+                // <sha256> <groupId:artifactId:version> <path>, for example
+                // 5d803eb7348a27468c6172daef2f0d77260dd63cde377ebfa73e36789ae8fcee com.mojang:logging:1.6.11 com/mojang/logging/1.6.11/logging-1.6.11.jar
+                // 7e9941bbdcca244d878ea95bfff788fd9ba6a65af757f24be6c632930d61c7ed com.mysql:mysql-connector-j:9.2.0 com/mysql/mysql-connector-j/9.2.0/mysql-connector-j-9.2.0.jar
+                //
+                // When the libraries get expanded, they simply extract the jars referenced in
+                // the path column to ./libraries/{path}
+                //
+                // Reader iterates through each line, trimming whitespace, then selecting the
+                // third column, fetching the path of
+                // the jar
+
                 libs = br.lines()
                         .map(String::trim)
                         .map(s -> s.split("\\s+"))
