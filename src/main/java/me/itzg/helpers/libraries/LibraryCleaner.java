@@ -57,13 +57,16 @@ public class LibraryCleaner {
         }
 
         final List<String> installedLibraries;
+
+
+        if (!Files.isDirectory(libraryFolder)) {
+            log.debug("Failed to read library folder {}", libraryFolder);
+        }
+
         try {
             installedLibraries = readInstalledLibraries(libraryFolder);
-        } catch (Exception e) {
-
-            // Will fail on fresh install as no libs installed
-            // Therefore no /library created
-            log.debug("Failed to read installed libraries {}", e);
+        } catch (IOException e) {
+            log.warn("Failed to read installed libraries", e);
             return;
         }
 
