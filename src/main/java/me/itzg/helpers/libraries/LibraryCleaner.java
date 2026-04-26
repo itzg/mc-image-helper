@@ -165,17 +165,12 @@ public class LibraryCleaner {
      * @param required  List of libraries required by Server Jar
      * @return List of currently installed libraries not required by the Server Jar
      */
-    private HashSet<String> compareInstalledRequiredLibraries(List<String> installed, List<String> required) {
+    private List<String> compareInstalledRequiredLibraries(List<String> installed, List<String> required) {
         HashSet<String> installedNotRequired = new HashSet<String>(installed);
-        HashSet<String> requiredSet = new HashSet<String>(required);
 
-        for (String s : installed) {
-            if (requiredSet.contains(s)) {
-                installedNotRequired.remove(s);
-            }
-        }
+        installedNotRequired.removeAll(required);
 
-        return installedNotRequired;
+        return installedNotRequired.stream().collect(Collectors.toList());
     }
 
     /**
