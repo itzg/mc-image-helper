@@ -107,21 +107,25 @@ public class LibraryCleaner {
         JarEntry libraryList = serverJar.getJarEntry(libraryListPath.getPath());
 
         if (libraryList == null) {
-            log.error("Failed to read library List {} for server type {}", libraryListPath.getPath(), libraryListPath.name());
+            log.error("Failed to read library List {} for server type {}", libraryListPath.getPath(),
+                    libraryListPath.name());
             serverJar.close();
             return libs;
         }
 
-        InputStream is = serverJar.getInputStream(libraryList);
-        InputStreamReader isr = new InputStreamReader(is);
-        BufferedReader br = new BufferedReader(isr);
+        try (
+                InputStream is = serverJar.getInputStream(libraryList);
+                InputStreamReader isr = new InputStreamReader(is);
+                BufferedReader br = new BufferedReader(isr);) {
 
-        libs = br.lines()
-                .map(String::trim)
-                .map(s -> s.split("\\s+"))
-                .filter(parts -> parts.length > 1)
-                .map(parts -> parts[2])
-                .collect(Collectors.toList());
+            libs = br.lines()
+                    .map(String::trim)
+                    .map(s -> s.split("\\s+"))
+                    .filter(parts -> parts.length > 1)
+                    .map(parts -> parts[2])
+                    .collect(Collectors.toList());
+
+        }
 
         serverJar.close();
         return libs;
