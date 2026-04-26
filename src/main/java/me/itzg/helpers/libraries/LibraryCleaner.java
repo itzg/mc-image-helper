@@ -7,6 +7,7 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.jar.JarEntry;
@@ -76,12 +77,13 @@ public class LibraryCleaner {
         for (String s : oldLibraries) {
             try {
                 Files.delete(libraryFolder.resolve(s));
-                deleteEmptyParentDirectories(libraryFolder, libraryFolder.resolve(s));
             } catch (Exception e) {
                 log.warn("Failed to delete library {} {}", s, e);
             }
 
         }
+
+        deleteEmptyDirectories(libraryFolder);
     }
 
     /**
@@ -177,30 +179,27 @@ public class LibraryCleaner {
     }
 
     /**
-     * Takes currently delete file, moves upwards in filesystem and deletes any
-     * empty folders
-     * 
-     * @param baseRoot    Root folder where libraries are installed
-     * @param deletedFile Path to recently deleted file
+     * Reads all files inside directory, deletes empty subdirectories
+     *
+     * @param root Root directory to search inside
      */
-    private void deleteEmptyParentDirectories(Path baseRoot, Path deletedFile) {
-        Path current = deletedFile.getParent();
-        while (current != null && !current.equals(baseRoot)) {
-            try (Stream<Path> entries = Files.list(current)) {
-                if (entries.findAny().isPresent()) {
-                    return;
-                }
-            } catch (IOException e) {
-                log.debug("Failed to inspect directory {}", current, e);
-                return;
-            }
-            try {
-                Files.delete(current);
-            } catch (IOException e) {
-                log.debug("Failed to delete empty directory {}", current, e);
-                return;
-            }
-            current = current.getParent();
+    private void deleteEmptyDirectories(Path root) {
+        try (Stream<Path> stream = Files.walk(root)) {
+            stream.sorted(Comparator.reverseOrder())
+                    .filter(Files::isDirectory)
+                    .forEach(dir -> {
+
+                        try (Stream<Path> files = Files.list(dir)) {
+                            if (files.findAny().isEmpty()) {
+                                Files.delete(dir);
+                            }
+                        } catch (IOException e) {
+                            log.error("Failed to delete directory {} {}", dir.toString(), e);
+                        }
+                    });
+
+        } catch (Exception e) {
+            log.error("Failed to walk directory {} {}", root.toString(), e);
         }
     }
 }
