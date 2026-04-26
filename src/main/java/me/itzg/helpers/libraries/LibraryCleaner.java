@@ -70,7 +70,7 @@ public class LibraryCleaner {
             return;
         }
 
-        log.info("Removing " + String.valueOf(oldLibraries.size()) + " deprecated installed libraries");
+        log.info("Removing {} deprecated installed libraries", String.valueOf(oldLibraries.size()));
 
         for (String s : oldLibraries) {
             try {
