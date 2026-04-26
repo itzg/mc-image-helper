@@ -165,9 +165,10 @@ public class LibraryCleaner {
      */
     private HashSet<String> compareInstalledRequiredLibraries(List<String> installed, List<String> required) {
         HashSet<String> installedNotRequired = new HashSet<String>(installed);
+        HashSet<String> requiredSet = new HashSet<String>(required);
 
         for (String s : installed) {
-            if (required.contains(s)) {
+            if (requiredSet.contains(s)) {
                 installedNotRequired.remove(s);
             }
         }
