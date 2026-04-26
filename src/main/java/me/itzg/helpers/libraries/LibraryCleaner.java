@@ -7,6 +7,7 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -64,7 +65,7 @@ public class LibraryCleaner {
             return;
         }
 
-        oldLibraries = compareInstalledRequiredLibraries(installedLibraries, requiredLibraries);
+        oldLibraries = new ArrayList<String>(compareInstalledRequiredLibraries(installedLibraries, requiredLibraries));
 
         if (oldLibraries.isEmpty()) {
             return;
@@ -162,8 +163,8 @@ public class LibraryCleaner {
      * @param required  List of libraries required by Server Jar
      * @return List of currently installed libraries not required by the Server Jar
      */
-    private List<String> compareInstalledRequiredLibraries(List<String> installed, List<String> required) {
-        List<String> installedNotRequired = new ArrayList<String>(installed);
+    private HashSet<String> compareInstalledRequiredLibraries(List<String> installed, List<String> required) {
+        HashSet<String> installedNotRequired = new HashSet<String>(installed);
 
         for (String s : installed) {
             if (required.contains(s)) {
