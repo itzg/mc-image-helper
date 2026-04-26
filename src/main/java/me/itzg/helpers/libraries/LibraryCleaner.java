@@ -77,7 +77,7 @@ public class LibraryCleaner {
                 Files.delete(libraryFolder.resolve(s));
                 deleteEmptyParentDirectories(libraryFolder, libraryFolder.resolve(s));
             } catch (Exception e) {
-                log.debug("Failed to delete library {} {}", s, e);
+                log.warn("Failed to delete library {} {}", s, e);
             }
 
         }
