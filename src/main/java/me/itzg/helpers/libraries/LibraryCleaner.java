@@ -47,8 +47,8 @@ public class LibraryCleaner {
      * for Server Jar, removes non-required libraries
      */
     public void cleanLibraries() {
-        List<String> requiredLibraries, installedLibraries, oldLibraries;
 
+        final List<String> requiredLibraries;
         try {
             requiredLibraries = readJarLibraries(serverJar, libraryListPath);
         } catch (Exception e) {
@@ -56,6 +56,7 @@ public class LibraryCleaner {
             return;
         }
 
+        final List<String> installedLibraries;
         try {
             installedLibraries = readInstalledLibraries(libraryFolder);
         } catch (Exception e) {
@@ -66,7 +67,7 @@ public class LibraryCleaner {
             return;
         }
 
-        oldLibraries = new ArrayList<String>(compareInstalledRequiredLibraries(installedLibraries, requiredLibraries));
+        final List<String> oldLibraries = compareInstalledRequiredLibraries(installedLibraries, requiredLibraries);
 
         if (oldLibraries.isEmpty()) {
             return;
