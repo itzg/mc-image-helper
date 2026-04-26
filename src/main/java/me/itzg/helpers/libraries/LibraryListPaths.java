@@ -9,5 +9,5 @@ public enum LibraryListPaths {
     PAPER("META-INF/libraries.list"),
     FORGE("bootstrap-shim.list");
 
-    private String PATH;
+    private String path;
 }

@@ -95,7 +95,7 @@ public class LibraryCleaner {
         List<String> libs = new ArrayList<String>();
 
         JarFile serverJar = new JarFile(jarFile.toString());
-        JarEntry libraryList = serverJar.getJarEntry(libraryListPath.getPATH());
+        JarEntry libraryList = serverJar.getJarEntry(libraryListPath.getPath());
 
         InputStream is = serverJar.getInputStream(libraryList);
         InputStreamReader isr = new InputStreamReader(is);
