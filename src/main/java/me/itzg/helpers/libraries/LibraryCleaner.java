@@ -99,16 +99,14 @@ public class LibraryCleaner {
      * @throws IOException
      */
     private List<String> readJarLibraries(Path jarFile, LibraryListPaths libraryListPath) throws IOException {
-        List<String> libs = new ArrayList<String>();
+        final List<String> libs;
 
         try (JarFile serverJar = new JarFile(jarFile.toString());) {
 
             JarEntry libraryList = serverJar.getJarEntry(libraryListPath.getPath());
 
             if (libraryList == null) {
-                log.error("Failed to read library list {} for server type {}", libraryListPath.getPath(),
-                        libraryListPath.name());
-                return libs;
+                throw new IOException("Failed to read library list for server jar");
             }
 
             try (
@@ -137,9 +135,7 @@ public class LibraryCleaner {
 
             }
 
-        } catch (Exception e) {
-            log.error("Failed to read server jar {} {}", jarFile.toString(), e);
-        }
+        } 
 
         return libs;
     }
