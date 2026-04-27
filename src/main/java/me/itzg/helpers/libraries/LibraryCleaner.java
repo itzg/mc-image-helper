@@ -52,7 +52,7 @@ public class LibraryCleaner {
         try {
             requiredLibraries = readJarLibraries(serverJar, libraryListPath);
         } catch (Exception e) {
-            log.debug("Failed to read server jar libraries", e);
+            log.warn("Failed to read server jar libraries", e);
             return;
         }
 
