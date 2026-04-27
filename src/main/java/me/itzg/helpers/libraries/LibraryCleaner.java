@@ -82,7 +82,7 @@ public class LibraryCleaner {
             try {
                 Files.delete(libraryFolder.resolve(s));
             } catch (Exception e) {
-                log.warn("Failed to delete library {} {}", s, e);
+                log.warn("Failed to delete library {}", s, e);
             }
 
         }
@@ -189,12 +189,12 @@ public class LibraryCleaner {
                                 Files.delete(dir);
                             }
                         } catch (IOException e) {
-                            log.error("Failed to delete directory {} {}", dir.toString(), e);
+                            log.error("Failed to delete directory {}", dir, e);
                         }
                     });
 
         } catch (Exception e) {
-            log.error("Failed to walk directory {} {}", root.toString(), e);
+            log.error("Failed to walk directory {}", root, e);
         }
     }
 }
