@@ -45,14 +45,14 @@ jar {
 }
 
 java {
-  // Specify to gradle that the project expects to be built with java 21, but produce output compatible with Java 11
+  // Specify to gradle that the project expects to be built with java 21, but produce output compatible with Java 17
   toolchain {
     languageVersion = JavaLanguageVersion.of(21)
   }
 }
 // https://docs.gradle.org/current/userguide/toolchains.html#sec:release-flag-toolchain
 tasks.withType(JavaCompile).configureEach {
-  options.release = 11
+  options.release = 17
 }
 
 test {
@@ -115,6 +115,7 @@ dependencies {
   implementation 'org.apache.maven:maven-artifact:3.9.15'
   implementation 'commons-codec:commons-codec:1.22.0'
   implementation 'org.jetbrains:annotations:26.1.0'
+  implementation 'land.oras:oras-java-sdk:0.6.0'
 
   // https://commons.apache.org/proper/commons-compress/zip.html
   // For IMPLODE compression used by some CurseForge modpacks
