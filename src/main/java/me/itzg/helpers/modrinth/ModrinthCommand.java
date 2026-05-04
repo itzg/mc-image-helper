@@ -13,8 +13,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
@@ -113,6 +115,8 @@ public class ModrinthCommand implements Callable<Integer> {
 
     final Set<String/*projectId*/> projectsProcessed = Collections.synchronizedSet(new HashSet<>());
 
+    private final Map<String/*projectId*/, VersionType> allowedVersionTypesByProject = new HashMap<>();
+
     @Override
     public Integer call() throws Exception {
         Files.createDirectories(outputDirectory);
@@ -145,7 +149,6 @@ public class ModrinthCommand implements Callable<Integer> {
             .collect(Collectors.toList());
 
         try (ModrinthApiClient modrinthApiClient = new ModrinthApiClient(baseUrl, "modrinth", sharedFetchArgs.options())) {
-            //noinspection DataFlowIssue since it thinks block() may return null
             final List<ResolvedProject> resolvedProjects =
                 modrinthApiClient.bulkGetProjects(
                     allRefs.stream(),
@@ -156,6 +159,20 @@ public class ModrinthCommand implements Callable<Integer> {
                 )
                 .defaultIfEmpty(Collections.emptyList())
                 .block();
+            if (resolvedProjects == null) {
+                throw new GenericException("Unable to resolve projects");
+            }
+            log.trace("Resolved projects: {}", resolvedProjects);
+
+            // tracking any user declared, per-project version type
+            resolvedProjects.stream()
+                .filter(resolvedProject -> resolvedProject.getProjectRef().hasVersionType())
+                .forEach(resolvedProject ->
+                    allowedVersionTypesByProject.put(
+                        resolvedProject.getProject().getId(),
+                        resolvedProject.getProjectRef().getVersionType()
+                    )
+                );
 
             return resolvedProjects.stream()
                 .flatMap(resolvedProject ->
@@ -225,15 +242,14 @@ public class ModrinthCommand implements Callable<Integer> {
         log.debug("Expanding dependencies of version={}", version);
         return version.getDependencies().stream()
             .filter(this::filterDependency)
-            .filter(dep -> projectsProcessed.add(dep.getProjectId()))
+            .filter(dep -> trackProjectProcessed(dep.getProjectId()))
             .flatMap(dep -> {
-                projectsProcessed.add(dep.getProjectId());
-
                 final Version depVersion;
                 try {
                     if (dep.getVersionId() == null) {
                         log.debug("Fetching versions of dep={} and picking", dep);
                         depVersion = pickVersion(
+                            dep.getProjectId(),
                             getVersionsForProject(modrinthApiClient, dep.getProjectId(), loader, gameVersion)
                         );
                     }
@@ -268,6 +284,15 @@ public class ModrinthCommand implements Callable<Integer> {
 
     }
 
+    /**
+     * @return true if the project was not previously processed
+     */
+    private boolean trackProjectProcessed(String projectId) {
+        final boolean absent = projectsProcessed.add(projectId);
+        log.debug("Project {} was {} processed", projectId, absent ? "not" : "already");
+        return absent;
+    }
+
     private boolean filterDependency(VersionDependency dep) {
         if (downloadDependencies == null) {
             return false;
@@ -280,8 +305,10 @@ public class ModrinthCommand implements Callable<Integer> {
         );
     }
 
-    private Version pickVersion(List<Version> versions) {
-        return this.pickVersion(versions, defaultVersionType);
+    private Version pickVersion(String projectId, List<Version> versions) {
+        return this.pickVersion(versions,
+            allowedVersionTypesByProject.getOrDefault(projectId, defaultVersionType)
+            );
     }
 
     private Version pickVersion(List<Version> versions, VersionType versionType) {
@@ -359,9 +386,9 @@ public class ModrinthCommand implements Callable<Integer> {
                 ));
         }
 
-        log.debug("Starting with project='{}' slug={} optional={}", project.getTitle(), project.getSlug(), projectRef.isOptional());
+        log.debug("Starting with project='{}' slug={} id={} optional={}", project.getTitle(), project.getSlug(), project.getId(), projectRef.isOptional());
 
-        if (projectsProcessed.add(project.getId())) {
+        if (trackProjectProcessed(project.getId())) {
             final Loader effectiveLoader = projectRef.getLoader() != null
                 ? projectRef.getLoader()
                 : this.loader;
