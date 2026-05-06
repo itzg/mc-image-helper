@@ -113,7 +113,7 @@ dependencies {
     exclude group: 'io.netty', module: 'netty-codec-native-quic'
   }
   implementation 'org.apache.maven:maven-artifact:3.9.15'
-  implementation 'commons-codec:commons-codec:1.21.0'
+  implementation 'commons-codec:commons-codec:1.22.0'
   implementation 'org.jetbrains:annotations:26.1.0'
 
   // https://commons.apache.org/proper/commons-compress/zip.html
