@@ -21,6 +21,8 @@ import me.itzg.helpers.http.Fetch;
 import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.http.SharedFetchArgs;
 import me.itzg.helpers.json.ObjectMappers;
+import me.itzg.helpers.libraries.LibraryCleaner;
+import me.itzg.helpers.libraries.LibraryListPaths;
 import me.itzg.helpers.purpur.model.VersionMeta;
 import me.itzg.helpers.sync.MultiCopyManifest;
 import picocli.CommandLine;
@@ -80,6 +82,8 @@ public class InstallPurpurCommand implements Callable<Integer> {
     @Option(names = "--results-file", description = ResultsFileWriter.OPTION_DESCRIPTION, paramLabel = "FILE")
     Path resultsFile;
 
+    @Option(names = "--clean-libraries", defaultValue = "false", description = "Remove currently installed and not required libraries")
+    Boolean cleanLibraries;
     @ArgGroup
     SharedFetchArgs sharedFetchArgs = new SharedFetchArgs();
 
@@ -115,6 +119,9 @@ public class InstallPurpurCommand implements Callable<Integer> {
             }
         }
 
+        if (cleanLibraries) {
+            new LibraryCleaner(result.serverJar, LibraryListPaths.PURPUR).cleanLibraries();
+        }
         Manifests.cleanup(outputDirectory, oldManifest, result.newManifest, log);
         Manifests.save(outputDirectory, PurpurManifest.ID, result.newManifest);
 
