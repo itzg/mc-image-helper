@@ -7,6 +7,7 @@ import lombok.Getter;
 @Getter
 public enum LibraryListPaths {
     PAPER("META-INF/libraries.list"),
+    QUILT("META-INF/libraries.list"),
     FORGE("bootstrap-shim.list");
 
     private String path;
