@@ -18,6 +18,8 @@ import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.files.ResultsFileWriter;
 import me.itzg.helpers.http.Fetch;
 import me.itzg.helpers.http.SharedFetch;
+import me.itzg.helpers.libraries.LibraryCleaner;
+import me.itzg.helpers.libraries.LibraryListPaths;
 import me.itzg.helpers.mvn.MavenRepoApi;
 import me.itzg.helpers.versions.MinecraftVersionsApi;
 import org.jetbrains.annotations.Blocking;
@@ -43,6 +45,9 @@ public class QuiltInstaller implements AutoCloseable {
 
     @Setter
     private boolean forceReinstall;
+
+    @Setter 
+    boolean cleanLibraries;
 
     public QuiltInstaller(String repoUrl, SharedFetch.Options fetchOptions, Path outputDir, String minecraftVersion) {
 
@@ -192,6 +197,14 @@ public class QuiltInstaller implements AutoCloseable {
             Files.move(installedLauncher, resolvedLauncher, StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
             throw new GenericException("Failed to rename server launcher", e);
+        }
+
+
+        if (cleanLibraries) {
+            final Path serverJar = outputDir.resolve("server.jar");
+            if (Files.exists(serverJar)) {
+                new LibraryCleaner(serverJar, LibraryListPaths.QUILT).cleanLibraries();
+            }
         }
 
         if (resultsFile != null) {
