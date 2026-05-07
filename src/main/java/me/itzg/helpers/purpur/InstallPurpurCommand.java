@@ -80,6 +80,8 @@ public class InstallPurpurCommand implements Callable<Integer> {
     @Option(names = "--results-file", description = ResultsFileWriter.OPTION_DESCRIPTION, paramLabel = "FILE")
     Path resultsFile;
 
+    @Option(names = "--clean-libraries", defaultValue = "false", description = "Remove currently installed and not required libraries")
+    Boolean cleanLibraries;
     @ArgGroup
     SharedFetchArgs sharedFetchArgs = new SharedFetchArgs();
 
