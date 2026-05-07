@@ -205,7 +205,7 @@ public class QuiltInstaller implements AutoCloseable {
             if (Files.exists(serverJar)) {
                 new LibraryCleaner(serverJar, LibraryListPaths.QUILT).cleanLibraries();
             } else {
-                log.debug("Failed to read jar at {}", serverJar);
+                log.warn("Failed to read jar at {}", serverJar);
             }
         }
 
