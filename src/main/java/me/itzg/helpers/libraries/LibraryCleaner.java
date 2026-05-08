@@ -61,6 +61,7 @@ public class LibraryCleaner {
 
         if (!Files.isDirectory(libraryFolder)) {
             log.debug("Failed to read library folder {}", libraryFolder);
+            return;
         }
 
         try {
