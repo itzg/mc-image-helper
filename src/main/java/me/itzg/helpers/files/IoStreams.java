@@ -2,7 +2,9 @@ package me.itzg.helpers.files;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import me.itzg.helpers.errors.InvalidParameterException;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.jetbrains.annotations.Nullable;
@@ -22,6 +24,12 @@ public class IoStreams {
      */
     @Nullable
     public static <T> T readFileFromZip(Path zipFile, String entryName, EntryReader<T> entryReader) throws IOException {
+        if (!Files.exists(zipFile)) {
+            throw new InvalidParameterException("Zip file does not exist: " + zipFile);
+        }
+        if (Files.isDirectory(zipFile)) {
+            throw new InvalidParameterException("Zip file seems to be a directory: " + zipFile);
+        }
         try (ZipFile zip = ZipFile.builder().setPath(zipFile).get()) {
             final ZipArchiveEntry entry = zip.getEntry(entryName);
             if (entry != null) {
