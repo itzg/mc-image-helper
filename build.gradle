@@ -47,7 +47,7 @@ jar {
 java {
   // Specify to gradle that the project expects to be built with java 21, but produce output compatible with Java 11
   toolchain {
-    languageVersion = JavaLanguageVersion.of(11)
+    languageVersion = JavaLanguageVersion.of(21)
   }
 }
 // https://docs.gradle.org/current/userguide/toolchains.html#sec:release-flag-toolchain

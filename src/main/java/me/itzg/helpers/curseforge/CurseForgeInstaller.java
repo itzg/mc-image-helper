@@ -7,11 +7,9 @@ import static me.itzg.helpers.curseforge.CurseForgeApiClient.CACHING_NAMESPACE;
 import static me.itzg.helpers.curseforge.CurseForgeApiClient.modFileDownloadStatusHandler;
 import static me.itzg.helpers.singles.MoreCollections.safeStreamFrom;
 
-import com.fasterxml.jackson.databind.JsonMappingException;
 import io.netty.channel.ChannelException;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -50,11 +48,12 @@ import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidApiKeyException;
 import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.fabric.FabricLauncherInstaller;
+import me.itzg.helpers.files.IoStreams;
 import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.files.ReactiveFileUtils;
 import me.itzg.helpers.files.ResultsFileWriter;
-import me.itzg.helpers.forge.ForgeLikeInstaller;
 import me.itzg.helpers.forge.ForgeInstallerResolver;
+import me.itzg.helpers.forge.ForgeLikeInstaller;
 import me.itzg.helpers.forge.ForgeUrlArgs;
 import me.itzg.helpers.forge.NeoForgeInstallerResolver;
 import me.itzg.helpers.http.FailedRequestException;
@@ -62,8 +61,6 @@ import me.itzg.helpers.http.Fetch;
 import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.http.Uris;
 import me.itzg.helpers.json.ObjectMappers;
-import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
-import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.jetbrains.annotations.Blocking;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -1053,18 +1050,8 @@ public class CurseForgeInstaller {
     }
 
     private MinecraftModpackManifest extractModpackManifest(Path modpackZip) throws IOException {
-        try (ZipFile zipFile = ZipFile.builder().setPath(modpackZip).get()) {
-            final ZipArchiveEntry entry = zipFile.getEntry("manifest.json");
-            if (entry != null) {
-                try (InputStream in = zipFile.getInputStream(entry)) {
-                    return ObjectMappers.defaultMapper().readValue(in, MinecraftModpackManifest.class);
-                } catch (JsonMappingException e) {
-                    throw new InvalidParameterException("The modpack's manifest file was not valid -- did you make sure to reference a client, not server, file?", e);
-                }
-            }
-        }
-        throw new InvalidParameterException(
-            "Modpack file is missing a manifest. Make sure to reference a client modpack file."
+        return IoStreams.readFileFromZip(modpackZip, "manifest.json",
+            in -> ObjectMappers.defaultMapper().readValue(in, MinecraftModpackManifest.class)
         );
     }
 
