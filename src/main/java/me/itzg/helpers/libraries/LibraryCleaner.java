@@ -186,7 +186,7 @@ public class LibraryCleaner {
                     .forEach(dir -> {
 
                         try (Stream<Path> files = Files.list(dir)) {
-                            if (files.findAny().isEmpty()) {
+                            if (!files.findAny().isPresent()) {
                                 Files.delete(dir);
                             }
                         } catch (IOException e) {
