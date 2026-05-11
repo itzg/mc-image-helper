@@ -57,6 +57,10 @@ public class InstallQuiltCommand implements Callable<Integer> {
     @Option(names = "--force-reinstall", defaultValue = "${env:QUILT_FORCE_REINSTALL:-false}")
     boolean forceReinstall;
 
+    @Option(names = "--clean-libraries", defaultValue = "false", description = "Remove currently installed and not required libraries")
+    Boolean cleanLibraries;
+
+
     @Override
     public Integer call() throws Exception {
 
@@ -66,6 +70,7 @@ public class InstallQuiltCommand implements Callable<Integer> {
         )
             .setResultsFile(resultsFile)
             .setForceReinstall(forceReinstall)
+            .setCleanLibraries(cleanLibraries)
         ) {
             if (inputs.installerUrl != null) {
                 installer.installFromUrl(inputs.installerUrl, loaderVersion);
