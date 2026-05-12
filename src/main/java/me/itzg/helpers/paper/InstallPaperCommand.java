@@ -22,6 +22,8 @@ import me.itzg.helpers.http.FileDownloadStatusHandler;
 import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.http.SharedFetchArgs;
 import me.itzg.helpers.json.ObjectMappers;
+import me.itzg.helpers.libraries.LibraryCleaner;
+import me.itzg.helpers.libraries.LibraryListPaths;
 import me.itzg.helpers.paper.PaperDownloadsClient.VersionBuildFile;
 import me.itzg.helpers.paper.model.VersionMeta;
 import me.itzg.helpers.sync.MultiCopyManifest;
@@ -94,6 +96,9 @@ public class InstallPaperCommand implements Callable<Integer> {
     @Option(names = "--results-file", description = ResultsFileWriter.OPTION_DESCRIPTION, paramLabel = "FILE")
     Path resultsFile;
 
+    @Option(names = "--clean-libraries", defaultValue = "false", description = "Remove currently installed and not required libraries")
+    Boolean cleanLibraries;
+
     @ArgGroup
     SharedFetchArgs sharedFetchArgs = new SharedFetchArgs();
 
@@ -144,6 +149,10 @@ public class InstallPaperCommand implements Callable<Integer> {
                 results.writeType(inputs.coordinates.project != null ?
                     inputs.coordinates.project.toUpperCase() : "PAPER");
             }
+        }
+
+        if (cleanLibraries) {
+            new LibraryCleaner(result.serverJar, LibraryListPaths.PAPER).cleanLibraries();
         }
 
         Manifests.cleanup(outputDirectory, oldManifest, result.newManifest, log);
