@@ -7,7 +7,7 @@ x-api-key: {{cfApiKey}}
 
 ###
 # mod
-GET https://api.curseforge.com/v1/mods/search?gameId=432&slug=jei&classId=6
+GET https://api.curseforge.com/v1/mods/search?gameId=432&slug=particle-effects-reforged&classId=6
 x-api-key: {{cfApiKey}}
 
 ### modpack that claims neoforge support...but uses 1.18.2 of Forge, which is not availalbe in NeoForge
