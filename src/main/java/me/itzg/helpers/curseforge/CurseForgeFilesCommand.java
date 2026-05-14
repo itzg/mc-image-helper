@@ -100,13 +100,14 @@ public class CurseForgeFilesCommand implements Callable<Integer> {
 
     @Parameters(paramLabel = "REF",
         split = McImageHelper.SPLIT_COMMA_NL, splitSynopsisLabel = McImageHelper.SPLIT_SYNOPSIS_COMMA_NL,
-        description = "Can be <project ID>|<slug>':'<file ID>,"
-            + " <project ID>|<slug>'@'<filename matcher>,"
-            + " <project ID>|<slug>,"
-            + " project page URL, file page URL,"
-            + " '@'<filename with ref per line>"
+        description = "Can be"
+            + "%n<project ID>|<slug>':'<file ID>,"
+            + "%n<project ID>|<slug>'@'<filename matcher>,"
+            + "%n<project ID>|<slug>,"
+            + "%nproject page URL, file page URL,"
+            + "%n'@'<filename with ref per line>"
             + "%nIf not specified, any previous mod/plugin files are removed."
-            + "%Embedded comments are allowed")
+            + "%nEmbedded comments are allowed")
     public void setModFileRefs(List<String> modFileRefs) {
         this.modFileRefs = normalizeOptionList(modFileRefs);
     }

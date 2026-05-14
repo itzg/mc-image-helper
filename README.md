@@ -32,6 +32,9 @@ Commands:
   get                             Download a file
   github
   hash                            Outputs an MD5 hash of the standard input
+  has-feature                     Check if a subcommand is available and
+                                    optionally if it has specific options
+                                    (arguments)
   ini-path                        Extracts a field from an INI file
   install-curseforge              Downloads, installs, and upgrades CurseForge
                                     modpacks
@@ -139,21 +142,24 @@ Usage: mc-image-helper curseforge-files [-h] [--disable-api-caching]
                                         [--mod-loader=<modLoaderType>] [-o=DIR]
                                         [[--api-cache-ttl=OPERATION=DURATION]...
                                          [--api-cache-default-ttl=DURATION]]
-                                        [[--connection-pool-pending-acquire-time
-                                        out=DURATION]
+                                        [[--use-http2] [--wiretap]
                                         [--http-response-timeout=DURATION]
                                         [--tls-handshake-timeout=DURATION]
-                                        [--use-http2] [--wiretap]
                                         [--connection-pool-max-idle-timeout=DURA
-                                        TION]] [REF[,|<nl>REF...]...]
+                                        TION]
+                                        [--connection-pool-pending-acquire-timeo
+                                        ut=DURATION]] [REF[,|<nl>REF...]...]
 Download and manage individual mod/plugin files from CurseForge
       [REF[,|<nl>REF...]...]
-                           Can be <project ID>|<slug>':'<file ID>, <project
-                             ID>|<slug>'@'<filename matcher>, <project
-                             ID>|<slug>, project page URL, file page URL,
-                             '@'<filename with ref per line>%nIf not specified,
-                             any previous mod/plugin files are removed.%
-                             Embedded comments are allowed
+                           Can be
+                           <project ID>|<slug>':'<file ID>,
+                           <project ID>|<slug>'@'<filename matcher>,
+                           <project ID>|<slug>,
+                           project page URL, file page URL,
+                           '@'<filename with ref per line>
+                           If not specified, any previous mod/plugin files are
+                             removed.
+                           Embedded comments are allowed
       --api-base-url=<apiBaseUrl>
                            Allows for overriding the CurseForge Eternal API used
                            Can also be passed via CF_API_BASE_URL
@@ -308,6 +314,17 @@ Commands:
                            asset, and outputs the downloaded filename
 ```
 
+### has-feature
+
+```
+Usage: mc-image-helper has-feature <subcommand> [<arguments>...]
+Check if a subcommand is available and optionally if it has specific options
+(arguments)
+      <subcommand>       The subcommand name to check for availability
+      [<arguments>...]   Optional option names to check within the subcommand
+                           (e.g., 'help' for --help or -h)
+```
+
 ### hash
 
 ```
@@ -346,10 +363,10 @@ Usage: mc-image-helper install-curseforge [-h] [--disable-api-caching]
        <overridesExclusions>...]]... [[--exclude-include-file=FILE|URI]
        [--exclude-all-mods] [[--excludes=PROJECT_ID|SLUG[,
        |<nl>PROJECT_ID|SLUG...]]... [--force-includes=PROJECT_ID|SLUG[,
-       |<nl>PROJECT_ID|SLUG...]]...]]
-       [[--connection-pool-pending-acquire-timeout=DURATION]
+       |<nl>PROJECT_ID|SLUG...]]...]] [[--use-http2] [--wiretap]
        [--http-response-timeout=DURATION] [--tls-handshake-timeout=DURATION]
-       [--use-http2] [--wiretap] [--connection-pool-max-idle-timeout=DURATION]]
+       [--connection-pool-max-idle-timeout=DURATION]
+       [--connection-pool-pending-acquire-timeout=DURATION]]
        [[--api-cache-ttl=OPERATION=DURATION]...
        [--api-cache-default-ttl=DURATION]] [[--forge-promotions-url=URL]
        [--forge-maven-repo-url=URL]] [COMMAND]
@@ -478,18 +495,22 @@ Commands:
 
 ```
 Usage: mc-image-helper install-fabric-loader [-h] [--force-reinstall]
-       [--output-directory=DIR] [--results-file=FILE] [--from-local-file=FILE |
-       --from-url=URL | [[--minecraft-version=VERSION]
-       [--installer-version=VERSION] [--loader-version=VERSION]]]
-       [[--connection-pool-pending-acquire-timeout=DURATION]
+       [--fabric-meta-base-url=<fabricMetaBaseUrl>] [--output-directory=DIR]
+       [--results-file=FILE] [--from-local-file=FILE | --from-url=URL |
+       [[--installer-version=VERSION] [--loader-version=VERSION]
+       [--minecraft-version=VERSION]]] [[--use-http2] [--wiretap]
        [--http-response-timeout=DURATION] [--tls-handshake-timeout=DURATION]
-       [--use-http2] [--wiretap] [--connection-pool-max-idle-timeout=DURATION]]
+       [--connection-pool-max-idle-timeout=DURATION]
+       [--connection-pool-pending-acquire-timeout=DURATION]]
 Provides a few ways to obtain a Fabric loader with simple cleanup of previous
 loader instances
       --connection-pool-max-idle-timeout=DURATION
 
       --connection-pool-pending-acquire-timeout=DURATION
 
+      --fabric-meta-base-url=<fabricMetaBaseUrl>
+                            Base URL for Fabric meta API. Default: https://meta.
+                              fabricmc.net
       --force-reinstall     Force reinstall of the loader even if it already
                               exists
       --from-local-file=FILE
@@ -526,19 +547,18 @@ Usage: mc-image-helper install-forge [-h] [--force-reinstall]
                                      [--results-file=FILE]
                                      [--forge-installer=FILE |
                                      [--forge-version=<version>]]
-                                     [[--connection-pool-pending-acquire-timeout
-                                     =DURATION]
+                                     [[--use-http2] [--wiretap]
                                      [--http-response-timeout=DURATION]
                                      [--tls-handshake-timeout=DURATION]
-                                     [--use-http2] [--wiretap]
                                      [--connection-pool-max-idle-timeout=DURATIO
-                                     N]] [[--forge-promotions-url=URL]
+                                     N]
+                                     [--connection-pool-pending-acquire-timeout=
+                                     DURATION]] [[--forge-promotions-url=URL]
                                      [--forge-maven-repo-url=URL]]
 Downloads and installs a requested version of Forge
       --connection-pool-max-idle-timeout=DURATION
 
       --connection-pool-pending-acquire-timeout=DURATION
-[picocli WARN] Could not format 'Can be <project ID>|<slug>':'<file ID>, <project ID>|<slug>'@'<filename matcher>, <project ID>|<slug>, project page URL, file page URL, '@'<filename with ref per line>%nIf not specified, any previous mod/plugin files are removed.%Embedded comments are allowed' (Underlying error: Format specifier '%E'). Using raw String: '%n' format strings have not been replaced with newlines. Please ensure to escape '%' characters with another '%'.
 
       --force-reinstall
       --forge-installer=FILE
@@ -592,10 +612,10 @@ Usage: mc-image-helper install-modrinth-modpack [--force-modloader-reinstall]
        [--ignore-missing-files=<ignoreMissingFiles>[,
        |<nl><ignoreMissingFiles>...]]...
        [--overrides-exclusions=<overridesExclusions>[NL or ,
-       <overridesExclusions>...]]...
-       [[--connection-pool-pending-acquire-timeout=DURATION]
+       <overridesExclusions>...]]... [[--use-http2] [--wiretap]
        [--http-response-timeout=DURATION] [--tls-handshake-timeout=DURATION]
-       [--use-http2] [--wiretap] [--connection-pool-max-idle-timeout=DURATION]]
+       [--connection-pool-max-idle-timeout=DURATION]
+       [--connection-pool-pending-acquire-timeout=DURATION]]
        [[--forge-promotions-url=URL] [--forge-maven-repo-url=URL]]
 Supports installation of Modrinth modpacks along with the associated mod loader
       --api-base-url=<baseUrl>
@@ -685,16 +705,17 @@ Supports installation of Modrinth modpacks along with the associated mod loader
 ```
 Usage: mc-image-helper install-neoforge [-h] [--force-reinstall]
                                         [--minecraft-version=VERSION]
-                                        [--neoforge-version=<version>]
                                         [--output-directory=DIR]
                                         [--results-file=FILE]
-                                        [[--connection-pool-pending-acquire-time
-                                        out=DURATION]
+                                        [--neoforge-installer=FILE |
+                                        [--neoforge-version=<version>]]
+                                        [[--use-http2] [--wiretap]
                                         [--http-response-timeout=DURATION]
                                         [--tls-handshake-timeout=DURATION]
-                                        [--use-http2] [--wiretap]
                                         [--connection-pool-max-idle-timeout=DURA
-                                        TION]]
+                                        TION]
+                                        [--connection-pool-pending-acquire-timeo
+                                        ut=DURATION]]
 Downloads and installs a requested version of NeoForge
       --connection-pool-max-idle-timeout=DURATION
 
@@ -708,6 +729,8 @@ Downloads and installs a requested version of NeoForge
       --minecraft-version=VERSION
                             'latest', which is the default, or a specific
                               version to narrow NeoForge version selection
+      --neoforge-installer=FILE
+                            Use a local neoforge installer
       --neoforge-version=<version>
                             A specific NeoForge version, 'latest', or 'beta'.
                               Default value is latest
@@ -726,19 +749,20 @@ Downloads and installs a requested version of NeoForge
 ### install-paper
 
 ```
-Usage: mc-image-helper install-paper [--check-updates] [--base-url=<baseUrl>]
+Usage: mc-image-helper install-paper [--check-updates] [--clean-libraries]
+                                     [--base-url=<baseUrl>]
                                      [-o=<outputDirectory>]
                                      [--results-file=FILE] [--url=<downloadUrl>
                                      | [[--project=<project>] [--build=<build>]
                                      [--channel=<channel>]
-                                     [--version=<version>]]]
-                                     [--connection-pool-pending-acquire-timeout=
-                                     DURATION |
+                                     [--version=<version>]]] [[--use-http2] |
+                                     [--wiretap] |
                                      [--http-response-timeout=DURATION] |
                                      [--tls-handshake-timeout=DURATION] |
-                                     [--use-http2] | [--wiretap] |
                                      [--connection-pool-max-idle-timeout=DURATIO
-                                     N]]
+                                     N] |
+                                     --connection-pool-pending-acquire-timeout=D
+                                     URATION]
 Installs selected PaperMC
       --base-url=<baseUrl>
       --build=<build>
@@ -772,21 +796,25 @@ Installs selected PaperMC
 ### install-purpur
 
 ```
-Usage: mc-image-helper install-purpur [--base-url=<baseUrl>]
+Usage: mc-image-helper install-purpur [--clean-libraries]
+                                      [--base-url=<baseUrl>]
                                       [-o=<outputDirectory>]
                                       [--results-file=FILE]
-                                      [--url=<downloadUrl> | [[--build=<build>]
-                                      [--version=<version>]]]
-                                      [--connection-pool-pending-acquire-timeout
-                                      =DURATION |
+                                      [--url=<downloadUrl> |
+                                      [[--version=<version>]
+                                      [--build=<build>]]] [[--use-http2] |
+                                      [--wiretap] |
                                       [--http-response-timeout=DURATION] |
                                       [--tls-handshake-timeout=DURATION] |
-                                      [--use-http2] | [--wiretap] |
                                       [--connection-pool-max-idle-timeout=DURATI
-                                      ON]]
+                                      ON] |
+                                      --connection-pool-pending-acquire-timeout=
+                                      DURATION]
 Downloads latest or selected version of Purpur
       --base-url=<baseUrl>
       --build=<build>
+      --clean-libraries      Remove currently installed and not required
+                               libraries
       --connection-pool-max-idle-timeout=DURATION
 
       --connection-pool-pending-acquire-timeout=DURATION
@@ -818,13 +846,13 @@ Usage: mc-image-helper install-quilt [-h] [--force-reinstall]
                                      [--repo-url=<repoUrl>]
                                      [--results-file=FILE] [--installer-url=URL
                                      | --installer-version=VERSION]
-                                     [[--connection-pool-pending-acquire-timeout
-                                     =DURATION]
+                                     [[--use-http2] [--wiretap]
                                      [--http-response-timeout=DURATION]
                                      [--tls-handshake-timeout=DURATION]
-                                     [--use-http2] [--wiretap]
                                      [--connection-pool-max-idle-timeout=DURATIO
-                                     N]]
+                                     N]
+                                     [--connection-pool-pending-acquire-timeout=
+                                     DURATION]]
 Installs Quilt mod loader
       --connection-pool-max-idle-timeout=DURATION
 
@@ -898,14 +926,14 @@ Usage: mc-image-helper manage-users [-fh] [--existing=<existingFileBehavior>]
                                     [--playerdb-api-base-url=<playerdbApiBaseUrl
                                     >] -t=<type>
                                     [--user-api-provider=<userApiProvider>]
-                                    [--version=<version>]
-                                    [[--connection-pool-pending-acquire-timeout=
-                                    DURATION]
+                                    [--version=<version>] [[--use-http2]
+                                    [--wiretap]
                                     [--http-response-timeout=DURATION]
                                     [--tls-handshake-timeout=DURATION]
-                                    [--use-http2] [--wiretap]
                                     [--connection-pool-max-idle-timeout=DURATION
-                                    ]] [INPUT[,INPUT...]...]
+                                    ]
+                                    [--connection-pool-pending-acquire-timeout=D
+                                    URATION]] [INPUT[,INPUT...]...]
       [INPUT[,INPUT...]...] One or more Mojang usernames, UUID, or ID (UUID
                               without dashes); however, when offline, only
                               UUID/IDs can be provided.
@@ -951,13 +979,13 @@ Usage: mc-image-helper maven-download [-h] [--print-filename] [--skip-existing]
                                       [--output-directory=<outputDirectory>]
                                       [--packaging=<packaging>]
                                       [-r=<mavenRepo>] [-v=<version>]
-                                      [[--connection-pool-pending-acquire-timeou
-                                      t=DURATION]
+                                      [[--use-http2] [--wiretap]
                                       [--http-response-timeout=DURATION]
                                       [--tls-handshake-timeout=DURATION]
-                                      [--use-http2] [--wiretap]
                                       [--connection-pool-max-idle-timeout=DURATI
-                                      ON]]
+                                      ON]
+                                      [--connection-pool-pending-acquire-timeout
+                                      =DURATION]]
 Downloads a maven artifact from a Maven repository
   -a, -m, --module, --artifact=<artifact>
 
@@ -996,13 +1024,12 @@ Downloads a maven artifact from a Maven repository
 Usage: mc-image-helper mcopy [-hz] [--file-is-listing]
                              [--ignore-missing-sources] [--quiet-when-skipped]
                              [--skip-existing] [--glob=GLOB]
-                             [--scope=<manifestId>] --to=<dest>
-                             [[--connection-pool-pending-acquire-timeout=DURATIO
-                             N] [--http-response-timeout=DURATION]
-                             [--tls-handshake-timeout=DURATION] [--use-http2]
-                             [--wiretap]
-                             [--connection-pool-max-idle-timeout=DURATION]] [SRC
-                             [,|<nl>SRC...]...]
+                             [--scope=<manifestId>] --to=<dest> [[--use-http2]
+                             [--wiretap] [--http-response-timeout=DURATION]
+                             [--tls-handshake-timeout=DURATION]
+                             [--connection-pool-max-idle-timeout=DURATION]
+                             [--connection-pool-pending-acquire-timeout=DURATION
+                             ]] [SRC[,|<nl>SRC...]...]
 Multi-source file copy operation with with managed cleanup. Supports
 auto-detected sourcing from file list, directories, and URLs
       [SRC[,|<nl>SRC...]...] Any mix of source file, directory, or URLs
@@ -1053,13 +1080,14 @@ Usage: mc-image-helper modrinth [--skip-existing] [--skip-up-to-date]
                                  --game-version=<gameVersion> --loader=<loader>
                                 [--output-directory=DIR]
                                 [--world-directory=<worldDirectory>]
-                                [--projects=[loader:]id|slug[:version][,|<nl>
-                                [loader:]id|slug[:version]...]]...
-                                [[--connection-pool-pending-acquire-timeout=DURA
-                                TION] [--http-response-timeout=DURATION]
+                                [--projects=[loader:]id|slug[?][:version][,|<nl>
+                                [loader:]id|slug[?][:version]...]]...
+                                [[--use-http2] [--wiretap]
+                                [--http-response-timeout=DURATION]
                                 [--tls-handshake-timeout=DURATION]
-                                [--use-http2] [--wiretap]
-                                [--connection-pool-max-idle-timeout=DURATION]]
+                                [--connection-pool-max-idle-timeout=DURATION]
+                                [--connection-pool-pending-acquire-timeout=DURAT
+                                ION]]
 Automates downloading of modrinth resources
       --allowed-version-type=<defaultVersionType>
                           Valid values: release, beta, alpha
@@ -1082,15 +1110,18 @@ Automates downloading of modrinth resources
                             bungeecord, velocity, datapack
       --output-directory=DIR
 
-      --projects=[loader:]id|slug[:version][,|<nl>[loader:]id|slug[:version]...]
+      --projects=[loader:]id|slug[?][:version][,|<nl>[loader:]id|slug[?][:
+        version]...]
                           Project ID or Slug. Can be <project ID>|<slug>,
                             <loader>:<project ID>|<slug>, <loader>:<project
                             ID>|<slug>:<version ID|version number|release
                             type>, '@'<filename with ref per line (supports #
                             comments)>
+                          Append '?' to mark a project as optional (skipped
+                            with a warning if unavailable).
                           Examples: fabric-api, fabric:fabric-api, fabric:
                             fabric-api:0.76.1+1.19.2, datapack:terralith,
-                            @/path/to/modrinth-mods.txt
+                            pl3xmap?, @/path/to/modrinth-mods.txt
                           Valid release types: release, beta, alpha
                           Valid loaders: fabric, forge, paper, datapack, etc.
                           Embedded comments are allowed.
@@ -1145,11 +1176,10 @@ Supports the file formats:
 ### resolve-minecraft-version
 
 ```
-Usage: mc-image-helper resolve-minecraft-version
-       [[--connection-pool-pending-acquire-timeout=DURATION]
+Usage: mc-image-helper resolve-minecraft-version [[--use-http2] [--wiretap]
        [--http-response-timeout=DURATION] [--tls-handshake-timeout=DURATION]
-       [--use-http2] [--wiretap] [--connection-pool-max-idle-timeout=DURATION]]
-       <inputVersion>
+       [--connection-pool-max-idle-timeout=DURATION]
+       [--connection-pool-pending-acquire-timeout=DURATION]] <inputVersion>
 Resolves and validate latest, snapshot, and specific versions
       <inputVersion>
       --connection-pool-max-idle-timeout=DURATION
@@ -1256,13 +1286,13 @@ Usage: mc-image-helper vanillatweaks [--force-synchronize]
                                      [--world-subdir=<worldSubdir>]
                                      [--pack-files=FILE[,|<nl>FILE...]]...
                                      [--share-codes=CODE[,|<nl>CODE...]]...
-                                     [[--connection-pool-pending-acquire-timeout
-                                     =DURATION]
+                                     [[--use-http2] [--wiretap]
                                      [--http-response-timeout=DURATION]
                                      [--tls-handshake-timeout=DURATION]
-                                     [--use-http2] [--wiretap]
                                      [--connection-pool-max-idle-timeout=DURATIO
-                                     N]]
+                                     N]
+                                     [--connection-pool-pending-acquire-timeout=
+                                     DURATION]]
 Downloads Vanilla Tweaks resource packs, data packs, or crafting tweaks given a
 share code or pack file
       --base-url=<baseUrl>
@@ -1292,37 +1322,46 @@ share code or pack file
 
 ```
 Usage: mc-image-helper version-from-modrinth-projects
-       [--api-base-url=<baseUrl>] [--projects=[loader:]id|slug[:version][,|<nl>
-       [loader:]id|slug[:version]...]...]...
-       [[--connection-pool-pending-acquire-timeout=DURATION]
+       [--allowed-version-type=<defaultVersionType>] [--api-base-url=<baseUrl>]
+       [--loader=<loader>] [--projects=[loader:]id|slug[?][:version][,|<nl>
+       [loader:]id|slug[?][:version]...]...]... [[--use-http2] [--wiretap]
        [--http-response-timeout=DURATION] [--tls-handshake-timeout=DURATION]
-       [--use-http2] [--wiretap] [--connection-pool-max-idle-timeout=DURATION]]
+       [--connection-pool-max-idle-timeout=DURATION]
+       [--connection-pool-pending-acquire-timeout=DURATION]]
 Finds a compatible Minecraft version across given Modrinth projects
+      --allowed-version-type=<defaultVersionType>
+                          Valid values: release, beta, alpha
       --api-base-url=<baseUrl>
-                    Default: https://api.modrinth.com
+                          Default: https://api.modrinth.com
       --connection-pool-max-idle-timeout=DURATION
 
       --connection-pool-pending-acquire-timeout=DURATION
 
       --http-response-timeout=DURATION
-                    The response timeout to apply to HTTP operations. Parsed
-                      from ISO-8601 format. Default: PT30S
-      --projects=[loader:]id|slug[:version][,|<nl>[loader:]id|slug[:
+                          The response timeout to apply to HTTP operations.
+                            Parsed from ISO-8601 format. Default: PT30S
+      --loader=<loader>   Valid values: fabric, quilt, forge, neoforge, bukkit,
+                            spigot, paper, folia, pufferfish, leaf, purpur,
+                            bungeecord, velocity, datapack
+      --projects=[loader:]id|slug[?][:version][,|<nl>[loader:]id|slug[?][:
         version]...]...
-                    Project ID or Slug. Can be <project ID>|<slug>, <loader>:
-                      <project ID>|<slug>, <loader>:<project ID>|<slug>:
-                      <version ID|version number|release type>, '@'<filename
-                      with ref per line (supports # comments)>
-                    Examples: fabric-api, fabric:fabric-api, fabric:fabric-api:
-                      0.76.1+1.19.2, datapack:terralith,
-                      @/path/to/modrinth-mods.txt
-                    Valid release types: release, beta, alpha
-                    Valid loaders: fabric, forge, paper, datapack, etc.
+                          Project ID or Slug. Can be <project ID>|<slug>,
+                            <loader>:<project ID>|<slug>, <loader>:<project
+                            ID>|<slug>:<version ID|version number|release
+                            type>, '@'<filename with ref per line (supports #
+                            comments)>
+                          Append '?' to mark a project as optional (excluded
+                            from version resolution).
+                          Examples: fabric-api, fabric:fabric-api, fabric:
+                            fabric-api:0.76.1+1.19.2, datapack:terralith,
+                            pl3xmap?, @/path/to/modrinth-mods.txt
+                          Valid release types: release, beta, alpha
+                          Valid loaders: fabric, forge, paper, datapack, etc.
       --tls-handshake-timeout=DURATION
-                    Default: PT30S
-      --use-http2   Whether to use HTTP/2. Default: false
-      --wiretap     Whether to enable Reactor Netty wiretap logging. Default:
-                      false
+                          Default: PT30S
+      --use-http2         Whether to use HTTP/2. Default: false
+      --wiretap           Whether to enable Reactor Netty wiretap logging.
+                            Default: false
 ```
 
 ### yaml-path
