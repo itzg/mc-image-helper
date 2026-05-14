@@ -38,6 +38,7 @@ import me.itzg.helpers.properties.SetPropertiesCommand;
 import me.itzg.helpers.purpur.InstallPurpurCommand;
 import me.itzg.helpers.quilt.InstallQuiltCommand;
 import me.itzg.helpers.singles.Asciify;
+import me.itzg.helpers.singles.HasFeatureCommand;
 import me.itzg.helpers.singles.HashCommand;
 import me.itzg.helpers.singles.NetworkInterfacesCommand;
 import me.itzg.helpers.singles.TestLoggingCommand;
@@ -72,6 +73,7 @@ import picocli.CommandLine.Spec;
         GetCommand.class,
         GithubCommands.class,
         HashCommand.class,
+        HasFeatureCommand.class,
         IniPathCommand.class,
         InstallCurseForgeCommand.class,
         InstallFabricLoaderCommand.class,
