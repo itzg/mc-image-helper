@@ -114,6 +114,7 @@ public class InstallOciPackCommand implements Callable<Integer> {
                         throw new GenericException(
                             "Failed to download OCI layer " + digest + ": " + e.getMessage(), e);
                     }
+                    verifyDownloaded(target, digest);
                 }
                 written.add(target);
             }
@@ -214,19 +215,56 @@ public class InstallOciPackCommand implements Callable<Integer> {
             return false;
         }
         try {
-            final MessageDigest sha = MessageDigest.getInstance("SHA-256");
-            try (InputStream in = Files.newInputStream(target)) {
-                final byte[] buf = new byte[8192];
-                int n;
-                while ((n = in.read(buf)) > 0) {
-                    sha.update(buf, 0, n);
-                }
-            }
-            return ("sha256:" + toHex(sha.digest())).equalsIgnoreCase(expectedDigest);
-        } catch (IOException | NoSuchAlgorithmException e) {
+            return computeSha256(target).equalsIgnoreCase(expectedDigest);
+        } catch (IOException e) {
             log.debug("Could not verify existing layer at {}: {}", target, e.getMessage());
             return false;
         }
+    }
+
+    // The ORAS SDK only verifies blob bytes against the Docker-Content-Digest
+    // response header, and silently skips verification when that header is
+    // absent (the OCI distribution spec marks it SHOULD, not MUST). Recompute
+    // the digest ourselves against the manifest's declared value so a
+    // misbehaving registry or stripping proxy cannot serve us tampered bytes.
+    private static void verifyDownloaded(Path target, String expectedDigest) {
+        if (!"sha256:".regionMatches(true, 0, expectedDigest, 0, "sha256:".length())) {
+            return;
+        }
+        final String actual;
+        try {
+            actual = computeSha256(target);
+        } catch (IOException e) {
+            throw new GenericException(
+                "Failed to verify digest of " + target + ": " + e.getMessage(), e);
+        }
+        if (!actual.equalsIgnoreCase(expectedDigest)) {
+            try {
+                Files.deleteIfExists(target);
+            } catch (IOException ignored) {
+                // best-effort cleanup
+            }
+            throw new GenericException(String.format(
+                "Digest mismatch for OCI blob: expected %s, got %s",
+                expectedDigest, actual));
+        }
+    }
+
+    private static String computeSha256(Path target) throws IOException {
+        final MessageDigest sha;
+        try {
+            sha = MessageDigest.getInstance("SHA-256");
+        } catch (NoSuchAlgorithmException e) {
+            throw new AssertionError("SHA-256 unavailable in this JRE", e);
+        }
+        try (InputStream in = Files.newInputStream(target)) {
+            final byte[] buf = new byte[8192];
+            int n;
+            while ((n = in.read(buf)) > 0) {
+                sha.update(buf, 0, n);
+            }
+        }
+        return "sha256:" + toHex(sha.digest());
     }
 
     private static String toHex(byte[] bytes) {

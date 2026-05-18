@@ -176,6 +176,39 @@ class InstallOciPackCommandTest {
             .hasMessageContaining("Digest mismatch");
     }
 
+    @Test
+    void rejectsLayerWhenRegistryOmitsDigestHeader(
+        WireMockRuntimeInfo wm, @TempDir Path tempDir
+    ) throws NoSuchAlgorithmException {
+        final byte[] truth = "real layer bytes".getBytes(StandardCharsets.UTF_8);
+        final byte[] tampered = "tampered without header".getBytes(StandardCharsets.UTF_8);
+        final String advertisedDigest = sha256(truth);
+
+        final URI base = URI.create(wm.getHttpBaseUrl());
+        final String registry = base.getHost() + ":" + base.getPort();
+        final String repository = "owner/no-header";
+
+        stubManifest(repository, "v1",
+            buildManifest(advertisedDigest, truth.length, null, 0));
+        // Note: no Docker-Content-Digest header. The SDK skips its own
+        // validation in that case, so this test covers our end-to-end
+        // digest check against the manifest's declared value.
+        stubBlob(repository, advertisedDigest, tampered);
+
+        final Path stage = tempDir.resolve("stage");
+        final InstallOciPackCommand cmd = new InstallOciPackCommand();
+        cmd.ref = registry + "/" + repository + ":v1";
+        cmd.outputDirectory = stage;
+        cmd.filenameStrategy = InstallOciPackCommand.FilenameStrategy.title;
+        cmd.setInsecure(true);
+
+        assertThatThrownBy(cmd::call)
+            .isInstanceOf(GenericException.class)
+            .hasMessageContaining("Digest mismatch");
+        // The tampered file should be cleaned up on mismatch
+        assertThat(stage.resolve("base.tar.gz")).doesNotExist();
+    }
+
     // Logback in tests writes to stdout, so strip those lines when asserting on command output
     private static String[] nonLogLines(String stdout) {
         return Arrays.stream(stdout.split("\n"))
