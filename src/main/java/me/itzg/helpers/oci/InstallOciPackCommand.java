@@ -6,7 +6,6 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -91,8 +90,8 @@ public class InstallOciPackCommand implements Callable<Integer> {
 
         Files.createDirectories(outputDirectory);
         final Registry registry = buildRegistry();
+        log.info("Resolving OCI artifact {}", cref);
         try {
-            log.info("Resolving OCI artifact {}", cref);
             final Manifest manifest = registry.getManifest(cref);
             if (manifest.getLayers() == null || manifest.getLayers().isEmpty()) {
                 throw new GenericException("OCI artifact " + cref + " declares no layers");
@@ -102,7 +101,11 @@ public class InstallOciPackCommand implements Callable<Integer> {
             for (final Layer layer : manifest.getLayers()) {
                 final Path target = outputDirectory.resolve(filenameFor(layer));
                 final String digest = layer.getDigest();
-                if (digest != null && Files.isRegularFile(target) && verifyExisting(target, digest)) {
+                if (digest == null) {
+                    throw new GenericException(
+                        "OCI artifact " + cref + " has a layer without a digest");
+                }
+                if (Files.isRegularFile(target) && verifyExisting(target, digest)) {
                     log.debug("Layer {} already on disk at {}; skipping download", digest, target);
                 } else {
                     try {
@@ -158,11 +161,11 @@ public class InstallOciPackCommand implements Callable<Integer> {
         } else {
             final String home = System.getProperty("user.home");
             if (home != null) {
-                final Path containersAuth = Paths.get(home, ".config", "containers", "auth.json");
+                final Path containersAuth = Path.of(home, ".config", "containers", "auth.json");
                 if (Files.isReadable(containersAuth)) {
                     config = containersAuth;
                 } else {
-                    final Path def = Paths.get(home, ".docker", "config.json");
+                    final Path def = Path.of(home, ".docker", "config.json");
                     if (Files.isReadable(def)) {
                         config = def;
                     }
@@ -190,7 +193,7 @@ public class InstallOciPackCommand implements Callable<Integer> {
             final String title = layerTitle(layer);
             candidate = title != null && !title.isBlank() ? title : layer.getDigest();
         }
-        final Path p = Paths.get(candidate).getFileName();
+        final Path p = Path.of(candidate).getFileName();
         if (p == null) {
             throw new InvalidParameterException(
                 "Could not derive a filename from layer: " + layer);
@@ -199,11 +202,11 @@ public class InstallOciPackCommand implements Callable<Integer> {
     }
 
     private static String layerTitle(Layer layer) {
-        final Map<String, String> ann = layer.getAnnotations();
-        if (ann == null) {
+        final Map<String, String> annotations = layer.getAnnotations();
+        if (annotations == null) {
             return null;
         }
-        return ann.get("org.opencontainers.image.title");
+        return annotations.get("org.opencontainers.image.title");
     }
 
     private static boolean verifyExisting(Path target, String expectedDigest) {
