@@ -3,7 +3,6 @@ package me.itzg.helpers.oci;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -25,6 +24,7 @@ import land.oras.auth.AuthStore;
 import land.oras.auth.AuthStoreAuthenticationProvider;
 import land.oras.auth.NoAuthProvider;
 import land.oras.exception.OrasException;
+import lombok.AccessLevel;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
@@ -65,16 +65,17 @@ public class InstallOciPackCommand implements Callable<Integer> {
             + " When omitted, layer paths are also printed to stdout for interactive use.")
     Path layerListFile;
 
-    // Allows tests to capture stdout without intercepting the JVM's
-    @Setter
-    private PrintStream out = System.out;
-
-    // Visible for tests; production code always uses HTTPS
-    @Setter
-    String scheme = "https";
+    // Visible for tests so they can point at a plain-HTTP WireMock registry
+    @Setter(AccessLevel.PACKAGE)
+    boolean insecure;
 
     public enum FilenameStrategy {
+        /**
+         * Use the layer's {@code org.opencontainers.image.title} annotation,
+         * falling back to its digest when the annotation is absent.
+         */
         title,
+        /** Always use the layer's digest as the filename. */
         digest
     }
 
@@ -127,7 +128,7 @@ public class InstallOciPackCommand implements Callable<Integer> {
                 }
             } else {
                 for (final Path p : written) {
-                    out.println(p.toAbsolutePath());
+                    System.out.println(p.toAbsolutePath());
                 }
             }
         } catch (OrasException e) {
@@ -141,7 +142,7 @@ public class InstallOciPackCommand implements Callable<Integer> {
     private Registry buildRegistry() {
         final Registry.Builder b = Registry.builder()
             .withAuthProvider(resolveAuthProvider());
-        if ("http".equalsIgnoreCase(scheme)) {
+        if (insecure) {
             b.insecure();
         }
         return b.build();
@@ -187,7 +188,7 @@ public class InstallOciPackCommand implements Callable<Integer> {
             candidate = layer.getDigest();
         } else {
             final String title = layerTitle(layer);
-            candidate = (title != null && !title.isEmpty()) ? title : layer.getDigest();
+            candidate = title != null && !title.isBlank() ? title : layer.getDigest();
         }
         final Path p = Paths.get(candidate).getFileName();
         if (p == null) {

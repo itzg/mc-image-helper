@@ -1,5 +1,6 @@
 package me.itzg.helpers.oci;
 
+import static com.github.stefanbirkner.systemlambda.SystemLambda.tapSystemOutNormalized;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.head;
@@ -15,15 +16,13 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.PrintStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import me.itzg.helpers.errors.GenericException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -37,7 +36,7 @@ class InstallOciPackCommandTest {
     @Test
     void pullsLayersInManifestOrderAndPrintsPaths(
         WireMockRuntimeInfo wm, @TempDir Path tempDir
-    ) throws IOException, NoSuchAlgorithmException {
+    ) throws Exception {
         final byte[] baseLayer = "shared base layer content".getBytes(StandardCharsets.UTF_8);
         final byte[] overlayLayer = "tech overlay content".getBytes(StandardCharsets.UTF_8);
         final String baseDigest = sha256(baseLayer);
@@ -53,24 +52,21 @@ class InstallOciPackCommandTest {
         stubBlob(repository, overlayDigest, overlayLayer);
 
         final Path stage = tempDir.resolve("stage");
-        final ByteArrayOutputStream stdout = new ByteArrayOutputStream();
         final InstallOciPackCommand cmd = new InstallOciPackCommand();
         cmd.ref = registry + "/" + repository + ":v1";
         cmd.outputDirectory = stage;
         cmd.filenameStrategy = InstallOciPackCommand.FilenameStrategy.title;
-        cmd.setOut(new PrintStream(stdout, true, StandardCharsets.UTF_8.name()));
-        cmd.setScheme("http");
+        cmd.setInsecure(true);
 
-        final Integer exit = cmd.call();
-
-        assertThat(exit).isEqualTo(ExitCode.OK);
+        final String stdout = tapSystemOutNormalized(() ->
+            assertThat(cmd.call()).isEqualTo(ExitCode.OK));
 
         final Path baseFile = stage.resolve("base.tar.gz");
         final Path overlayFile = stage.resolve("tech.tar.gz");
         assertThat(baseFile).exists().hasBinaryContent(baseLayer);
         assertThat(overlayFile).exists().hasBinaryContent(overlayLayer);
 
-        final String[] printedLines = stdout.toString(StandardCharsets.UTF_8.name()).split("\\R");
+        final String[] printedLines = nonLogLines(stdout);
         assertThat(printedLines).hasSize(2);
         assertThat(Path.of(printedLines[0])).isEqualTo(baseFile.toAbsolutePath());
         assertThat(Path.of(printedLines[1])).isEqualTo(overlayFile.toAbsolutePath());
@@ -79,7 +75,7 @@ class InstallOciPackCommandTest {
     @Test
     void writesLayerListFileForScriptedConsumers(
         WireMockRuntimeInfo wm, @TempDir Path tempDir
-    ) throws IOException, NoSuchAlgorithmException {
+    ) throws Exception {
         final byte[] baseLayer = "shared base".getBytes(StandardCharsets.UTF_8);
         final byte[] overlayLayer = "overlay".getBytes(StandardCharsets.UTF_8);
         final String baseDigest = sha256(baseLayer);
@@ -96,17 +92,16 @@ class InstallOciPackCommandTest {
 
         final Path stage = tempDir.resolve("stage");
         final Path layerList = tempDir.resolve("nested/layers.txt");
-        final ByteArrayOutputStream stdout = new ByteArrayOutputStream();
 
         final InstallOciPackCommand cmd = new InstallOciPackCommand();
         cmd.ref = registry + "/" + repository + ":v1";
         cmd.outputDirectory = stage;
         cmd.layerListFile = layerList;
         cmd.filenameStrategy = InstallOciPackCommand.FilenameStrategy.title;
-        cmd.setOut(new PrintStream(stdout, true, StandardCharsets.UTF_8.name()));
-        cmd.setScheme("http");
+        cmd.setInsecure(true);
 
-        assertThat(cmd.call()).isEqualTo(ExitCode.OK);
+        final String stdout = tapSystemOutNormalized(() ->
+            assertThat(cmd.call()).isEqualTo(ExitCode.OK));
 
         assertThat(layerList).exists();
         assertThat(Files.readAllLines(layerList))
@@ -114,13 +109,14 @@ class InstallOciPackCommandTest {
                 stage.resolve("base.tar.gz").toAbsolutePath().toString(),
                 stage.resolve("tech.tar.gz").toAbsolutePath().toString()
             );
-        assertThat(stdout.toString(StandardCharsets.UTF_8.name())).isEmpty();
+        // With --layer-list-file set, stdout carries only logger output, no layer paths
+        assertThat(nonLogLines(stdout)).isEmpty();
     }
 
     @Test
     void skipsRedownloadWhenLayerAlreadyOnDisk(
         WireMockRuntimeInfo wm, @TempDir Path tempDir
-    ) throws IOException, NoSuchAlgorithmException {
+    ) throws Exception {
         final byte[] baseLayer = "already cached locally".getBytes(StandardCharsets.UTF_8);
         final String baseDigest = sha256(baseLayer);
 
@@ -140,10 +136,10 @@ class InstallOciPackCommandTest {
         cmd.ref = registry + "/" + repository + ":v1";
         cmd.outputDirectory = stage;
         cmd.filenameStrategy = InstallOciPackCommand.FilenameStrategy.title;
-        cmd.setOut(new PrintStream(new ByteArrayOutputStream()));
-        cmd.setScheme("http");
+        cmd.setInsecure(true);
 
-        assertThat(cmd.call()).isEqualTo(ExitCode.OK);
+        tapSystemOutNormalized(() ->
+            assertThat(cmd.call()).isEqualTo(ExitCode.OK));
 
         verify(0, com.github.tomakehurst.wiremock.client.WireMock
             .getRequestedFor(urlPathEqualTo("/v2/" + repository + "/blobs/" + baseDigest)));
@@ -173,12 +169,18 @@ class InstallOciPackCommandTest {
         cmd.ref = registry + "/" + repository + ":v1";
         cmd.outputDirectory = stage;
         cmd.filenameStrategy = InstallOciPackCommand.FilenameStrategy.title;
-        cmd.setOut(new PrintStream(new ByteArrayOutputStream()));
-        cmd.setScheme("http");
+        cmd.setInsecure(true);
 
         assertThatThrownBy(cmd::call)
             .isInstanceOf(GenericException.class)
             .hasMessageContaining("Digest mismatch");
+    }
+
+    // Logback in tests writes to stdout, so strip those lines when asserting on command output
+    private static String[] nonLogLines(String stdout) {
+        return Arrays.stream(stdout.split("\n"))
+            .filter(line -> !line.isEmpty() && !line.startsWith("[mc-image-helper]"))
+            .toArray(String[]::new);
     }
 
     private static String sha256(byte[] bytes) throws NoSuchAlgorithmException {
