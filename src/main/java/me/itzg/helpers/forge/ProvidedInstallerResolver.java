@@ -121,12 +121,13 @@ public class ProvidedInstallerResolver implements InstallerResolver {
             if (idParts[1].equals(INSTALLER_ID_FORGE)) {
                 return new VersionPair(minecraftVersion, idParts[2]);
             }
-            if (idParts[0].equals(INSTALLER_ID_NEOFORGE)) {
-                return new VersionPair(minecraftVersion, idParts[1]);
-            }
             if (idParts[0].equals(INSTALLER_ID_CLEANROOM)) {
                 return new VersionPair(minecraftVersion, String.join("-", idParts[1], idParts[2]))
                     .setVariantOverride(INSTALLER_ID_CLEANROOM);
+            }
+        } else if (idParts.length >= 2) {
+            if (idParts[0].equals(INSTALLER_ID_NEOFORGE)) {
+                return new VersionPair(minecraftVersion, idParts[1]);
             }
         }
 
