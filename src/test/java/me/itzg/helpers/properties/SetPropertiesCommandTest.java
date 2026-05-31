@@ -4,6 +4,7 @@ import static com.github.stefanbirkner.systemlambda.SystemLambda.tapSystemErr;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
@@ -18,9 +19,11 @@ import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Stream;
 import me.itzg.helpers.env.MappedEnvVarProvider;
+import me.itzg.helpers.json.ObjectMappers;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
@@ -309,6 +312,51 @@ class SetPropertiesCommandTest {
 
         assertThat(properties).containsEntry("rcon.password", secret);
         assertPropertiesEqualExcept(properties, "rcon.password");
+    }
+
+    @ParameterizedTest
+    @MethodSource("translatesLiteralNewlinesArgs")
+    void translatesLiteralNewlines(String input, String expected, @TempDir Path tempDir) throws IOException {
+        final Path tempDefnFile = createDefinitionsFile(Map.of(
+                "motd", PropertyDefinition.builder()
+                    .env("MOTD")
+                    .translateLiteralNewlines(true)
+                    .build()
+            ), tempDir
+        );
+
+        final int exitCode = new CommandLine(new SetPropertiesCommand()
+            .setEnvironmentVariablesProvider(MappedEnvVarProvider.of(
+                "MOTD", input
+            ))
+        )
+            .execute(
+                "--definitions", tempDefnFile.toString(),
+                propertiesFile.toString()
+            );
+
+        assertThat(exitCode).isEqualTo(ExitCode.OK);
+
+        final Properties properties = loadProperties();
+
+        assertThat(properties).containsEntry("motd", expected);
+    }
+
+    public static Stream<Arguments> translatesLiteralNewlinesArgs() {
+        return Stream.of(
+            arguments("one\\ntwo", "one\ntwo"),
+            arguments("one\ntwo", "one\ntwo")
+        );
+    }
+
+    private static Path createDefinitionsFile(Map<String, PropertyDefinition> definitions, Path tempDir) throws IOException {
+        final Path definitionsFile = Files.createTempFile(tempDir, "definitions-", ".json");
+
+        try (BufferedWriter writer = Files.newBufferedWriter(definitionsFile)) {
+            ObjectMappers.defaultMapper().writeValue(writer, definitions);
+        }
+
+        return definitionsFile;
     }
 
     private void assertPropertiesEqualExcept(Properties properties, String... propertiesToIgnore) {

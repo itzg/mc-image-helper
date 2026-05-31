@@ -32,7 +32,9 @@ import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
-@Command(name = "set-properties", description = "Maps environment variables to a properties file")
+@Command(name = "set-properties", description = "Maps environment variables to a properties file",
+    subcommands = {PropertyDefinitionSchemaCommand.class}
+)
 @Slf4j
 public class SetPropertiesCommand implements Callable<Integer> {
 
@@ -222,6 +224,10 @@ public class SetPropertiesCommand implements Callable<Integer> {
                     )
                 );
             }
+        }
+
+        if (definition.isTranslateLiteralNewlines()) {
+            value = value.replace("\\n", "\n");
         }
 
         return value;
