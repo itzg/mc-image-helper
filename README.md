@@ -1571,3 +1571,38 @@ One of the following identifiers or can be prefixed with `list of ` to indicate 
   }
 }
 ```
+
+## set-properties schema
+
+```json
+{
+  "$schema" : "http://json-schema.org/draft-04/schema#",
+  "title" : "Property Definition",
+  "type" : "object",
+  "additionalProperties" : false,
+  "properties" : {
+    "env" : {
+      "type" : "string"
+    },
+    "allowed" : {
+      "type" : "array",
+      "items" : {
+        "type" : "string"
+      }
+    },
+    "mappings" : {
+      "type" : "object",
+      "additionalProperties" : {
+        "type" : "string"
+      }
+    },
+    "remove" : {
+      "type" : "boolean"
+    },
+    "translateLiteralNewlines" : {
+      "type" : "boolean"
+    }
+  },
+  "required" : [ "remove", "translateLiteralNewlines" ]
+}
+```
