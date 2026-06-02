@@ -985,6 +985,7 @@ public class CurseForgeInstaller {
 
         // id could be values like
         // neoforge-1.20.1-47.1.99
+        // neoforge-26.1.2.68-beta
         final String[] parts = id.split("-", 3);
         if (parts.length < 2) {
             throw new GenericException("Unknown modloader ID: " + id);
@@ -1007,7 +1008,7 @@ public class CurseForgeInstaller {
                     break;
 
                 case "neoforge":
-                    prepareNeoForge(sharedFetch, minecraftVersion, loaderVersion);
+                    prepareNeoForge(sharedFetch, minecraftVersion, id);
                     break;
 
                 case "fabric":
@@ -1040,10 +1041,12 @@ public class CurseForgeInstaller {
             .install(outputDir, resultsFile, forceReinstallModloader, "Forge");
     }
 
-    private void prepareNeoForge(SharedFetch sharedFetch, String minecraftVersion, String loaderVersion) {
+    private void prepareNeoForge(SharedFetch sharedFetch, String minecraftVersion, String loaderId) {
         new ForgeLikeInstaller(
-            new NeoForgeInstallerResolver(sharedFetch,
-                minecraftVersion, loaderVersion
+            NeoForgeInstallerResolver.givenLoaderId(
+                sharedFetch,
+                minecraftVersion,
+                loaderId
             )
         )
             .install(outputDir, resultsFile, forceReinstallModloader, "NeoForge");
