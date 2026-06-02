@@ -41,6 +41,15 @@ class NeoForgeInstallerResolverTest {
         );
     }
 
+    public static Stream<Arguments> resolve_loaderId_args() {
+        // minecraftVersion, loaderId, expectedMinecraftVersion, expectedNeoforgeVersion
+        // needs to be in resources/__files/forge/neoforged-neoforge-maven-metadata.xml
+        return Stream.of(
+            arguments("26.1.2", "neoforge-26.1.2.7-beta", "26.1.2", "26.1.2.7-beta"),
+            arguments("latest", "neoforge-20.2.88", "1.20.2", "20.2.88")
+        );
+    }
+
     @ParameterizedTest
     @MethodSource("resolve_args")
     void resolve(String minecraftVersion, String neoforgeVersion,
@@ -75,6 +84,39 @@ class NeoForgeInstallerResolverTest {
                 assertThat(versionPair.forge).isEqualTo(expectedNeoforgeVersion);
             }
 
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("resolve_loaderId_args")
+    void resolveLoaderId(String minecraftVersion, String loaderId,
+        String expectedMinecraftVersion, String expectedNeoforgeVersion,
+        WireMockRuntimeInfo wmInfo
+    ) {
+        try (SharedFetch sharedFetch = Fetch.sharedFetch("install-neoforge", Options.builder().build())) {
+            final VersionPair requestedVersion = IdResolver.buildVersionFromId(loaderId, minecraftVersion);
+            final NeoForgeInstallerResolver resolver =
+                NeoForgeInstallerResolver.givenLoaderId(sharedFetch,
+                    requestedVersion.minecraft, loaderId,
+                    wmInfo.getHttpBaseUrl()
+                );
+
+            stubFor(get("/net/neoforged/neoforge/maven-metadata.xml")
+                .willReturn(aResponse()
+                    .withBodyFile("forge/neoforged-neoforge-maven-metadata.xml")
+                )
+            );
+            stubFor(get("/net/neoforged/forge/maven-metadata.xml")
+                .willReturn(aResponse()
+                    .withBodyFile("forge/neoforged-forge-maven-metadata.xml")
+                )
+            );
+
+            final VersionPair versionPair = resolver.resolve(null);
+
+            assertThat(versionPair).isNotNull();
+            assertThat(versionPair.minecraft).isEqualTo(expectedMinecraftVersion);
+            assertThat(versionPair.forge).isEqualTo(expectedNeoforgeVersion);
         }
     }
 

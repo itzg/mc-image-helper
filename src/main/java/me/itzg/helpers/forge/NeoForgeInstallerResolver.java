@@ -18,6 +18,7 @@ import me.itzg.helpers.mvn.MavenRepoApi;
 import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.VisibleForTesting;
 import org.jspecify.annotations.NonNull;
 
 @Slf4j
@@ -33,7 +34,32 @@ public class NeoForgeInstallerResolver implements InstallerResolver {
     private final String requestedMinecraftVersion;
     private final String requestedNeoForgeVersion;
 
-    public NeoForgeInstallerResolver(SharedFetch sharedFetch,
+    public static NeoForgeInstallerResolver givenLoaderVersion(SharedFetch sharedFetch,
+        String requestedMinecraftVersion,
+        String requestedNeoForgeVersion
+    ) {
+        return new NeoForgeInstallerResolver(sharedFetch, requestedMinecraftVersion, requestedNeoForgeVersion);
+    }
+
+    public static NeoForgeInstallerResolver givenLoaderId(SharedFetch sharedFetch,
+        String requestedMinecraftVersion,
+        String loaderId
+    ) {
+        final VersionPair version = IdResolver.buildVersionFromId(loaderId, requestedMinecraftVersion);
+        return new NeoForgeInstallerResolver(sharedFetch, version.minecraft, version.forge);
+    }
+
+    @VisibleForTesting
+    static NeoForgeInstallerResolver givenLoaderId(SharedFetch sharedFetch,
+        String requestedMinecraftVersion,
+        String loaderId,
+        String neoforgeMavenRepoUrl
+    ) {
+        final VersionPair version = IdResolver.buildVersionFromId(loaderId, requestedMinecraftVersion);
+        return new NeoForgeInstallerResolver(sharedFetch, version.minecraft, version.forge, neoforgeMavenRepoUrl);
+    }
+
+    protected NeoForgeInstallerResolver(SharedFetch sharedFetch,
         @NotNull
         String requestedMinecraftVersion,
         @Nullable
@@ -42,7 +68,7 @@ public class NeoForgeInstallerResolver implements InstallerResolver {
         this(sharedFetch, requestedMinecraftVersion, requestedNeoForgeVersion, DEFAULT_MVN_URL);
     }
 
-    NeoForgeInstallerResolver(SharedFetch sharedFetch,
+    protected NeoForgeInstallerResolver(SharedFetch sharedFetch,
         @NotNull
         String requestedMinecraftVersion,
         @Nullable

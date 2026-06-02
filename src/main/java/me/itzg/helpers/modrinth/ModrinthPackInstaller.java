@@ -21,8 +21,8 @@ import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.fabric.FabricLauncherInstaller;
 import me.itzg.helpers.files.AntPathMatcher;
 import me.itzg.helpers.files.IoStreams;
-import me.itzg.helpers.forge.ForgeLikeInstaller;
 import me.itzg.helpers.forge.ForgeInstallerResolver;
+import me.itzg.helpers.forge.ForgeLikeInstaller;
 import me.itzg.helpers.forge.ForgeUrlArgs;
 import me.itzg.helpers.forge.NeoForgeInstallerResolver;
 import me.itzg.helpers.http.SharedFetch;
@@ -230,6 +230,13 @@ public class ModrinthPackInstaller {
         for (final Entry<DependencyId, ModloaderPreparer> entry : modloaderPreparers.entrySet()) {
             final String version = dependencies.get(entry.getKey());
             if (version != null) {
+                /*
+                NOTE: neoforge 26.+ and beta versions are formatted correctly as
+                    "dependencies": {
+                        "minecraft": "26.1.2",
+                        "neoforge": "26.1.2.59-beta"
+                    }
+                 */
                 entry.getValue().prepare(sharedFetch, minecraftVersion, version);
                 return;
             }
@@ -284,7 +291,7 @@ public class ModrinthPackInstaller {
 
     private void prepareNeoForge(SharedFetch sharedFetch, String minecraftVersion, String version) {
         new ForgeLikeInstaller(
-            new NeoForgeInstallerResolver(sharedFetch, minecraftVersion, version)
+            NeoForgeInstallerResolver.givenLoaderVersion(sharedFetch, minecraftVersion, version)
         )
             .install(
                 this.outputDirectory,
