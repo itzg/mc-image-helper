@@ -3,7 +3,7 @@ name: test
 on:
   push:
     branches: &branches
-      - master
+      - main
       - java8
     paths-ignore: &path-ignore
       - "*.md"
