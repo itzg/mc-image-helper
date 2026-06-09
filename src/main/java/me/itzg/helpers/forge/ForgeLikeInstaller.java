@@ -274,6 +274,12 @@ public class ForgeLikeInstaller {
         (v,m, f) -> String.format("%s-%s.jar", v, f)
     );
 
+    private static Path findShimJar(Path outputDir, String variant, String minecraftVersion, String forgeVersion) {
+        final Path path = outputDir.resolve(String.format("%s-%s-%s-shim.jar",
+            variant.toLowerCase(), minecraftVersion, forgeVersion));
+        return Files.exists(path) ? path : null;
+    }
+
     private static Path findEntryJar(Path outputDir, String variant, String minecraftVersion, String forgeVersion) {
         for (final ServerJarNameBuilder builder : serverJarNameBuilders) {
             final Path path = outputDir.resolve(builder.build(variant.toLowerCase(), minecraftVersion, forgeVersion));
