@@ -129,6 +129,16 @@ public class ForgeLikeInstaller {
                 throw new RuntimeException("Failed to populate results file", e);
             }
         }
+
+        if (cleanLibraries) {
+            final Path shimJar = findShimJar(outputDir, Optional.ofNullable(resolved.variantOverride).orElse(variant), resolved.minecraft, resolved.forge);
+
+            if (shimJar == null) {
+                log.warn("Unable to locate {} shim jar for library cleanup", variant);
+            } else {
+                new LibraryCleaner(shimJar, LibraryListPaths.FORGE).cleanLibraries();
+            }
+        }
     }
 
     private boolean serverEntryExists(@NonNull Path outputDir, String serverEntry) {
