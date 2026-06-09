@@ -134,17 +134,20 @@ public class ForgeLikeInstaller {
         }
 
         if (cleanLibraries) {
-            final Path shimJar = findShimJar(outputDir, Optional.ofNullable(resolved.variantOverride).orElse(variant), resolved.minecraft, resolved.forge);
 
             if (new ComparableVersion(resolved.minecraft).compareTo(MIN_SHIM_JAR_MC_VERSION) < 0) {
                 log.warn("Forge library cleanup requires Minecraft {} or newer", MIN_SHIM_JAR_MC_VERSION);
                 return;
             }
-            if (shimJar == null) {
+
+            final Path shimJar = outputDir.resolve(String.format("%s-%s-%s-shim.jar", variant.toLowerCase(), resolved.minecraft, resolved.forge));
+
+            if (!Files.exists(shimJar)) {
                 log.warn("Unable to locate {} shim jar for library cleanup", variant);
-            } else {
-                new LibraryCleaner(shimJar, LibraryListPaths.FORGE).cleanLibraries();
+                return;
             }
+
+            new LibraryCleaner(shimJar, LibraryListPaths.FORGE).cleanLibraries();
         }
     }
 
@@ -291,11 +294,6 @@ public class ForgeLikeInstaller {
         (v,m, f) -> String.format("%s-%s.jar", v, f)
     );
 
-    private static Path findShimJar(Path outputDir, String variant, String minecraftVersion, String forgeVersion) {
-        final Path path = outputDir.resolve(String.format("%s-%s-%s-shim.jar",
-            variant.toLowerCase(), minecraftVersion, forgeVersion));
-        return Files.exists(path) ? path : null;
-    }
 
     private static Path findEntryJar(Path outputDir, String variant, String minecraftVersion, String forgeVersion) {
         for (final ServerJarNameBuilder builder : serverJarNameBuilders) {
