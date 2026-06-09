@@ -130,7 +130,7 @@ public class LibraryCleaner {
                 libs = br.lines()
                         .map(String::trim)
                         .map(s -> s.split("\\s+"))
-                        .filter(parts -> parts.length > 1)
+                        .filter(parts -> parts.length >= 3)
                         .map(parts -> parts[2])
                         .collect(Collectors.toList());
 
