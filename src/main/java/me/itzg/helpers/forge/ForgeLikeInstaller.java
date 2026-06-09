@@ -24,6 +24,8 @@ import me.itzg.helpers.files.ResultsFileWriter;
 import me.itzg.helpers.json.ObjectMappers;
 import me.itzg.helpers.libraries.LibraryCleaner;
 import me.itzg.helpers.libraries.LibraryListPaths;
+
+import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.jetbrains.annotations.Nullable;
 
 @Slf4j
@@ -32,6 +34,7 @@ public class ForgeLikeInstaller {
     private static final Pattern RESULT_INFO = Pattern.compile(
         "Exec:\\s+(?<exec>.+)"
             + "|The server installed successfully, you should now be able to run the file (?<universalJar>.+)");
+    private static final ComparableVersion MIN_SHIM_JAR_MC_VERSION = new ComparableVersion("1.20.3");
 
     private final InstallerResolver installerResolver;
 
@@ -133,6 +136,10 @@ public class ForgeLikeInstaller {
         if (cleanLibraries) {
             final Path shimJar = findShimJar(outputDir, Optional.ofNullable(resolved.variantOverride).orElse(variant), resolved.minecraft, resolved.forge);
 
+            if (new ComparableVersion(resolved.minecraft).compareTo(MIN_SHIM_JAR_MC_VERSION) < 0) {
+                log.warn("Forge library cleanup requires Minecraft {} or newer", MIN_SHIM_JAR_MC_VERSION);
+                return;
+            }
             if (shimJar == null) {
                 log.warn("Unable to locate {} shim jar for library cleanup", variant);
             } else {
