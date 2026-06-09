@@ -22,6 +22,8 @@ import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.files.ResultsFileWriter;
 import me.itzg.helpers.json.ObjectMappers;
+import me.itzg.helpers.libraries.LibraryCleaner;
+import me.itzg.helpers.libraries.LibraryListPaths;
 import org.jetbrains.annotations.Nullable;
 
 @Slf4j
@@ -42,6 +44,16 @@ public class ForgeLikeInstaller {
         @Nullable Path resultsFile,
         boolean forceReinstall,
         String variant
+    ) {
+        install(outputDir, resultsFile, forceReinstall, variant, false);
+    }
+
+    public void install(
+        @NonNull Path outputDir,
+        @Nullable Path resultsFile,
+        boolean forceReinstall,
+        String variant,
+        boolean cleanLibraries
     ) {
         final String manifestId = variant.toLowerCase();
         final ForgeManifest prevManifest;
