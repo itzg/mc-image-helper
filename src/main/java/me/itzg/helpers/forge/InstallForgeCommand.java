@@ -87,6 +87,9 @@ public class InstallForgeCommand implements Callable<Integer> {
     @Option(names = "--force-reinstall")
     boolean forceReinstall;
 
+    @Option(names = "--clean-libraries", defaultValue = "false", description = "Remove installed libraries not required by the Forge shim")
+    boolean cleanLibraries;
+
     @ArgGroup(exclusive = false)
     SharedFetchArgs sharedFetchArgs = new SharedFetchArgs();
 
@@ -107,7 +110,7 @@ public class InstallForgeCommand implements Callable<Integer> {
 
             );
 
-            installer.install(outputDirectory, resultsFile, forceReinstall, "Forge");
+            installer.install(outputDirectory, resultsFile, forceReinstall, "Forge", cleanLibraries);
         }
 
         return ExitCode.OK;

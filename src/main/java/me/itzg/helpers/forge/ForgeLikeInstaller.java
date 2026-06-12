@@ -22,6 +22,10 @@ import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.files.ResultsFileWriter;
 import me.itzg.helpers.json.ObjectMappers;
+import me.itzg.helpers.libraries.LibraryCleaner;
+import me.itzg.helpers.libraries.LibraryListPaths;
+
+import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.jetbrains.annotations.Nullable;
 
 @Slf4j
@@ -30,6 +34,7 @@ public class ForgeLikeInstaller {
     private static final Pattern RESULT_INFO = Pattern.compile(
         "Exec:\\s+(?<exec>.+)"
             + "|The server installed successfully, you should now be able to run the file (?<universalJar>.+)");
+    private static final ComparableVersion MIN_SHIM_JAR_MC_VERSION = new ComparableVersion("1.20.3");
 
     private final InstallerResolver installerResolver;
 
@@ -42,6 +47,16 @@ public class ForgeLikeInstaller {
         @Nullable Path resultsFile,
         boolean forceReinstall,
         String variant
+    ) {
+        install(outputDir, resultsFile, forceReinstall, variant, false);
+    }
+
+    public void install(
+        @NonNull Path outputDir,
+        @Nullable Path resultsFile,
+        boolean forceReinstall,
+        String variant,
+        boolean cleanLibraries
     ) {
         final String manifestId = variant.toLowerCase();
         final ForgeManifest prevManifest;
@@ -116,6 +131,23 @@ public class ForgeLikeInstaller {
             } catch (IOException e) {
                 throw new RuntimeException("Failed to populate results file", e);
             }
+        }
+
+        if (cleanLibraries) {
+
+            if (new ComparableVersion(resolved.minecraft).compareTo(MIN_SHIM_JAR_MC_VERSION) < 0) {
+                log.warn("Forge library cleanup requires Minecraft {} or newer", MIN_SHIM_JAR_MC_VERSION);
+                return;
+            }
+
+            final Path shimJar = outputDir.resolve(String.format("%s-%s-%s-shim.jar", variant.toLowerCase(), resolved.minecraft, resolved.forge));
+
+            if (!Files.exists(shimJar)) {
+                log.warn("Unable to locate {} shim jar for library cleanup", variant);
+                return;
+            }
+
+            new LibraryCleaner(shimJar, LibraryListPaths.FORGE).cleanLibraries();
         }
     }
 
@@ -261,6 +293,7 @@ public class ForgeLikeInstaller {
         (v,m, f) -> String.format("%s-%s-%s-shim.jar", v, m, f),
         (v,m, f) -> String.format("%s-%s.jar", v, f)
     );
+
 
     private static Path findEntryJar(Path outputDir, String variant, String minecraftVersion, String forgeVersion) {
         for (final ServerJarNameBuilder builder : serverJarNameBuilders) {
