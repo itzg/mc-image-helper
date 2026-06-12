@@ -6,19 +6,27 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.stream.Stream;
+import lombok.AccessLevel;
+import lombok.Setter;
 import lombok.SneakyThrows;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
+import me.itzg.helpers.env.EnvironmentVariablesProvider;
 import me.itzg.helpers.env.InterpolationException;
 import me.itzg.helpers.env.Interpolator;
 import me.itzg.helpers.env.StandardEnvironmentVariablesProvider;
 import me.itzg.helpers.errors.GenericException;
+import org.apache.commons.io.FileUtils;
+import org.jetbrains.annotations.VisibleForTesting;
 import picocli.CommandLine;
 
 @CommandLine.Command(name = "interpolate",
 description = "Interpolates existing files in one or more directories")
 @Slf4j
 public class InterpolateCommand implements Callable<Integer> {
+
+    public static final long FILE_SIZE_LIMIT = 100 * FileUtils.ONE_MB;
+
     @CommandLine.Option(names = {"-h", "--help"}, usageHelp = true, description = "Show this usage and exit")
     @ToString.Exclude
     boolean showHelp;
@@ -29,9 +37,13 @@ public class InterpolateCommand implements Callable<Integer> {
     @CommandLine.Parameters(paramLabel = "DIRECTORY")
     List<Path> directories;
 
+    @VisibleForTesting
+    @Setter(AccessLevel.PACKAGE)
+    EnvironmentVariablesProvider environmentVariablesProvider = new StandardEnvironmentVariablesProvider();
+
     @Override
     public Integer call() throws Exception {
-        final Interpolator interpolator = new Interpolator(new StandardEnvironmentVariablesProvider(), replaceEnv.prefix);
+        final Interpolator interpolator = new Interpolator(environmentVariablesProvider, replaceEnv.prefix);
 
         for (Path directory : directories) {
             if (!Files.isDirectory(directory)) {
@@ -59,6 +71,15 @@ public class InterpolateCommand implements Callable<Integer> {
 
     @SneakyThrows
     private void processFile(Path path, Interpolator interpolator) {
+        final long size = Files.size(path);
+        if (size > FILE_SIZE_LIMIT) {
+            log.warn("Skipping interpolating '{}' because it is too large ({} > {})", path,
+                FileUtils.byteCountToDisplaySize(size),
+                FileUtils.byteCountToDisplaySize(FILE_SIZE_LIMIT)
+            );
+            return;
+        }
+
         log.debug("Interpolating file={}", path);
         final byte[] original = Files.readAllBytes(path);
 
