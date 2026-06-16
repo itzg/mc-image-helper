@@ -542,6 +542,7 @@ loader instances
 
 ```
 Usage: mc-image-helper install-forge [-h] [--force-reinstall]
+                                     [--clean-libraries]
                                      [--minecraft-version=VERSION]
                                      [--output-directory=DIR]
                                      [--results-file=FILE]
@@ -556,6 +557,8 @@ Usage: mc-image-helper install-forge [-h] [--force-reinstall]
                                      DURATION]] [[--forge-promotions-url=URL]
                                      [--forge-maven-repo-url=URL]]
 Downloads and installs a requested version of Forge
+      --clean-libraries   Remove installed libraries not required by the Forge
+                            shim
       --connection-pool-max-idle-timeout=DURATION
 
       --connection-pool-pending-acquire-timeout=DURATION

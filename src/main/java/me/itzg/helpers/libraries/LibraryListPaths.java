@@ -10,5 +10,5 @@ public enum LibraryListPaths {
     PURPUR("META-INF/libraries.list"),
     FORGE("bootstrap-shim.list");
 
-    private String path;
+    private final String path;
 }
