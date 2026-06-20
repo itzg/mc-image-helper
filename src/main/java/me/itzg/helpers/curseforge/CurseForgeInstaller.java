@@ -79,6 +79,7 @@ public class CurseForgeInstaller {
     public static final String REPO_SUBDIR_MODPACKS = "modpacks";
     public static final String REPO_SUBDIR_MODS = "mods";
     public static final String REPO_SUBDIR_WORLDS = "worlds";
+    public static final String MANIFEST_JSON = "manifest.json";
 
     private final Path outputDir;
     private final Path resultsFile;
@@ -415,6 +416,9 @@ public class CurseForgeInstaller {
         try {
 
             final MinecraftModpackManifest modpackManifest = extractModpackManifest(modpackZip);
+            if (modpackManifest == null) {
+                throw InvalidParameterException.formatted("Modpack zip %s did not contain a %s. Only client modpack files contain manifest", modpackZip, MANIFEST_JSON);
+            }
             results = processModpack(context, modpackManifest,
                 new OverridesFromZipApplier(
                     outputDir, modpackZip, overridesSkipExisting,
@@ -1052,8 +1056,11 @@ public class CurseForgeInstaller {
             .install(outputDir, resultsFile, forceReinstallModloader, "NeoForge");
     }
 
-    private MinecraftModpackManifest extractModpackManifest(Path modpackZip) throws IOException {
-        return IoStreams.readFileFromZip(modpackZip, "manifest.json",
+    /**
+     * @return the manifest or null if not found
+     */
+    private @Nullable MinecraftModpackManifest extractModpackManifest(Path modpackZip) throws IOException {
+        return IoStreams.readFileFromZip(modpackZip, MANIFEST_JSON,
             in -> ObjectMappers.defaultMapper().readValue(in, MinecraftModpackManifest.class)
         );
     }

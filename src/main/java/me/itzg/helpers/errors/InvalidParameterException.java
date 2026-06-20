@@ -29,4 +29,8 @@ public class InvalidParameterException extends RuntimeException {
         super(message, cause);
         this.showCauses = showCauses;
     }
+
+    public static InvalidParameterException formatted(String format, Object... args) {
+        return new InvalidParameterException(String.format(format, args));
+    }
 }
