@@ -1,12 +1,9 @@
 package me.itzg.helpers.oci;
 
 import static com.github.stefanbirkner.systemlambda.SystemLambda.tapSystemOutNormalized;
-import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.get;
-import static com.github.tomakehurst.wiremock.client.WireMock.head;
-import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
-import static com.github.tomakehurst.wiremock.client.WireMock.verify;
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static me.itzg.helpers.oci.InstallOciPackCommand.DEFAULT_EXPECTED_ARTIFACT_TYPE;
+import static me.itzg.helpers.oci.InstallOciPackCommand.DEFAULT_EXPECTED_LAYER_MEDIA_TYPE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -209,6 +206,153 @@ class InstallOciPackCommandTest {
         assertThat(stage.resolve("base.tar.gz")).doesNotExist();
     }
 
+    @Test
+    void failsOnArtifactTypeMismatch(
+        WireMockRuntimeInfo wm, @TempDir Path tempDir
+    ) throws Exception {
+        final byte[] baseLayer = "content".getBytes(StandardCharsets.UTF_8);
+        final String baseDigest = sha256(baseLayer);
+
+        final URI base = URI.create(wm.getHttpBaseUrl());
+        final String registry = base.getHost() + ":" + base.getPort();
+        final String repository = "owner/wrong-type";
+
+        stubManifest(repository, "v1",
+            buildManifest("application/vnd.something.else", baseDigest, baseLayer.length, null, 0));
+
+        final InstallOciPackCommand cmd = new InstallOciPackCommand();
+        cmd.ref = registry + "/" + repository + ":v1";
+        cmd.outputDirectory = tempDir.resolve("stage");
+        cmd.expectedArtifactType = "application/vnd.itzg.minecraft.modpack.v1+json";
+        cmd.setInsecure(true);
+
+        assertThatThrownBy(cmd::call)
+            .isInstanceOf(GenericException.class)
+            .hasMessageContaining("has a non-matching artifact type");
+    }
+
+    @Test
+    void filtersLayersByMediaType(
+        WireMockRuntimeInfo wm, @TempDir Path tempDir
+    ) throws Exception {
+        final byte[] matchingLayer = "matching content".getBytes(StandardCharsets.UTF_8);
+        final byte[] otherLayer = "other content".getBytes(StandardCharsets.UTF_8);
+        final String matchingDigest = sha256(matchingLayer);
+        final String otherDigest = sha256(otherLayer);
+
+        final URI base = URI.create(wm.getHttpBaseUrl());
+        final String registry = base.getHost() + ":" + base.getPort();
+        final String repository = "owner/filtered-layers";
+
+        final ObjectNode manifest = MAPPER.createObjectNode();
+        manifest.put("schemaVersion", 2);
+        manifest.put("mediaType", "application/vnd.oci.image.manifest.v1+json");
+        manifest.put("artifactType", DEFAULT_EXPECTED_ARTIFACT_TYPE);
+        final ObjectNode config = manifest.putObject("config");
+        config.put("mediaType", "application/vnd.oci.empty.v1+json");
+        config.put("digest", "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a");
+        config.put("size", 2);
+        final ArrayNode layers = manifest.putArray("layers");
+        
+        final ObjectNode layer1 = layers.addObject();
+        layer1.put("mediaType", DEFAULT_EXPECTED_LAYER_MEDIA_TYPE);
+        layer1.put("digest", matchingDigest);
+        layer1.put("size", matchingLayer.length);
+        layer1.putObject("annotations").put("org.opencontainers.image.title", "matching.tar.gz");
+
+        final ObjectNode layer2 = layers.addObject();
+        layer2.put("mediaType", "application/vnd.something.else");
+        layer2.put("digest", otherDigest);
+        layer2.put("size", otherLayer.length);
+        layer2.putObject("annotations").put("org.opencontainers.image.title", "other.tar.gz");
+
+        stubManifest(repository, "v1", manifest.toString());
+        stubBlob(repository, matchingDigest, matchingLayer);
+        // layer2 blob should not even be requested
+
+        final Path stage = tempDir.resolve("stage");
+        final InstallOciPackCommand cmd = new InstallOciPackCommand();
+        cmd.ref = registry + "/" + repository + ":v1";
+        cmd.outputDirectory = stage;
+        cmd.expectedLayerMediaType = "application/vnd.itzg.minecraft.modpack.layer.v1.tar+gzip";
+        cmd.setInsecure(true);
+
+        final String stdout = tapSystemOutNormalized(() ->
+            assertThat(cmd.call()).isEqualTo(ExitCode.OK));
+
+        assertThat(stage.resolve("matching.tar.gz")).exists();
+        assertThat(stage.resolve("other.tar.gz")).doesNotExist();
+
+        assertThat(nonLogLines(stdout)).containsExactly(stage.resolve("matching.tar.gz").toAbsolutePath().toString());
+    }
+
+    @Test
+    void allowsAnyArtifactTypeWhenSetToWildcard(
+        WireMockRuntimeInfo wm, @TempDir Path tempDir
+    ) throws Exception {
+        final byte[] baseLayer = "content".getBytes(StandardCharsets.UTF_8);
+        final String baseDigest = sha256(baseLayer);
+
+        final URI base = URI.create(wm.getHttpBaseUrl());
+        final String registry = base.getHost() + ":" + base.getPort();
+        final String repository = "owner/any-artifact-type";
+
+        stubManifest(repository, "v1",
+            buildManifest("application/vnd.something.else", baseDigest, baseLayer.length, null, 0));
+        stubBlob(repository, baseDigest, baseLayer);
+
+        final Path stage = tempDir.resolve("stage");
+        final InstallOciPackCommand cmd = new InstallOciPackCommand();
+        cmd.ref = registry + "/" + repository + ":v1";
+        cmd.outputDirectory = stage;
+        cmd.expectedArtifactType = "*/*";
+        cmd.setInsecure(true);
+
+        assertThat(cmd.call()).isEqualTo(ExitCode.OK);
+        assertThat(stage.resolve("base.tar.gz")).exists();
+    }
+
+    @Test
+    void allowsAnyLayerMediaTypeWhenEmpty(
+        WireMockRuntimeInfo wm, @TempDir Path tempDir
+    ) throws Exception {
+        final byte[] baseLayer = "content".getBytes(StandardCharsets.UTF_8);
+        final String baseDigest = sha256(baseLayer);
+
+        final URI base = URI.create(wm.getHttpBaseUrl());
+        final String registry = base.getHost() + ":" + base.getPort();
+        final String repository = "owner/any-layer-type";
+
+        final ObjectNode manifest = MAPPER.createObjectNode();
+        manifest.put("schemaVersion", 2);
+        manifest.put("mediaType", "application/vnd.oci.image.manifest.v1+json");
+        manifest.put("artifactType", "application/vnd.itzg.minecraft.modpack.v1+json");
+        final ObjectNode config = manifest.putObject("config");
+        config.put("mediaType", "application/vnd.oci.empty.v1+json");
+        config.put("digest", "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a");
+        config.put("size", 2);
+        final ArrayNode layers = manifest.putArray("layers");
+        
+        final ObjectNode layer1 = layers.addObject();
+        layer1.put("mediaType", "application/vnd.something.else");
+        layer1.put("digest", baseDigest);
+        layer1.put("size", baseLayer.length);
+        layer1.putObject("annotations").put("org.opencontainers.image.title", "base.tar.gz");
+
+        stubManifest(repository, "v1", manifest.toString());
+        stubBlob(repository, baseDigest, baseLayer);
+
+        final Path stage = tempDir.resolve("stage");
+        final InstallOciPackCommand cmd = new InstallOciPackCommand();
+        cmd.ref = registry + "/" + repository + ":v1";
+        cmd.outputDirectory = stage;
+        cmd.expectedLayerMediaType = "";
+        cmd.setInsecure(true);
+
+        assertThat(cmd.call()).isEqualTo(ExitCode.OK);
+        assertThat(stage.resolve("base.tar.gz")).exists();
+    }
+
     // Logback in tests writes to stdout, so strip those lines when asserting on command output
     private static String[] nonLogLines(String stdout) {
         return Arrays.stream(stdout.split("\n"))
@@ -228,10 +372,15 @@ class InstallOciPackCommandTest {
 
     private static String buildManifest(String baseDigest, int baseSize,
                                         String overlayDigest, int overlaySize) {
+        return buildManifest(DEFAULT_EXPECTED_ARTIFACT_TYPE, baseDigest, baseSize, overlayDigest, overlaySize);
+    }
+
+    private static String buildManifest(String artifactType, String baseDigest, int baseSize,
+                                        String overlayDigest, int overlaySize) {
         final ObjectNode manifest = MAPPER.createObjectNode();
         manifest.put("schemaVersion", 2);
         manifest.put("mediaType", "application/vnd.oci.image.manifest.v1+json");
-        manifest.put("artifactType", "application/vnd.itzg.minecraft.modpack.v1+json");
+        manifest.put("artifactType", artifactType);
         final ObjectNode config = manifest.putObject("config");
         config.put("mediaType", "application/vnd.oci.empty.v1+json");
         config.put("digest",
@@ -240,7 +389,7 @@ class InstallOciPackCommandTest {
 
         final ArrayNode layers = manifest.putArray("layers");
         final ObjectNode layer1 = layers.addObject();
-        layer1.put("mediaType", "application/vnd.itzg.minecraft.modpack.layer.v1.tar+gzip");
+        layer1.put("mediaType", DEFAULT_EXPECTED_LAYER_MEDIA_TYPE);
         layer1.put("digest", baseDigest);
         layer1.put("size", baseSize);
         layer1.putObject("annotations")
@@ -248,7 +397,7 @@ class InstallOciPackCommandTest {
 
         if (overlayDigest != null) {
             final ObjectNode layer2 = layers.addObject();
-            layer2.put("mediaType", "application/vnd.itzg.minecraft.modpack.layer.v1.tar+gzip");
+            layer2.put("mediaType", DEFAULT_EXPECTED_LAYER_MEDIA_TYPE);
             layer2.put("digest", overlayDigest);
             layer2.put("size", overlaySize);
             layer2.putObject("annotations")
@@ -258,6 +407,7 @@ class InstallOciPackCommandTest {
         return manifest.toString();
     }
 
+    @SuppressWarnings("SameParameterValue")
     private static void stubManifest(String repository, String tag, String body) {
         final String path = "/v2/" + repository + "/manifests/" + tag;
         final ResponseDefinitionBuilder ok = aResponse()
