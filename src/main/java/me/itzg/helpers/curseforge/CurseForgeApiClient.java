@@ -238,8 +238,11 @@ public class CurseForgeApiClient implements AutoCloseable {
                     final FailedRequestException fre = (FailedRequestException) e;
                     if (fre.getStatusCode() == 400) {
                         if (isNotFoundResponse(fre.getBody())) {
-                            return new InvalidParameterException("Requested file not found for modpack", e);
+                            return new GenericException(String.format("Requested file ID %d for project %d not found", fileID, projectID), e);
                         }
+                    }
+                    else if (fre.getStatusCode() == 404) {
+                        return new GenericException(String.format("Requested file ID %d for project %d not found", fileID, projectID), e);
                     }
                     return e;
                 })
