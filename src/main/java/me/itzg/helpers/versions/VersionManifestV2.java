@@ -24,6 +24,10 @@ public class VersionManifestV2 {
         private String id;
         private VersionType type;
         private URI url;
+
+        public MinecraftVersionInfo toVersionInfo() {
+            return new MinecraftVersionInfo(id, url);
+        }
     }
 
     private Latest latest;
