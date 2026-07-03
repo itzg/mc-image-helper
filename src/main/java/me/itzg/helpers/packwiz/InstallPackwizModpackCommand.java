@@ -7,8 +7,8 @@ import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.fabric.FabricLauncherInstaller;
 import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.files.ResultsFileWriter;
-import me.itzg.helpers.forge.ForgeInstaller;
 import me.itzg.helpers.forge.ForgeInstallerResolver;
+import me.itzg.helpers.forge.ForgeLikeInstaller;
 import me.itzg.helpers.forge.NeoForgeInstallerResolver;
 import me.itzg.helpers.http.Fetch;
 import me.itzg.helpers.http.SharedFetch;
@@ -17,6 +17,7 @@ import me.itzg.helpers.modrinth.ModrinthModpackManifest;
 import me.itzg.helpers.mvn.MavenRepoApi;
 import me.itzg.helpers.packwiz.model.PackwizPack;
 import me.itzg.helpers.quilt.QuiltInstaller;
+import org.apache.commons.lang3.NotImplementedException;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.ExitCode;
@@ -29,6 +30,7 @@ import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 
 @Command(name = "install-packwiz-modpack",
     description = "Supports installation of Packwiz modpacks along with the associated mod loader",
@@ -50,6 +52,9 @@ public final class InstallPackwizModpackCommand implements Callable<Integer> {
     )
     boolean forceUpdate;
 
+    @Option(names = "--force-reinstall")
+    boolean forceReinstall;
+
     @ArgGroup(exclusive = false)
     SharedFetchArgs sharedFetchArgs = new SharedFetchArgs();
 
@@ -63,7 +68,11 @@ public final class InstallPackwizModpackCommand implements Callable<Integer> {
         final PackwizModpackManifest newManifest;
         try (SharedFetch fetch = Fetch.sharedFetch("install-packwiz-modpack", sharedFetchArgs.options())) {
             newManifest = getManifest(fetch);
-            if (prevManifest != null && prevManifest.getVersion().equals(newManifest.getVersion()) && !forceUpdate) {
+            boolean skipUpdate = !forceUpdate
+                && prevManifest != null
+                && prevManifest.getIndexHash().equals(newManifest.getIndexHash())
+                && prevManifest.getDependencies().equals(newManifest.getDependencies());
+            if (skipUpdate) {
                 return ExitCode.OK;
             }
 
@@ -75,8 +84,7 @@ public final class InstallPackwizModpackCommand implements Callable<Integer> {
 
             installModLoader(newManifest, fetch);
             bootstrapPackwiz(fetch);
-
-            // populate the results file (MODPACK_NAME, MODPACK_VERSION)
+            populateResultsFile(resultsFile, newManifest);
         }
 
         Manifests.cleanup(outputDirectory, prevManifest, newManifest, log);
@@ -123,20 +131,27 @@ public final class InstallPackwizModpackCommand implements Callable<Integer> {
 
     private void installModLoader(PackwizModpackManifest manifest, SharedFetch fetch) {
         final String minecraftVersion = manifest.minecraftVersion();
-        // TODO support forceReinstall parameters (the falses)
         // check NeoForge and Forge first, in case the pack is using Fabric mods on (Neo)Forge via Sinytra Connector or similar
         // (packwiz requires you to declare a fabric version in your pack.toml to add fabric mods to a (neo)forge-based pack)
         final String neoforgeVersion = manifest.neoforgeVersion();
         if (neoforgeVersion != null) {
-            new ForgeInstaller(new NeoForgeInstallerResolver(fetch, minecraftVersion, neoforgeVersion))
-                .install(outputDirectory, resultsFile, false, "NeoForge");
+            new ForgeLikeInstaller(
+                NeoForgeInstallerResolver.givenLoaderVersion(fetch, minecraftVersion, neoforgeVersion)
+            ).install(outputDirectory, resultsFile, forceReinstall, "NeoForge");
             return;
         }
 
         final String forgeVersion = manifest.forgeVersion();
         if (forgeVersion != null) {
-            new ForgeInstaller(new ForgeInstallerResolver(fetch, minecraftVersion, forgeVersion))
-                .install(outputDirectory, resultsFile, false, "Forge");
+            new ForgeLikeInstaller(new ForgeInstallerResolver(
+                fetch,
+                minecraftVersion,
+                forgeVersion,
+                // TODO make these able to be specified?
+                ForgeInstallerResolver.DEFAULT_PROMOTIONS_URL,
+                ForgeInstallerResolver.DEFAULT_MAVEN_REPO_URL
+            )
+            ).install(outputDirectory, resultsFile, forceReinstall, "Forge");
             return;
         }
 
@@ -144,6 +159,7 @@ public final class InstallPackwizModpackCommand implements Callable<Integer> {
         if (fabricVersion != null) {
             new FabricLauncherInstaller(outputDirectory)
                 .setResultsFile(resultsFile)
+                .setForceReinstall(forceReinstall)
                 .installUsingVersions(sharedFetchArgs.options(), minecraftVersion, fabricVersion, null);
             return;
         }
@@ -155,10 +171,14 @@ public final class InstallPackwizModpackCommand implements Callable<Integer> {
                 sharedFetchArgs.options(),
                 outputDirectory,
                 minecraftVersion
-            ).setResultsFile(resultsFile)) {
+            ).setResultsFile(resultsFile)
+                .setForceReinstall(forceReinstall)) {
                 installer.installWithVersion(null, quiltVersion);
             }
+            return;
         }
+
+        throw new NotImplementedException("Vanilla installs are not currently supported");
     }
 
     private PackwizModpackManifest getManifest(SharedFetch fetch) throws IOException {
@@ -179,19 +199,33 @@ public final class InstallPackwizModpackCommand implements Callable<Integer> {
         }
 
         log.debug(
-            "Found packwiz pack with name={}, author={}, version={}, dependencies={}",
+            "Found packwiz pack with name={}, author={}, version={}, pack format={}, index hash={}, dependencies={}",
             packFile.getName(),
             packFile.getAuthor(),
             packFile.getVersion(),
+            packFile.getPackFormat(),
+            packFile.getIndex().getHash(),
             packFile.getVersions()
             );
+
+        if (!packFile.getPackFormat().equals("packwiz:1.1.0")) {
+            throw new GenericException("Unsupported pack format: " + packFile.getPackFormat() + ". Only packwiz:1.1.0 is supported.");
+        }
 
         return PackwizModpackManifest.builder()
             .name(packFile.getName())
             .author(packFile.getAuthor())
             .version(packFile.getVersion())
+            .indexHash(packFile.getIndex().getHash())
             .dependencies(packFile.getVersions())
             .files(Collections.emptyList())
             .build();
+    }
+
+    private void populateResultsFile(Path resultsFile, PackwizModpackManifest manifest) throws IOException {
+        try (ResultsFileWriter results = new ResultsFileWriter(resultsFile, true)) {
+            results.write(ResultsFileWriter.MODPACK_NAME, manifest.getName());
+            results.write(ResultsFileWriter.MODPACK_VERSION, manifest.getVersion());
+        }
     }
 }

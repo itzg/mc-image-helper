@@ -16,6 +16,7 @@ public final class PackwizModpackManifest extends BaseManifest
     private String name;
     private String author;
     private String version;
+    private String indexHash;
     // string -> string because the versions can have arbitrary entries
     private Map<String, String> dependencies;
 
