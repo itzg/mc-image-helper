@@ -94,7 +94,13 @@ public class SharedFetch implements AutoCloseable {
             log.debug("Using HTTP/2");
             return c
                 // https://projectreactor.io/docs/netty/release/reference/http-client.html#HTTP2
-                .protocol(HttpProtocol.HTTP11, HttpProtocol.H2)
+                .protocol(HttpProtocol.H2, HttpProtocol.HTTP11)
+                .http2Settings(settings ->
+                    // Reference https://projectreactor.io/docs/netty/release/reference/index.html#http2-settings
+                    settings
+                        .initialWindowSize(options.getHttp2InitialWindowSize())
+                        .maxFrameSize(options.getHttp2MaxFrameSize())
+                )
                 .secure(spec ->
                     // Http2 SSL supports both HTTP/2 and HTTP/1.1
                     spec.sslContext((GenericSslContextSpec<?>) Http2SslContextSpec.forClient())
@@ -157,7 +163,13 @@ public class SharedFetch implements AutoCloseable {
         private final URI filesViaUrl;
 
         @Default
-        private final boolean useHttp2 = false;
+        private final boolean useHttp2 = true;
+
+        @Default
+        private final int http2InitialWindowSize = 65535 * 16;
+
+        @Default
+        private final int http2MaxFrameSize = 65535;
 
         private final boolean wiretap;
 
@@ -168,7 +180,7 @@ public class SharedFetch implements AutoCloseable {
 
             return new Options(
                 responseTimeout, tlsHandshakeTimeout, maxIdleTimeout, pendingAcquireTimeout,
-                newHeaders, filesViaUrl, useHttp2, wiretap
+                newHeaders, filesViaUrl, useHttp2, http2InitialWindowSize, http2MaxFrameSize, wiretap
             );
         }
     }
