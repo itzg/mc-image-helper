@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.Enumeration;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.jar.Attributes;
 import java.util.jar.Attributes.Name;
@@ -144,14 +145,18 @@ public class McImageHelper {
             setLevel(true, level);
         }
 
+        private final static Set<String> LOGGERS_TO_TRACE = Set.of(
+            "org.apache.hc.client5.http",
+            "reactor.netty.http.client.HttpClient",
+            "io.netty.handler.ssl"
+        );
+
         private static void setLevel(boolean enabled, Level level) {
             ((Logger) LoggerFactory.getLogger("me.itzg.helpers")).setLevel(
                 enabled ? level : Level.INFO);
             if (Level.TRACE.isGreaterOrEqual(level)) {
-                ((Logger) LoggerFactory.getLogger("org.apache.hc.client5.http")).setLevel(
-                    enabled ? level : Level.INFO);
-                ((Logger) LoggerFactory.getLogger("reactor.netty.http.client.HttpClient")).setLevel(
-                    enabled ? level : Level.INFO);
+                LOGGERS_TO_TRACE.forEach(loggerName -> ((Logger) LoggerFactory.getLogger(loggerName)).setLevel(
+                    enabled ? level : Level.INFO));
             }
         }
 
