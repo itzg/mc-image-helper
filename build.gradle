@@ -116,7 +116,13 @@ dependencies {
     //	at reactor.netty.http.internal.Http3.isHttp3Available(Http3.java:35)
     exclude group: 'io.netty', module: 'netty-codec-native-quic'
   }
-  runtimeOnly 'io.netty:netty-tcnative-boringssl-static'
+
+  // Force both x86_64 and ARM64 native slices into the final distribution, otherwise it will prefer the build host's architecture
+  runtimeOnly 'io.netty:netty-tcnative-boringssl-static::linux-x86_64'
+  runtimeOnly 'io.netty:netty-tcnative-boringssl-static::linux-aarch_64'
+  runtimeOnly 'io.netty:netty-transport-native-epoll::linux-x86_64'
+  runtimeOnly 'io.netty:netty-transport-native-epoll::linux-aarch_64'
+
   implementation 'org.apache.maven:maven-artifact:3.9.16'
   implementation 'commons-codec:commons-codec:1.22.0'
   implementation 'org.jetbrains:annotations:26.1.0'
