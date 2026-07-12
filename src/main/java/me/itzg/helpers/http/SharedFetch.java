@@ -1,13 +1,11 @@
 package me.itzg.helpers.http;
 
 import io.netty.handler.codec.http.HttpHeaderNames;
-import io.netty.handler.ssl.SslHandler;
 import java.net.URI;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import javax.net.ssl.SSLParameters;
 import lombok.Builder;
 import lombok.Builder.Default;
 import lombok.Getter;
@@ -19,14 +17,14 @@ import reactor.netty.http.Http2SslContextSpec;
 import reactor.netty.http.HttpProtocol;
 import reactor.netty.http.client.HttpClient;
 import reactor.netty.resources.ConnectionProvider;
+import reactor.netty.tcp.SslProvider;
 import reactor.netty.tcp.SslProvider.GenericSslContextSpec;
 
 /**
- * Provides an efficient way to make multiple web requests since a single client
- * is shared.
+ * Provides an efficient way to make multiple web requests since a single client is shared.
  * <p>
- *     <b>NOTE:</b> {@link FetchBuilderBase} makes use of this class to abstract
- *     away the need to know about one-off requests vs shared requests.
+ * <b>NOTE:</b> {@link FetchBuilderBase} makes use of this class to abstract
+ * away the need to know about one-off requests vs shared requests.
  * </p>
  */
 @Getter
@@ -63,7 +61,7 @@ public class SharedFetch implements AutoCloseable {
 
         reactiveClient =
             applyWiretap(
-                applyUseHttp2(
+                applyHttp2Option(
                     HttpClient.create(connectionProvider)
                         .proxyWithSystemProperties()
                         .headers(headers -> {
@@ -91,45 +89,37 @@ public class SharedFetch implements AutoCloseable {
         return options.isWiretap() ? c.wiretap(true) : c;
     }
 
-    private HttpClient applyUseHttp2(HttpClient c, Options options) {
+    private HttpClient applyHttp2Option(HttpClient c, Options options) {
+        final HttpProtocol[] protocols;
         if (options.isUseHttp2()) {
             log.debug("Using HTTP/2");
-            return c
-                // https://projectreactor.io/docs/netty/release/reference/http-client.html#HTTP2
-                .protocol(HttpProtocol.H2, HttpProtocol.HTTP11)
-                .http2Settings(settings ->
-                    // Reference https://projectreactor.io/docs/netty/release/reference/index.html#http2-settings
-                    settings
-                        .initialWindowSize(options.getHttp2InitialWindowSize())
-                        .maxFrameSize(options.getHttp2MaxFrameSize())
-                )
-                .secure(spec ->
-                    // Http2 SSL supports both HTTP/2 and HTTP/1.1
-                    spec.sslContext((GenericSslContextSpec<?>) Http2SslContextSpec.forClient())
-                        // Reference https://projectreactor.io/docs/netty/release/reference/index.html#ssl-tls-timeout
-                        .handshakeTimeout(options.getTlsHandshakeTimeout())
-                        // This forces Java/Netty to explicitly configure endpoint identification rules matching HTTPS
-                        .handlerConfigurator(SharedFetch::configureSslEndpointIdentification)
-                );
+            // https://projectreactor.io/docs/netty/release/reference/http-client.html#HTTP2
+            protocols = new HttpProtocol[]{HttpProtocol.H2, HttpProtocol.HTTP11};
         }
         else {
             log.debug("Using HTTP/1.1");
-            return c
-                .secure(spec ->
-                    spec.sslContext((GenericSslContextSpec<?>) Http11SslContextSpec.forClient())
-                        // Reference https://projectreactor.io/docs/netty/release/reference/index.html#ssl-tls-timeout
-                        .handshakeTimeout(options.getTlsHandshakeTimeout())
-                        // This forces Java/Netty to explicitly configure endpoint identification rules matching HTTPS
-                        .handlerConfigurator(SharedFetch::configureSslEndpointIdentification)
-                );
+            protocols = new HttpProtocol[]{HttpProtocol.HTTP11};
         }
-
+        return c
+            .protocol(protocols)
+            // ignored for HTTP/1.1
+            .http2Settings(settings ->
+                // Reference https://projectreactor.io/docs/netty/release/reference/index.html#http2-settings
+                settings
+                    .initialWindowSize(options.getHttp2InitialWindowSize())
+                    .maxFrameSize(options.getHttp2MaxFrameSize())
+            )
+            .secure(spec -> applySslContext(options, spec));
     }
 
-    private static void configureSslEndpointIdentification(SslHandler sslHandler) {
-        SSLParameters params = sslHandler.engine().getSSLParameters();
-        params.setEndpointIdentificationAlgorithm("HTTPS");
-        sslHandler.engine().setSSLParameters(params);
+    private static void applySslContext(Options options, SslProvider.SslContextSpec spec) {
+        spec.sslContext((GenericSslContextSpec<?>) (
+                options.isUseHttp2() ?
+                    Http2SslContextSpec.forClient()
+                    : Http11SslContextSpec.forClient()
+            ))
+            // Reference https://projectreactor.io/docs/netty/release/reference/index.html#ssl-tls-timeout
+            .handshakeTimeout(options.getTlsHandshakeTimeout());
     }
 
     public FetchBuilderBase<?> fetch(URI uri) {
@@ -166,11 +156,10 @@ public class SharedFetch implements AutoCloseable {
         @Default
         private final Duration pendingAcquireTimeout = Duration.ofSeconds(120);
 
-        private final Map<String,String> extraHeaders;
+        private final Map<String, String> extraHeaders;
 
         /**
-         * Can be set for unit testing file downloads where the original URL's path is resolved
-         * against this given URL.
+         * Can be set for unit testing file downloads where the original URL's path is resolved against this given URL.
          */
         private final URI filesViaUrl;
 
