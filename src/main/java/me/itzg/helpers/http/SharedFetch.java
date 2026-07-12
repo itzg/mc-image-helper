@@ -1,11 +1,13 @@
 package me.itzg.helpers.http;
 
 import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.ssl.SslHandler;
 import java.net.URI;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import javax.net.ssl.SSLParameters;
 import lombok.Builder;
 import lombok.Builder.Default;
 import lombok.Getter;
@@ -106,6 +108,8 @@ public class SharedFetch implements AutoCloseable {
                     spec.sslContext((GenericSslContextSpec<?>) Http2SslContextSpec.forClient())
                         // Reference https://projectreactor.io/docs/netty/release/reference/index.html#ssl-tls-timeout
                         .handshakeTimeout(options.getTlsHandshakeTimeout())
+                        // This forces Java/Netty to explicitly configure endpoint identification rules matching HTTPS
+                        .handlerConfigurator(SharedFetch::configureSslEndpointIdentification)
                 );
         }
         else {
@@ -115,9 +119,17 @@ public class SharedFetch implements AutoCloseable {
                     spec.sslContext((GenericSslContextSpec<?>) Http11SslContextSpec.forClient())
                         // Reference https://projectreactor.io/docs/netty/release/reference/index.html#ssl-tls-timeout
                         .handshakeTimeout(options.getTlsHandshakeTimeout())
+                        // This forces Java/Netty to explicitly configure endpoint identification rules matching HTTPS
+                        .handlerConfigurator(SharedFetch::configureSslEndpointIdentification)
                 );
         }
 
+    }
+
+    private static void configureSslEndpointIdentification(SslHandler sslHandler) {
+        SSLParameters params = sslHandler.engine().getSSLParameters();
+        params.setEndpointIdentificationAlgorithm("HTTPS");
+        sslHandler.engine().setSSLParameters(params);
     }
 
     public FetchBuilderBase<?> fetch(URI uri) {
