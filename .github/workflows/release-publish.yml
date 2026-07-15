@@ -10,6 +10,8 @@ on:
 jobs:
   publish:
     uses: itzg/github-workflows/.github/workflows/gradle-build.yml@main
+    env:
+      CF_API_KEY: ${{ secrets.CF_API_KEY }}
     with:
       arguments: >
         test 
