@@ -62,4 +62,16 @@ public class MinecraftVersionsApi {
             .doOnNext(resolvedVersion -> log.debug("Resolved given Minecraft version {} to {}", inputVersion, resolvedVersion.getId()))
             .switchIfEmpty(Mono.error(() -> new InvalidParameterException(String.format("Minecraft version '%s' is not valid", inputVersion))));
     }
+
+    /**
+     * @return the server JAR URL or empty when the version has no server download
+     */
+    public Mono<URI> getServerJarUrl(Version version) {
+        return sharedFetch.fetch(version.getUrl())
+            .toObject(MinecraftVersionMetadata.class)
+            .assemble()
+            .flatMap(metadata -> Mono.justOrEmpty(metadata.getDownloads()))
+            .flatMap(downloads -> Mono.justOrEmpty(downloads.getServer()))
+            .flatMap(server -> Mono.justOrEmpty(server.getUrl()));
+    }
 }
