@@ -1,3 +1,5 @@
+import obby.ObbyTask
+
 plugins {
   id 'java'
   id 'application'
@@ -166,4 +168,24 @@ githubReleaser {
     homepage = 'https://github.com/itzg/mc-image-helper'
     license = 'MIT'
   }
+}
+
+tasks.register('obbyCfApi', ObbyTask, {
+  outputFile = layout.buildDirectory.file('generated/resources/main/cf-api.properties')
+  clearTextProperties.set([
+      // Bake in the CF_API_KEY is provided by the build
+      'cfApiKey': project.findProperty('cfApiKey') as String ?: System.getenv('CF_API_KEY') ?: '',
+  ])
+})
+
+sourceSets {
+  main {
+    resources {
+      srcDir(layout.buildDirectory.dir('generated/resources/main'))
+    }
+  }
+}
+
+processResources {
+  dependsOn 'obbyCfApi'
 }

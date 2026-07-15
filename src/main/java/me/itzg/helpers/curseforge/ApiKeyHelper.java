@@ -19,7 +19,11 @@ public class ApiKeyHelper {
     }
 
     public static void logKeyIssues(Logger log, String apiKey) {
-        if (apiKey.startsWith("$$")) {
+        if (apiKey == null) {
+            log.error("No API key was provided. Please set the environment variable "
+                + CurseForgeApiClient.API_KEY_VAR + ".");
+        }
+        else if (apiKey.startsWith("$$")) {
             log.error("The API key seems to have extra dollar sign escaping since "
                     + "it looked like '{}' but should start with '{}'.",
                 partiallyRedactApiKey(apiKey), EXPECTED_API_KEY_PREFIX

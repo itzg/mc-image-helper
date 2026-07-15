@@ -27,6 +27,7 @@ import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidApiKeyException;
 import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.errors.RateLimitException;
+import me.itzg.helpers.files.ObbyLoader;
 import me.itzg.helpers.http.FailedRequestException;
 import me.itzg.helpers.http.Fetch;
 import me.itzg.helpers.http.FileDownloadStatusHandler;
@@ -69,17 +70,13 @@ public class CurseForgeApiClient implements AutoCloseable {
 
     private final ApiCaching apiCaching;
 
-    public CurseForgeApiClient(String apiBaseUrl, String apiKey, Options sharedFetchOptions, String gameId,
+    public CurseForgeApiClient(String apiBaseUrl, String providedApiKey, Options sharedFetchOptions, String gameId,
         ApiCaching apiCaching
     ) {
         this.apiCaching = apiCaching;
-        if (apiKey == null || apiKey.trim().isEmpty()) {
-            throw new InvalidParameterException("CurseForge API key is required");
-        }
-
         this.preparedFetch = Fetch.sharedFetch("install-curseforge",
             (sharedFetchOptions != null ? sharedFetchOptions : Options.builder().build())
-                .withHeader(API_KEY_HEADER, apiKey.trim())
+                .withHeader(API_KEY_HEADER, loadApiKey(providedApiKey))
         );
         this.uriBuilder = UriBuilder.withBaseUrl(apiBaseUrl);
         this.downloadFallbackUriBuilder = UriBuilder.withBaseUrl(
@@ -89,6 +86,23 @@ public class CurseForgeApiClient implements AutoCloseable {
                 "https://www.curseforge.com/api" : apiBaseUrl
         );
         this.gameId = gameId;
+    }
+
+    private String loadApiKey(String providedApiKey) {
+        if (providedApiKey != null && !providedApiKey.isBlank()) {
+            log.debug("Using provided CurseForge API key");
+            return providedApiKey.trim();
+        }
+
+        // properties file and property need to match the ObbyTask in build.gradle
+        final Map<String, String> cfApiProperties = ObbyLoader.loadProperties("/cf-api.properties");
+        final String loadedApiKey = cfApiProperties.get("cfApiKey");
+
+        if (loadedApiKey == null || loadedApiKey.isBlank()) {
+            throw new InvalidParameterException("CurseForge API key is required");
+        }
+        log.debug("Loaded CurseForge API key from cf-api.properties");
+        return loadedApiKey.trim();
     }
 
     static FileDownloadStatusHandler modFileDownloadStatusHandler(Path outputDir, Logger log) {
@@ -292,7 +306,7 @@ public class CurseForgeApiClient implements AutoCloseable {
     private static boolean isNotFoundResponse(String body) {
         try {
             final CurseForgeResponse<Void> resp = ObjectMappers.defaultMapper().readValue(
-                body, new TypeReference<CurseForgeResponse<Void>>() {
+                body, new TypeReference<>() {
                 }
             );
             return resp.getError().startsWith("Error: 404");
