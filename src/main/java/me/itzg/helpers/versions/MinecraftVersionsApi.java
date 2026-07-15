@@ -5,6 +5,7 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.http.SharedFetch;
+import me.itzg.helpers.versions.MinecraftVersionMetadata.Download;
 import me.itzg.helpers.versions.VersionManifestV2.Version;
 import reactor.core.publisher.Mono;
 
@@ -64,14 +65,13 @@ public class MinecraftVersionsApi {
     }
 
     /**
-     * @return the server JAR URL or empty when the version has no server download
+     * @return the server download metadata or empty when the version has no server download
      */
-    public Mono<URI> getServerJarUrl(Version version) {
+    public Mono<Download> getServerDownload(Version version) {
         return sharedFetch.fetch(version.getUrl())
             .toObject(MinecraftVersionMetadata.class)
             .assemble()
             .flatMap(metadata -> Mono.justOrEmpty(metadata.getDownloads()))
-            .flatMap(downloads -> Mono.justOrEmpty(downloads.getServer()))
-            .flatMap(server -> Mono.justOrEmpty(server.getUrl()));
+            .flatMap(downloads -> Mono.justOrEmpty(downloads.getServer()));
     }
 }
