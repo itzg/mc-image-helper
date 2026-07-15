@@ -1,0 +1,125 @@
+{
+  "mappings": [
+    {
+      "request": {
+        "url": "/mc/game/version_manifest_v2.json",
+        "method": "GET"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "bodyFileName": "version_manifest_v2.json"
+      }
+    },
+
+    {
+      "request": {
+        "url": "/manifests/26.3-snapshot-3.json",
+        "method": "GET"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "bodyFileName": "26.3-snapshot-3.json"
+      }
+    },
+    {
+      "request": {
+        "url": "/jars/26.3-snapshot-3.jar",
+        "method": "GET"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/octet-stream"
+        },
+        "bodyFileName": "26.3-snapshot-3.jar"
+      }
+    },
+
+    {
+      "request": {
+        "url": "/manifests/26.2.json",
+        "method": "GET"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "bodyFileName": "26.2.json"
+      }
+    },
+    {
+      "request": {
+        "url": "/jars/26.2.jar",
+        "method": "GET"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/octet-stream"
+        },
+        "bodyFileName": "26.2.jar"
+      }
+    },
+
+    {
+      "request": {
+        "url": "/manifests/1.6.json",
+        "method": "GET"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "bodyFileName": "1.6.json"
+      }
+    },
+    {
+      "request": {
+        "url": "/jars/1.6.jar",
+        "method": "GET"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/octet-stream"
+        },
+        "bodyFileName": "1.6.jar"
+      }
+    },
+
+    {
+      "request": {
+        "url": "/manifests/1.5.json",
+        "method": "GET"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "bodyFileName": "1.5.json"
+      }
+    },
+    {
+      "request": {
+        "url": "/jars/1.5.jar",
+        "method": "GET"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/octet-stream"
+        },
+        "bodyFileName": "1.5.jar"
+      }
+    }
+  ]
+}

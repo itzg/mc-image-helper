@@ -1,0 +1,28 @@
+{
+  "latest": {
+    "release": "26.2",
+    "snapshot": "26.3-snapshot-3"
+  },
+  "versions": [
+    {
+      "id": "26.3-snapshot-3",
+      "type": "snapshot",
+      "url": "{{request.baseUrl}}/manifests/26.3-snapshot-3.json"
+    },
+    {
+      "id": "26.2",
+      "type": "release",
+      "url": "{{request.baseUrl}}/manifests/26.2.json"
+    },
+    {
+      "id": "1.6",
+      "type": "snapshot",
+      "url": "{{request.baseUrl}}/manifests/1.6.json"
+    },
+    {
+      "id": "1.5",
+      "type": "snapshot",
+      "url": "{{request.baseUrl}}/manifests/1.5.json"
+    }
+  ]
+}
