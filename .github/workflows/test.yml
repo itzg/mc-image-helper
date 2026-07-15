@@ -14,9 +14,9 @@ on:
 jobs:
   test:
     uses: itzg/github-workflows/.github/workflows/gradle-build.yml@main
-    env:
-      CF_API_KEY: ${{ secrets.CF_API_KEY }}
     with:
       arguments: test
       include-test-report: true
       retest-showing-standard-streams: true
+    secrets:
+      cf-api-key: ${{ secrets.CF_API_KEY }}
