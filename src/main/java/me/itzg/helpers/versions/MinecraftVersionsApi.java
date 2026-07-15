@@ -12,7 +12,7 @@ import reactor.core.publisher.Mono;
 public class MinecraftVersionsApi {
 
     @Setter
-    private URI manifestUrl = URI.create("https://launchermeta.mojang.com/mc/game/version_manifest_v2.json");
+    private URI manifestUrl = URI.create("https://piston-meta.mojang.com/mc/game/version_manifest_v2.json");
 
     private final SharedFetch sharedFetch;
 
