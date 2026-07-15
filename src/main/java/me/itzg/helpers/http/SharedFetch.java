@@ -1,6 +1,10 @@
 package me.itzg.helpers.http;
 
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelOutboundHandlerAdapter;
+import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http2.Http2SettingsFrame;
 import java.net.URI;
 import java.time.Duration;
 import java.util.HashMap;
@@ -12,6 +16,8 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.McImageHelper;
 import me.itzg.helpers.errors.GenericException;
+import org.jspecify.annotations.NonNull;
+import reactor.netty.ChannelPipelineConfigurer;
 import reactor.netty.http.Http11SslContextSpec;
 import reactor.netty.http.Http2SslContextSpec;
 import reactor.netty.http.HttpProtocol;
@@ -90,26 +96,49 @@ public class SharedFetch implements AutoCloseable {
     }
 
     private HttpClient applyHttp2Option(HttpClient c, Options options) {
-        final HttpProtocol[] protocols;
         if (options.isUseHttp2()) {
             log.debug("Using HTTP/2");
             // https://projectreactor.io/docs/netty/release/reference/http-client.html#HTTP2
-            protocols = new HttpProtocol[]{HttpProtocol.H2, HttpProtocol.HTTP11};
+            return c
+                .protocol(HttpProtocol.H2, HttpProtocol.HTTP11)
+                .doOnChannelInit(ensureHttpSettingsFlush())
+                // ignored for HTTP/1.1
+                .http2Settings(settings ->
+                    // Reference https://projectreactor.io/docs/netty/release/reference/index.html#http2-settings
+                    settings
+                        .initialWindowSize(options.getHttp2InitialWindowSize())
+                        .maxFrameSize(options.getHttp2MaxFrameSize())
+                )
+                .secure(spec -> applySslContext(options, spec));
+
         }
         else {
             log.debug("Using HTTP/1.1");
-            protocols = new HttpProtocol[]{HttpProtocol.HTTP11};
+            return c
+                .protocol(HttpProtocol.HTTP11)
+                .secure(spec -> applySslContext(options, spec));
         }
-        return c
-            .protocol(protocols)
-            // ignored for HTTP/1.1
-            .http2Settings(settings ->
-                // Reference https://projectreactor.io/docs/netty/release/reference/index.html#http2-settings
-                settings
-                    .initialWindowSize(options.getHttp2InitialWindowSize())
-                    .maxFrameSize(options.getHttp2MaxFrameSize())
-            )
-            .secure(spec -> applySslContext(options, spec));
+    }
+
+    /**
+     * Some HTTP/2 servers (e.g. Cloudflare) will not send the initial settings frame until the first request is sent.
+     * This can cause a delay in the first request since the client will wait for the settings frame to be received before sending the request.
+     * By adding a channel handler that flushes the channel after the settings frame is sent, we can ensure that the settings frame is sent immediately and the first request is not delayed.
+     */
+    private static @NonNull ChannelPipelineConfigurer ensureHttpSettingsFlush() {
+        return (connectionObserver, channel, remoteAddress) -> {
+            channel.pipeline().addFirst("immediate-h2-flush", new ChannelOutboundHandlerAdapter() {
+                    @Override
+                    public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+                        super.write(ctx, msg, promise);
+                        // If we just sent the H2 connection settings, force an immediate socket flush
+                        if (msg instanceof Http2SettingsFrame) {
+                            ctx.flush();
+                        }
+                    }
+                }
+            );
+        };
     }
 
     private static void applySslContext(Options options, SslProvider.SslContextSpec spec) {
