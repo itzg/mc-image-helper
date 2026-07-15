@@ -67,11 +67,10 @@ public class ObbyLoader {
 
     private static String decrypt(byte[] value, Key key) {
         try {
-            final Cipher cipher = Cipher.getInstance(ObbyLoader.CIPHER_TRANSFORMATION);
-            cipher.init(Cipher.DECRYPT_MODE, key, new IvParameterSpec(value, 0, ObbyLoader.IV_LEN));
+            final Cipher cipher = Cipher.getInstance(CIPHER_TRANSFORMATION);
+            cipher.init(Cipher.DECRYPT_MODE, key, new IvParameterSpec(value, 0, IV_LEN));
 
-            cipher.update(value, ObbyLoader.IV_LEN, value.length - ObbyLoader.IV_LEN);
-            return new String(cipher.doFinal(), java.nio.charset.StandardCharsets.UTF_8);
+            return new String(cipher.doFinal(value, IV_LEN, value.length - IV_LEN), java.nio.charset.StandardCharsets.UTF_8);
         } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidAlgorithmParameterException | InvalidKeyException |
                  IllegalBlockSizeException | BadPaddingException e) {
             throw new RuntimeException(e);

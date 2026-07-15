@@ -74,10 +74,9 @@ public class CurseForgeApiClient implements AutoCloseable {
         ApiCaching apiCaching
     ) {
         this.apiCaching = apiCaching;
-        final String apiKey = loadApiKey(providedApiKey);
         this.preparedFetch = Fetch.sharedFetch("install-curseforge",
             (sharedFetchOptions != null ? sharedFetchOptions : Options.builder().build())
-                .withHeader(API_KEY_HEADER, apiKey.trim())
+                .withHeader(API_KEY_HEADER, loadApiKey(providedApiKey))
         );
         this.uriBuilder = UriBuilder.withBaseUrl(apiBaseUrl);
         this.downloadFallbackUriBuilder = UriBuilder.withBaseUrl(
@@ -307,7 +306,7 @@ public class CurseForgeApiClient implements AutoCloseable {
     private static boolean isNotFoundResponse(String body) {
         try {
             final CurseForgeResponse<Void> resp = ObjectMappers.defaultMapper().readValue(
-                body, new TypeReference<CurseForgeResponse<Void>>() {
+                body, new TypeReference<>() {
                 }
             );
             return resp.getError().startsWith("Error: 404");
