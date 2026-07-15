@@ -20,35 +20,42 @@ public class MinecraftVersionsApi {
         this.sharedFetch = sharedFetch;
     }
 
+    public Mono<String> resolve(String inputVersion) {
+        return resolveVersion(inputVersion)
+            .map(Version::getId);
+    }
+
     /**
      * @param inputVersion latest, release, snapshot or a specific version
-     * @return the resolved version or empty if not valid/present
+     * @return the resolved version manifest entry
      */
-    public Mono<String> resolve(String inputVersion) {
+    public Mono<Version> resolveVersion(String inputVersion) {
         return sharedFetch.fetch(
             manifestUrl
         )
             .toObject(VersionManifestV2.class)
             .assemble()
             .flatMap(manifest -> {
+                final String resolvedVersion;
                 if (inputVersion == null
                     || inputVersion.equalsIgnoreCase("latest")
                     || inputVersion.equalsIgnoreCase("release")) {
-                    return Mono.just(manifest.getLatest().getRelease());
+                    resolvedVersion = manifest.getLatest().getRelease();
                 }
                 else if (inputVersion.equalsIgnoreCase("snapshot")) {
-                    return Mono.just(manifest.getLatest().getSnapshot());
+                    resolvedVersion = manifest.getLatest().getSnapshot();
                 }
                 else {
-                    return Mono.justOrEmpty(
-                        manifest.getVersions().stream()
-                            .map(Version::getId)
-                            .filter(id -> id.equalsIgnoreCase(inputVersion))
-                            .findFirst()
-                    );
+                    resolvedVersion = inputVersion;
                 }
+
+                return Mono.justOrEmpty(
+                    manifest.getVersions().stream()
+                        .filter(version -> version.getId().equalsIgnoreCase(resolvedVersion))
+                        .findFirst()
+                );
             })
-            .doOnNext(resolvedVersion -> log.debug("Resolved given Minecraft version {} to {}", inputVersion, resolvedVersion))
+            .doOnNext(resolvedVersion -> log.debug("Resolved given Minecraft version {} to {}", inputVersion, resolvedVersion.getId()))
             .switchIfEmpty(Mono.error(() -> new InvalidParameterException(String.format("Minecraft version '%s' is not valid", inputVersion))));
     }
 }
