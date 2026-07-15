@@ -20,6 +20,10 @@ public class MinecraftVersionsApi {
         this.sharedFetch = sharedFetch;
     }
 
+    /**
+     * @param inputVersion latest, release, snapshot or a specific version
+     * @return the resolved version or empty if not valid/present
+     */
     public Mono<String> resolve(String inputVersion) {
         return resolveVersion(inputVersion)
             .map(Version::getId);
@@ -27,7 +31,7 @@ public class MinecraftVersionsApi {
 
     /**
      * @param inputVersion latest, release, snapshot or a specific version
-     * @return the resolved version manifest entry
+     * @return the resolved version manifest entry or empty if not valid/present
      */
     public Mono<Version> resolveVersion(String inputVersion) {
         return sharedFetch.fetch(
