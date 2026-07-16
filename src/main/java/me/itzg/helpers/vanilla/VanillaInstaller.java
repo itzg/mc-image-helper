@@ -70,11 +70,13 @@ public class VanillaInstaller {
 
         log.debug("Populating results file {}", resultsFile);
 
+    if (resultsFile != null) {
         try (ResultsFileWriter writer = new ResultsFileWriter(resultsFile)) {
             writer.writeType("VANILLA");
             writer.writeServer(outputDirectory.resolve(newManifest.getServerEntry()));
             writer.writeVersion(newManifest.getMinecraftVersion());
         }
+     }
     }
 
     private Mono<VanillaManifest> installVersion(Path outputDirectory, MinecraftVersionInfo version) {
