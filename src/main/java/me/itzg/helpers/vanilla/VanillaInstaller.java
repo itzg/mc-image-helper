@@ -30,10 +30,12 @@ public class VanillaInstaller {
         final boolean needsInstall;
         if (forceReinstall || prevManifest == null) {
             needsInstall = true;
-        } else if (!Manifests.allFilesPresent(outputDirectory, prevManifest)) {
+        }
+        else if (!Manifests.allFilesPresent(outputDirectory, prevManifest)) {
             needsInstall = true;
             log.warn("Server files for Minecraft are missing. Reinstalling...");
-        } else {
+        }
+        else {
             needsInstall = false;
         }
 
@@ -43,10 +45,12 @@ public class VanillaInstaller {
                 .resolve(version)
                 .flatMap(resolved -> installVersion(outputDirectory, resolved))
                 .block();
-        } else if (prevManifest.getMinecraftVersion().equalsIgnoreCase(version)) {
+        }
+        else if (prevManifest.getMinecraftVersion().equalsIgnoreCase(version)) {
             newManifest = prevManifest;
             log.info("Minecraft version {} is already installed", prevManifest.getMinecraftVersion());
-        } else {
+        }
+        else {
             newManifest = versionsApi
                 .resolve(version)
                 // skip reinstall when the player is using 'latest' or 'snapshot' and the actual version
@@ -56,7 +60,9 @@ public class VanillaInstaller {
                         log.info("Minecraft version {} is already installed", prevManifest.getMinecraftVersion());
                         return Mono.just(prevManifest);
                     }
-                    log.info("Reinstalling Minecraft due to version change from {} to {}", prevManifest.getMinecraftVersion(), resolved.getVersion());
+                    log.info("Reinstalling Minecraft due to version change from {} to {}", prevManifest.getMinecraftVersion(),
+                        resolved.getVersion()
+                    );
                     return installVersion(outputDirectory, resolved);
                 })
                 .block();
@@ -70,13 +76,13 @@ public class VanillaInstaller {
 
         log.debug("Populating results file {}", resultsFile);
 
-    if (resultsFile != null) {
-        try (ResultsFileWriter writer = new ResultsFileWriter(resultsFile)) {
-            writer.writeType("VANILLA");
-            writer.writeServer(outputDirectory.resolve(newManifest.getServerEntry()));
-            writer.writeVersion(newManifest.getMinecraftVersion());
+        if (resultsFile != null) {
+            try (ResultsFileWriter writer = new ResultsFileWriter(resultsFile)) {
+                writer.writeType("VANILLA");
+                writer.writeServer(outputDirectory.resolve(newManifest.getServerEntry()));
+                writer.writeVersion(newManifest.getMinecraftVersion());
+            }
         }
-     }
     }
 
     private Mono<VanillaManifest> installVersion(Path outputDirectory, MinecraftVersionInfo version) {
