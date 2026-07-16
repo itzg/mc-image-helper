@@ -6,7 +6,8 @@ import picocli.CommandLine.Option;
 
 @Command(name = "github",
     subcommands = {
-        DownloadLatestAssetCommand.class
+        DownloadLatestAssetCommand.class,
+        DownloadArtifactCommand.class
     }
 )
 @Getter
