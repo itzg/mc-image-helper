@@ -11,7 +11,7 @@ import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 import picocli.CommandLine.ArgGroup;
 
-@Command(name = "Download workflow artifact", description = "Download an artifact from a successfull github action workflow, output as raw file from github, or unzip")
+@Command(name = "download-artifact", description = "Download an artifact from a successfull github action workflow, output as raw file from github, or unzip")
 @Slf4j
 public class DownloadArtifactCommand implements Callable<Integer> {
 
