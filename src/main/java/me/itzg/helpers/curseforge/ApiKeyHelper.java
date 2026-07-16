@@ -1,7 +1,12 @@
 package me.itzg.helpers.curseforge;
 
+import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
+import me.itzg.helpers.errors.InvalidParameterException;
+import me.itzg.helpers.files.ObbyLoader;
 import org.slf4j.Logger;
 
+@Slf4j
 public class ApiKeyHelper {
 
     public static final String EXPECTED_API_KEY_PREFIX = "$2a$10$";
@@ -36,4 +41,25 @@ public class ApiKeyHelper {
             );
         }
     }
+
+    /**
+     * @throws InvalidParameterException if no API key is provided or cannot be loaded
+     */
+    public static String loadApiKey(String providedApiKey) {
+        if (providedApiKey != null && !providedApiKey.isBlank()) {
+            log.debug("Using provided CurseForge API key");
+            return providedApiKey.trim();
+        }
+
+        // properties file and property need to match the ObbyTask in build.gradle
+        final Map<String, String> cfApiProperties = ObbyLoader.loadProperties("/cf-api.properties");
+        final String loadedApiKey = cfApiProperties.get("cfApiKey");
+
+        if (loadedApiKey == null || loadedApiKey.isBlank()) {
+            throw new InvalidParameterException("CurseForge API key is required");
+        }
+        log.debug("Loaded CurseForge API key from cf-api.properties");
+        return loadedApiKey.trim();
+    }
+
 }

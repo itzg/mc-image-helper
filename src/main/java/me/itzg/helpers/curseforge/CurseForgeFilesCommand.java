@@ -1,5 +1,6 @@
 package me.itzg.helpers.curseforge;
 
+import static me.itzg.helpers.curseforge.ApiKeyHelper.loadApiKey;
 import static me.itzg.helpers.curseforge.CurseForgeApiClient.*;
 import static me.itzg.helpers.curseforge.ModFileRefResolver.idsFrom;
 import static me.itzg.helpers.singles.NormalizeOptions.normalizeOptionList;
@@ -128,7 +129,9 @@ public class CurseForgeFilesCommand implements Callable<Integer> {
                     : new ApiCachingImpl(outputDir, CACHING_NAMESPACE, cacheArgs)
                         .setCacheDurations(CurseForgeApiClient.getCacheDurations());
                 final CurseForgeApiClient apiClient = new CurseForgeApiClient(
-                    apiBaseUrl, apiKey, sharedFetchArgs.options(),
+                    apiBaseUrl,
+                    loadApiKey(apiKey),
+                    sharedFetchArgs.options(),
                     CurseForgeApiClient.MINECRAFT_GAME_ID,
                     apiCaching
                 )

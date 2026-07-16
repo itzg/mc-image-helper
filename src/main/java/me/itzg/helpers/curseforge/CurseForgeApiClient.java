@@ -25,9 +25,7 @@ import me.itzg.helpers.curseforge.model.GetModResponse;
 import me.itzg.helpers.curseforge.model.ModsSearchResponse;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidApiKeyException;
-import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.errors.RateLimitException;
-import me.itzg.helpers.files.ObbyLoader;
 import me.itzg.helpers.http.FailedRequestException;
 import me.itzg.helpers.http.Fetch;
 import me.itzg.helpers.http.FileDownloadStatusHandler;
@@ -70,39 +68,20 @@ public class CurseForgeApiClient implements AutoCloseable {
 
     private final ApiCaching apiCaching;
 
-    public CurseForgeApiClient(String apiBaseUrl, String providedApiKey, Options sharedFetchOptions, String gameId,
+    public CurseForgeApiClient(String apiBaseUrl, String apiKey, Options sharedFetchOptions, String gameId,
         ApiCaching apiCaching
     ) {
         this.apiCaching = apiCaching;
         this.preparedFetch = Fetch.sharedFetch("install-curseforge",
             (sharedFetchOptions != null ? sharedFetchOptions : Options.builder().build())
-                .withHeader(API_KEY_HEADER, loadApiKey(providedApiKey))
+                .withHeader(API_KEY_HEADER, apiKey.trim())
         );
         this.uriBuilder = UriBuilder.withBaseUrl(apiBaseUrl);
         this.downloadFallbackUriBuilder = UriBuilder.withBaseUrl(
-            // Hardcoded conditional swap out of URL here helps mitigate the "manual download"
-            // challenge for those mods with a null download URL in their metadata.
-            apiBaseUrl.equals("https://api.curseforge.com") ?
-                "https://www.curseforge.com/api" : apiBaseUrl
+            // Refer to https://blog.curseforge.com/introducing-api-key-authentication-for-curseforge-file-downloads/
+            "https://edge.forgecdn.net"
         );
         this.gameId = gameId;
-    }
-
-    private String loadApiKey(String providedApiKey) {
-        if (providedApiKey != null && !providedApiKey.isBlank()) {
-            log.debug("Using provided CurseForge API key");
-            return providedApiKey.trim();
-        }
-
-        // properties file and property need to match the ObbyTask in build.gradle
-        final Map<String, String> cfApiProperties = ObbyLoader.loadProperties("/cf-api.properties");
-        final String loadedApiKey = cfApiProperties.get("cfApiKey");
-
-        if (loadedApiKey == null || loadedApiKey.isBlank()) {
-            throw new InvalidParameterException("CurseForge API key is required");
-        }
-        log.debug("Loaded CurseForge API key from cf-api.properties");
-        return loadedApiKey.trim();
     }
 
     static FileDownloadStatusHandler modFileDownloadStatusHandler(Path outputDir, Logger log) {
@@ -271,16 +250,36 @@ public class CurseForgeApiClient implements AutoCloseable {
     public Mono<Path> download(CurseForgeFile cfFile, Path outputFile, FileDownloadStatusHandler handler) {
         final URI uriToDownload = cfFile.getDownloadUrl() != null ?
             normalizeDownloadUrl(cfFile.getDownloadUrl())
-            : downloadFallbackUriBuilder.resolve(
-                "/v1/mods/{modId}/files/{fileId}/download",
-                cfFile.getModId(), cfFile.getId()
-            );
+            : buildFallbackUrl(cfFile);
         log.trace("Downloading cfFile={} from normalizedUrl={}", cfFile, uriToDownload);
         return preparedFetch.fetch(uriToDownload)
             .toFile(outputFile)
             .skipExisting(true)
             .handleStatus(handler)
             .assemble();
+    }
+
+    private URI buildFallbackUrl(CurseForgeFile cfFile) {
+        final String idStr = Integer.toString(cfFile.getId());
+
+        // In most (modern) cases a file ID like 8273779
+        // results in a URL path like /files/8273/779/cc-tweaked-1.21.1-forge-1.120.0.jar
+        final String idFolder;
+        final String idRemainder;
+        if (idStr.length() >= 7) {
+            idFolder = idStr.substring(0, 4);
+            idRemainder = idStr.substring(4);
+        }
+        else {
+            // legacy cases just divided the ID by 1000
+            idFolder = Integer.toString(cfFile.getId() / 1000);
+            idRemainder = idStr;
+        }
+
+        return downloadFallbackUriBuilder.resolve(
+            "/files/{id}/{subId}/{filename}",
+            idFolder, idRemainder, cfFile.getFileName()
+        );
     }
 
     public Mono<Path> downloadTemp(CurseForgeFile cfFile, String suffix, FileDownloadStatusHandler handler) {

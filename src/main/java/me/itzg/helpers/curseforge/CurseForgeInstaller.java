@@ -3,6 +3,7 @@ package me.itzg.helpers.curseforge;
 import static java.util.Collections.emptySet;
 import static java.util.Objects.requireNonNull;
 import static java.util.Optional.ofNullable;
+import static me.itzg.helpers.curseforge.ApiKeyHelper.loadApiKey;
 import static me.itzg.helpers.curseforge.CurseForgeApiClient.CACHING_NAMESPACE;
 import static me.itzg.helpers.curseforge.CurseForgeApiClient.modFileDownloadStatusHandler;
 import static me.itzg.helpers.singles.MoreCollections.safeStreamFrom;
@@ -211,27 +212,14 @@ public class CurseForgeInstaller {
         // to adapt to previous copies of manifest
         trimLevelsContent(manifest);
 
-        if (apiKey == null || apiKey.isEmpty()) {
-            if (manifest != null) {
-                log.warn("API key is not set, so will re-use previous modpack installation of {}",
-                    manifest.getSlug() != null ? manifest.getSlug() : "Project ID " + manifest.getModId()
-                );
-                log.warn("Obtain an API key from " + CurseForgeApiClient.ETERNAL_DEVELOPER_CONSOLE_URL
-                    + " and set the environment variable " + CurseForgeApiClient.API_KEY_VAR + " in order to restore full functionality.");
-                return;
-            }
-            else {
-                throw new InvalidParameterException("API key is not set. Obtain an API key from " + CurseForgeApiClient.ETERNAL_DEVELOPER_CONSOLE_URL
-                    + " and set the environment variable " + CurseForgeApiClient.API_KEY_VAR);
-            }
-        }
-
         try (
             final ApiCaching apiCaching = disableApiCaching ? new ApiCachingDisabled()
                 : new ApiCachingImpl(outputDir, CACHING_NAMESPACE, cacheArgs)
                     .setCacheDurations(CurseForgeApiClient.getCacheDurations());
             final CurseForgeApiClient cfApi = new CurseForgeApiClient(
-                apiBaseUrl, apiKey, sharedFetchOptions,
+                apiBaseUrl,
+                loadApiKey(apiKey),
+                sharedFetchOptions,
                 CurseForgeApiClient.MINECRAFT_GAME_ID,
                 apiCaching
             )
