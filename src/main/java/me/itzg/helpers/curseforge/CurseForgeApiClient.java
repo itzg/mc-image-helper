@@ -74,7 +74,7 @@ public class CurseForgeApiClient implements AutoCloseable {
         this.apiCaching = apiCaching;
         this.preparedFetch = Fetch.sharedFetch("install-curseforge",
             (sharedFetchOptions != null ? sharedFetchOptions : Options.builder().build())
-                .withHeader(API_KEY_HEADER, apiKey)
+                .withHeader(API_KEY_HEADER, apiKey.trim())
         );
         this.uriBuilder = UriBuilder.withBaseUrl(apiBaseUrl);
         this.downloadFallbackUriBuilder = UriBuilder.withBaseUrl(

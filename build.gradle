@@ -143,10 +143,9 @@ dependencies {
   }
 
   // https://junit.org/junit5/docs/current/user-guide/#running-tests-build-gradle-bom
-  // stuck < 5.12.0 due to Java 8
-  testImplementation(platform("org.junit:junit-bom:[5.11.4,5.12.0)"))
-  testImplementation 'org.junit.jupiter:junit-jupiter'
-  testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+  testImplementation(platform('org.junit:junit-bom:6.1.2'))
+  testImplementation('org.junit.jupiter:junit-jupiter')
+  testRuntimeOnly('org.junit.platform:junit-platform-launcher')
 
   testImplementation 'org.mockito:mockito-junit-jupiter:5.18.0'
   // https://github.com/wiremock/wiremock/releases/tag/3.0.0 drops support for Java 8
