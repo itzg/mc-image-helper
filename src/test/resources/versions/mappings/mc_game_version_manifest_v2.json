@@ -8,6 +8,9 @@
     "headers": {
       "Content-Type": "application/json"
     },
-    "bodyFileName": "version_manifest_v2.json"
+    "bodyFileName": "version_manifest_v2.json",
+    "transformers": [
+      "response-template"
+    ]
   }
 }

@@ -8,6 +8,9 @@
     "headers": {
       "Content-Type": "application/json"
     },
-    "bodyFileName": "26.2.json"
+    "bodyFileName": "26.2.json",
+    "transformers": [
+      "response-template"
+    ]
   }
 }
