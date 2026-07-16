@@ -1,0 +1,13 @@
+{
+  "request": {
+    "url": "/jars/1.6.jar",
+    "method": "GET"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/octet-stream"
+    },
+    "bodyFileName": "1.6.jar"
+  }
+}

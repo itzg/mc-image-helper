@@ -1,0 +1,13 @@
+{
+  "request": {
+    "url": "/manifests/26.3-snapshot-3.json",
+    "method": "GET"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "bodyFileName": "26.3-snapshot-3.json"
+  }
+}
