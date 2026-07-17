@@ -58,9 +58,9 @@ public class DownloadArtifactCommand implements Callable<Integer> {
         description = "Overwrite existing files when extracing zip")
     private boolean overwrite;
 
-    @Option(names = "--name-pattern", required = true,
+    @Option(names = "--artifact-pattern", required = true,
         description = "Regular expression that must match exactly one artifact name")
-    private Pattern namePattern;
+    private Pattern artifactPattern;
 
     @ParentCommand
     private GithubCommands parent;
@@ -138,9 +138,9 @@ public class DownloadArtifactCommand implements Callable<Integer> {
 
         if (runSelector.workflow != null) {
             return client.resolveArtifactForLatestSuccessfulWorkflow(organization, repo, runSelector.workflow,
-                    namePattern);
+                    artifactPattern);
         } else {
-            return client.resolveArtifactForRun(organization, repo, runSelector.runId, namePattern);
+            return client.resolveArtifactForRun(organization, repo, runSelector.runId, artifactPattern);
         }
     }
 
