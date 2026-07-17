@@ -87,13 +87,6 @@ public class DownloadArtifactCommand implements Callable<Integer> {
     @Override
     public Integer call() throws Exception {
 
-        // Github API requires a token with "'Actions' repository
-        // permissions (read)" to download an artifact
-        // https://docs.github.com/en/rest/actions/artifacts?apiVersion=2026-03-10#download-an-artifact
-        if (parent.token == null) {
-            throw new IllegalArgumentException("Must provide a github token to query artifact data");
-        }
-
         if (!Files.isDirectory(outputDirectory)) {
             try {
                 Files.createDirectory(outputDirectory);
@@ -114,6 +107,13 @@ public class DownloadArtifactCommand implements Callable<Integer> {
 
             if (noDownload) {
                 return ExitCode.OK;
+            }
+
+            // Github API requires a token with "'Actions' repository
+            // permissions (read)" to download an artifact
+            // https://docs.github.com/en/rest/actions/artifacts?apiVersion=2026-03-10#download-an-artifact
+            if (parent.token == null) {
+                throw new IllegalArgumentException("Must provide a github token to query artifact data");
             }
 
             Path download = candidate
