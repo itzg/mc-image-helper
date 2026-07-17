@@ -24,7 +24,7 @@ import picocli.CommandLine.ParentCommand;
 import reactor.core.publisher.Mono;
 
 @Command(name = "download-artifact",
-    description = "Download an artifact from a successful GitHub Actions workflow as received or unzipped")
+    description = "Download an artifact from a successful GitHub Actions workflow")
 @Slf4j
 public class DownloadArtifactCommand implements Callable<Integer> {
 
@@ -37,25 +37,25 @@ public class DownloadArtifactCommand implements Callable<Integer> {
     static class RunSelector {
 
         @Option(names = "--workflow", paramLabel = "ID|FILE",
-            description = "Workflow ID or filename whose latest successful run should be used")
+            description = "Query this workflow for the latest successful run to download an artifact")
         private String workflow;
 
         @Option(names = "--run-id", paramLabel = "ID",
-            description = "Specific workflow run ID to use")
+            description = "Query this specific workflow run to download an artifact")
         private Long runId;
     }
 
     @ArgGroup(multiplicity = "1")
     private RunSelector runSelector;
 
-    @Option(names = {"--output-directory", "-o"}, defaultValue = ".")
+    @Option(names = {"--output-directory", "-o"}, defaultValue = ".", description = "Output directory of downloaded artifact")
     private Path outputDirectory;
 
-    @Option(names = "--unzip", description = "Extract the downloaded response and remove it afterward")
+    @Option(names = "--unzip", description = "Extract the downloaded artifact")
     private boolean unzip;
 
     @Option(names = "--overwrite", defaultValue = "false",
-        description = "When extracting zip, overwrite existing files")
+        description = "Overwrite existing files when extracing zip")
     private boolean overwrite;
 
     @Option(names = "--name-pattern", required = true,
