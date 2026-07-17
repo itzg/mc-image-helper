@@ -59,7 +59,7 @@ public class DownloadArtifactCommand implements Callable<Integer> {
     private boolean overwrite;
 
     @Option(names = "--artifact-pattern", required = true,
-        description = "Regular expression that must match exactly one artifact name")
+        description = "Regular expression that must match exactly one artifact")
     private Pattern artifactPattern;
 
     @ParentCommand
