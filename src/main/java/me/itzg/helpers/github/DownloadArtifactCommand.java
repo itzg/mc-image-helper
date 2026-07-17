@@ -20,6 +20,9 @@ public class DownloadArtifactCommand implements Callable<Integer> {
     String organization;
     String repo;
 
+    @Option(names = {"--help", "-h"}, usageHelp = true)
+    public Boolean help;
+
     static class RunSelector {
 
         @Option(names = "--workflow", paramLabel = "ID|FILE",
@@ -39,6 +42,10 @@ public class DownloadArtifactCommand implements Callable<Integer> {
 
     @Option(names = "--unzip", description = "Extract the downloaded response and remove it afterward")
     private boolean unzip;
+
+    @Option(names = "--overwrite", defaultValue = "false",
+        description = "When extracting zip, overwrite existing files")
+    private boolean overwrite;
 
     @Option(names = "--name-pattern", required = true,
         description = "Regular expression that must match exactly one artifact name")
