@@ -62,6 +62,12 @@ public class DownloadArtifactCommand implements Callable<Integer> {
         description = "Regular expression that must match exactly one artifact")
     private Pattern artifactPattern;
 
+    @Option(names = "--print-artifact", description = "Prints artifact name")
+    private Boolean printArtifact;
+
+    @Option(names = "--no-download", description = "Doesn't download artifact")
+    private Boolean noDownload;
+
     @ParentCommand
     private GithubCommands parent;
 
@@ -99,14 +105,23 @@ public class DownloadArtifactCommand implements Callable<Integer> {
         try (SharedFetch sharedFetch = Fetch.sharedFetch("github download-artifact", sharedFetchArgs.options())) {
             final GithubClient client = new GithubClient(sharedFetch, parent.apiBaseUrl, parent.token);
 
-            // Async fetch + download, then synchronos unzip
-            Path download = resolveArtifact(client)
-                    .switchIfEmpty(Mono.error(new GenericException("Github client failed to find an artifact")))
-                    .doOnNext(artifact -> {
-                        log.info("Downloading artifact {}", artifact.getName());
-                    })
-                    .flatMap(artifact -> downloadArtifact(client, artifact))
-                    .block();
+            Mono<Artifact> candidate = resolveArtifact(client)
+                .switchIfEmpty(Mono.error(new GenericException("Github client failed to find an artifact")));
+
+            if (printArtifact) {
+                log.info("Resolved artifact {}", candidate.block().getName());
+            }
+
+            if (noDownload) {
+                return ExitCode.OK;
+            }
+
+            Path download = candidate
+                .doOnNext(artifact -> {
+                    log.info("Downloading artifact {}", artifact.getName());
+                }) 
+                .flatMap(artifact -> downloadArtifact(client, artifact)).block();
+
 
             if (unzip) {
                 log.info("Unzipping artifact");
