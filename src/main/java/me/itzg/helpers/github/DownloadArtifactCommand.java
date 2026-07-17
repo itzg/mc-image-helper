@@ -62,8 +62,8 @@ public class DownloadArtifactCommand implements Callable<Integer> {
         description = "Regular expression that must match exactly one artifact")
     private Pattern artifactPattern;
 
-    @Option(names = "--print-artifact", description = "Prints artifact name", defaultValue = "false")
-    private Boolean printArtifact;
+    @Option(names = "--output-filename", description = "Prints artifact name", defaultValue = "false")
+    private Boolean outputFilename;
 
     @Option(names = "--no-download", description = "Doesn't download artifact", defaultValue = "false")
     private Boolean noDownload;
@@ -101,8 +101,8 @@ public class DownloadArtifactCommand implements Callable<Integer> {
             Mono<Artifact> candidate = resolveArtifact(client)
                 .switchIfEmpty(Mono.error(new GenericException("Github client failed to find an artifact")));
 
-            if (printArtifact) {
-                log.info("Resolved artifact {}", candidate.block().getName());
+            if (outputFilename) {
+                System.out.println(candidate.block().getName());
             }
 
             if (noDownload) {
