@@ -88,10 +88,12 @@ public class DownloadArtifactCommand implements Callable<Integer> {
             throw new IllegalArgumentException("Must provide a github token to query artifact data");
         }
 
-        try {
-            Files.createDirectory(outputDirectory);
-        } catch (IOException e) {
-            log.error("Failed to create output directory {}", outputDirectory.toAbsolutePath().toString());
+        if (!Files.isDirectory(outputDirectory)) {
+            try {
+                Files.createDirectory(outputDirectory);
+            } catch (IOException e) {
+                log.error("Failed to create output directory {}", outputDirectory.toAbsolutePath().toString());
+            }
         }
 
         try (SharedFetch sharedFetch = Fetch.sharedFetch("github download-artifact", sharedFetchArgs.options())) {
