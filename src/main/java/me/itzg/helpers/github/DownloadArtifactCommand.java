@@ -62,10 +62,10 @@ public class DownloadArtifactCommand implements Callable<Integer> {
         description = "Regular expression that must match exactly one artifact")
     private Pattern artifactPattern;
 
-    @Option(names = "--print-artifact", description = "Prints artifact name")
+    @Option(names = "--print-artifact", description = "Prints artifact name", defaultValue = "false")
     private Boolean printArtifact;
 
-    @Option(names = "--no-download", description = "Doesn't download artifact")
+    @Option(names = "--no-download", description = "Doesn't download artifact", defaultValue = "false")
     private Boolean noDownload;
 
     @ParentCommand
