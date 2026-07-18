@@ -1,0 +1,10 @@
+{
+  "downloads": {
+    "server": {
+      "$comment": "the below size and hash intentionally do not match the jar",
+      "sha1": "25dba08e125aed66067ee763b64136d78828a7cd",
+      "size": 166,
+      "url": "{{request.baseUrl}}/jars/bad-sha.jar"
+    }
+  }
+}

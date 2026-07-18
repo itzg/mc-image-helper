@@ -23,6 +23,11 @@
       "id": "1.5",
       "type": "snapshot",
       "url": "{{request.baseUrl}}/manifests/1.5.json"
+    },
+    {
+      "id": "bad-sha",
+      "type": "snapshot",
+      "url": "{{request.baseUrl}}/manifests/bad-sha.json"
     }
   ]
 }

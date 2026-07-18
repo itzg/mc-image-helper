@@ -1,0 +1,16 @@
+{
+  "request": {
+    "url": "/manifests/bad-sha.json",
+    "method": "GET"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "bodyFileName": "bad-sha.json",
+    "transformers": [
+      "response-template"
+    ]
+  }
+}
