@@ -1,0 +1,16 @@
+{
+  "request": {
+    "url": "/manifests/b1.7.3.json",
+    "method": "GET"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "bodyFileName": "b1.7.3.json",
+    "transformers": [
+      "response-template"
+    ]
+  }
+}

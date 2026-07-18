@@ -101,10 +101,10 @@ public class VanillaInstaller {
                         if (!Checksums.valid(jarPath, jarInfo.getChecksumAlgo(), jarInfo.getChecksum())) {
                             Files.delete(jarPath);
                             log.error("Checksum failed for server jar");
-                            throw new FileHashInvalidException("Hash mismatch for " + jarPath + ", aborting");
+                            return Mono.error(new FileHashInvalidException("Hash mismatch for " + jarPath + ", aborting"));
                         }
                     } catch (IOException e) {
-                        throw new RuntimeException(e);
+                        return Mono.error(e);
                     }
 
                     final List<Path> files = new ArrayList<>();

@@ -95,6 +95,12 @@ class VanillaInstallerTests {
         assertThat(tempDir).isEmptyDirectory();
     }
 
+    @Test
+    void missingServerDownloadRejected() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> installer.install("b1.7.3", tempDir, resultsFile, false));
+        assertThat(tempDir).isEmptyDirectory();
+    }
+
     void assertResultsFile(String version, String jarName) throws IOException {
         assertThat(resultsFile).exists();
         final HashMap<String, String> items = new HashMap<>();

@@ -25,6 +25,11 @@
       "url": "{{request.baseUrl}}/manifests/1.5.json"
     },
     {
+      "id": "b1.7.3",
+      "type": "old_beta",
+      "url": "{{request.baseUrl}}/manifests/b1.7.3.json"
+    },
+    {
       "id": "bad-sha",
       "type": "snapshot",
       "url": "{{request.baseUrl}}/manifests/bad-sha.json"
