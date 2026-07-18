@@ -63,7 +63,7 @@ public class QuiltInstaller implements AutoCloseable {
                     .flatMap(resolvedMinecraftVersion ->
                         resolveLoaderVersion(loaderVersion)
                             .filter(resolvedLoaderVersion ->
-                                needsInstall(prevManifest, resolvedMinecraftVersion, resolvedLoaderVersion)
+                                needsInstall(prevManifest, resolvedMinecraftVersion.getVersion(), resolvedLoaderVersion)
                             )
                             .flatMap(resolvedLoaderVersion ->
                                 mavenRepoApi.download(outputDir, QUILT_GROUP_ID, INSTALLER_ARTIFACT,
@@ -73,7 +73,7 @@ public class QuiltInstaller implements AutoCloseable {
                                     .switchIfEmpty(
                                         Mono.defer(() -> Mono.error(new GenericException("Unable to obtain Quilt installer"))))
                                     .publishOn(Schedulers.boundedElastic())
-                                    .map(installerPath -> runInstaller(resolvedMinecraftVersion, installerPath, resolvedLoaderVersion))
+                                    .map(installerPath -> runInstaller(resolvedMinecraftVersion.getVersion(), installerPath, resolvedLoaderVersion))
                             )
                     )
             );
@@ -85,12 +85,12 @@ public class QuiltInstaller implements AutoCloseable {
             .flatMap(resolvedMinecraftVersion ->
                 resolveLoaderVersion(loaderVersion)
                     .filter(resolvedLoaderVersion ->
-                        needsInstall(prevManifest, resolvedMinecraftVersion, resolvedLoaderVersion)
+                        needsInstall(prevManifest, resolvedMinecraftVersion.getVersion(), resolvedLoaderVersion)
                     )
                     .flatMap(resolvedLoaderVersion ->
                         downloadFromCustomInstallerUrl(installerUrl)
                             .publishOn(Schedulers.boundedElastic())
-                            .map(installerPath -> runInstaller(resolvedMinecraftVersion, installerPath, resolvedLoaderVersion))
+                            .map(installerPath -> runInstaller(resolvedMinecraftVersion.getVersion(), installerPath, resolvedLoaderVersion))
                     )
             )
         );

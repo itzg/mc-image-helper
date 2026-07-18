@@ -4,6 +4,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import lombok.experimental.UtilityClass;
 import me.itzg.helpers.errors.InvalidParameterException;
+import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.jspecify.annotations.Nullable;
 import picocli.CommandLine;
 import picocli.CommandLine.ParameterException;
@@ -51,5 +52,33 @@ public class McVersioning {
 
     public static boolean isLatest(@Nullable String version) {
         return version == null || version.equalsIgnoreCase(LATEST);
+    }
+
+    public static int compare(String leftVersion, String rightVersion) {
+        if (leftVersion == null || leftVersion.isEmpty()) {
+            throw new InvalidParameterException("Left version is required");
+        }
+
+        if (rightVersion == null || rightVersion.isEmpty()) {
+            throw new InvalidParameterException("Right version is required");
+        }
+
+        char leftVersionChannel = leftVersion.charAt(0);
+        leftVersionChannel = Character.isDigit(leftVersionChannel) ? 'r' : leftVersionChannel;
+        char rightVersionChannel = rightVersion.charAt(0);
+        rightVersionChannel = Character.isDigit(rightVersionChannel) ? 'r' : rightVersionChannel;
+
+        if (leftVersionChannel != rightVersionChannel) {
+            return Character.compare(leftVersionChannel, rightVersionChannel);
+        }
+
+        if (leftVersion.startsWith("a") || leftVersion.startsWith("b")) {
+            leftVersion = leftVersion.substring(1);
+        }
+        if (rightVersion.startsWith("a") || rightVersion.startsWith("b")) {
+            rightVersion = rightVersion.substring(1);
+        }
+
+        return new ComparableVersion(leftVersion).compareTo(new ComparableVersion(rightVersion));
     }
 }
