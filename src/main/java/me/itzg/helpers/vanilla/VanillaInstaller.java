@@ -77,9 +77,8 @@ public class VanillaInstaller {
 
         Manifests.save(outputDirectory, VanillaManifest.ID, newManifest);
 
-        log.debug("Populating results file {}", resultsFile);
-
         if (resultsFile != null) {
+            log.debug("Populating results file {}", resultsFile);
             try (ResultsFileWriter writer = new ResultsFileWriter(resultsFile)) {
                 writer.writeType("VANILLA");
                 writer.writeServer(outputDirectory.resolve(newManifest.getServerEntry()));

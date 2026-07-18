@@ -21,8 +21,10 @@ public class InstallVanillaCommand implements Callable<Integer> {
     Path outputDirectory;
 
     @Option(names = "--results-file", description =
-        "A key=value file suitable for scripted environment variables. Currently includes"
-            + "\n  SERVER: the entry point jar or script", paramLabel = "FILE")
+        """
+            A key=value file suitable for scripted environment variables. Currently includes
+              SERVER: the entry point jar or script
+              VERSION: the resolved Minecraft version""", paramLabel = "FILE")
     Path resultsFile;
 
     @Option(names = "--force-reinstall")
