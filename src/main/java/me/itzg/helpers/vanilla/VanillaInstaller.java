@@ -1,6 +1,5 @@
 package me.itzg.helpers.vanilla;
 
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.files.Checksums;
 import me.itzg.helpers.files.FileHashInvalidException;
@@ -8,7 +7,6 @@ import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.files.ResultsFileWriter;
 import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.versions.McVersioning;
-import me.itzg.helpers.versions.MinecraftJarInfo;
 import me.itzg.helpers.versions.MinecraftVersionInfo;
 import me.itzg.helpers.versions.MinecraftVersionsApi;
 import reactor.core.publisher.Mono;
@@ -102,6 +100,7 @@ public class VanillaInstaller {
                     try {
                         if (!Checksums.valid(jarPath, jarInfo.checksumAlgo(), jarInfo.checksum())) {
                             Files.delete(jarPath);
+                            log.error("Checksum failed for server jar");
                             throw new FileHashInvalidException("Hash mismatch for " + jarPath + ", aborting");
                         }
                     } catch (IOException e) {
