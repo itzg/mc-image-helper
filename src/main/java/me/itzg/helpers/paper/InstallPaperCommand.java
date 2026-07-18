@@ -41,6 +41,10 @@ import reactor.core.scheduler.Schedulers;
 @Slf4j
 public class InstallPaperCommand implements Callable<Integer> {
 
+    @SuppressWarnings("unused")
+    @Option(names = {"--help", "-h"}, usageHelp = true)
+    boolean help;
+
     @Option(names = "--check-updates", description = "Check for updates and exit with status code 0 when available")
     boolean requestCheckUpdates;
 
