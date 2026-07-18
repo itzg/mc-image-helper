@@ -1,10 +1,14 @@
 package me.itzg.helpers.vanilla;
 
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import me.itzg.helpers.files.Checksums;
+import me.itzg.helpers.files.FileHashInvalidException;
 import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.files.ResultsFileWriter;
 import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.versions.McVersioning;
+import me.itzg.helpers.versions.MinecraftJarInfo;
 import me.itzg.helpers.versions.MinecraftVersionInfo;
 import me.itzg.helpers.versions.MinecraftVersionsApi;
 import reactor.core.publisher.Mono;
@@ -16,6 +20,7 @@ import java.util.List;
 
 @Slf4j
 public class VanillaInstaller {
+
     private final SharedFetch sharedFetch;
     private final MinecraftVersionsApi versionsApi;
 
@@ -86,33 +91,43 @@ public class VanillaInstaller {
     }
 
     private Mono<VanillaManifest> installVersion(Path outputDirectory, MinecraftVersionInfo version) {
-        return versionsApi.getServerJarUrl(version)
-            .switchIfEmpty(Mono.error(() -> new IllegalArgumentException("No server jar download available for version " + version.getVersion())))
-            .flatMap(url -> sharedFetch
-                .fetch(url)
+        return versionsApi.getServerJar(version)
+            .switchIfEmpty(Mono.error(
+                () -> new IllegalArgumentException("No server jar download available for version " + version.getVersion())))
+            .flatMap(jarInfo -> sharedFetch
+                .fetch(jarInfo.url())
                 .toFile(outputDirectory.resolve(String.format("minecraft_server.%s.jar", version.getVersion().replace(' ', '_'))))
-                .assemble())
-            .flatMap(serverJar -> {
-                final List<Path> files = new ArrayList<>();
-                files.add(serverJar);
-                String serverEntry = outputDirectory.relativize(serverJar).toString();
-                if (McVersioning.compare(version.getVersion(), "1.6") < 0) {
-                    final Path symlink = outputDirectory.resolve("minecraft_server.jar");
+                .assemble()
+                .flatMap(jarPath -> {
                     try {
-                        Files.deleteIfExists(symlink);
-                        Files.createSymbolicLink(symlink, outputDirectory.relativize(serverJar));
+                        if (!Checksums.valid(jarPath, jarInfo.checksumAlgo(), jarInfo.checksum())) {
+                            Files.delete(jarPath);
+                            throw new FileHashInvalidException("Hash mismatch for " + jarPath + ", aborting");
+                        }
                     } catch (IOException e) {
-                        return Mono.error(e);
+                        throw new RuntimeException(e);
                     }
-                    files.add(symlink);
-                    serverEntry = outputDirectory.relativize(symlink).toString();
-                }
 
-                return Mono.just(VanillaManifest.builder()
-                    .minecraftVersion(version.getVersion())
-                    .serverEntry(serverEntry)
-                    .files(Manifests.relativizeAll(outputDirectory, files))
-                    .build());
-            });
+                    final List<Path> files = new ArrayList<>();
+                    files.add(jarPath);
+                    String serverEntry = outputDirectory.relativize(jarPath).toString();
+                    if (McVersioning.compare(version.getVersion(), "1.6") < 0) {
+                        final Path symlink = outputDirectory.resolve("minecraft_server.jar");
+                        try {
+                            Files.deleteIfExists(symlink);
+                            Files.createSymbolicLink(symlink, outputDirectory.relativize(jarPath));
+                        } catch (IOException e) {
+                            return Mono.error(e);
+                        }
+                        files.add(symlink);
+                        serverEntry = outputDirectory.relativize(symlink).toString();
+                    }
+
+                    return Mono.just(VanillaManifest.builder()
+                        .minecraftVersion(version.getVersion())
+                        .serverEntry(serverEntry)
+                        .files(Manifests.relativizeAll(outputDirectory, files))
+                        .build());
+                }));
     }
 }

@@ -4,7 +4,9 @@ import java.net.URI;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.InvalidParameterException;
+import me.itzg.helpers.files.ChecksumAlgo;
 import me.itzg.helpers.http.SharedFetch;
+import me.itzg.helpers.versions.AssetsManifest.JarInfo;
 import me.itzg.helpers.versions.VersionManifestV2.Version;
 import reactor.core.publisher.Mono;
 
@@ -55,14 +57,22 @@ public class MinecraftVersionsApi {
             .switchIfEmpty(Mono.error(() -> new InvalidParameterException(String.format("Minecraft version '%s' is not valid", inputVersion))));
     }
 
-    public Mono<URI> getServerJarUrl(MinecraftVersionInfo version) {
+    /**
+     * @param version the version of Minecraft as returned from {@link MinecraftVersionsApi#resolve(String)}
+     * @return information about the server jar or empty if the version has no server
+     */
+    public Mono<MinecraftJarInfo> getServerJar(MinecraftVersionInfo version) {
         return sharedFetch.fetch(
                 version.getManifestUrl()
             )
             .toObject(AssetsManifest.class)
             .assemble()
-            .flatMap(m -> m.getDownloads().getServer() != null
-                ? Mono.just(m.getDownloads().getServer().getUrl())
-                : Mono.empty());
+            .flatMap(m -> {
+                final JarInfo server = m.getDownloads().getServer();
+                if (server != null) {
+                    return Mono.just(new MinecraftJarInfo(server.getUrl(), server.getSize(), ChecksumAlgo.SHA1, server.getSha1()));
+                }
+                return Mono.empty();
+            });
     }
 }

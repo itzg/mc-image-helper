@@ -12,6 +12,8 @@ public class AssetsManifest {
 
     @Data
     public static class JarInfo {
+        private String sha1;
+        private int size;
         private URI url;
     }
 
