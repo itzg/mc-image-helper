@@ -46,6 +46,7 @@ import me.itzg.helpers.sync.MulitCopyCommand;
 import me.itzg.helpers.sync.Sync;
 import me.itzg.helpers.sync.SyncAndInterpolate;
 import me.itzg.helpers.users.ManageUsersCommand;
+import me.itzg.helpers.vanilla.InstallVanillaCommand;
 import me.itzg.helpers.vanillatweaks.VanillaTweaksCommand;
 import me.itzg.helpers.versions.CompareVersionsCommand;
 import me.itzg.helpers.versions.JavaReleaseCommand;
@@ -81,6 +82,7 @@ import picocli.CommandLine.Spec;
         InstallPaperCommand.class,
         InstallPurpurCommand.class,
         InstallQuiltCommand.class,
+        InstallVanillaCommand.class,
         InterpolateCommand.class,
         JavaReleaseCommand.class,
         ManageUsersCommand.class,

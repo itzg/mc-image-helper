@@ -1,0 +1,13 @@
+{
+  "request": {
+    "url": "/jars/bad-sha.jar",
+    "method": "GET"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/octet-stream"
+    },
+    "bodyFileName": "bad-sha.txt"
+  }
+}

@@ -21,7 +21,7 @@ public class ResolveMinecraftVersionCommand implements Callable<Integer> {
     @Override
     public Integer call() throws Exception {
         try (SharedFetch sharedFetch = Fetch.sharedFetch("resolve-minecraft-version", sharedFetchArgs.options())) {
-            final String resolved = new MinecraftVersionsApi(sharedFetch)
+            final MinecraftVersionInfo resolved = new MinecraftVersionsApi(sharedFetch)
                 .resolve(inputVersion)
                 .block();
             if (resolved == null) {
@@ -29,7 +29,7 @@ public class ResolveMinecraftVersionCommand implements Callable<Integer> {
                 return ExitCode.USAGE;
             }
 
-            System.out.println(resolved);
+            System.out.println(resolved.getVersion());
         }
 
         return ExitCode.OK;

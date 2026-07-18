@@ -50,6 +50,8 @@ import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidApiKeyException;
 import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.fabric.FabricLauncherInstaller;
+import me.itzg.helpers.files.FileHashInvalidException;
+import me.itzg.helpers.files.IoStreams;
 import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.files.ReactiveFileUtils;
 import me.itzg.helpers.files.ResultsFileWriter;

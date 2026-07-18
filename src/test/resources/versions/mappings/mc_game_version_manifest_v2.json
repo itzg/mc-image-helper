@@ -1,0 +1,16 @@
+{
+  "request": {
+    "url": "/mc/game/version_manifest_v2.json",
+    "method": "GET"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "bodyFileName": "version_manifest_v2.json",
+    "transformers": [
+      "response-template"
+    ]
+  }
+}

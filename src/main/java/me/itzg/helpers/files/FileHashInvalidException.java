@@ -1,4 +1,4 @@
-package me.itzg.helpers.curseforge;
+package me.itzg.helpers.files;
 
 public class FileHashInvalidException extends RuntimeException {
 
