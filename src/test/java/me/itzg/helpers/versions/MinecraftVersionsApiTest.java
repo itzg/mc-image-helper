@@ -24,6 +24,7 @@ class MinecraftVersionsApiTest {
 
     @ParameterizedTest
     @CsvSource({
+        "release,26.2",
         "latest,26.2",
         "snapshot,26.3-snapshot-3",
         "26.2,26.2",
