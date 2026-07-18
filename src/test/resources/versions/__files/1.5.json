@@ -1,7 +1,7 @@
 {
   "downloads": {
     "server": {
-      "sha1": "25dba08e125aed66067ee763b64136d78828a7cd",
+      "sha1": "4a9f143abccca5d9ed43958957a36698a400bb3d",
       "size": 166,
       "url": "{{request.baseUrl}}/jars/1.5.jar"
     }

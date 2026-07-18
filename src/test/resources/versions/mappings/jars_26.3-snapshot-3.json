@@ -8,6 +8,6 @@
     "headers": {
       "Content-Type": "application/octet-stream"
     },
-    "bodyFileName": "26.3-snapshot-3.jar"
+    "bodyFileName": "26.3-snapshot-3.txt"
   }
 }

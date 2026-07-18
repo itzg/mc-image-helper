@@ -8,6 +8,6 @@
     "headers": {
       "Content-Type": "application/octet-stream"
     },
-    "bodyFileName": "bad-sha.jar"
+    "bodyFileName": "bad-sha.txt"
   }
 }

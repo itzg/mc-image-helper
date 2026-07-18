@@ -8,6 +8,6 @@
     "headers": {
       "Content-Type": "application/octet-stream"
     },
-    "bodyFileName": "1.6.jar"
+    "bodyFileName": "1.6.txt"
   }
 }

@@ -1,7 +1,7 @@
 {
   "downloads": {
     "server": {
-      "sha1": "d84f5e34d6641aadef301371346eafcc81b965c3",
+      "sha1": "4b77b529b8c3fb9de58267bb65ee8d71b2ad146b",
       "size": 178,
       "url": "{{request.baseUrl}}/jars/26.3-snapshot-3.jar"
     }
