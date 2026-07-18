@@ -10,6 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import me.itzg.helpers.curseforge.model.FileHash;
 import me.itzg.helpers.curseforge.model.HashAlgo;
+import me.itzg.helpers.files.FileHashInvalidException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 

@@ -11,6 +11,7 @@ import me.itzg.helpers.curseforge.model.FileHash;
 import me.itzg.helpers.curseforge.model.HashAlgo;
 import me.itzg.helpers.files.ChecksumAlgo;
 import me.itzg.helpers.files.Checksums;
+import me.itzg.helpers.files.FileHashInvalidException;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
