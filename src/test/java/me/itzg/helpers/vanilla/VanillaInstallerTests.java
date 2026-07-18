@@ -32,14 +32,14 @@ class VanillaInstallerTests {
             .extensions(new ResponseTemplateTransformer(false)))
         .build();
 
-    Path tempDir;
+    Path outputDir;
     Path resultsFile;
     VanillaInstaller installer;
 
     @BeforeEach
     void setup(@TempDir Path tempDir) {
-        this.tempDir = tempDir;
-        resultsFile = tempDir.resolve(".install-vanilla.env");
+        outputDir = tempDir;
+        resultsFile = outputDir.resolve(".install-vanilla.env");
 
         final SharedFetch sharedFetch = new SharedFetch("test-vanilla-installer", Options.builder().build());
         final MinecraftVersionsApi versionsApi = new MinecraftVersionsApi(sharedFetch)
@@ -56,27 +56,27 @@ class VanillaInstallerTests {
         "1.6,1.6",
     })
     void testModernInstall(String inputVersion, String expectedVersion) throws IOException {
-        installer.install(inputVersion, tempDir, resultsFile, false);
-        VanillaManifest manifest = Manifests.load(tempDir, VanillaManifest.ID, VanillaManifest.class);
+        installer.install(inputVersion, outputDir, resultsFile, false);
+        VanillaManifest manifest = Manifests.load(outputDir, VanillaManifest.ID, VanillaManifest.class);
 
         final String jarName = "minecraft_server." + expectedVersion + ".jar";
         assertThat(manifest).isNotNull();
         assertThat(manifest.minecraftVersion).isEqualTo(expectedVersion);
         assertThat(manifest.serverEntry).isEqualTo(jarName);
         assertThat(manifest.getFiles()).containsExactly(jarName);
-        assertThat(tempDir.resolve(jarName)).exists();
+        assertThat(outputDir.resolve(jarName)).isRegularFile();
         assertResultsFile(expectedVersion, jarName);
     }
 
     @Test
     void testPre1_6Install() throws IOException {
-        installer.install("1.5", tempDir, resultsFile, false);
-        VanillaManifest manifest = Manifests.load(tempDir, VanillaManifest.ID, VanillaManifest.class);
+        installer.install("1.5", outputDir, resultsFile, false);
+        VanillaManifest manifest = Manifests.load(outputDir, VanillaManifest.ID, VanillaManifest.class);
 
         final String jarName = "minecraft_server.1.5.jar";
         final String symlinkName = "minecraft_server.jar";
-        final Path symlinkPath = tempDir.resolve(symlinkName);
-        final Path jarPath = tempDir.resolve(jarName);
+        final Path symlinkPath = outputDir.resolve(symlinkName);
+        final Path jarPath = outputDir.resolve(jarName);
         assertThat(manifest).isNotNull();
         assertThat(manifest.minecraftVersion).isEqualTo("1.5");
         assertThat(manifest.serverEntry).isEqualTo(symlinkName);
@@ -91,14 +91,14 @@ class VanillaInstallerTests {
 
     @Test
     void testBadChecksumRejected() {
-        Assertions.assertThrows(FileHashInvalidException.class, () -> installer.install("bad-sha", tempDir, resultsFile, false));
-        assertThat(tempDir).isEmptyDirectory();
+        Assertions.assertThrows(FileHashInvalidException.class, () -> installer.install("bad-sha", outputDir, resultsFile, false));
+        assertThat(outputDir).isEmptyDirectory();
     }
 
     @Test
-    void missingServerDownloadRejected() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> installer.install("b1.7.3", tempDir, resultsFile, false));
-        assertThat(tempDir).isEmptyDirectory();
+    void testMissingServerDownloadRejected() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> installer.install("b1.7.3", outputDir, resultsFile, false));
+        assertThat(outputDir).isEmptyDirectory();
     }
 
     void assertResultsFile(String version, String jarName) throws IOException {
@@ -112,7 +112,7 @@ class VanillaInstallerTests {
 
         assertThat(items).containsOnly(
             entry("TYPE", "\"VANILLA\""),
-            entry("SERVER", '"' + tempDir.resolve(jarName).toString() + '"'),
+            entry("SERVER", '"' + outputDir.resolve(jarName).toString() + '"'),
             entry("VERSION", '"' + version + '"')
         );
     }
