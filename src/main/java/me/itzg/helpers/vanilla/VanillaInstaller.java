@@ -93,12 +93,12 @@ public class VanillaInstaller {
             .switchIfEmpty(Mono.error(
                 () -> new IllegalArgumentException("No server jar download available for version " + version.getVersion())))
             .flatMap(jarInfo -> sharedFetch
-                .fetch(jarInfo.url())
+                .fetch(jarInfo.getUrl())
                 .toFile(outputDirectory.resolve(String.format("minecraft_server.%s.jar", version.getVersion().replace(' ', '_'))))
                 .assemble()
                 .flatMap(jarPath -> {
                     try {
-                        if (!Checksums.valid(jarPath, jarInfo.checksumAlgo(), jarInfo.checksum())) {
+                        if (!Checksums.valid(jarPath, jarInfo.getChecksumAlgo(), jarInfo.getChecksum())) {
                             Files.delete(jarPath);
                             log.error("Checksum failed for server jar");
                             throw new FileHashInvalidException("Hash mismatch for " + jarPath + ", aborting");
