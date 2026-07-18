@@ -22,9 +22,9 @@ public class VanillaInstaller {
     private final SharedFetch sharedFetch;
     private final MinecraftVersionsApi versionsApi;
 
-    public VanillaInstaller(SharedFetch sharedFetch) {
+    public VanillaInstaller(SharedFetch sharedFetch, MinecraftVersionsApi versionsApi) {
         this.sharedFetch = sharedFetch;
-        this.versionsApi = new MinecraftVersionsApi(sharedFetch);
+        this.versionsApi = versionsApi;
     }
 
     public void install(String version, Path outputDirectory, Path resultsFile, boolean forceReinstall) throws IOException {

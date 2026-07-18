@@ -3,6 +3,7 @@ package me.itzg.helpers.vanilla;
 import me.itzg.helpers.http.Fetch;
 import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.http.SharedFetchArgs;
+import me.itzg.helpers.versions.MinecraftVersionsApi;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.ExitCode;
@@ -38,7 +39,7 @@ public class InstallVanillaCommand implements Callable<Integer> {
     @Override
     public Integer call() throws Exception {
         try (SharedFetch sharedFetch = Fetch.sharedFetch("install-vanilla", sharedFetchArgs.options())) {
-            final VanillaInstaller installer = new VanillaInstaller(sharedFetch);
+            final VanillaInstaller installer = new VanillaInstaller(sharedFetch, new MinecraftVersionsApi(sharedFetch));
             installer.install(minecraftVersion, outputDirectory, resultsFile, forceReinstall);
         }
         return ExitCode.OK;
