@@ -4,26 +4,34 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import java.util.List;
 import lombok.Data;
+import lombok.ToString;
 
 /**
  * <a href="https://docs.modrinth.com/api/operations/getproject/#200">Spec</a>
  */
 @Data
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
+@ToString(onlyExplicitlyIncluded = true)
 public class Project {
-  String slug;
 
-  String id;
+    @ToString.Include
+    String slug;
 
-  String title;
+    @ToString.Include
+    String id;
 
-  ProjectType projectType;
+    @ToString.Include
+    String title;
 
-  ServerSide serverSide;
+    @ToString.Include
+    ProjectType projectType;
 
-  List<String> versions;
+    @ToString.Include
+    ServerSide serverSide;
 
-  List<String> gameVersions;
+    List<String> versions;
 
-  List<String> loaders;
+    List<String> gameVersions;
+
+    List<String> loaders;
 }

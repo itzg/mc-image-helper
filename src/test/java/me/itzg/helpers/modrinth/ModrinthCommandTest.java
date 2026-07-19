@@ -12,8 +12,10 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.function.Consumer;
 import me.itzg.helpers.LatchingExecutionExceptionHandler;
@@ -25,6 +27,7 @@ import me.itzg.helpers.modrinth.model.ProjectType;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.assertj.core.api.AbstractPathAssert;
 import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.io.TempDir;
@@ -35,6 +38,9 @@ import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
 
 class ModrinthCommandTest {
+
+    public static final String PROJECT_ID_GLITCHCORE = "s3dmwKy5";
+    public static final String PROJECT_ID_BIOMES_O_PLENTY = "YPm4arUa";
     final ObjectMapper objectMapper = ObjectMappers.defaultMapper();
 
     @RegisterExtension
@@ -106,7 +112,7 @@ class ModrinthCommandTest {
 
         stubProjectBulkRequest(projectId, projectSlug);
 
-        stubVersionRequest(projectId, versionId, deps -> {
+        stubProjectVersionRequestForOne(projectId, versionId, deps -> {
             deps.addObject()
                 .put("project_id", requiredDepProjectId)
                 .put("dependency_type", "required");
@@ -114,10 +120,10 @@ class ModrinthCommandTest {
                 .put("project_id", optionalDepProjectId)
                 .put("dependency_type", "optional");
         });
-        stubVersionRequest(requiredDepProjectId, requiredVersionId, deps -> {});
-        stubVersionRequest(optionalDepProjectId, optionalVersionId, deps -> {});
+        stubProjectVersionRequestForOne(requiredDepProjectId, requiredVersionId, deps -> {});
+        stubProjectVersionRequestForOne(optionalDepProjectId, optionalVersionId, deps -> {});
 
-        stubDownload();
+        stubAnyDownload();
 
         final int exitCode = new CommandLine(
             new ModrinthCommand()
@@ -172,7 +178,7 @@ class ModrinthCommandTest {
 
         stubProjectBulkRequest(projectId, projectSlug);
 
-        stubVersionRequest(projectId, versionId, deps ->
+        stubProjectVersionRequestForOne(projectId, versionId, deps ->
             deps.addObject()
             .put("project_id", requiredDepProjectId)
             .put("dependency_type", "required")
@@ -181,7 +187,7 @@ class ModrinthCommandTest {
         stubVersionRequestEmptyResponse(requiredDepProjectId, "spigot");
         stubGetProject(requiredDepProjectId, new Project().setProjectType(ProjectType.resourcepack));
 
-        stubDownload();
+        stubAnyDownload();
 
         final LatchingExecutionExceptionHandler executionExceptionHandler = new LatchingExecutionExceptionHandler();
 
@@ -466,6 +472,146 @@ class ModrinthCommandTest {
         }
     }
 
+    @Test
+    void ensureBetaDependencySkipped(@TempDir Path tempDir) {
+        stubProjectBulkRequestMulti("biomes-o-plenty", PROJECT_ID_BIOMES_O_PLENTY);
+        // biomes-o-plenty
+        stubVersionRequest(PROJECT_ID_BIOMES_O_PLENTY, deps -> {
+            addDependency(deps, "required",
+                // glitchcore
+                PROJECT_ID_GLITCHCORE, null);
+        }, files -> {
+            addFile(files, wm.getRuntimeInfo().getHttpBaseUrl() + "/cdn/YPm4arUa", "biomes-o-plenty-1.0.0.jar");
+        });
+        stubProjectVersionsRequest(PROJECT_ID_GLITCHCORE, "fabric", "1.21.1", versions -> {
+            addProjectVersion(versions, "FsKFwxzd", PROJECT_ID_GLITCHCORE, "beta", new String[]{"fabric"},
+                files -> {
+                addFile(files, wm.getRuntimeInfo().getHttpBaseUrl() + "/cdn/FsKFwxzd", "glitchcore-1.0.0.jar");
+            }, deps -> {});
+        });
+        stubAnyDownload();
+
+        final int exitCode = new CommandLine(
+            new ModrinthCommand()
+        )
+            .execute(
+                "--api-base-url", wm.getRuntimeInfo().getHttpBaseUrl(),
+                "--output-directory", tempDir.toString(),
+                "--game-version", "1.21.1",
+                "--loader", "fabric",
+                "--download-dependencies", DownloadDependencies.REQUIRED.name(),
+                "--projects",
+                "biomes-o-plenty:YPm4arUa"
+            );
+
+        assertThat(exitCode).isEqualTo(ExitCode.OK);
+        assertThat(tempDir.resolve("mods/biomes-o-plenty-1.0.0.jar")).exists();
+        verifyVersionRequest(PROJECT_ID_BIOMES_O_PLENTY);
+
+        assertThat(tempDir.resolve("mods")).isDirectoryNotContaining(path -> path.getFileName().toString().startsWith("glitchcore"));
+        // glitchcore with beta
+        verifyProjectVersionsRequest(PROJECT_ID_GLITCHCORE, "fabric", "1.21.1");
+    }
+
+    @Test
+    void ensureBetaDependencyDoesntMaskExplicitProject(@TempDir Path tempDir) {
+        /*
+         * bug: glitchcore was getting skipped since biomes-o-plenty depends on glitchcore, but only betas are available
+         * inputs:
+         *       Loader: fabric
+         *       Minecraft version: 1.21.1
+         *       MODRINTH_PROJECTS: |-
+         *         biomes-o-plenty:YPm4arUa
+         *         glitchcore:FsKFwxzd
+         */
+
+        stubProjectBulkRequestMulti("glitchcore", PROJECT_ID_GLITCHCORE, "biomes-o-plenty", PROJECT_ID_BIOMES_O_PLENTY);
+        // glitchore
+        stubVersionRequest("FsKFwxzd", deps -> {
+        }, files -> {
+            addFile(files, wm.getRuntimeInfo().getHttpBaseUrl() + "/cdn/"
+                + PROJECT_ID_GLITCHCORE, "glitchcore-1.0.0.jar");
+        });
+        // biomes-o-plenty
+        stubVersionRequest(PROJECT_ID_BIOMES_O_PLENTY, deps -> {
+            addDependency(deps, "required", PROJECT_ID_GLITCHCORE, null);
+        }, files -> {
+            addFile(files, wm.getRuntimeInfo().getHttpBaseUrl() + "/cdn/" + PROJECT_ID_BIOMES_O_PLENTY, "biomes-o-plenty-1.0.0.jar");
+        });
+        stubAnyDownload();
+
+        final int exitCode = new CommandLine(
+            new ModrinthCommand()
+        )
+            .execute(
+                "--api-base-url", wm.getRuntimeInfo().getHttpBaseUrl(),
+                "--output-directory", tempDir.toString(),
+                "--game-version", "1.21.1",
+                "--loader", "fabric",
+                "--download-dependencies", DownloadDependencies.REQUIRED.name(),
+                "--projects",
+                    "biomes-o-plenty:YPm4arUa"
+                    + ",glitchcore:FsKFwxzd"
+            );
+
+        assertThat(exitCode).isEqualTo(ExitCode.OK);
+        assertThat(tempDir.resolve("mods/glitchcore-1.0.0.jar")).exists();
+        assertThat(tempDir.resolve("mods/biomes-o-plenty-1.0.0.jar")).exists();
+    }
+
+    @Test
+    void handlesDependencyChain(@TempDir Path tempDir) throws IOException {
+        // such as Tech Reborn ──> requires RebornCore ──> requires Fabric API
+        // techreborn(3eMENr4V) -> reborncore(3NCrJdj3) -> fabric-api(P7dR8mSH)
+        // NOTE: normally techreborn (like most) depends on fabric-api, but for this test, we are going to make it depend on reborncore instead, which will then depend on fabric-api
+
+        stubProjectBulkRequestMulti(
+            "techreborn", "3eMENr4V"
+        );
+        stubProjectVersionsRequest("3eMENr4V", "fabric", "1.21.1", versions -> {
+            addProjectVersion(versions, "3eMENr4V", "3eMENr4V", "release", new String[]{"fabric"},
+                files -> {
+                addFile(files, wm.getRuntimeInfo().getHttpBaseUrl() + "/cdn/3eMENr4V", "techreborn-1.0.0.jar");
+            }, deps -> {
+                addDependency(deps, "required", "3NCrJdj3", null);
+            });
+        });
+        stubProjectVersionsRequest("3NCrJdj3", "fabric", "1.21.1", versions -> {
+            addProjectVersion(versions, "3NCrJdj3", "3NCrJdj3", "release", new String[]{"fabric"},
+                files -> {
+                addFile(files, wm.getRuntimeInfo().getHttpBaseUrl() + "/cdn/3NCrJdj3", "reborncore-1.0.0.jar");
+            }, deps -> {
+                addDependency(deps, "required", "P7dR8mSH", null);
+            });
+        });
+        stubProjectVersionsRequest("P7dR8mSH", "fabric", "1.21.1", versions -> {
+            addProjectVersion(versions, "P7dR8mSH", "P7dR8mSH", "release", new String[]{"fabric"},
+                files -> {
+                addFile(files, wm.getRuntimeInfo().getHttpBaseUrl() + "/cdn/P7dR8mSH", "fabric-api-1.0.0.jar");
+            }, deps -> {});
+        });
+        stubAnyDownload();
+
+        final int exitCode = new CommandLine(
+            new ModrinthCommand()
+        )
+            .execute(
+                "--api-base-url", wm.getRuntimeInfo().getHttpBaseUrl(),
+                "--output-directory", tempDir.toString(),
+                "--game-version", "1.21.1",
+                "--loader", "fabric",
+                "--download-dependencies", DownloadDependencies.REQUIRED.name(),
+                "--projects",
+                "techreborn"
+            );
+
+        assertThat(exitCode).isEqualTo(ExitCode.OK);
+        final Path modsDir = tempDir.resolve("mods");
+        assertThat(modsDir.resolve("techreborn-1.0.0.jar")).exists();
+        assertThat(modsDir.resolve("reborncore-1.0.0.jar")).exists();
+        assertThat(modsDir.resolve("fabric-api-1.0.0.jar")).exists();
+    }
+
     @NotNull
     private static RequestPatternBuilder projectVersionsRequest(String projectId) {
         return getRequestedFor(urlPathEqualTo("/v2/project/" + projectId + "/version"));
@@ -493,6 +639,30 @@ class ModrinthCommandTest {
         );
     }
 
+    private void stubProjectBulkRequestMulti(String... projectsSlugsIds) {
+        final ArrayNode projectResp = objectMapper.createArrayNode();
+        assertThat(projectsSlugsIds.length % 2).isEqualTo(0);
+        final ArrayList<String> projects = new ArrayList<>();
+        for (int i = 0; i < projectsSlugsIds.length; i +=2) {
+            final String projectSlug = projectsSlugsIds[i];
+            final String projectId = projectsSlugsIds[i+1];
+            projects.add(projectSlug);
+            projectResp
+                .addObject()
+                .put("id", projectId)
+                .put("slug", projectSlug)
+                .put("project_type", "mod")
+                .put("server_side", "required");
+        }
+        stubFor(get(urlPathEqualTo("/v2/projects"))
+            .withQueryParam("ids", equalTo("[\"" + String.join("\",\"", projects) + "\"]"))
+            .willReturn(aResponse()
+                .withHeader("Content-Type", "application/json")
+                .withJsonBody(projectResp)
+            )
+        );
+    }
+
     private void stubGetProject(String projectIdOrSlug, Project project) throws JsonProcessingException {
         stubFor(get(urlPathEqualTo("/v2/project/"+projectIdOrSlug))
             .willReturn(aResponse()
@@ -502,7 +672,7 @@ class ModrinthCommandTest {
         );
     }
 
-    private void stubVersionRequest(String projectId, String versionId, Consumer<ArrayNode> depsAdder) {
+    private void stubProjectVersionRequestForOne(String projectId, String versionId, Consumer<ArrayNode> depsAdder) {
         final ArrayNode versionResp = objectMapper.createArrayNode();
         final ObjectNode versionNode = versionResp
             .addObject()
@@ -526,6 +696,66 @@ class ModrinthCommandTest {
         );
     }
 
+    private void stubProjectVersionsRequest(String projectId, String loader, String mcVersion, Consumer<ArrayNode> projectVersionAdder) {
+        final ArrayNode versionResp = objectMapper.createArrayNode();
+        projectVersionAdder.accept(versionResp);
+
+        stubFor(get(urlPathEqualTo("/v2/project/" + projectId + "/version"))
+            .withQueryParam("loaders", equalTo("[\"" + loader + "\"]"))
+            .withQueryParam("game_versions", equalTo("[\"" + mcVersion + "\"]"))
+            .willReturn(aResponse()
+                .withHeader("Content-Type", "application/json")
+                .withJsonBody(versionResp)
+            )
+        );
+    }
+
+    private void addProjectVersion(ArrayNode projects, String versionId, String projectId, String versionType, String[] loaders,
+        Consumer<ArrayNode> filesAdder, Consumer<ArrayNode> depsAdder) {
+        final ObjectNode versionNode = projects.addObject()
+            .put("id", versionId)
+            .put("project_id", projectId)
+            .put("version_type", versionType);
+        final ArrayNode loadersArray = versionNode.putArray("loaders");
+        for (String loader : loaders) {
+            loadersArray.add(loader);
+        }
+
+        final ArrayNode files = versionNode.putArray("files");
+        filesAdder.accept(files);
+
+        final ArrayNode dependencies = versionNode.putArray("dependencies");
+        depsAdder.accept(dependencies);
+    }
+
+    private void addDependency(ArrayNode deps, String dependencyType, String projectId, @Nullable String versionId) {
+        final ObjectNode dep = deps.addObject();
+        dep.put("dependency_type", dependencyType);
+        dep.put("project_id", projectId);
+        dep.put("version_id", versionId);
+    }
+
+    private void addFile(ArrayNode files, String url, String filename) {
+        final ObjectNode file = files.addObject();
+        file.put("url", url);
+        file.put("filename", filename);
+    }
+
+    private void stubVersionRequest(String versionId, Consumer<ArrayNode> depsAdder, Consumer<ArrayNode> filesAdder) {
+        final ObjectNode body = objectMapper.createObjectNode();
+        final ArrayNode deps = body.putArray("dependencies");
+        depsAdder.accept(deps);
+        final ArrayNode files = body.putArray("files");
+        filesAdder.accept(files);
+
+        stubFor(get(urlPathEqualTo("/v2/version/" + versionId))
+            .willReturn(aResponse()
+                .withHeader("Content-Type", "application/json")
+                .withJsonBody(body)
+            )
+        );
+    }
+
     private void stubVersionRequestEmptyResponse(String projectId, String loader) {
         final ArrayNode versionResp = objectMapper.createArrayNode();
 
@@ -539,7 +769,7 @@ class ModrinthCommandTest {
         );
     }
 
-    private static void stubDownload() {
+    private static void stubAnyDownload() {
         stubFor(get(urlPathMatching("/cdn/(.+)"))
             .willReturn(aResponse()
                 .withBody("{{request.pathSegments.[1]}}")
@@ -584,4 +814,16 @@ class ModrinthCommandTest {
                 )
         );
     }
+
+    private static void verifyProjectVersionsRequest(String projectId, String loader, String mcVersion) {
+        verify(exactly(1), getRequestedFor(urlPathEqualTo("/v2/project/" + projectId + "/version"))
+            .withQueryParam("loaders", equalTo("[\"" + loader + "\"]"))
+            .withQueryParam("game_versions", equalTo("[\"" + mcVersion + "\"]"))
+        );
+    }
+
+    private static void verifyVersionRequest(String versionId) {
+        verify(exactly(1), getRequestedFor(urlPathEqualTo("/v2/version/" + versionId)));
+    }
+
 }

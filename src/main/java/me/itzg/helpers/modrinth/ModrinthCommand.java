@@ -2,7 +2,6 @@ package me.itzg.helpers.modrinth;
 
 import static me.itzg.helpers.McImageHelper.SPLIT_COMMA_NL;
 import static me.itzg.helpers.McImageHelper.SPLIT_SYNOPSIS_COMMA_NL;
-import static me.itzg.helpers.http.Fetch.fetch;
 import static me.itzg.helpers.singles.NormalizeOptions.normalizeOptionList;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -28,6 +27,7 @@ import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.http.Fetch;
+import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.http.SharedFetchArgs;
 import me.itzg.helpers.json.ObjectMappers;
 import me.itzg.helpers.modrinth.model.DependencyType;
@@ -115,6 +115,9 @@ public class ModrinthCommand implements Callable<Integer> {
 
     final Set<String/*projectId*/> projectsProcessed = Collections.synchronizedSet(new HashSet<>());
 
+    private final Set<String/*projectId*/> explicitProjectIds = new HashSet<>();
+    private final Set<String/*projectId*/> dependencyProjectsWithVersion = new HashSet<>();
+
     private final Map<String/*projectId*/, VersionType> allowedVersionTypesByProject = new HashMap<>();
 
     @Override
@@ -140,15 +143,15 @@ public class ModrinthCommand implements Callable<Integer> {
             return Collections.emptyList();
         }
 
-        final List<String> expandedRefs = expandProjectListings(projects);
-
-        // Separate optional from required so that bulkGetProjects can handle
-        // unknown optional slugs gracefully.
-        final List<ProjectRef> allRefs = expandedRefs.stream()
+        final List<ProjectRef> allRefs = expandProjectListings(projects).stream()
             .map(ProjectRef::parse)
-            .collect(Collectors.toList());
+            .toList();
 
-        try (ModrinthApiClient modrinthApiClient = new ModrinthApiClient(baseUrl, "modrinth", sharedFetchArgs.options())) {
+        log.debug("Processing input project refs: {}", allRefs);
+
+        try (
+            final SharedFetch sharedFetch = new SharedFetch("modrinth", sharedFetchArgs.options());
+            ModrinthApiClient modrinthApiClient = new ModrinthApiClient(baseUrl, sharedFetch)) {
             final List<ResolvedProject> resolvedProjects =
                 modrinthApiClient.bulkGetProjects(
                     allRefs.stream(),
@@ -164,6 +167,12 @@ public class ModrinthCommand implements Callable<Integer> {
             }
             log.trace("Resolved projects: {}", resolvedProjects);
 
+            explicitProjectIds.addAll(
+                resolvedProjects.stream()
+                    .map(resolvedProject -> resolvedProject.getProject().getId())
+                    .collect(Collectors.toSet())
+            );
+
             // tracking any user declared, per-project version type
             resolvedProjects.stream()
                 .filter(resolvedProject -> resolvedProject.getProjectRef().hasVersionType())
@@ -178,7 +187,7 @@ public class ModrinthCommand implements Callable<Integer> {
                 .flatMap(resolvedProject ->
                     processProject(
                         modrinthApiClient,
-                        resolvedProject.getProjectRef(),
+                        sharedFetch, resolvedProject.getProjectRef(),
                         resolvedProject.getProject()
                     )
                 )
@@ -242,7 +251,7 @@ public class ModrinthCommand implements Callable<Integer> {
         log.debug("Expanding dependencies of version={}", version);
         return version.getDependencies().stream()
             .filter(this::filterDependency)
-            .filter(dep -> trackProjectProcessed(dep.getProjectId()))
+            .filter(this::trackDependencyProjectProcessed)
             .flatMap(dep -> {
                 final Version depVersion;
                 try {
@@ -281,7 +290,6 @@ public class ModrinthCommand implements Callable<Integer> {
                     return Stream.empty();
                 }
             });
-
     }
 
     /**
@@ -291,6 +299,39 @@ public class ModrinthCommand implements Callable<Integer> {
         final boolean absent = projectsProcessed.add(projectId);
         log.debug("Project {} was {} processed", projectId, absent ? "not" : "already");
         return absent;
+    }
+
+    /**
+     * Enforces precedence rules for dependencies:
+     * <ul>
+     *     <li>Explicitly requested projects take precedence over dependencies.</li>
+     *     <li>A dependency with version_id takes precedence over one without version_id.</li>
+     * </ul>
+     */
+    private boolean trackDependencyProjectProcessed(VersionDependency dep) {
+        final String projectId = dep.getProjectId();
+
+        if (explicitProjectIds.contains(projectId)) {
+            log.debug("Skipping dependency={} because project={} was explicitly requested", dep, projectId);
+            return false;
+        }
+
+        if (dep.getVersionId() != null) {
+            final boolean firstVersionedDependency = dependencyProjectsWithVersion.add(projectId);
+            if (firstVersionedDependency && projectsProcessed.contains(projectId)) {
+                // Prefer the version-pinned dependency over previously seen unpinned dep.
+                log.debug("Replacing previously processed unpinned dependency for project={}", projectId);
+                projectsProcessed.remove(projectId);
+            }
+            return trackProjectProcessed(projectId);
+        }
+
+        if (dependencyProjectsWithVersion.contains(projectId)) {
+            log.debug("Skipping dependency={} because a versioned dependency already exists for project={}", dep, projectId);
+            return false;
+        }
+
+        return trackProjectProcessed(projectId);
     }
 
     private boolean filterDependency(VersionDependency dep) {
@@ -320,7 +361,7 @@ public class ModrinthCommand implements Callable<Integer> {
         return null;
     }
 
-    private Path download(Loader loader, VersionFile versionFile) {
+    private Path download(SharedFetch sharedFetch, Loader loader, VersionFile versionFile) {
         final Path outPath;
         try {
             final Loader effectiveLoader = loader != null ? loader : this.loader;
@@ -354,7 +395,7 @@ public class ModrinthCommand implements Callable<Integer> {
         }
 
         try {
-            return fetch(URI.create(versionFile.getUrl()))
+            return sharedFetch.fetch(URI.create(versionFile.getUrl()))
                 .userAgentCommand("modrinth")
                 .toFile(outPath)
                 .skipExisting(skipExisting)
@@ -378,7 +419,7 @@ public class ModrinthCommand implements Callable<Integer> {
     }
 
 
-    private Stream<Path> processProject(ModrinthApiClient modrinthApiClient, ProjectRef projectRef, Project project) {
+    private Stream<Path> processProject(ModrinthApiClient modrinthApiClient, SharedFetch sharedFetch, ProjectRef projectRef, Project project) {
         if (project.getProjectType() != ProjectType.mod) {
             throw new InvalidParameterException(
                 String.format("Requested project '%s' is not a mod, but has type %s",
@@ -386,7 +427,7 @@ public class ModrinthCommand implements Callable<Integer> {
                 ));
         }
 
-        log.debug("Starting with project='{}' slug={} id={} optional={}", project.getTitle(), project.getSlug(), project.getId(), projectRef.isOptional());
+        log.debug("Starting with project='{}' optional={}", project, projectRef.isOptional());
 
         if (trackProjectProcessed(project.getId())) {
             final Loader effectiveLoader = projectRef.getLoader() != null
@@ -434,7 +475,7 @@ public class ModrinthCommand implements Callable<Integer> {
                     )
                 )
                     .map(ModrinthApiClient::pickVersionFile)
-                    .map(versionFile -> download(effectiveLoader, versionFile))
+                    .map(versionFile -> download(sharedFetch, effectiveLoader, versionFile))
                     .flatMap(downloadedFile -> {
                         // Only expand ZIPs for non-datapack loaders
                         return effectiveLoader == Loader.datapack
