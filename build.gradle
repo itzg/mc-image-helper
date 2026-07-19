@@ -50,6 +50,46 @@ java {
   }
 }
 
+// Just to be totally sure...
+tasks.register('verifyJava8Bytecode') {
+  group = 'verification'
+  description = 'Verifies that all compiled class files target Java 8 (major version 52).'
+
+  // Explicitly depend on compileJava running first
+  dependsOn tasks.named('compileJava')
+
+  // Set the input directory to watch for changes
+  inputs.dir(tasks.named('compileJava').map { it.destinationDirectory })
+
+  doLast {
+    def classesDir = tasks.named('compileJava').get().destinationDirectory.get().asFile
+    if (!classesDir.exists()) return
+
+    classesDir.eachFileRecurse { file ->
+      if (file.name.endsWith('.class')) {
+        file.withInputStream { is ->
+          def bytes = new byte[8]
+          is.read(bytes)
+          // The 7th and 8th bytes represent the major version
+          int majorVersion = ((bytes[6] & 0xFF) << 8) | (bytes[7] & 0xFF)
+
+          if (majorVersion != 52) {
+            throw new GradleException(
+                "Bytecode verification failed! File ${file.name} " +
+                    "has major version ${majorVersion}, expected 52 (Java 8)."
+            )
+          }
+        }
+      }
+    }
+    logger.lifecycle("✓ All class files successfully verified as Java 8 compatible.")
+  }
+}
+
+// Hook it into your standard build lifecycle
+tasks.named('check') {
+  dependsOn 'verifyJava8Bytecode'
+}
 test {
   useJUnitPlatform()
 
