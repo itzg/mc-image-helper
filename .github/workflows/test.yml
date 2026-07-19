@@ -3,7 +3,7 @@ name: test
 on:
   push:
     branches: &branches
-      - master
+      - main
       - java8
     paths-ignore: &path-ignore
       - "*.md"
@@ -18,3 +18,5 @@ jobs:
       arguments: test
       include-test-report: true
       retest-showing-standard-streams: true
+    secrets:
+      cf-api-key: ${{ secrets.CF_API_KEY }}
