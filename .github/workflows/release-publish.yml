@@ -18,3 +18,4 @@ jobs:
       homebrew-tap-repo: itzg/homebrew-tap
     secrets:
       GITHUB_PUBLISH_TOKEN: ${{ secrets.PUSH_ACCESS_GITHUB_TOKEN }}
+      cf-api-key: ${{ secrets.CF_API_KEY }}
