@@ -1,0 +1,16 @@
+{
+  "request": {
+    "url": "/manifests/26.2.json",
+    "method": "GET"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "bodyFileName": "26.2.json",
+    "transformers": [
+      "response-template"
+    ]
+  }
+}

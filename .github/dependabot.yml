@@ -14,3 +14,17 @@ updates:
           - "*"
         update-types:
           - "patch"
+    ignore:
+      # The following are pinned because this branch targets Java 8
+      - dependency-name: "org.mockito:*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "ch.qos.logback:*"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: "org.junit:junit-bom"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: "org.junit.jupiter:*"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: "com.github.tomakehurst:wiremock-jre8"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "org.apache.cxf:cxf-core"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
