@@ -169,8 +169,10 @@ githubReleaser {
   }
 }
 
+def generatedResourcesMain = 'generated/resources/main'
+
 tasks.register('obbyCfApi', ObbyTask, {
-  outputFile = layout.buildDirectory.file('generated/resources/main/cf-api.properties')
+  outputFile = layout.buildDirectory.file(generatedResourcesMain + '/cf-api.properties')
   clearTextProperties.set([
       // Bake in the CF_API_KEY is provided by the build
       'cfApiKey': project.findProperty('cfApiKey') as String ?: System.getenv('CF_API_KEY') ?: '',
@@ -180,7 +182,12 @@ tasks.register('obbyCfApi', ObbyTask, {
 sourceSets {
   main {
     resources {
-      srcDir(layout.buildDirectory.dir('generated/resources/main'))
+      // include obby generated resources in the main resources
+      srcDir(layout.buildDirectory.dir(generatedResourcesMain))
+    }
+    java {
+      // exclude sidecar design docs
+      exclude '**/*.md'
     }
   }
 }

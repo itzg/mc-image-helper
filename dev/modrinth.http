@@ -10,18 +10,36 @@ GET https://api.modrinth.com/v2/project/datacraft
 ### Nerbvival v5
 GET https://api.modrinth.com/v2/version/ayspYmZQ
 
+###
+@versionId =YPm4arUa
+GET https://api.modrinth.com/v2/version/{{versionId}}
+
 ### https://modrinth.com/modpack/better-mc-fabric-bmc2/version/v2
 # has a client mod incorrectly published
 GET https://api.modrinth.com/v2/version/8xwR1JNo
 
 ###
-GET https://api.modrinth.com/v2/projects?ids=["female-gender-spigot"]
+@project =techreborn
+GET https://api.modrinth.com/v2/projects?ids=["{{project}}"]
 
 ###
 GET https://api.modrinth.com/v2/projects?ids=["fabric-api","cloth-config"]
 
 ###
+GET https://api.modrinth.com/v2/projects?ids=["glitchcore","biomes-o-plenty"]
+
+###
+@id =biomes-o-plenty
+GET https://api.modrinth.com/v2/project/{{id}}/dependencies
+
+###
 GET https://api.modrinth.com/v2/project/ae2/version?loaders=fabric&game_versions=1.20.1
+
+###
+@projectId =3eMENr4V
+@loaders =fabric
+@gameVersion =1.21.1
+GET https://api.modrinth.com/v2/project/{{projectId}}/version?loaders=["{{loaders}}"]&game_versions=["{{gameVersion}}"]
 
 ###
 GET https://api.modrinth.com/v2/project/datacraft/version?loaders=neoforge&game_versions=1.20.1
