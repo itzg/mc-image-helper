@@ -4,12 +4,14 @@ import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.files.Checksums;
 import me.itzg.helpers.files.FileHashInvalidException;
 import me.itzg.helpers.files.Manifests;
+import me.itzg.helpers.files.OsUtils;
 import me.itzg.helpers.files.ResultsFileWriter;
 import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.versions.McVersioning;
 import me.itzg.helpers.versions.MinecraftVersionInfo;
 import me.itzg.helpers.versions.MinecraftVersionsApi;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -95,6 +97,7 @@ public class VanillaInstaller {
                 .fetch(jarInfo.getUrl())
                 .toFile(outputDirectory.resolve(String.format("minecraft_server.%s.jar", version.getVersion().replace(' ', '_'))))
                 .assemble()
+                .publishOn(Schedulers.boundedElastic())
                 .flatMap(jarPath -> {
                     try {
                         if (!Checksums.valid(jarPath, jarInfo.getChecksumAlgo(), jarInfo.getChecksum())) {
@@ -107,18 +110,37 @@ public class VanillaInstaller {
                     }
 
                     final List<Path> files = new ArrayList<>();
-                    files.add(jarPath);
                     String serverEntry = outputDirectory.relativize(jarPath).toString();
                     if (McVersioning.compare(version.getVersion(), "1.6") < 0) {
-                        final Path symlink = outputDirectory.resolve("minecraft_server.jar");
-                        try {
-                            Files.deleteIfExists(symlink);
-                            Files.createSymbolicLink(symlink, outputDirectory.relativize(jarPath));
-                        } catch (IOException e) {
-                            return Mono.error(e);
+                        if (OsUtils.notWindows()) {
+                            final Path symlink = outputDirectory.resolve("minecraft_server.jar");
+                            log.debug("Creating symlink {} to {}", symlink, jarPath);
+                            try {
+                                Files.deleteIfExists(symlink);
+                                Files.createSymbolicLink(symlink, outputDirectory.relativize(jarPath));
+                            } catch (IOException e) {
+                                return Mono.error(e);
+                            }
+                            files.add(jarPath);
+                            files.add(symlink);
+                            serverEntry = outputDirectory.relativize(symlink).toString();
                         }
-                        files.add(symlink);
-                        serverEntry = outputDirectory.relativize(symlink).toString();
+                        else {
+                            // rename the file instead
+                            final Path renamed = outputDirectory.resolve("minecraft_server.jar");
+                            log.debug("Renaming {} to {} for Windows", jarPath, renamed);
+                            try {
+                                Files.deleteIfExists(renamed);
+                                Files.move(jarPath, renamed);
+                            } catch (IOException e) {
+                                return Mono.error(e);
+                            }
+                            files.add(renamed);
+                            serverEntry = outputDirectory.relativize(renamed).toString();
+                        }
+                    }
+                    else {
+                        files.add(jarPath);
                     }
 
                     return Mono.just(VanillaManifest.builder()
@@ -128,4 +150,5 @@ public class VanillaInstaller {
                         .build());
                 }));
     }
+
 }

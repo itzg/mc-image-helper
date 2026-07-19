@@ -5,6 +5,7 @@ import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemp
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import me.itzg.helpers.files.FileHashInvalidException;
 import me.itzg.helpers.files.Manifests;
+import me.itzg.helpers.files.OsUtils;
 import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.http.SharedFetch.Options;
 import me.itzg.helpers.versions.MinecraftVersionsApi;
@@ -74,19 +75,24 @@ class VanillaInstallerTests {
         VanillaManifest manifest = Manifests.load(outputDir, VanillaManifest.ID, VanillaManifest.class);
 
         final String jarName = "minecraft_server.1.5.jar";
-        final String symlinkName = "minecraft_server.jar";
-        final Path symlinkPath = outputDir.resolve(symlinkName);
+        final String serverJarName = "minecraft_server.jar";
+        final Path symlinkPath = outputDir.resolve(serverJarName);
         final Path jarPath = outputDir.resolve(jarName);
         assertThat(manifest).isNotNull();
         assertThat(manifest.minecraftVersion).isEqualTo("1.5");
-        assertThat(manifest.serverEntry).isEqualTo(symlinkName);
-        assertThat(manifest.getFiles()).containsExactlyInAnyOrder(jarName, symlinkName);
-        assertThat(jarPath).isRegularFile();
-        assertThat(symlinkPath).isSymbolicLink();
-        final Path symlinkTarget = symlinkPath.getParent().resolve(Files.readSymbolicLink(symlinkPath));
+        assertThat(manifest.serverEntry).isEqualTo(serverJarName);
+        if (OsUtils.notWindows()) {
+            assertThat(manifest.getFiles()).containsExactlyInAnyOrder(jarName, serverJarName);
+            assertThat(jarPath).isRegularFile();
+            assertThat(symlinkPath).isSymbolicLink();
+            final Path symlinkTarget = symlinkPath.getParent().resolve(Files.readSymbolicLink(symlinkPath));
 
-        assertThat(Files.isSameFile(symlinkTarget, jarPath)).isTrue();
-        assertResultsFile("1.5", symlinkName);
+            assertThat(Files.isSameFile(symlinkTarget, jarPath)).isTrue();
+        }
+        else {
+            assertThat(manifest.getFiles()).containsExactly(serverJarName);
+        }
+        assertResultsFile("1.5", serverJarName);
     }
 
     @Test
