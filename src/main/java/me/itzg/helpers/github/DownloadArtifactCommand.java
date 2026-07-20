@@ -111,17 +111,16 @@ public class DownloadArtifactCommand implements Callable<Integer> {
             // Github API requires a token with "'Actions' repository
             // permissions (read)" to download an artifact
             // https://docs.github.com/en/rest/actions/artifacts?apiVersion=2026-03-10#download-an-artifact
-            if (parent.token == null) {
-                throw new InvalidParameterException("Must provide a github token to query artifact data");
-            }
-
             Path download = candidate
-                .doOnNext(artifact -> {
-                    log.info("Downloading artifact {}", artifact.getName());
-                }) 
-                .flatMap(artifact -> downloadArtifact(client, artifact))
-                .block();
+                .flatMap((artifact) -> {
+                    if (parent.token == null) {
+                        return Mono.error(new InvalidParameterException("Must provide a github toen to download artifact data"));
+                    }
 
+                    log.info("Downloading artifact {}", artifact.getName());
+                    return downloadArtifact(client, artifact);
+                })
+                .block();
 
             if (unzip) {
                 log.info("Unzipping artifact");
