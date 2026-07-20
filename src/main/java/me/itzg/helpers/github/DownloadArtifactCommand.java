@@ -114,7 +114,7 @@ public class DownloadArtifactCommand implements Callable<Integer> {
             Path download = candidate
                 .flatMap((artifact) -> {
                     if (parent.token == null) {
-                        return Mono.error(new InvalidParameterException("Must provide a github toen to download artifact data"));
+                        return Mono.error(new InvalidParameterException("Must provide a github token to download artifact data"));
                     }
 
                     log.info("Downloading artifact {}", artifact.getName());
