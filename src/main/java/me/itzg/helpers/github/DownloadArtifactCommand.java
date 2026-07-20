@@ -104,6 +104,7 @@ public class DownloadArtifactCommand implements Callable<Integer> {
                 .doOnNext((artifact) -> System.out.println(artifact.getName()));
 
             if (noDownload) {
+                candidate.block();
                 return ExitCode.OK;
             }
 
