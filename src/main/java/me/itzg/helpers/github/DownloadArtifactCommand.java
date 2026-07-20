@@ -125,7 +125,7 @@ public class DownloadArtifactCommand implements Callable<Integer> {
             if (unzip) {
                 log.info("Unzipping artifact");
                 unzipArtifact(download, outputDirectory, overwrite);
-                Files.deleteIfExists(download);
+                Files.delete(download);
             }
         }
 
