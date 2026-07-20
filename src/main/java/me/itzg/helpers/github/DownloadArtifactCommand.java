@@ -201,7 +201,7 @@ public class DownloadArtifactCommand implements Callable<Integer> {
                 }
             }
         } catch (IOException e) {
-            throw new RuntimeException("Failed to extract artifact archive", e);
+            throw new GenericException("Failed to extract artifact archive", e);
         }
     }
 
