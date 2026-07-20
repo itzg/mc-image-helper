@@ -112,7 +112,7 @@ public class DownloadArtifactCommand implements Callable<Integer> {
             // permissions (read)" to download an artifact
             // https://docs.github.com/en/rest/actions/artifacts?apiVersion=2026-03-10#download-an-artifact
             if (parent.token == null) {
-                throw new IllegalArgumentException("Must provide a github token to query artifact data");
+                throw new InvalidParameterException("Must provide a github token to query artifact data");
             }
 
             Path download = candidate
@@ -148,9 +148,9 @@ public class DownloadArtifactCommand implements Callable<Integer> {
     private Mono<Artifact> resolveArtifact(GithubClient client) {
         if (runSelector.workflow == null && runSelector.runId == null) {
             return Mono.error(
-                    new IllegalArgumentException("Workflow ID and Run ID not present, cannot resolve Github Artifact"));
+                    new InvalidParameterException("Workflow ID and Run ID not present, cannot resolve Github Artifact"));
         } else if (runSelector.workflow != null && runSelector.runId != null) {
-            return Mono.error(new IllegalArgumentException("Workflow ID and Run ID present, please provide one value"));
+            return Mono.error(new InvalidParameterException("Workflow ID and Run ID present, please provide one value"));
         }
 
         if (runSelector.workflow != null) {
