@@ -119,7 +119,8 @@ public class DownloadArtifactCommand implements Callable<Integer> {
                 .doOnNext(artifact -> {
                     log.info("Downloading artifact {}", artifact.getName());
                 }) 
-                .flatMap(artifact -> downloadArtifact(client, artifact)).block();
+                .flatMap(artifact -> downloadArtifact(client, artifact))
+                .block();
 
 
             if (unzip) {
