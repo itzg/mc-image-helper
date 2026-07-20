@@ -8,6 +8,7 @@ import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidParameterException;
@@ -99,11 +100,8 @@ public class DownloadArtifactCommand implements Callable<Integer> {
             final GithubClient client = new GithubClient(sharedFetch, parent.apiBaseUrl, parent.token);
 
             Mono<Artifact> candidate = resolveArtifact(client)
-                .switchIfEmpty(Mono.error(new GenericException("Github client failed to find an artifact")));
-
-            if (outputFilename) {
-                System.out.println(candidate.block().getName());
-            }
+                .switchIfEmpty(Mono.error(new GenericException("Github client failed to find an artifact")))
+                .doOnNext((artifact) -> System.out.println(artifact.getName()));
 
             if (noDownload) {
                 return ExitCode.OK;
