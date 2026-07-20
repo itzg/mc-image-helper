@@ -101,7 +101,10 @@ public class DownloadArtifactCommand implements Callable<Integer> {
 
             Mono<Artifact> candidate = resolveArtifact(client)
                 .switchIfEmpty(Mono.error(new GenericException("Github client failed to find an artifact")))
-                .doOnNext((artifact) -> System.out.println(artifact.getName()));
+                .doOnNext((artifact) -> {
+                    if (outputFilename) {
+                        System.out.println(artifact.getName());
+                    }});
 
             if (noDownload) {
                 candidate.block();
