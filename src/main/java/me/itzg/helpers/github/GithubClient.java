@@ -116,8 +116,7 @@ public class GithubClient {
                 .withAuthorization("Bearer", token)
                 .toObject(WorkflowRunsResponse.class)
                 .assemble()
-                .flatMapIterable(WorkflowRunsResponse::getWorkflowRuns)
-                .next()
+                .mapNotNull(resp -> resp.getWorkflowRuns().stream().findFirst().orElse(null))
                 .flatMap(run -> resolveArtifactForRun(org, repo, run.getId(), namePattern));
     }
 
