@@ -223,9 +223,11 @@ public final class InstallPackwizModpackCommand implements Callable<Integer> {
     }
 
     private void populateResultsFile(Path resultsFile, PackwizModpackManifest manifest) throws IOException {
-        try (ResultsFileWriter results = new ResultsFileWriter(resultsFile, true)) {
-            results.write(ResultsFileWriter.MODPACK_NAME, manifest.getName());
-            results.write(ResultsFileWriter.MODPACK_VERSION, manifest.getVersion());
+        if (resultsFile != null) {
+            try (ResultsFileWriter results = new ResultsFileWriter(resultsFile, true)) {
+                results.write(ResultsFileWriter.MODPACK_NAME, manifest.getName());
+                results.write(ResultsFileWriter.MODPACK_VERSION, manifest.getVersion());
+            }
         }
     }
 }
