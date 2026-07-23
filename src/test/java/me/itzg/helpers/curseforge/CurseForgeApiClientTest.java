@@ -5,14 +5,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
+import java.nio.file.Path;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.Set;
 import java.util.stream.Collectors;
 import me.itzg.helpers.cache.ApiCachingDisabled;
+import me.itzg.helpers.curseforge.model.CurseForgeFile;
 import me.itzg.helpers.curseforge.model.CurseForgeMod;
 import me.itzg.helpers.http.SharedFetch.Options;
 import org.intellij.lang.annotations.Language;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import reactor.core.publisher.Flux;
 
 @WireMockTest
@@ -67,5 +71,37 @@ class CurseForgeApiClientTest {
 
             assertThat(ids).containsExactly(100);
         }
+    }
+
+    @Test
+    void fallbackUrlEncodesSpaces(@TempDir Path tempDir, WireMockRuntimeInfo wmInfo) {
+        final CurseForgeFile cfFile = new CurseForgeFile();
+        cfFile.setId(5228909);
+        cfFile.setGameId(432);
+        cfFile.setModId(551909);
+        cfFile.setDownloadUrl(null);
+        final String fileName = "Butchersdelight beta 1.20.1 2.1.0.jar";
+        cfFile.setFileName(fileName);
+
+        stubFor(get(urlPathEqualTo("/files/5228/909/Butchersdelight%20beta%201.20.1%202.1.0.jar"))
+            .willReturn(aResponse()
+                .withBody("file content")
+                .withHeader("Content-Type", "application/java-archive")
+            )
+        );
+
+        // observed in dev tools https://mediafilez.forgecdn.net/files/5228/909/Butchersdelight%20beta%201.20.1%202.1.0.jar
+        final Path result = new CurseForgeApiClient(wmInfo.getHttpBaseUrl()+"/api", "key", Options.builder().build(), "432",
+            new ApiCachingDisabled(), wmInfo.getHttpBaseUrl()
+        )
+            .download(cfFile, tempDir.resolve(fileName), (status, uri, file) -> {})
+            .block(Duration.ofSeconds(5));
+
+        assertThat(result).isNotNull();
+
+        assertThat(tempDir).isNotEmptyDirectory();
+        assertThat(tempDir.resolve(fileName))
+            .exists()
+            .content().isEqualTo("file content");
     }
 }

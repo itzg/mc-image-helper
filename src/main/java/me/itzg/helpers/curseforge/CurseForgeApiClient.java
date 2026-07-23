@@ -33,6 +33,7 @@ import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.http.SharedFetch.Options;
 import me.itzg.helpers.http.UriBuilder;
 import me.itzg.helpers.json.ObjectMappers;
+import org.jetbrains.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -71,6 +72,15 @@ public class CurseForgeApiClient implements AutoCloseable {
     public CurseForgeApiClient(String apiBaseUrl, String apiKey, Options sharedFetchOptions, String gameId,
         ApiCaching apiCaching
     ) {
+        this(apiBaseUrl, apiKey, sharedFetchOptions, gameId, apiCaching,
+            // Refer to https://blog.curseforge.com/introducing-api-key-authentication-for-curseforge-file-downloads/
+            "https://edge.forgecdn.net");
+    }
+
+    @VisibleForTesting
+    CurseForgeApiClient(String apiBaseUrl, String apiKey, Options sharedFetchOptions, String gameId,
+        ApiCaching apiCaching, String downloadBaseUrl
+    ) {
         this.apiCaching = apiCaching;
         this.preparedFetch = Fetch.sharedFetch("install-curseforge",
             (sharedFetchOptions != null ? sharedFetchOptions : Options.builder().build())
@@ -78,8 +88,7 @@ public class CurseForgeApiClient implements AutoCloseable {
         );
         this.uriBuilder = UriBuilder.withBaseUrl(apiBaseUrl);
         this.downloadFallbackUriBuilder = UriBuilder.withBaseUrl(
-            // Refer to https://blog.curseforge.com/introducing-api-key-authentication-for-curseforge-file-downloads/
-            "https://edge.forgecdn.net"
+            downloadBaseUrl
         );
         this.gameId = gameId;
     }
