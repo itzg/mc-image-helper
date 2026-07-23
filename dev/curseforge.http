@@ -23,6 +23,12 @@ GET https://api.curseforge.com/v1/mods/322347/files/3254160
 x-api-key: {{cfApiKey}}
 
 ###
+@modId =551909
+@fileId =5228909
+GET https://api.curseforge.com/v1/mods/{{modId}}/files/{{fileId}}
+x-api-key: {{cfApiKey}}
+
+###
 # mod
 GET https://api.curseforge.com/v1/mods/238222
 x-api-key: {{cfApiKey}}
