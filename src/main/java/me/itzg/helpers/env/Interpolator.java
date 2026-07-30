@@ -12,6 +12,7 @@ import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.CharsetDetector;
+import me.itzg.helpers.errors.InvalidParameterException;
 
 @Slf4j
 public class Interpolator {
@@ -75,8 +76,18 @@ public class Interpolator {
     }
 
     private String readValueFromFile(String filename) throws IOException {
-        final String content = new String(Files.readAllBytes(Paths.get(filename)), StandardCharsets.UTF_8);
-        return content.trim();
+        final byte[] content;
+        try {
+            content = Files.readAllBytes(Paths.get(filename));
+        } catch (IOException e) {
+            // A declared value source that cannot be read is a configuration error rather than
+            // something to continue past: callers would otherwise carry on and produce a result
+            // that is missing the very value this file was named to supply.
+            throw new InvalidParameterException(
+                String.format("Failed to read placeholder value from %s", filename), e, true
+            );
+        }
+        return new String(content, StandardCharsets.UTF_8).trim();
     }
 
     public Result<byte[]> interpolate(byte[] content) throws IOException {
