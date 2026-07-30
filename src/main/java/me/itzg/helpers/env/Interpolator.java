@@ -12,6 +12,7 @@ import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.CharsetDetector;
+import me.itzg.helpers.errors.InvalidParameterException;
 
 @Slf4j
 public class Interpolator {
@@ -79,10 +80,11 @@ public class Interpolator {
         try {
             content = Files.readAllBytes(Paths.get(filename));
         } catch (IOException e) {
-            // Without the file name here, the failure gets reported against whatever file the
-            // caller was processing, which is not the file that could not be read.
-            throw new IOException(
-                String.format("Failed to read placeholder value from %s (%s)", filename, e.getMessage()), e
+            // A declared value source that cannot be read is a configuration error rather than
+            // something to continue past: callers would otherwise carry on and produce a result
+            // that is missing the very value this file was named to supply.
+            throw new InvalidParameterException(
+                String.format("Failed to read placeholder value from %s", filename), e, true
             );
         }
         return new String(content, StandardCharsets.UTF_8).trim();

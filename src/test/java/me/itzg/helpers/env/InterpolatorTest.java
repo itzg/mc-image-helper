@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.nio.file.Path;
 import me.itzg.helpers.env.Interpolator.Result;
+import me.itzg.helpers.errors.InvalidParameterException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
@@ -48,7 +49,7 @@ class InterpolatorTest {
     }
 
     @Test
-    void reportsFileNameWhenValueFileCannotBeRead(@TempDir Path tempDir) {
+    void failsWhenValueFileCannotBeRead(@TempDir Path tempDir) {
         // A directory is the typical case: container engines create a missing bind-mount source
         // as a directory, so the *_FILE path exists but cannot be read as a value.
         when(varProvider.get("CFG_SECRET_FILE"))
@@ -57,7 +58,7 @@ class InterpolatorTest {
         final Interpolator interpolator = new Interpolator(varProvider, "CFG_");
 
         assertThatThrownBy(() -> interpolator.interpolate("${CFG_SECRET}"))
-            .isInstanceOf(IOException.class)
+            .isInstanceOf(InvalidParameterException.class)
             .hasMessageContaining(tempDir.toString())
             .hasCauseInstanceOf(IOException.class);
     }
