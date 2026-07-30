@@ -87,7 +87,10 @@ public class PatchSetProcessor {
                         }
                     }
                 } catch (IOException e) {
-                    log.warn("Failed to read content of {}: {}", filePath, e.getMessage());
+                    // Not necessarily a failure to read filePath: applying the ops can also read
+                    // other files, such as the *_FILE source of a placeholder value.
+                    log.warn("Failed to apply patch from {} to {}: {}",
+                        patch.getSrc(), filePath, e.getMessage());
                     log.debug("Details", e);
                 }
             }

@@ -75,8 +75,17 @@ public class Interpolator {
     }
 
     private String readValueFromFile(String filename) throws IOException {
-        final String content = new String(Files.readAllBytes(Paths.get(filename)), StandardCharsets.UTF_8);
-        return content.trim();
+        final byte[] content;
+        try {
+            content = Files.readAllBytes(Paths.get(filename));
+        } catch (IOException e) {
+            // Without the file name here, the failure gets reported against whatever file the
+            // caller was processing, which is not the file that could not be read.
+            throw new IOException(
+                String.format("Failed to read placeholder value from %s (%s)", filename, e.getMessage()), e
+            );
+        }
+        return new String(content, StandardCharsets.UTF_8).trim();
     }
 
     public Result<byte[]> interpolate(byte[] content) throws IOException {
