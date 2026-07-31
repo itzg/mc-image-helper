@@ -1163,8 +1163,8 @@ Supports the file formats:
 - JSON5
 - Yaml
 - TOML, but processed output is not pretty
-      FILE_OR_DIR   Path to a PatchSet json file or directory containing
-                      PatchDefinition json files
+      FILE_OR_DIR   Path to a PatchSet or PatchDefinition json file, or
+                      directory containing PatchDefinition json files
   -h, --help        Show this usage and exit
       --json-allow-comments
                     Whether to allow comments in JSON files. Env:

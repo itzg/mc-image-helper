@@ -1,11 +1,13 @@
 package me.itzg.helpers.patch;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Callable;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.env.Interpolator;
@@ -45,7 +47,7 @@ public class PatchCommand implements Callable<Integer> {
     )
     boolean jsonAllowComments;
 
-    @Parameters(description = "Path to a PatchSet json file or directory containing PatchDefinition json files",
+    @Parameters(description = "Path to a PatchSet or PatchDefinition json file, or directory containing PatchDefinition json files",
         paramLabel = "FILE_OR_DIR"
     )
     Path patches;
@@ -78,7 +80,7 @@ public class PatchCommand implements Callable<Integer> {
     }
 
     /**
-     * Looking at {@link #patches}, loads {@link PatchDefinition}s from a directory or a @{link PatchSet} from a file.
+     * Looking at {@link #patches}, loads patch definitions from a directory or a patch definition or set from a file.
      */
     private PatchSet loadPatchSet() throws IOException {
         if (Files.isDirectory(patches)) {
@@ -101,7 +103,16 @@ public class PatchCommand implements Callable<Integer> {
             return patchSet;
         }
         else {
-            return setSource(patches, patchSetMapper.readValue(patches.toFile(), PatchSet.class));
+            final JsonNode root = patchSetMapper.readTree(patches.toFile());
+            if (root.has("patches")) {
+                return setSource(patches, patchSetMapper.treeToValue(root, PatchSet.class));
+            }
+
+            return new PatchSet()
+                .setPatches(List.of(
+                    patchSetMapper.treeToValue(root, PatchDefinition.class)
+                        .setSrc(patches)
+                ));
         }
     }
 
