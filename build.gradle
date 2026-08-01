@@ -184,7 +184,7 @@ dependencies {
   testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
   // Limit version for java 8
-  testImplementation 'org.mockito:mockito-junit-jupiter:4.11.0'
+  testImplementation 'org.mockito:mockito-junit-jupiter:5.23.0'
   // would like to transition these to wiremock
   testImplementation 'org.mock-server:mockserver-junit-jupiter:5.15.0'
   testImplementation('com.github.tomakehurst:wiremock-jre8') {
