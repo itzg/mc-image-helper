@@ -1,5 +1,9 @@
 package me.itzg.helpers.curseforge;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.InvalidParameterException;
@@ -46,9 +50,32 @@ public class ApiKeyHelper {
      * @throws InvalidParameterException if no API key is provided or cannot be loaded
      */
     public static String loadApiKey(String providedApiKey) {
+        return loadApiKey(providedApiKey, System.getenv());
+    }
+
+    static String loadApiKey(String providedApiKey, Map<String, String> environment) {
         if (providedApiKey != null && !providedApiKey.isBlank()) {
             log.debug("Using provided CurseForge API key");
             return providedApiKey.trim();
+        }
+
+        final String apiKeyFile = environment.get(CurseForgeApiClient.API_KEY_FILE_VAR);
+        if (apiKeyFile != null && !apiKeyFile.isBlank()) {
+            final String loadedApiKey;
+            try {
+                loadedApiKey = Files.readString(Path.of(apiKeyFile), StandardCharsets.UTF_8).trim();
+            } catch (IOException | RuntimeException e) {
+                throw new InvalidParameterException(
+                    "Unable to read CurseForge API key from " + CurseForgeApiClient.API_KEY_FILE_VAR, e, true
+                );
+            }
+            if (loadedApiKey.isBlank()) {
+                throw new InvalidParameterException(
+                    "CurseForge API key file from " + CurseForgeApiClient.API_KEY_FILE_VAR + " is empty"
+                );
+            }
+            log.debug("Loaded CurseForge API key from {}", CurseForgeApiClient.API_KEY_FILE_VAR);
+            return loadedApiKey;
         }
 
         // properties file and property need to match the ObbyTask in build.gradle
