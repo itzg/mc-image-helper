@@ -151,7 +151,7 @@ dependencies {
     exclude group: 'io.netty', module: 'netty-codec-native-quic'
   }
   implementation 'org.apache.maven:maven-artifact:3.9.16'
-  implementation 'commons-codec:commons-codec:1.21.0'
+  implementation 'commons-codec:commons-codec:1.22.0'
   // for RFC5987 parsing of content-disposition filename*
   implementation('org.apache.cxf:cxf-core') {
     version {
