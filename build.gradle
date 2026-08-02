@@ -183,10 +183,16 @@ dependencies {
   testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
   testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
-  // Limit version for java 8
-  testImplementation 'org.mockito:mockito-junit-jupiter:4.11.0'
+  testImplementation ('org.mockito:mockito-junit-jupiter') {
+    // Limit version for java 8
+    version {
+      strictly('[4.11.0, 5.0.0)')
+      prefer '4.11.0'
+    }
+  }
   // would like to transition these to wiremock
   testImplementation ('org.mock-server:mockserver-junit-jupiter') {
+    // Limit version for java 8
     version {
       strictly('[5.15.0, 6.0.0)')
       prefer '5.15.0'
