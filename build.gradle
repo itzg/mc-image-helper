@@ -186,7 +186,12 @@ dependencies {
   // Limit version for java 8
   testImplementation 'org.mockito:mockito-junit-jupiter:4.11.0'
   // would like to transition these to wiremock
-  testImplementation 'org.mock-server:mockserver-junit-jupiter:5.15.0'
+  testImplementation ('org.mock-server:mockserver-junit-jupiter') {
+    version {
+      strictly('[5.15.0, 6.0.0)')
+      prefer '5.15.0'
+    }
+  }
   testImplementation('com.github.tomakehurst:wiremock-jre8') {
     version {
       // https://github.com/wiremock/wiremock/releases/tag/3.0.0 drops support for Java 8
