@@ -16,6 +16,7 @@ import me.itzg.helpers.github.model.Artifact;
 import me.itzg.helpers.http.Fetch;
 import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.http.SharedFetchArgs;
+import org.slf4j.event.Level;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.ExitCode;
@@ -64,10 +65,10 @@ public class DownloadArtifactCommand implements Callable<Integer> {
     private Pattern artifactPattern;
 
     @Option(names = "--output-filename", description = "Prints artifact name", defaultValue = "false")
-    private Boolean outputFilename;
+    private boolean outputFilename;
 
     @Option(names = "--no-download", description = "Doesn't download artifact", defaultValue = "false")
-    private Boolean noDownload;
+    private boolean noDownload;
 
     @ParentCommand
     private GithubCommands parent;
@@ -120,13 +121,19 @@ public class DownloadArtifactCommand implements Callable<Integer> {
                         return Mono.error(new InvalidParameterException("Must provide a github token to download artifact data"));
                     }
 
-                    log.info("Downloading artifact {}", artifact.getName());
+                    log.atLevel(outputFilename ? Level.DEBUG : Level.INFO)
+                        .log("Downloading artifact {}", artifact.getName());
                     return downloadArtifact(client, artifact);
                 })
                 .block();
 
             if (unzip) {
-                log.info("Unzipping artifact");
+                if (download == null) {
+                    throw new GenericException("Failed to download artifact");
+                }
+
+                log.atLevel(outputFilename ? Level.DEBUG : Level.INFO)
+                    .log("Unzipping artifact {}", download.getFileName());
                 unzipArtifact(download, outputDirectory, overwrite);
                 Files.delete(download);
             }
