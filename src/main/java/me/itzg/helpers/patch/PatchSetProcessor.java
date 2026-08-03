@@ -115,7 +115,9 @@ public class PatchSetProcessor {
         final FileFormat fileFormat;
         if (formatName != null) {
             fileFormat = getFileFormatByName(formatName);
-            log.warn("The file format {} is not supported", formatName);
+            if (fileFormat == null) {
+                log.warn("The file format {} is not supported", formatName);
+            }
         } else {
             fileFormat = findFileFormat(filePath);
             if (fileFormat == null) {
