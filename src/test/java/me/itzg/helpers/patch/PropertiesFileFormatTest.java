@@ -88,9 +88,27 @@ class PropertiesFileFormatTest {
         original.put("aa", "2");
         original.put("mm", "3");
 
-        // store() separates entries with the platform line separator
-        final String eol = System.lineSeparator();
-        assertThat(format.encode(original)).isEqualTo("zz=1" + eol + "aa=2" + eol + "mm=3" + eol);
+        assertThat(format.encode(original))
+            .isEqualToNormalizingNewlines("zz=1\naa=2\nmm=3\n");
+    }
+
+    public static Stream<Arguments> leadingComments() {
+        return Stream.of(
+            arguments("one line, lf", "#date\na=b\n", "a=b\n"),
+            arguments("one line, crlf", "#date\r\na=b\r\n", "a=b\r\n"),
+            arguments("several lines, lf", "#one\n#two\na=b\n", "a=b\n"),
+            arguments("several lines, crlf", "#one\r\n#two\r\na=b\r\n", "a=b\r\n"),
+            arguments("written with an exclamation", "!date\r\na=b\r\n", "a=b\r\n"),
+            arguments("no entries follow", "#date\r\n", ""),
+            arguments("unterminated", "#date", ""),
+            arguments("an escaped hash never leads a line", "\\#a=b\r\n", "\\#a=b\r\n")
+        );
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("leadingComments")
+    void stripsTheDateComment(String label, String written, String expected) {
+        assertThat(PropertiesFileFormat.stripLeadingComments(written)).isEqualTo(expected);
     }
 
     public static Stream<Arguments> unsupportedValues() {

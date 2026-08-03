@@ -79,8 +79,15 @@ public class PropertiesFileFormat implements FileFormat {
         final StringWriter out = new StringWriter();
         properties.store(out, null);
 
-        // store() leads with the date, which java.properties.date can turn into several lines
-        final String written = out.toString();
+        return stripLeadingComments(out.toString());
+    }
+
+    /**
+     * {@link Properties#store} leads with the date, which the java.properties.date system
+     * property can turn into several lines. Lines are located by their newline, so this works
+     * whichever line separator {@link Properties#store} used.
+     */
+    static String stripLeadingComments(String written) {
         int start = 0;
         while (start < written.length()
             && (written.charAt(start) == '#' || written.charAt(start) == '!')) {
