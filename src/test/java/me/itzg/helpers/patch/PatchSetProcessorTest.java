@@ -1,5 +1,6 @@
 package me.itzg.helpers.patch;
 
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -7,6 +8,10 @@ import static org.mockito.Mockito.*;
 import static uk.org.webcompere.modelassert.json.JsonAssertions.assertJson;
 import static uk.org.webcompere.modelassert.json.JsonAssertions.assertYaml;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.BooleanNode;
 import com.fasterxml.jackson.databind.node.DoubleNode;
@@ -18,6 +23,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import com.jayway.jsonpath.JsonPathException;
 import me.itzg.helpers.env.EnvironmentVariablesProvider;
@@ -29,6 +36,8 @@ import me.itzg.helpers.patch.model.PatchDefinition;
 import me.itzg.helpers.patch.model.PatchPutOperation;
 import me.itzg.helpers.patch.model.PatchSet;
 import me.itzg.helpers.patch.model.PatchSetOperation;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
@@ -37,12 +46,36 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.LoggerFactory;
 
 @ExtendWith(MockitoExtension.class)
 class PatchSetProcessorTest {
 
     @Mock
     EnvironmentVariablesProvider environmentVariablesProvider;
+
+    private final Logger patchLogger = (Logger) LoggerFactory.getLogger(PatchSetProcessor.class);
+
+    private final ListAppender<ILoggingEvent> logAppender = new ListAppender<>();
+
+    @BeforeEach
+    void startCapturingLogging() {
+        logAppender.start();
+        patchLogger.addAppender(logAppender);
+    }
+
+    @AfterEach
+    void stopCapturingLogging() {
+        patchLogger.detachAppender(logAppender);
+        logAppender.stop();
+    }
+
+    private List<String> capturedWarnings() {
+        return logAppender.list.stream()
+            .filter(event -> event.getLevel().isGreaterOrEqual(Level.WARN))
+            .map(ILoggingEvent::getFormattedMessage)
+            .collect(Collectors.toList());
+    }
 
     public static Stream<Arguments> setInJson_args() {
         return Stream.of(
@@ -195,6 +228,47 @@ class PatchSetProcessorTest {
         assertThat(src).hasSameTextualContentAs(
                 Paths.get("src/test/resources/patch/expected-setInYaml.yaml")
         );
+    }
+
+    public static Stream<Arguments> warnsOnlyWhenDeclaredFileFormatIsNotSupported_args() {
+        return Stream.of(
+            // the suffix is unrecognized, so only the declared format can resolve it
+            Arguments.arguments("testing.unknown", "yaml", "expected-setInYaml.yaml", emptyList()),
+            Arguments.arguments("testing.yaml", "nosuchformat", "testing.yaml",
+                singletonList("The file format nosuchformat is not supported")
+            )
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("warnsOnlyWhenDeclaredFileFormatIsNotSupported_args")
+    void warnsOnlyWhenDeclaredFileFormatIsNotSupported(String file, String declaredFormat,
+        String expectedFile, List<String> expectedWarnings, @TempDir Path tempDir
+    ) throws IOException {
+        final Path src = tempDir.resolve(file);
+        Files.copy(Paths.get("src/test/resources/patch/testing.yaml"), src);
+
+        final PatchSetProcessor processor = new PatchSetProcessor(
+                new Interpolator(environmentVariablesProvider, "CFG_")
+        );
+
+        processor.process(new PatchSet()
+                .setPatches(singletonList(
+                    new PatchDefinition()
+                        .setFile(src.toString())
+                        .setFileFormat(declaredFormat)
+                        .setOps(singletonList(
+                            new PatchSetOperation()
+                                .setPath("$.outer.field1")
+                                .setValue(new TextNode("new value"))
+                        ))
+                ))
+        );
+
+        assertThat(src).hasSameTextualContentAs(
+                Paths.get("src/test/resources/patch/" + expectedFile)
+        );
+        assertThat(capturedWarnings()).isEqualTo(expectedWarnings);
     }
 
     @Test
