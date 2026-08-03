@@ -41,7 +41,8 @@ public class PatchSetProcessor {
                 new JsonFileFormat(jsonAllowComments),
                 new Json5FileFormat(),
                 new YamlFileFormat(),
-                new TomlFileFormat()
+                new TomlFileFormat(),
+                new PropertiesFileFormat()
         };
     }
 
@@ -78,12 +79,13 @@ public class PatchSetProcessor {
                             ), e, true);
                         }
 
+                        // encode before opening the file, since opening it truncates and a
+                        // failure to encode would otherwise leave nothing behind
+                        final byte[] encoded = fileFormat.encode(data)
+                            .getBytes(detected.getCharset());
+
                         try (OutputStream out = Files.newOutputStream(filePath)) {
-                            out.write(
-                                    fileFormat
-                                            .encode(data)
-                                            .getBytes(detected.getCharset())
-                            );
+                            out.write(encoded);
                         }
                     }
                 } catch (IOException e) {

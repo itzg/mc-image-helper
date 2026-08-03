@@ -325,6 +325,66 @@ class PatchSetProcessorTest {
     }
 
     @Test
+    void setInProperties(@TempDir Path tempDir) throws IOException {
+        final Path src = tempDir.resolve("testing.properties");
+        Files.copy(Paths.get("src/test/resources/patch/testing.properties"), src);
+
+        final PatchSetProcessor processor = new PatchSetProcessor(
+                new Interpolator(environmentVariablesProvider, "CFG_")
+        );
+
+        processor.process(new PatchSet()
+                .setPatches(singletonList(
+                    new PatchDefinition()
+                        .setFile(src.toString())
+                        .setOps(Arrays.asList(
+                            new PatchSetOperation()
+                                .setPath("$.second")
+                                .setValue(new TextNode("changed")),
+                            // a key containing a dot needs bracket notation
+                            new PatchSetOperation()
+                                .setPath("$['with.dot']")
+                                .setValue(new IntNode(5))
+                        ))
+                ))
+        );
+
+        assertThat(src).hasSameTextualContentAs(
+                Paths.get("src/test/resources/patch/expected-setInProperties.properties")
+        );
+    }
+
+    @Test
+    void leavesFileAloneWhenItCannotBeEncoded(@TempDir Path tempDir) throws IOException {
+        final Path src = tempDir.resolve("testing.properties");
+        Files.copy(Paths.get("src/test/resources/patch/testing.properties"), src);
+
+        final PatchSetProcessor processor = new PatchSetProcessor(
+                new Interpolator(environmentVariablesProvider, "CFG_")
+        );
+
+        assertThatThrownBy(() ->
+            processor.process(new PatchSet()
+                    .setPatches(singletonList(
+                        new PatchDefinition()
+                            .setFile(src.toString())
+                            .setOps(singletonList(
+                                new PatchSetOperation()
+                                    .setPath("$.second")
+                                    .setValue(new TextNode("a,b"))
+                                    .setValueType("list of string")
+                            ))
+                    ))
+            )
+        )
+            .isInstanceOf(InvalidParameterException.class);
+
+        assertThat(src).hasSameTextualContentAs(
+                Paths.get("src/test/resources/patch/testing.properties")
+        );
+    }
+
+    @Test
     void setNativeTypes(@TempDir Path tempDir) throws IOException {
         final Path src = tempDir.resolve("testing.yaml");
         Files.copy(Paths.get("src/test/resources/patch/testing.yaml"), src);

@@ -25,7 +25,8 @@ import picocli.CommandLine.Parameters;
         + "- JSON%n"
         + "- JSON5%n"
         + "- Yaml%n"
-        + "- TOML, but processed output is not pretty",
+        + "- TOML, but processed output is not pretty%n"
+        + "- Properties, but comments are not retained",
     showDefaultValues = true
 )
 @Slf4j
