@@ -263,9 +263,18 @@ public class MulitCopyCommand implements Callable<Integer> {
                     //noinspection BlockingMethodInNonBlockingContext because IntelliJ is confused
                     try (DirectoryStream<Path> files = Files.newDirectoryStream(srcDir, fileGlob)) {
                         for (final Path file : files) {
-                            //noinspection BlockingMethodInNonBlockingContext because IntelliJ is confused
-                            results.add(processFileImmediate(file, destination));
-                        }
+    if (Files.isDirectory(file)) {
+        Path subDest = destination.resolve(file.getFileName());
+
+        Files.createDirectories(subDest);
+
+        processDirectory(file, subDest)
+            .toIterable()
+            .forEach(results::add);
+    } else {
+        results.add(processFileImmediate(file, destination));
+    }
+}
                     }
                     return Flux.fromIterable(results);
                 } catch (IOException e) {
