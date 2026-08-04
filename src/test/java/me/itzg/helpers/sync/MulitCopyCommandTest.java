@@ -260,6 +260,40 @@ class MulitCopyCommandTest {
         }
 
         @Test
+void recursiveDirectoryCopy() throws IOException {
+
+    Path srcDir = Files.createDirectories(tempDir.resolve("srcDir"));
+
+    writeLine(srcDir, "one.txt", "one");
+
+    Path images = Files.createDirectories(srcDir.resolve("images"));
+    writeLine(images, "logo.png", "logo");
+
+    Path icons = Files.createDirectories(images.resolve("icons"));
+    writeLine(icons, "home.png", "home");
+
+    Path destDir = tempDir.resolve("dest");
+
+    int exitCode = new CommandLine(new MulitCopyCommand())
+            .execute(
+                    "--to",
+                    destDir.toString(),
+                    srcDir.toString()
+            );
+
+    assertThat(exitCode).isEqualTo(CommandLine.ExitCode.OK);
+
+    assertThat(destDir.resolve("one.txt"))
+            .hasContent("one");
+
+    assertThat(destDir.resolve("images/logo.png"))
+            .hasContent("logo");
+
+    assertThat(destDir.resolve("images/icons/home.png"))
+            .hasContent("home");
+}
+
+        @Test
         void toInlineDir() throws IOException {
             final Path srcDir = Files.createDirectories(tempDir.resolve("srcDir"));
             final Path srcTxt = writeLine(srcDir, "one.txt", "one");
