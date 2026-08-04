@@ -96,6 +96,10 @@ public class CurseForgeInstaller {
 
     @Getter
     @Setter
+    private Path apiKeyFile;
+
+    @Getter
+    @Setter
     private boolean forceSynchronize;
 
     @Getter @Setter
@@ -219,7 +223,7 @@ public class CurseForgeInstaller {
                     .setCacheDurations(CurseForgeApiClient.getCacheDurations());
             final CurseForgeApiClient cfApi = new CurseForgeApiClient(
                 apiBaseUrl,
-                loadApiKey(apiKey),
+                loadApiKey(apiKey, apiKeyFile),
                 sharedFetchOptions,
                 CurseForgeApiClient.MINECRAFT_GAME_ID,
                 apiCaching

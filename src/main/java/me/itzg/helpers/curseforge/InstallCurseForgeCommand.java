@@ -89,6 +89,11 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
     )
     String apiKey;
 
+    @Option(names = "--api-key-file", paramLabel = "PATH", defaultValue = "${env:CF_API_KEY_FILE}",
+        description = "Read the API key from a UTF-8 file (instead of passing it directly)."
+            + "%nCan also be passed via CF_API_KEY_FILE")
+    Path apiKeyFile;
+
     @Option(names = "--mod-loader-version", paramLabel = "VERSION",
         description = "Override the mod loader version specified in the modpack"
     )
@@ -238,6 +243,7 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
             .setOverridesExclusions(overridesExclusions)
             .setSharedFetchOptions(sharedFetchArgs.options())
             .setApiKey(apiKey)
+            .setApiKeyFile(apiKeyFile)
             .setDownloadsRepo(downloadsRepo)
             .setDisableApiCaching(disableApiCaching)
             .setCacheArgs(cacheArgs)

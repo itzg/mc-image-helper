@@ -5,7 +5,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Map;
 import me.itzg.helpers.errors.InvalidParameterException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -16,10 +15,10 @@ class ApiKeyHelperTest {
     Path tempDir;
 
     @Test
-    void loadsApiKeyFromFileEnvironmentVariable() throws Exception {
+    void loadsApiKeyFromFile() throws Exception {
         final Path apiKeyFile = Files.writeString(tempDir.resolve("cf-api-key"), "key-from-file\n");
 
-        assertThat(ApiKeyHelper.loadApiKey(null, Map.of(CurseForgeApiClient.API_KEY_FILE_VAR, apiKeyFile.toString())))
+        assertThat(ApiKeyHelper.loadApiKey(null, apiKeyFile))
             .isEqualTo("key-from-file");
     }
 
@@ -27,7 +26,7 @@ class ApiKeyHelperTest {
     void providedApiKeyTakesPrecedenceOverFileEnvironmentVariable() throws Exception {
         final Path apiKeyFile = Files.writeString(tempDir.resolve("cf-api-key"), "key-from-file\n");
 
-        assertThat(ApiKeyHelper.loadApiKey("provided", Map.of(CurseForgeApiClient.API_KEY_FILE_VAR, apiKeyFile.toString())))
+        assertThat(ApiKeyHelper.loadApiKey("provided", apiKeyFile))
             .isEqualTo("provided");
     }
 
@@ -35,9 +34,8 @@ class ApiKeyHelperTest {
     void unreadableApiKeyFileIsAConfigurationError() {
         final Path missingFile = tempDir.resolve("missing-cf-api-key");
 
-        assertThatThrownBy(() -> ApiKeyHelper.loadApiKey(
-            null, Map.of(CurseForgeApiClient.API_KEY_FILE_VAR, missingFile.toString())))
+        assertThatThrownBy(() -> ApiKeyHelper.loadApiKey(null, missingFile))
             .isInstanceOf(InvalidParameterException.class)
-            .hasMessageContaining(CurseForgeApiClient.API_KEY_FILE_VAR);
+            .hasMessageContaining("CurseForge API key file");
     }
 }

@@ -50,31 +50,30 @@ public class ApiKeyHelper {
      * @throws InvalidParameterException if no API key is provided or cannot be loaded
      */
     public static String loadApiKey(String providedApiKey) {
-        return loadApiKey(providedApiKey, System.getenv());
+        return loadApiKey(providedApiKey, null);
     }
 
-    static String loadApiKey(String providedApiKey, Map<String, String> environment) {
+    public static String loadApiKey(String providedApiKey, Path apiKeyFile) {
         if (providedApiKey != null && !providedApiKey.isBlank()) {
             log.debug("Using provided CurseForge API key");
             return providedApiKey.trim();
         }
 
-        final String apiKeyFile = environment.get(CurseForgeApiClient.API_KEY_FILE_VAR);
-        if (apiKeyFile != null && !apiKeyFile.isBlank()) {
+        if (apiKeyFile != null) {
             final String loadedApiKey;
             try {
-                loadedApiKey = Files.readString(Path.of(apiKeyFile), StandardCharsets.UTF_8).trim();
+                loadedApiKey = Files.readString(apiKeyFile, StandardCharsets.UTF_8).trim();
             } catch (IOException | RuntimeException e) {
                 throw new InvalidParameterException(
-                    "Unable to read CurseForge API key from " + CurseForgeApiClient.API_KEY_FILE_VAR, e, true
+                    "Unable to read CurseForge API key file " + apiKeyFile, e, true
                 );
             }
             if (loadedApiKey.isBlank()) {
                 throw new InvalidParameterException(
-                    "CurseForge API key file from " + CurseForgeApiClient.API_KEY_FILE_VAR + " is empty"
+                    "CurseForge API key file " + apiKeyFile + " is empty"
                 );
             }
-            log.debug("Loaded CurseForge API key from {}", CurseForgeApiClient.API_KEY_FILE_VAR);
+            log.debug("Loaded CurseForge API key from file");
             return loadedApiKey;
         }
 

@@ -79,6 +79,11 @@ public class CurseForgeFilesCommand implements Callable<Integer> {
     )
     String apiKey;
 
+    @Option(names = "--api-key-file", paramLabel = "PATH", defaultValue = "${env:CF_API_KEY_FILE}",
+        description = "Read the API key from a UTF-8 file (instead of passing it directly)."
+            + "%nCan also be passed via CF_API_KEY_FILE")
+    Path apiKeyFile;
+
     @Option(names = "--game-version", defaultValue = "${env:VERSION}",
         description = "The Minecraft version"
             + "%nCan also be passed via VERSION"
@@ -130,7 +135,7 @@ public class CurseForgeFilesCommand implements Callable<Integer> {
                         .setCacheDurations(CurseForgeApiClient.getCacheDurations());
                 final CurseForgeApiClient apiClient = new CurseForgeApiClient(
                     apiBaseUrl,
-                    loadApiKey(apiKey),
+                    loadApiKey(apiKey, apiKeyFile),
                     sharedFetchArgs.options(),
                     CurseForgeApiClient.MINECRAFT_GAME_ID,
                     apiCaching
