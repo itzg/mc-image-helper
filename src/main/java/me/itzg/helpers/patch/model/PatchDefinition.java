@@ -14,8 +14,9 @@ public class PatchDefinition {
     @JsonPropertyDescription("Path to the file to patch")
     String file;
 
-    @JsonPropertyDescription("If non-null, declares a specifically supported format name: json, yaml. " +
-            "Otherwise, the file format is detected by the file's suffix.")
+    @JsonPropertyDescription("If non-null, declares a specifically supported format name: "
+            + "json, json5, yaml, toml, properties. "
+            + "Otherwise, the file format is detected by the file's suffix.")
     @JsonProperty("file-format")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     String fileFormat;

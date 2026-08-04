@@ -71,6 +71,7 @@ Commands:
                                   - JSON5
                                   - Yaml
                                   - TOML, but processed output is not pretty
+                                  - Properties, but comments are not retained
   resolve-minecraft-version       Resolves and validate latest, snapshot, and
                                     specific versions
   set-properties                  Maps environment variables to a properties
@@ -1163,6 +1164,7 @@ Supports the file formats:
 - JSON5
 - Yaml
 - TOML, but processed output is not pretty
+- Properties, but comments are not retained
       FILE_OR_DIR   Path to a PatchSet or PatchDefinition json file, or
                       directory containing PatchDefinition json files
   -h, --help        Show this usage and exit
@@ -1423,7 +1425,7 @@ Example
 ### PatchDefinition
 
 - `file` : Path to the file to patch
-- `file-format` : **optional** If non-null, declares a specifically supported format name: json, yaml. Otherwise, the file format is detected by the file's suffix.
+- `file-format` : **optional** If non-null, declares a specifically supported format name: json, json5, yaml, toml, properties. Otherwise, the file format is detected by the file's suffix.
 - `ops` : array of [PatchOperation](#patchoperation)
 
 Example:
