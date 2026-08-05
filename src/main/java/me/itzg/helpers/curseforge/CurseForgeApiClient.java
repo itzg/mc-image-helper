@@ -51,6 +51,7 @@ public class CurseForgeApiClient implements AutoCloseable {
     public static final String CATEGORY_BUKKIT_PLUGINS = "bukkit-plugins";
     public static final String CATEGORY_WORLDS = "worlds";
     public static final String API_KEY_VAR = "CF_API_KEY";
+    public static final String API_KEY_FILE_VAR = API_KEY_VAR + "_FILE";
     public static final String ETERNAL_DEVELOPER_CONSOLE_URL = "https://console.curseforge.com/";
 
     private static final String API_KEY_HEADER = "x-api-key";
