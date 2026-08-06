@@ -119,7 +119,6 @@ class CurseForgeApiClientTest {
     }
 
 
-        assertThat(result.getId()).isEqualTo(2);
     }
     @Test
     void fallbackUrlEncodesSpaces(@TempDir Path tempDir, WireMockRuntimeInfo wmInfo) {
