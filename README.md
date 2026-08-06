@@ -407,7 +407,9 @@ Downloads, installs, and upgrades CurseForge modpacks
       --file-download-retry-min-delay=DURATION
                              Default is PT5S
       --file-id=<fileId>
-      --filename-matcher=STR Substring to select specific modpack filename
+      --filename-matcher=STR Substring to select specific modpack filename, or
+                               a slash-surrounded string to be parsed regex, E.
+                               G. '/.*1\.5$/'
       --force-includes, --force-include-mods=PROJECT_ID|SLUG[,
         |<nl>PROJECT_ID|SLUG...]
                              Some mods incorrectly declare client-only support,
