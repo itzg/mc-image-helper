@@ -2,6 +2,7 @@ package me.itzg.helpers.curseforge;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
+
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
@@ -11,6 +12,9 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.cache.ApiCaching;
@@ -25,6 +29,7 @@ import me.itzg.helpers.curseforge.model.GetModResponse;
 import me.itzg.helpers.curseforge.model.ModsSearchResponse;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidApiKeyException;
+import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.errors.RateLimitException;
 import me.itzg.helpers.http.FailedRequestException;
 import me.itzg.helpers.http.Fetch;
@@ -166,12 +171,79 @@ public class CurseForgeApiClient implements AutoCloseable {
     }
 
     /**
-     * @param fileMatcher a pattern to match desired modpack file name or null to obtain first/newest
+     * Parses FileMatcher argument.
+     *
+     * If the filematcher string starts and endswith a "/", it is to be parsed
+     * as regex. If the String is to be passed as regex, it is trimmed and returned,
+     * If the string is not surrounded by "/", an empty optional is returned
+     *
+     * @param fileMatcher User fileMatcher input
+     * @return            Optional of trimmed regex if "/" delimited, empty if non-regex
+     */
+    private static Optional<String> parseMatcher(String fileMatcher) {
+
+        if (fileMatcher == null) {
+            return Optional.empty();
+        }
+
+        if (fileMatcher.length() >= 2 && fileMatcher.startsWith("/") && fileMatcher.endsWith("/")) {
+            log.debug("Parsing fileMatcher as regex");
+            return Optional.of(fileMatcher.substring(1, fileMatcher.length()-1));
+        }
+
+        return Optional.empty();
+    }
+
+    /**
+     * Matches fileName against present matching method.
+     *
+     * If the {@code Optional<Pattern>} is present, use the {@code Pattern} to
+     * match against the fileName. If Pattern not present, check if fileName
+     * includes fileMatcher.
+     *
+     * If fileMatcher is null, do not compare files and return true.
+     *
+     * @param fileName    Filename we are currently matching against
+     * @param fileMatcher Substring to match against Filename
+     * @param regex       Regex to match against Filename
+     * @return            True if fileName matches either matching strategies 
+     */
+    private static Boolean matchesFilename(String fileName, String fileMatcher, Optional<Pattern> regex) {
+
+        if (fileMatcher == null || fileMatcher.isEmpty()) {
+            return true;
+        }
+
+        return regex
+            .map(pattern -> pattern.matcher(fileName).find())
+            .orElseGet(() -> fileName.contains(fileMatcher));
+    }
+
+
+    /**
+     * Resolves the first matching client modpack file.
+     *
+     * A {@code null} or empty matcher selects the first available file. Values
+     * surrounded by "/" are interpreted as regex and searched within the 
+     * filename. Other values are matched as literal substrings.
+     *
+     * @param mod         The CurseForge modpack
+     * @param fileMatcher An optional filename substring or slash-delimited regular expression
+     * @return            First matching non-server-pack file
      */
     public CurseForgeFile resolveModpackFile(
         CurseForgeMod mod,
         String fileMatcher
     ) {
+
+        Optional<Pattern> regex = parseMatcher(fileMatcher).map((s) -> {
+            try {
+                return Pattern.compile(s);
+            } catch (PatternSyntaxException e) {
+                throw new InvalidParameterException("Failed to parse filename matcher regex: " + fileMatcher, e);
+            }
+        });
+
         // NOTE latestFiles in mod is only one or two files, so retrieve the full list instead
         final GetModFilesResponse resp = preparedFetch.fetch(
                 uriBuilder.resolve("/v1/mods/{modId}/files", mod.getId()
@@ -191,7 +263,9 @@ public class CurseForgeApiClient implements AutoCloseable {
             .filter(file ->
                 // even though we're preparing a server, we need client modpack to get deterministic manifest layout
                 !file.isServerPack() &&
-                    (fileMatcher == null || file.getFileName().contains(fileMatcher)))
+                    matchesFilename(
+                        file.getFileName(), fileMatcher, regex
+                    ))
             .findFirst()
             .orElseThrow(() -> {
                 final String names = files.stream()
