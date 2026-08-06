@@ -1,6 +1,7 @@
 package me.itzg.helpers.curseforge.model;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.Instant;
 import java.util.List;
 import lombok.Data;
@@ -9,6 +10,7 @@ import lombok.Data;
 @JsonTypeName("File")
 public class CurseForgeFile {
 	private int gameId;
+	@JsonProperty("isAvailable")
 	private boolean isAvailable;
 	private String fileName;
 	private List<String> gameVersions;
@@ -21,6 +23,7 @@ public class CurseForgeFile {
 	private List<FileModule> modules;
 	private List<FileDependency> dependencies;
 	private long fileFingerprint;
+	@JsonProperty("isServerPack")
 	private boolean isServerPack;
 	private FileReleaseType releaseType;
 	private List<FileHash> hashes;
