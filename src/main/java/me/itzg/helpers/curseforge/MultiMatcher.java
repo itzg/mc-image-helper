@@ -1,7 +1,11 @@
 package me.itzg.helpers.curseforge;
 
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
+
 import org.jspecify.annotations.Nullable;
+
+import me.itzg.helpers.errors.InvalidParameterException;
 
 public class MultiMatcher {
 
@@ -22,7 +26,13 @@ public class MultiMatcher {
 
         if (pattern.length() >= 2 && pattern.startsWith("/") && pattern.endsWith("/")) {
             pattern = pattern.substring(1, pattern.length()-1);
-            regex = Pattern.compile(pattern);
+
+            try {
+                regex = Pattern.compile(pattern);
+            } catch (PatternSyntaxException e) {
+                throw new InvalidParameterException("Invalid regex pattern", e);
+            }
+
             substring = null;
         }
         else {
