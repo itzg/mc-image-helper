@@ -142,7 +142,7 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
     }
 
     @Option(names = "--filename-matcher", paramLabel = "STR",
-        description = "Substring to select specific modpack filename")
+        description = "Substring to select specific modpack filename, or a slash-surrounded string to be parsed regex, E.G. '/.*1\\.5$/'")
     String filenameMatcher;
 
     @Option(names = "--force-synchronize")

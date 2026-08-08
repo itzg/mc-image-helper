@@ -74,6 +74,96 @@ class CurseForgeApiClientTest {
     }
 
     @Test
+    void ignoresServerPacks(WireMockRuntimeInfo wmInfo) {
+        stubFor(get(urlPathEqualTo("/v1/mods/100/files"))
+            .willReturn(jsonResponse("""
+                {
+                  "data": [
+                    {
+                      "id": 1,
+                      "modId": 100,
+                      "fileName": "ATM10 To the Sky-1.5.zip",
+                      "isServerPack": true
+                    },
+                    {
+                      "id": 2,
+                      "modId": 100,
+                      "fileName": "ATM10 To the Sky-1.5.1b.zip",
+                      "isServerPack": false
+                    },
+                    {
+                      "id": 3,
+                      "modId": 100,
+                      "fileName": "ATM10 To the Sky-1.5.zip",
+                      "isServerPack": false
+                    }
+                  ]
+                }
+                """, 200)));
+
+        final CurseForgeMod mod = new CurseForgeMod();
+        mod.setId(100);
+
+        final CurseForgeFile result;
+        try (CurseForgeApiClient client = new CurseForgeApiClient(
+            wmInfo.getHttpBaseUrl(),
+            "key",
+            Options.builder().build(),
+            "432",
+            new ApiCachingDisabled()
+        )) {
+            result = client.resolveModpackFile(mod, null);
+        }
+
+        assertThat(result.getId()).isEqualTo(2);
+    }
+
+    @Test
+    void regexFilenameMatchesClientPack(WireMockRuntimeInfo wmInfo) {
+        stubFor(get(urlPathEqualTo("/v1/mods/100/files"))
+            .willReturn(jsonResponse("""
+                {
+                  "data": [
+                    {
+                      "id": 1,
+                      "modId": 100,
+                      "fileName": "ATM10 To the Sky-1.5.zip",
+                      "isServerPack": true
+                    },
+                    {
+                      "id": 2,
+                      "modId": 100,
+                      "fileName": "ATM10 To the Sky-1.5.1b.zip",
+                      "isServerPack": false
+                    },
+                    {
+                      "id": 3,
+                      "modId": 100,
+                      "fileName": "ATM10 To the Sky-1.5.zip",
+                      "isServerPack": false
+                    }
+                  ]
+                }
+                """, 200)));
+
+        final CurseForgeMod mod = new CurseForgeMod();
+        mod.setId(100);
+
+        final CurseForgeFile result;
+        try (CurseForgeApiClient client = new CurseForgeApiClient(
+            wmInfo.getHttpBaseUrl(),
+            "key",
+            Options.builder().build(),
+            "432",
+            new ApiCachingDisabled()
+        )) {
+            result = client.resolveModpackFile(mod, "/-1\\.5\\.zip$/");
+        }
+
+        assertThat(result.getId()).isEqualTo(3);
+    }
+
+    @Test
     void fallbackUrlEncodesSpaces(@TempDir Path tempDir, WireMockRuntimeInfo wmInfo) {
         final CurseForgeFile cfFile = new CurseForgeFile();
         cfFile.setId(5228909);

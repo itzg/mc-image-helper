@@ -2,6 +2,7 @@ package me.itzg.helpers.curseforge;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
+
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
@@ -167,12 +168,21 @@ public class CurseForgeApiClient implements AutoCloseable {
     }
 
     /**
-     * @param fileMatcher a pattern to match desired modpack file name or null to obtain first/newest
+     * Resolves the first matching client modpack file.
+     * A {@code null} or empty matcher selects the first available file. Values
+     * surrounded by "/" are interpreted as regex and searched within the 
+     * filename. Other values are matched as literal substrings.
+     *
+     * @param mod         The CurseForge modpack
+     * @param fileMatcher An optional filename substring or slash-delimited regular expression
+     * @return            First matching non-server-pack file
      */
     public CurseForgeFile resolveModpackFile(
         CurseForgeMod mod,
         String fileMatcher
     ) {
+        final MultiMatcher matcher = new MultiMatcher(fileMatcher);
+
         // NOTE latestFiles in mod is only one or two files, so retrieve the full list instead
         final GetModFilesResponse resp = preparedFetch.fetch(
                 uriBuilder.resolve("/v1/mods/{modId}/files", mod.getId()
@@ -192,7 +202,8 @@ public class CurseForgeApiClient implements AutoCloseable {
             .filter(file ->
                 // even though we're preparing a server, we need client modpack to get deterministic manifest layout
                 !file.isServerPack() &&
-                    (fileMatcher == null || file.getFileName().contains(fileMatcher)))
+                    matcher.matches(file.getFileName())
+            )
             .findFirst()
             .orElseThrow(() -> {
                 final String names = files.stream()
