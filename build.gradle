@@ -10,7 +10,7 @@ plugins {
   // https://github.com/itzg/github-releaser-gradle-plugin
   id 'io.github.itzg.github-releaser' version '0.2.1'
   // https://github.com/ben-manes/gradle-versions-plugin
-  id 'com.github.ben-manes.versions' version '0.58.0'
+  id 'com.github.ben-manes.versions' version '0.60.0'
 }
 
 group = 'io.github.itzg'
