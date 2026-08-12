@@ -13,7 +13,9 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.concurrent.atomic.AtomicReference;
 import me.itzg.helpers.files.Manifests;
+import me.itzg.helpers.http.FailedRequestException;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -487,6 +489,32 @@ void recursiveDirectoryCopy() throws IOException {
 
             assertThat(destDir.resolve("file.jar"))
                 .hasContent("remote");
+        }
+
+        @Test
+        void stopsAfterFirstRemoteFailure(WireMockRuntimeInfo wmInfo) {
+            stubFor(head(urlPathEqualTo("/first.jar"))
+                .willReturn(forbidden())
+            );
+            stubFor(head(urlPathEqualTo("/second.jar"))
+                .willReturn(forbidden())
+            );
+
+            final AtomicReference<Exception> executionException = new AtomicReference<>();
+            final int exitCode = new CommandLine(new MultiCopyCommand())
+                .setExecutionExceptionHandler((e, commandLine, parseResult) -> {
+                    executionException.set(e);
+                    return CommandLine.ExitCode.SOFTWARE;
+                })
+                .execute(
+                    "--to", tempDir.resolve("dest").toString(),
+                    wmInfo.getHttpBaseUrl() + "/first.jar," + wmInfo.getHttpBaseUrl() + "/second.jar"
+                );
+
+            assertThat(exitCode).isEqualTo(CommandLine.ExitCode.SOFTWARE);
+            assertThat(executionException.get()).isInstanceOf(FailedRequestException.class);
+            verify(1, headRequestedFor(urlPathEqualTo("/first.jar")));
+            verify(0, headRequestedFor(urlPathEqualTo("/second.jar")));
         }
 
         @Test
