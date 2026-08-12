@@ -100,7 +100,7 @@ public class MultiCopyCommand implements Callable<Integer> {
             final List<Path> results = Flux.fromIterable(sources)
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
-                .flatMap(source -> processSource(sharedFetch, source, fileIsListingOption, dest))
+                .concatMap(source -> processSource(sharedFetch, source, fileIsListingOption, dest))
                 .collectList()
                 .block();
 
@@ -185,7 +185,7 @@ public class MultiCopyCommand implements Callable<Integer> {
                     final List<String> lines = Files.readAllLines(path);
                     return Flux.fromIterable(lines)
                         .filter(this::isListingLine)
-                        .flatMap(src -> processSource(sharedFetch, src,
+                        .concatMap(src -> processSource(sharedFetch, src,
                             // avoid recursive file-listing processing
                             false,
                             destination
@@ -326,7 +326,7 @@ public class MultiCopyCommand implements Callable<Integer> {
                     .flatMapMany(content -> Flux.just(content.split("\\r?\\n")))
                     .filter(this::isListingLine)
             )
-            .flatMap(url -> processSource(sharedFetch, url, false, destination))
+            .concatMap(url -> processSource(sharedFetch, url, false, destination))
             .doOnTerminate(sharedFetch::close)
             .checkpoint("Processing remote listing at " + source, true);
     }
