@@ -80,12 +80,6 @@ public class MultiCopyCommand implements Callable<Integer> {
     @ArgGroup(exclusive = false)
     SharedFetchArgs sharedFetchArgs = new SharedFetchArgs();
 
-    @Option(names = "--max-concurrent-sources", defaultValue = "10", description = "Maximum number of sources to process concurrently")
-    int maxConccurentSources;
-
-    @Option(names = "--prefetch", defaultValue = "1", description = "Number of results to request in advance from each active source")
-    int prefetch;
-
     @Parameters(split = SPLIT_COMMA_NL, splitSynopsisLabel = SPLIT_SYNOPSIS_COMMA_NL,
         paramLabel = "SRC",
         description = "Any mix of source file, directory, or URLs delimited by commas or newlines"
@@ -99,16 +93,14 @@ public class MultiCopyCommand implements Callable<Integer> {
 
     private final static String destinationDelimiter = "<";
 
+    private final static int MAX_CONCURENT_SOURCES = 10;
+
+    private final static int PREFETCH = 1;
+
+
     @Override
     public Integer call() throws Exception {
 
-        if (maxConccurentSources <= 0) {
-            throw new InvalidParameterException("Max concurrent sources must be greater than 0");
-        }
-
-        if (prefetch <= 0) {
-            throw new InvalidParameterException("Prefetch must be greater than 0");
-        }
 
 
         try (SharedFetch sharedFetch = Fetch.sharedFetch("mcopy", sharedFetchArgs.options())) {
@@ -122,8 +114,8 @@ public class MultiCopyCommand implements Callable<Integer> {
                         .doOnError(error ->
                             log.error("Failed to process source {}: {}", source, error.getMessage())
                         ),
-                    maxConccurentSources,
-                    prefetch
+                    MAX_CONCURENT_SOURCES,
+                    PREFETCH
                 )
                 .collectList()
                 .block();
@@ -217,8 +209,8 @@ public class MultiCopyCommand implements Callable<Integer> {
                             )).doOnError(error ->
                                 log.error("Failed to process source {}: {}", src, error.getMessage())
                             ),
-                            maxConccurentSources,
-                            prefetch
+                            MAX_CONCURENT_SOURCES,
+                            PREFETCH
                         );
                 } catch (IOException e) {
                     return Mono.error(new GenericException("Failed to read file listing from " + path));
@@ -361,8 +353,8 @@ public class MultiCopyCommand implements Callable<Integer> {
                     .doOnError(error ->
                         log.error("Failed to process source {}: {}", url, error.getMessage())
                     ),
-                maxConccurentSources,
-                1
+                MAX_CONCURENT_SOURCES,
+                PREFETCH
             )
             .doOnTerminate(sharedFetch::close)
             .checkpoint("Processing remote listing at " + source, true);
