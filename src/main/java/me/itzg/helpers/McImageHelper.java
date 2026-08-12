@@ -45,7 +45,7 @@ import me.itzg.helpers.singles.HashCommand;
 import me.itzg.helpers.singles.NetworkInterfacesCommand;
 import me.itzg.helpers.singles.TestLoggingCommand;
 import me.itzg.helpers.sync.InterpolateCommand;
-import me.itzg.helpers.sync.MulitCopyCommand;
+import me.itzg.helpers.sync.MultiCopyCommand;
 import me.itzg.helpers.sync.Sync;
 import me.itzg.helpers.sync.SyncAndInterpolate;
 import me.itzg.helpers.users.ManageUsersCommand;
@@ -93,7 +93,7 @@ import picocli.CommandLine.Spec;
         ManageUsersCommand.class,
         MavenDownloadCommand.class,
         ModrinthCommand.class,
-        MulitCopyCommand.class,
+        MultiCopyCommand.class,
         NetworkInterfacesCommand.class,
         PatchCommand.class,
         ResolveMinecraftVersionCommand.class,
