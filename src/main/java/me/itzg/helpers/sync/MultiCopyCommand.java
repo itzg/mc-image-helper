@@ -41,7 +41,7 @@ import reactor.core.scheduler.Schedulers;
 @Command(name = "mcopy", description = "Multi-source file copy operation with with managed cleanup. "
     + "Supports auto-detected sourcing from file list, directories, and URLs")
 @Slf4j
-public class MulitCopyCommand implements Callable<Integer> {
+public class MultiCopyCommand implements Callable<Integer> {
     @SuppressWarnings("unused")
     @Option(names = {"--help", "-h"}, usageHelp = true)
     boolean showHelp;
