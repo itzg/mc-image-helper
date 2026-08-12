@@ -1,6 +1,8 @@
 package me.itzg.helpers.errors;
 
 import java.time.Instant;
+import java.util.stream.Collectors;
+
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.McImageHelper;
 import me.itzg.helpers.http.FailedRequestException;
@@ -9,6 +11,7 @@ import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.IExecutionExceptionHandler;
 import picocli.CommandLine.IExitCodeExceptionMapper;
 import picocli.CommandLine.ParseResult;
+import reactor.core.Exceptions;
 
 @Slf4j
 public class ExceptionHandler implements IExecutionExceptionHandler {
@@ -31,6 +34,10 @@ public class ExceptionHandler implements IExecutionExceptionHandler {
                     log.error("Invalid parameter provided for '{}' command: {}", commandLine.getCommandName(), e.getMessage());
                 }
                 log.debug("Invalid parameter details", e);
+            }
+            else if (Exceptions.isMultiple(e)) {
+                logCompositeExceptions(e, commandLine);
+                log.debug("Composite Exception details", e);
             }
             else if (e instanceof FailedRequestException) {
                 logExceptionWithoutStacktrace(e, commandLine);
@@ -67,5 +74,15 @@ public class ExceptionHandler implements IExecutionExceptionHandler {
             McImageHelper.getVersion(),
             ExceptionDetailer.buildCausalMessages(e)
         );
+    }
+
+    private static void logCompositeExceptions(Exception e, CommandLine commandLine) {
+        final String failures = Exceptions
+            .unwrapMultipleExcludingTracebacks(e)
+            .stream()
+            .map(ExceptionDetailer::buildCausalMessages)
+            .collect(Collectors.joining("; "));
+
+        log.error("'{}' command failed. Version is {}: {}", commandLine.getCommandName(), McImageHelper.getVersion(), failures);
     }
 }
