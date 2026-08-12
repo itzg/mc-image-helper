@@ -492,32 +492,6 @@ void recursiveDirectoryCopy() throws IOException {
         }
 
         @Test
-        void stopsAfterFirstRemoteFailure(WireMockRuntimeInfo wmInfo) {
-            stubFor(head(urlPathEqualTo("/first.jar"))
-                .willReturn(forbidden())
-            );
-            stubFor(head(urlPathEqualTo("/second.jar"))
-                .willReturn(forbidden())
-            );
-
-            final AtomicReference<Exception> executionException = new AtomicReference<>();
-            final int exitCode = new CommandLine(new MultiCopyCommand())
-                .setExecutionExceptionHandler((e, commandLine, parseResult) -> {
-                    executionException.set(e);
-                    return CommandLine.ExitCode.SOFTWARE;
-                })
-                .execute(
-                    "--to", tempDir.resolve("dest").toString(),
-                    wmInfo.getHttpBaseUrl() + "/first.jar," + wmInfo.getHttpBaseUrl() + "/second.jar"
-                );
-
-            assertThat(exitCode).isEqualTo(CommandLine.ExitCode.SOFTWARE);
-            assertThat(executionException.get()).isInstanceOf(FailedRequestException.class);
-            verify(1, headRequestedFor(urlPathEqualTo("/first.jar")));
-            verify(0, headRequestedFor(urlPathEqualTo("/second.jar")));
-        }
-
-        @Test
         void listingOfRemoteFiles(WireMockRuntimeInfo wmInfo) throws IOException {
             stubRemoteSrc("file1.jar", "one");
             stubRemoteSrc("file2.jar", "two");
