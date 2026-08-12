@@ -1060,6 +1060,8 @@ auto-detected sourcing from file list, directories, and URLs
       --ignore-missing-sources
                              Don't log or fail exit code when any or all
                                sources are missing
+      --max-concurrent-sources=<maxConccurentSources>
+                             Maximum number of sources to process concurrently
       --quiet-when-skipped   Don't log when file exists or is up to date
       --scope, --manifest-id=<manifestId>
                              If managed cleanup is required, this is the

@@ -93,15 +93,18 @@ public class MultiCopyCommand implements Callable<Integer> {
 
     private final static String destinationDelimiter = "<";
 
-    private final static int MAX_CONCURENT_SOURCES = 10;
-
     private final static int PREFETCH = 1;
+
+    @Option(names = "--max-concurrent-sources", defaultValue = "10", description = "Maximum number of sources to process concurrently")
+    int maxConccurentSources;
 
 
     @Override
     public Integer call() throws Exception {
 
-
+        if (maxConccurentSources <= 0) {
+            throw new InvalidParameterException("Max Concurrent sources must be greater than 0");
+        }
 
         try (SharedFetch sharedFetch = Fetch.sharedFetch("mcopy", sharedFetchArgs.options())) {
 
@@ -114,7 +117,7 @@ public class MultiCopyCommand implements Callable<Integer> {
                         .doOnError(error ->
                             log.error("Failed to process source {}: {}", source, error.getMessage())
                         ),
-                    MAX_CONCURENT_SOURCES,
+                    maxConccurentSources,
                     PREFETCH
                 )
                 .collectList()
@@ -209,7 +212,7 @@ public class MultiCopyCommand implements Callable<Integer> {
                             )).doOnError(error ->
                                 log.error("Failed to process source {}: {}", src, error.getMessage())
                             ),
-                            MAX_CONCURENT_SOURCES,
+                            maxConccurentSources,
                             PREFETCH
                         );
                 } catch (IOException e) {
@@ -353,7 +356,7 @@ public class MultiCopyCommand implements Callable<Integer> {
                     .doOnError(error ->
                         log.error("Failed to process source {}: {}", url, error.getMessage())
                     ),
-                MAX_CONCURENT_SOURCES,
+                maxConccurentSources,
                 PREFETCH
             )
             .doOnTerminate(sharedFetch::close)
