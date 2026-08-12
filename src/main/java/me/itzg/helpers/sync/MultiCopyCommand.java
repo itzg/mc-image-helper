@@ -97,10 +97,19 @@ public class MultiCopyCommand implements Callable<Integer> {
     public Integer call() throws Exception {
 
         try (SharedFetch sharedFetch = Fetch.sharedFetch("mcopy", sharedFetchArgs.options())) {
+
+
             final List<Path> results = Flux.fromIterable(sources)
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
-                .concatMap(source -> processSource(sharedFetch, source, fileIsListingOption, dest))
+                .flatMapDelayError(
+                    source -> Flux.defer(() -> processSource(sharedFetch, source, fileIsListingOption, dest))
+                        .doOnError(error ->
+                            log.error("Failed to process source {}: {}", source, error.getMessage())
+                        ),
+                    10, // maximum concurrent sources
+                    1   // prefetch
+                )
                 .collectList()
                 .block();
 
@@ -185,11 +194,17 @@ public class MultiCopyCommand implements Callable<Integer> {
                     final List<String> lines = Files.readAllLines(path);
                     return Flux.fromIterable(lines)
                         .filter(this::isListingLine)
-                        .concatMap(src -> processSource(sharedFetch, src,
-                            // avoid recursive file-listing processing
-                            false,
-                            destination
-                        ));
+                        .flatMapDelayError(
+                            src -> Flux.defer(() -> processSource(sharedFetch, src,
+                                // avoid recursive file-listing processing
+                                false,
+                                destination
+                            )).doOnError(error ->
+                                log.error("Failed to process source {}: {}", src, error.getMessage())
+                            ),
+                            10,
+                            1
+                        );
                 } catch (IOException e) {
                     return Mono.error(new GenericException("Failed to read file listing from " + path));
                 }
@@ -326,7 +341,14 @@ public class MultiCopyCommand implements Callable<Integer> {
                     .flatMapMany(content -> Flux.just(content.split("\\r?\\n")))
                     .filter(this::isListingLine)
             )
-            .concatMap(url -> processSource(sharedFetch, url, false, destination))
+            .flatMapDelayError(
+                url -> Flux.defer(() -> processSource(sharedFetch, url, false, destination))
+                    .doOnError(error ->
+                        log.error("Failed to process source {}: {}", url, error.getMessage())
+                    ),
+                10,
+                1
+            )
             .doOnTerminate(sharedFetch::close)
             .checkpoint("Processing remote listing at " + source, true);
     }
