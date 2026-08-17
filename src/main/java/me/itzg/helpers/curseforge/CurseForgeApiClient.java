@@ -27,6 +27,7 @@ import me.itzg.helpers.curseforge.model.ModsSearchResponse;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidApiKeyException;
 import me.itzg.helpers.errors.RateLimitException;
+import me.itzg.helpers.files.MultiMatcher;
 import me.itzg.helpers.http.FailedRequestException;
 import me.itzg.helpers.http.Fetch;
 import me.itzg.helpers.http.FileDownloadStatusHandler;

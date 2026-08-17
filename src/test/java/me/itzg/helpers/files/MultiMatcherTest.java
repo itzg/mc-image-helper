@@ -1,4 +1,4 @@
-package me.itzg.helpers.curseforge;
+package me.itzg.helpers.files;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

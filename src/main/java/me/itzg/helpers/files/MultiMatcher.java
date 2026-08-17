@@ -1,4 +1,4 @@
-package me.itzg.helpers.curseforge;
+package me.itzg.helpers.files;
 
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
