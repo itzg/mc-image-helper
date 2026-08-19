@@ -33,6 +33,27 @@ class FileInclusionCalculatorTest {
     }
 
     @Test
+    void regexExcludeDoesNotMatchSimilarFilename() {
+        final FileInclusionCalculator calculator = new FileInclusionCalculator(
+            null,
+            Collections.singletonList("/(^|/)figura-/"),
+            null,
+            null
+        );
+
+        final ModpackFile figura = new ModpackFile()
+            .setEnv(forServerAndClient())
+            .setPath("mods/figura-0.1.jar");
+
+        final ModpackFile configurable = new ModpackFile()
+            .setEnv(forServerAndClient())
+            .setPath("mods/configurable-3.5.2.jar");
+
+        assertThat(calculator.includeModFile(figura)).isFalse();
+        assertThat(calculator.includeModFile(configurable)).isTrue();
+    }
+
+    @Test
     void excludeForModpack() {
         final ExcludeIncludesContent globalContent = new ExcludeIncludesContent();
         globalContent.setGlobalExcludes(Collections.singleton("other"));
