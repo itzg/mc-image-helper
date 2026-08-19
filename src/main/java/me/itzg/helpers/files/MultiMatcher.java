@@ -10,7 +10,7 @@ import me.itzg.helpers.errors.InvalidParameterException;
 /**
  * MultiMatcher matches using either a literal substring or a regex pattern.
  * 
- * <p> Patterns encolsed in forward slashes are evaluated as regex patterns
+ * <p> Patterns enclosed in forward slashes are evaluated as regex patterns
  * using {@link java.util.regex.Matcher#find()} other non-null patterns
  * are matched using {@link String#contains(CharSequence)}. A null pattern
  * matches every input
