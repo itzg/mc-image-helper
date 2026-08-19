@@ -3,8 +3,10 @@ package me.itzg.helpers.modrinth;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.curseforge.ExcludeIncludesContent.ExcludeIncludes;
+import me.itzg.helpers.files.MultiMatcher;
 import me.itzg.helpers.modrinth.model.Env;
 import me.itzg.helpers.modrinth.model.EnvType;
 import me.itzg.helpers.modrinth.model.ModpackIndex;
@@ -12,8 +14,8 @@ import me.itzg.helpers.modrinth.model.ModpackIndex;
 @Slf4j
 public class FileInclusionCalculator {
 
-    private final Set<String> excludeFiles;
-    private final Set<String> forceIncludeFiles;
+    private final Set<MultiMatcher> excludeFiles;
+    private final Set<MultiMatcher> forceIncludeFiles;
 
     public FileInclusionCalculator(
         String modpackProjectSlug,
@@ -21,27 +23,30 @@ public class FileInclusionCalculator {
         List<String> forceIncludeFiles,
         ExcludeIncludesContent excludeIncludesContent) {
 
-        this.excludeFiles = new HashSet<>();
-        this.forceIncludeFiles = new HashSet<>();
+        final Set<String> excludePatterns = new HashSet<>();
+        final Set<String> forceIncludePatterns = new HashSet<>();
 
         if (excludeFiles != null) {
-            this.excludeFiles.addAll(excludeFiles);
+            excludePatterns.addAll(excludeFiles);
         }
         if (forceIncludeFiles != null) {
-            this.forceIncludeFiles.addAll(forceIncludeFiles);
+            forceIncludePatterns.addAll(forceIncludeFiles);
         }
         if (excludeIncludesContent != null) {
-            addAll(excludeIncludesContent.getGlobalExcludes(), this.excludeFiles);
-            addAll(excludeIncludesContent.getGlobalForceIncludes(), this.forceIncludeFiles);
+            addAll(excludeIncludesContent.getGlobalExcludes(), excludePatterns);
+            addAll(excludeIncludesContent.getGlobalForceIncludes(), forceIncludePatterns);
 
             if (excludeIncludesContent.getModpacks() != null && modpackProjectSlug != null) {
                 final ExcludeIncludes modpack = excludeIncludesContent.getModpacks().get(modpackProjectSlug);
                 if (modpack != null) {
-                    addAll(modpack.getExcludes(), this.excludeFiles);
-                    addAll(modpack.getForceIncludes(), this.forceIncludeFiles);
+                    addAll(modpack.getExcludes(), excludePatterns);
+                    addAll(modpack.getForceIncludes(), forceIncludePatterns);
                 }
             }
         }
+
+        this.excludeFiles = createMatchers(excludePatterns);
+        this.forceIncludeFiles = createMatchers(forceIncludePatterns);
     }
 
     public static FileInclusionCalculator empty() {
@@ -59,14 +64,14 @@ public class FileInclusionCalculator {
     }
 
     private boolean shouldForceIncludeFile(String modPath) {
-        if (forceIncludeFiles == null || forceIncludeFiles.isEmpty()) {
+        if (forceIncludeFiles.isEmpty()) {
             return false;
         }
 
         final String normalized = FileInclusionCalculator.sanitizeModFilePath(modPath).toLowerCase();
 
         final boolean include = forceIncludeFiles.stream()
-            .anyMatch(s -> normalized.contains(s.toLowerCase()));
+            .anyMatch(matcher -> matcher.matches(normalized));
         if (include) {
             log.debug("Force including '{}' as requested", modPath);
         }
@@ -75,7 +80,7 @@ public class FileInclusionCalculator {
     }
 
     private boolean shouldExcludeFile(String modPath) {
-        if (excludeFiles == null || excludeFiles.isEmpty()) {
+        if (excludeFiles.isEmpty()) {
             return false;
         }
 
@@ -83,13 +88,18 @@ public class FileInclusionCalculator {
         final String normalized = FileInclusionCalculator.sanitizeModFilePath(modPath).toLowerCase();
 
         final boolean exclude = excludeFiles.stream()
-            .anyMatch(s -> normalized.contains(s.toLowerCase()));
+            .anyMatch(matcher -> matcher.matches(normalized));
         if (exclude) {
             log.debug("Excluding '{}' as requested", modPath);
         }
         return exclude;
     }
 
+    private Set<MultiMatcher> createMatchers(Set<String> patterns) {
+        return patterns.stream()
+            .map(pattern -> new MultiMatcher(pattern.toLowerCase()))
+            .collect(Collectors.toSet());
+    }
 
     static String sanitizeModFilePath(String path) {
         // Using only backslash delimiters and not forward slashes?
