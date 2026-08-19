@@ -92,7 +92,7 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
 
     @Option(names = "--exclude-files",
         split = McImageHelper.SPLIT_COMMA_NL, splitSynopsisLabel = McImageHelper.SPLIT_SYNOPSIS_COMMA_NL,
-        description = "Files to exclude, such as improperly declared client mods. It will match any part of the file's name/path."
+        description = "Files to exclude, such as improperly declared client mods. Plain values match any part of the file's name/path. Values surrounded by '/' are evaluated as Java regex patterns, E.G. '/(^|/)figura-/'"
             + "%nEmbedded comments are allowed."
     )
     public void setExcludeFiles(List<String> excludeFiles) {
@@ -102,7 +102,7 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
 
     @Option(names = "--force-include-files",
         split = McImageHelper.SPLIT_COMMA_NL, splitSynopsisLabel = McImageHelper.SPLIT_SYNOPSIS_COMMA_NL,
-        description = "Files to force include that were marked as non-server mods. It will match any part of the file's name/path."
+        description = "Files to force include that were marked as non-server mods. Plain values match any part of the file's name/path. Values surrounded by '/' are evaluated as Java regex patterns, E.G. '/(^|/)figura-/'"
             + "%nEmbedded comments are allowed."
     )
     public void setForceIncludeFiles(List<String> forceIncludeFiles) {
