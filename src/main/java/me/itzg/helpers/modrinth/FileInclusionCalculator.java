@@ -14,8 +14,8 @@ import me.itzg.helpers.modrinth.model.ModpackIndex;
 @Slf4j
 public class FileInclusionCalculator {
 
-    private final Set<MultiMatcher> excludeFiles;
-    private final Set<MultiMatcher> forceIncludeFiles;
+    private final List<MultiMatcher> excludeFiles;
+    private final List<MultiMatcher> forceIncludeFiles;
 
     public FileInclusionCalculator(
         String modpackProjectSlug,
@@ -95,10 +95,10 @@ public class FileInclusionCalculator {
         return exclude;
     }
 
-    private Set<MultiMatcher> createMatchers(Set<String> patterns) {
+    private List<MultiMatcher> createMatchers(Set<String> patterns) {
         return patterns.stream()
             .map(pattern -> new MultiMatcher(pattern.toLowerCase()))
-            .collect(Collectors.toSet());
+            .collect(Collectors.toList());
     }
 
     static String sanitizeModFilePath(String path) {
