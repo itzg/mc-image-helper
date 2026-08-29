@@ -10,7 +10,7 @@ plugins {
   // https://github.com/itzg/github-releaser-gradle-plugin
   id 'io.github.itzg.github-releaser' version '0.2.1'
   // https://github.com/ben-manes/gradle-versions-plugin
-  id 'com.github.ben-manes.versions' version '0.60.0'
+  id 'io.github.ben-manes.versions' version '0.61.0'
 }
 
 group = 'io.github.itzg'
@@ -120,8 +120,10 @@ dependencies {
   }
 
   // Force both x86_64 and ARM64 native slices into the final distribution, otherwise it will prefer the build host's architecture
+  // whereas the uber jar didn't seem to work out on ARM64 hosts
   runtimeOnly 'io.netty:netty-tcnative-boringssl-static::linux-x86_64'
   runtimeOnly 'io.netty:netty-tcnative-boringssl-static::linux-aarch_64'
+  runtimeOnly 'io.netty:netty-tcnative-boringssl-static::windows-x86_64'
   runtimeOnly 'io.netty:netty-transport-native-epoll::linux-x86_64'
   runtimeOnly 'io.netty:netty-transport-native-epoll::linux-aarch_64'
 
