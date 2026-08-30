@@ -11,6 +11,9 @@ class ModpacksPageUrlParser {
     private static final Pattern PAGE_URL_PATTERN = Pattern.compile(
         "https://(www|beta)\\.curseforge\\.com/minecraft/modpacks/(?<slug>[^/]+?)(/((files|download)(/(?<fileId>\\d+)?)?)?)?");
 
+    private static final Pattern PAGE_CATEGORY_URL_PATTERN = Pattern.compile(
+        "https://(www|beta)\\.curseforge\\.com/minecraft/(?<category>[^/]+)/.*");
+
     @Data @Builder
     public static class Parsed {
         String slug;
@@ -39,10 +42,22 @@ class ModpacksPageUrlParser {
                     .build();
             }
         }
-        else {
-            throw new InvalidParameterException("Unexpected CF page URL structure: " + pageUrl);
+
+        final Matcher categoryMatcher = PAGE_CATEGORY_URL_PATTERN.matcher(pageUrl);
+        if (categoryMatcher.matches()) {
+            final String category = categoryMatcher.group("category");
+            if (!CurseForgeApiClient.CATEGORY_MODPACKS.equals(category)) {
+                String message = "install-curseforge expects a modpack page URL such as "
+                    + "https://www.curseforge.com/minecraft/modpacks/<slug>, not a "
+                    + category + " page: " + pageUrl;
+                if (CurseForgeApiClient.CATEGORY_MC_MODS.equals(category)
+                    || CurseForgeApiClient.CATEGORY_BUKKIT_PLUGINS.equals(category)) {
+                    message += ". Use curseforge-files for individual mods or plugins.";
+                }
+                throw new InvalidParameterException(message);
+            }
         }
 
-
+        throw new InvalidParameterException("Unexpected CF page URL structure: " + pageUrl);
     }
 }

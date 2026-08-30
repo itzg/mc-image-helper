@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import me.itzg.helpers.curseforge.ModpacksPageUrlParser.Parsed;
 import me.itzg.helpers.errors.InvalidParameterException;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -46,5 +47,14 @@ class ModpacksPageUrlParserTest {
     void invalid(String url) {
         assertThatThrownBy(() -> ModpacksPageUrlParser.parse(url))
             .isInstanceOf(InvalidParameterException.class);
+    }
+
+    @Test
+    void modPageInsteadOfModpack() {
+        assertThatThrownBy(() -> ModpacksPageUrlParser.parse(
+            "https://www.curseforge.com/minecraft/mc-mods/timeless-and-classics-zero/files/7278003"))
+            .isInstanceOf(InvalidParameterException.class)
+            .hasMessageContaining("not a mc-mods page")
+            .hasMessageContaining("curseforge-files");
     }
 }
