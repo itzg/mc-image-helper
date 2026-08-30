@@ -11,7 +11,7 @@ class ModpacksPageUrlParser {
     private static final Pattern PAGE_URL_PATTERN = Pattern.compile(
         "https://(www|beta)\\.curseforge\\.com/minecraft/modpacks/(?<slug>[^/]+?)(/((files|download)(/(?<fileId>\\d+)?)?)?)?");
 
-    private static final Pattern MINECRAFT_PAGE_URL_PATTERN = Pattern.compile(
+    private static final Pattern PAGE_CATEGORY_URL_PATTERN = Pattern.compile(
         "https://(www|beta)\\.curseforge\\.com/minecraft/(?<category>[^/]+)/.*");
 
     @Data @Builder
@@ -43,9 +43,9 @@ class ModpacksPageUrlParser {
             }
         }
 
-        final Matcher other = MINECRAFT_PAGE_URL_PATTERN.matcher(pageUrl);
-        if (other.matches()) {
-            final String category = other.group("category");
+        final Matcher categoryMatcher = PAGE_CATEGORY_URL_PATTERN.matcher(pageUrl);
+        if (categoryMatcher.matches()) {
+            final String category = categoryMatcher.group("category");
             if (!CurseForgeApiClient.CATEGORY_MODPACKS.equals(category)) {
                 String message = "install-curseforge expects a modpack page URL such as "
                     + "https://www.curseforge.com/minecraft/modpacks/<slug>, not a "
