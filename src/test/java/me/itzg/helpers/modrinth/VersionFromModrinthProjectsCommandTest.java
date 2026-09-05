@@ -9,6 +9,12 @@ import static org.junit.jupiter.params.provider.Arguments.argumentSet;
 import com.github.stefanbirkner.systemlambda.SystemLambda;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
+
+import me.itzg.helpers.LatchingExecutionExceptionHandler;
+import me.itzg.helpers.McImageHelper;
+import me.itzg.helpers.errors.InvalidParameterException;
+
+import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -23,7 +29,16 @@ class VersionFromModrinthProjectsCommandTest {
     @ParameterizedTest
     @FieldSource("processGameVersionsArgs")
     void processGameVersions(List<List<String>> versions, String expected) {
-        final String result = VersionFromModrinthProjectsCommand.processGameVersions(versions);
+
+        List<ProjectRef> projects = new ArrayList<>();
+
+        for (int i = 0; i < versions.size(); ++i) {
+            projects.add(new ProjectRef("test-project-" + Integer.toString(i), null));
+        }
+
+        System.out.println(projects.toString());
+
+        final String result = VersionFromModrinthProjectsCommand.processGameVersions(versions, projects);
 
         if (expected != null) {
             assertThat(result)
@@ -141,6 +156,36 @@ class VersionFromModrinthProjectsCommandTest {
         });
 
         assertThat(out).isEqualToNormalizingNewlines("1.21.4\n");
+    }
+
+    @Test
+    void testCommandHanlesEmptyProjects() throws Exception {
+
+        final LatchingExecutionExceptionHandler exceptionHandler = new LatchingExecutionExceptionHandler();
+
+        new CommandLine(new McImageHelper())
+            .setExecutionExceptionHandler(exceptionHandler)
+            .execute(
+                 "version-from-modrinth-projects",
+                "--projects="
+                );
+
+        assertThat(exceptionHandler.getExecutionException())
+            .isInstanceOf(InvalidParameterException.class)
+            .hasMessageContaining("No Modrinth projects parsed successfully, please ensure projects follow \"<loader>:<project ID>|<slug>\" and are delimited by commas");
+    }
+
+    @Test
+    void testCommandHandlesNullProjects() throws Exception {
+        final LatchingExecutionExceptionHandler exceptionHandler = new LatchingExecutionExceptionHandler();
+
+        new CommandLine(new McImageHelper())
+            .setExecutionExceptionHandler(exceptionHandler)
+            .execute("version-from-modrinth-projects");
+
+        assertThat(exceptionHandler.getExecutionException())
+            .isInstanceOf(InvalidParameterException.class)
+            .hasMessageContaining("No Modrinth projects provided, please provide at least one Modrinth project");
     }
 
     @Test

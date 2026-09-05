@@ -12,6 +12,8 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
 import me.itzg.helpers.errors.InvalidParameterException;
@@ -20,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 
 @Getter
 @ToString
+@EqualsAndHashCode
 public class ProjectRef {
     private static final Pattern VERSIONS = Pattern.compile("[a-zA-Z0-9]{8}");
     private static final Pattern MODPACK_PAGE_URL = Pattern.compile(

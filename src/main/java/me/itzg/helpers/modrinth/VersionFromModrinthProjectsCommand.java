@@ -5,12 +5,17 @@ import static me.itzg.helpers.McImageHelper.SPLIT_SYNOPSIS_COMMA_NL;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
+import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.http.SharedFetchArgs;
 import me.itzg.helpers.modrinth.model.VersionType;
 import picocli.CommandLine.ArgGroup;
@@ -58,6 +63,11 @@ public class VersionFromModrinthProjectsCommand implements Callable<Integer> {
 
     @Override
     public Integer call() throws Exception {
+
+        if (projects == null || projects.isEmpty()) {
+            throw new InvalidParameterException("No Modrinth projects provided, please provide at least one Modrinth project");
+        }
+
         try (ModrinthApiClient modrinthApiClient = new ModrinthApiClient(baseUrl, "modrinth", sharedFetchArgs.options())) {
             final String version = versionFromProjects(modrinthApiClient, projects, loader, defaultVersionType);
 
@@ -72,11 +82,19 @@ public class VersionFromModrinthProjectsCommand implements Callable<Integer> {
         }
     }
 
-    static String versionFromProjects(ModrinthApiClient modrinthApiClient, List<String> projectRefs, Loader defaultLoader, VersionType defaultVersionType) {
+    static String versionFromProjects(ModrinthApiClient modrinthApiClient, List<String> projectRefs, Loader defaultLoader, VersionType defaultVersionType) throws InvalidParameterException {
         // Parse all refs and separate optional from required
         final List<ProjectRef> allRefs = projectRefs.stream()
+            .filter(Objects::nonNull)
+            .map(String::trim)
+            .filter(s -> !s.isEmpty())
             .map(ProjectRef::parse)
+            .distinct()
             .collect(Collectors.toList());
+
+        if (allRefs.isEmpty()) {
+            throw new InvalidParameterException("No Modrinth projects parsed successfully, please ensure projects follow \"<loader>:<project ID>|<slug>\" and are delimited by commas");
+        }
 
         final List<ProjectRef> requiredRefs = allRefs.stream()
             .filter(ref -> !ref.isOptional())
@@ -99,27 +117,30 @@ public class VersionFromModrinthProjectsCommand implements Callable<Integer> {
         }
 
         final List<List<String>> allGameVersions = Flux.fromIterable(effectiveRefs)
-            .flatMap(projectRef -> {
+            .flatMapSequential(projectRef -> {
                 final Loader loader = projectRef.getLoader() != null ? projectRef.getLoader() : defaultLoader;
                 final VersionType allowedVersionType = projectRef.hasVersionType()
                     ? projectRef.getVersionType()
                     : defaultVersionType;
 
-                return modrinthApiClient.resolveProjectGameVersions(projectRef, loader, null, allowedVersionType);
+                return modrinthApiClient.resolveProjectGameVersions(projectRef, loader, null, allowedVersionType)
+                    .onErrorMap(error -> new GenericException("Failed to resolve project version for " + projectRef.getIdOrSlug(), error));
             })
             .collectList()
             .block();
 
         if (allGameVersions != null) {
-            return processGameVersions(allGameVersions);
+            return processGameVersions(allGameVersions, effectiveRefs);
         }
         else {
             throw new GenericException("Unable to retrieve game versions for projects " + projectRefs);
         }
     }
 
-    static String processGameVersions(List<List<String>> allGameVersions) {
-        final Map<String, Integer> gameVersionCounts = new HashMap<>();
+    static String processGameVersions(List<List<String>> allGameVersions, List<ProjectRef> projects) {
+
+        final Map<String, int[]> gameVersionPositions = new HashMap<>();
+        final Set<String> loggedBlockedVersions = new HashSet<>();
 
         final int projectCount = allGameVersions.size();
 
@@ -139,10 +160,37 @@ public class VersionFromModrinthProjectsCommand implements Callable<Integer> {
                 if (positions[i] >= 0) {
                     final int position = positions[i]--;
                     final String version = allGameVersions.get(i).get(position);
-                    final Integer result = gameVersionCounts.compute(version, (k, count) -> count == null ? 1 : count + 1);
+
+                    final int[] projectPositions = gameVersionPositions.computeIfAbsent(version, ignored -> {
+                        final int[] result = new int[projectCount];
+                        Arrays.fill(result, -1);
+                        return result;
+                    });
+
+                    // Prevent duplicate entries from the same project counting twice.
+                    if (projectPositions[i] < 0) {
+                        projectPositions[i] = position;
+                    }
+
                     // did this version slot indicate match for all?
-                    if (result == projectCount) {
+                    if (Arrays.stream(projectPositions).allMatch(projectPosition -> projectPosition >= 0)) {
                         return version;
+                    }
+
+                    if (log.isDebugEnabled() && !loggedBlockedVersions.contains(version)) {
+                        final List<Integer> blockingProjects = IntStream.range(0, projectCount)
+                            .filter(projectIndex -> !allGameVersions.get(projectIndex).contains(version))
+                            .boxed()
+                            .collect(Collectors.toList());
+
+                        if (!blockingProjects.isEmpty()) {
+                            loggedBlockedVersions.add(version);
+                            log.debug("Minecraft version {} is blocked by projects {}", version, 
+                                    blockingProjects.stream()
+                                    .map(projects::get)
+                                    .map(p -> p.getIdOrSlug())
+                                    .collect(Collectors.toList()));
+                        }
                     }
                 }
             }
