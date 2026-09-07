@@ -11,7 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class Zip {
 
-    public static boolean validate(Path zip) throws IOException {
+    public static boolean containsZipSlip(Path zip) throws IOException {
         final Path extractionRoot = zip.toAbsolutePath().normalize().getParent();
 
         try (ZipInputStream zis = new ZipInputStream(Files.newInputStream(zip))) {
@@ -22,11 +22,11 @@ public class Zip {
 
                 if (!output.startsWith(extractionRoot)) {
                     log.warn("Zip slip detected at: " + entry.getName() + " in zip: " + zip.toAbsolutePath());
-                    return false;
+                    return true;
                 }
             }
         }
 
-        return true;
+        return false;
     }
 }
