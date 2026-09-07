@@ -11,6 +11,15 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class Zip {
 
+    /**
+     * Checks if a Zip contains a Zip Slip.
+     *
+     * @see <a href="https://security.snyk.io/research/zip-slip-vulnerability">Zip Slip</a>
+     *
+     * @param zip Path to the zip to check
+     * @return Boolean if zip slip is found within zip
+     * @throws IOException
+     */
     public static boolean containsZipSlip(Path zip) throws IOException {
         final Path extractionRoot = zip.toAbsolutePath().normalize().getParent();
 
