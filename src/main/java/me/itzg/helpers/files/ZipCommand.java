@@ -1,8 +1,10 @@
 package me.itzg.helpers.files;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
+import me.itzg.helpers.errors.InvalidParameterException;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.Option;
@@ -19,6 +21,12 @@ public class ZipCommand {
             Path zip
             ) throws IOException {
         return Zip.validate(zip) ? ExitCode.OK : ExitCode.SOFTWARE;
+    private static void isZipAndExists(Path zip) throws InvalidParameterException, IOException {
+        if (!Files.exists(zip)) {
+            throw new InvalidParameterException("File does not exist at: " + zip.toAbsolutePath());
+        } else if (!Files.probeContentType(zip).equals("application/zip")) {
+            throw new InvalidParameterException("File is not a zip: " + zip.toAbsolutePath());
+        }
     }
 
 }
