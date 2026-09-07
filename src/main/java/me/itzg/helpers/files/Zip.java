@@ -11,7 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class Zip {
 
-    public static boolean validate(Path zip) throws IOException, SecurityException {
+    public static boolean validate(Path zip) throws IOException {
         final Path extractionRoot = zip.toAbsolutePath().normalize().getParent();
 
         try (ZipInputStream zis = new ZipInputStream(Files.newInputStream(zip))) {
