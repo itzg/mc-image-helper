@@ -6,6 +6,9 @@ import java.nio.file.Path;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class Zip {
 
     public static boolean validate(Path zip) throws IOException, SecurityException {
@@ -18,8 +21,8 @@ public class Zip {
                 final Path output = extractionRoot.resolve(entry.getName()).normalize();
 
                 if (!output.startsWith(extractionRoot)) {
-                    throw new SecurityException(
-                            "Zip Slip detected at: " + entry.getName() + " in zip: " + zip.toAbsolutePath());
+                    log.warn("Zip slip detected at: " + entry.getName() + " in zip: " + zip.toAbsolutePath());
+                    return false;
                 }
             }
         }

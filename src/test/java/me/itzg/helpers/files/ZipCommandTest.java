@@ -26,19 +26,20 @@ public class ZipCommandTest {
     Path tempDir;
 
     @Test
-    void rejectsZipWithZipSlip() throws IOException {
+    void rejectsZipWithZipSlip() throws IOException, Exception {
         final LatchingExecutionExceptionHandler exceptionHandler = new LatchingExecutionExceptionHandler();
         final Path slip = createTestZip(List.of("../../../../danger.txt"));
 
-        final int exitCode = new CommandLine(new McImageHelper())
-                .setExecutionExceptionHandler(exceptionHandler)
-                .execute("zip", "check-zip-slip", slip.toString());
+        final String sysErr = SystemLambda.tapSystemErr(() -> {
+            final int exitCode = new CommandLine(new McImageHelper())
+                    .setExecutionExceptionHandler(exceptionHandler)
+                    .execute("zip", "check-zip-slip", slip.toString());
 
-        assertThat(exceptionHandler.getExecutionException())
-                .isInstanceOf(SecurityException.class)
-                .hasMessageMatching("^Zip Slip detected at: .+? in zip: .+$");
+            assertThat(exitCode).isEqualTo(ExitCode.SOFTWARE);
+        });
 
-        assertThat(exitCode).isEqualTo(ExitCode.SOFTWARE);
+        assertThat(sysErr)
+            .containsPattern("Zip slip detected at: .+? in zip: .+");
     }
 
     @Test
