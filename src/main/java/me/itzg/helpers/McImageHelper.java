@@ -22,6 +22,7 @@ import me.itzg.helpers.errors.ExitCodeMapper;
 import me.itzg.helpers.fabric.InstallFabricLoaderCommand;
 import me.itzg.helpers.files.TomlPathCommand;
 import me.itzg.helpers.files.YamlPathCommand;
+import me.itzg.helpers.files.ZipCommand;
 import me.itzg.helpers.find.FindCommand;
 import me.itzg.helpers.forge.InstallForgeCommand;
 import me.itzg.helpers.forge.InstallNeoForgeCommand;
@@ -100,7 +101,8 @@ import picocli.CommandLine.Spec;
         TomlPathCommand.class,
         VanillaTweaksCommand.class,
         VersionFromModrinthProjectsCommand.class,
-        YamlPathCommand.class
+        YamlPathCommand.class,
+        ZipCommand.class
     }
 )
 @Slf4j
