@@ -3,8 +3,11 @@ package me.itzg.helpers.files;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+
+import org.apache.commons.compress.archivers.ArchiveException;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -37,5 +40,47 @@ public class Zip {
         }
 
         return false;
+    }
+
+    /**
+     * Extracts Zip file whilst checking for Zip Slips.
+     *
+     * @param zip         Path to the zip to extract
+     * @param destination Destination to extract zip to
+     * @param overwrite   Boolean flag to overrwite files when extracting
+     * @return Path to extracted files
+     * @throws IOException
+     */
+    public static Path unzip(Path zip, Path destination, boolean overwrite) throws IOException, ArchiveException {
+        final Path extractionRoot = destination.toAbsolutePath().normalize();
+
+        Files.createDirectories(extractionRoot); // Creates directory, does not fail if directory already exists
+
+        try (ZipInputStream zis = new ZipInputStream(Files.newInputStream(zip))) {
+            ZipEntry entry;
+
+            while ((entry = zis.getNextEntry()) != null) {
+                final Path output = extractionRoot.resolve(entry.getName()).normalize();
+
+                if (!output.startsWith(extractionRoot)) {
+                    throw new ArchiveException("Invalid Zip Entry; contains zip slip: " + entry.getName());
+                }
+
+                if (entry.isDirectory()) {
+                    Files.createDirectories(output);
+                } else {
+                    Files.createDirectories(output.getParent());
+
+                    if (overwrite) {
+                        Files.copy(zis, output, StandardCopyOption.REPLACE_EXISTING);
+                    } else if (Files.notExists(output)) {
+                        Files.copy(zis, output);
+                    }
+                }
+            }
+        }
+
+        return extractionRoot;
+
     }
 }
