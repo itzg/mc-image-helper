@@ -1383,6 +1383,17 @@ Extracts a path from a YAML file using json-path syntax
       --file=<yamlFile>   A YAML file to query
 ```
 
+### zip
+
+```
+Usage: mc-image-helper zip [-h] [COMMAND]
+Zip related helpers, asserting on zip-slips and extracting zips
+  -h, --help
+Commands:
+  check-zip-slip  Checks if a zip contains a zip-slip
+  unzip           Unzip archive, checking for zip-slips
+```
+
 <!-- END of documentation generated using `mc-image-helper show-all-subcommand-usage` -->
 
 
