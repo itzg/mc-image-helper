@@ -8,7 +8,7 @@ import java.util.zip.ZipInputStream;
 
 public class Zip {
 
-    static boolean validate(Path zip) throws IOException, SecurityException {
+    public static boolean validate(Path zip) throws IOException, SecurityException {
         final Path extractionRoot = zip.toAbsolutePath().normalize().getParent();
 
         try (ZipInputStream zis = new ZipInputStream(Files.newInputStream(zip))) {
