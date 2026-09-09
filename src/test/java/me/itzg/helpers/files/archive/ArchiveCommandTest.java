@@ -179,25 +179,35 @@ public class ArchiveCommandTest {
     }
 
     Path createTestArchive(ArchiveType type, List<String> entries) throws IOException {
+        return createTestArchive(type, List.of(), entries);
+    }
+
+    Path createTestArchive(ArchiveType type, List<String> directories, List<String> files) throws IOException {
         final Path archive = tempDir.resolve("test." + type.extension());
 
         switch (type) {
-            case ZIP -> createZip(archive, entries);
-            case TAR -> createTar(Files.newOutputStream(archive), entries);
+            case ZIP -> createZip(archive, directories, files);
+            case TAR -> createTar(Files.newOutputStream(archive), directories, files);
             case TAR_GZIP -> createTar(
-                    new GzipCompressorOutputStream(Files.newOutputStream(archive)), entries);
+                    new GzipCompressorOutputStream(Files.newOutputStream(archive)), directories, files);
             case TAR_BZIP2 -> createTar(
-                    new BZip2CompressorOutputStream(Files.newOutputStream(archive)), entries);
+                    new BZip2CompressorOutputStream(Files.newOutputStream(archive)), directories, files);
             case TAR_ZSTD -> createTar(
-                    new ZstdCompressorOutputStream(Files.newOutputStream(archive)), entries);
+                    new ZstdCompressorOutputStream(Files.newOutputStream(archive)), directories, files);
         }
 
         return archive;
     }
 
-    private void createZip(Path archive, List<String> entries) throws IOException {
+    private void createZip(Path archive, List<String> directories, List<String> files) throws IOException {
         try (ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(archive))) {
-            for (String path : entries) {
+            for (String path : directories) {
+                ZipEntry entry = new ZipEntry(path);
+                zos.putNextEntry(entry);
+                zos.closeEntry();
+            }
+
+            for (String path : files) {
                 ZipEntry entry = new ZipEntry(path);
                 zos.putNextEntry(entry);
                 zos.write("data".getBytes(StandardCharsets.UTF_8));
@@ -206,11 +216,18 @@ public class ArchiveCommandTest {
         }
     }
 
-    private void createTar(OutputStream output, List<String> entries) throws IOException {
+    private void createTar(OutputStream output, List<String> directories, List<String> files) throws IOException {
         try (output; TarArchiveOutputStream tos = new TarArchiveOutputStream(output)) {
             final byte[] data = "data".getBytes(StandardCharsets.UTF_8);
 
-            for (String path : entries) {
+            for (String path : directories) {
+                final String directoryPath = path.endsWith("/") ? path : path + "/";
+                final TarArchiveEntry entry = new TarArchiveEntry(directoryPath);
+                tos.putArchiveEntry(entry);
+                tos.closeArchiveEntry();
+            }
+
+            for (String path : files) {
                 TarArchiveEntry entry = new TarArchiveEntry(path);
                 entry.setSize(data.length);
                 tos.putArchiveEntry(entry);
