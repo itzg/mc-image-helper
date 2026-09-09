@@ -19,6 +19,8 @@ Usage: mc-image-helper [-hsV] [--debug | --logging=<loggingLevel>] [COMMAND]
   -s, --silent    Don't output logs even if there's an error
   -V, --version
 Commands:
+  archive                         Archive helpers, checking for path traversal
+                                    and extracting archives
   asciify                         Converts UTF-8 on stdin to ASCII by escaping
                                     Unicode characters
   assert                          Provides assertion operators for verifying
@@ -100,6 +102,17 @@ For [patch](#patch) command [see below](#patch-schemas) for a description of [Pa
 For [install-curseforge](#install-curseforge) and [install-modrinth-modpack](#install-modrinth-modpack) commands, refer to [the exclude/include file schema](#excludeinclude-file-schema).
 
 <!-- START of documentation generated using `mc-image-helper show-all-subcommand-usage` -->
+
+### archive
+
+```
+Usage: mc-image-helper archive [-h] [COMMAND]
+Archive helpers, checking for path traversal and extracting archives
+  -h, --help
+Commands:
+  check-path-traversal  Checks if an archive contains path traversal
+  extract               Extracts an archive, checking for path traversal
+```
 
 ### asciify
 
@@ -1381,17 +1394,6 @@ Extracts a path from a YAML file using json-path syntax
       <yamlPath>          A YAML/JSON path in to query. Leading root anchor, $,
                             will be added if not present
       --file=<yamlFile>   A YAML file to query
-```
-
-### zip
-
-```
-Usage: mc-image-helper zip [-h] [COMMAND]
-Zip related helpers, asserting on zip-slips and extracting zips
-  -h, --help
-Commands:
-  check-zip-slip  Checks if a zip contains a zip-slip
-  unzip           Unzip archive, checking for zip-slips
 ```
 
 <!-- END of documentation generated using `mc-image-helper show-all-subcommand-usage` -->
