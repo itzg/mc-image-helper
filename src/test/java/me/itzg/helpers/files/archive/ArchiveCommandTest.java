@@ -50,13 +50,14 @@ public class ArchiveCommandTest {
             .containsPattern("Zip slip detected at: .+? in zip: .+");
     }
 
-    @Test
-    void acceptsValidZip() throws IOException, Exception {
-        final Path slip = createTestArchive(ArchiveType.ZIP, List.of("file.txt"));
+    @ParameterizedTest
+    @EnumSource(ArchiveType.class)
+    void acceptsValidArchive(ArchiveType type) throws IOException, Exception {
+        final Path archive = createTestArchive(type, List.of("file.txt"));
 
         final String sysErr = SystemLambda.tapSystemErr(() -> {
             final int exitCode = new CommandLine(new McImageHelper())
-                    .execute("archive", "check-path-traversal", slip.toString());
+                    .execute("archive", "check-path-traversal", archive.toString());
 
             assertThat(exitCode).isEqualTo(ExitCode.OK);
         });
@@ -64,14 +65,15 @@ public class ArchiveCommandTest {
         assertThat(sysErr).isEmpty();
     }
 
-    @Test
-    void unzipsValidArchive() throws IOException, Exception {
-        final Path zip = createTestArchive(ArchiveType.ZIP, List.of("nested/file.txt"));
+    @ParameterizedTest
+    @EnumSource(ArchiveType.class)
+    void extractsValidArchive(ArchiveType type) throws IOException, Exception {
+        final Path archive = createTestArchive(type, List.of("nested/file.txt"));
         final Path destination = tempDir.resolve("destination");
 
         final String sysErr = SystemLambda.tapSystemErr(() -> {
             final int exitCode = new CommandLine(new McImageHelper())
-                    .execute("archive", "extract", zip.toString(), destination.toString());
+                    .execute("archive", "extract", archive.toString(), destination.toString());
 
             assertThat(exitCode).isEqualTo(ExitCode.OK);
         });
@@ -80,37 +82,41 @@ public class ArchiveCommandTest {
         assertThat(destination.resolve("nested/file.txt")).hasContent("data");
     }
 
-    @Test
-    void rejectsZipSlipDuringUnzip() throws IOException, Exception {
+    @ParameterizedTest
+    @EnumSource(ArchiveType.class)
+    void rejectsPathTraversalDuringExtraction(ArchiveType type) throws IOException, Exception {
         final LatchingExecutionExceptionHandler exceptionHandler = new LatchingExecutionExceptionHandler();
-        final Path zip = createTestArchive(ArchiveType.ZIP, List.of("../danger.txt"));
+        final Path archive = createTestArchive(type, List.of("../danger.txt"));
         final Path destination = tempDir.resolve("destination");
 
         final String sysErr = SystemLambda.tapSystemErr(() -> {
             final int exitCode = new CommandLine(new McImageHelper())
                     .setExecutionExceptionHandler(exceptionHandler)
-                    .execute("archive", "extract", zip.toString(), destination.toString());
+                    .execute("archive", "extract", archive.toString(), destination.toString());
 
             assertThat(exitCode).isEqualTo(ExitCode.SOFTWARE);
         });
 
         assertThat(exceptionHandler.getExecutionException())
                 .isInstanceOf(ArchiveException.class)
-                .hasMessageContaining("contains zip slip");
+                .hasMessageContaining(type == ArchiveType.ZIP
+                        ? "contains zip slip"
+                        : "contains path traversal");
         assertThat(sysErr).contains("ArchiveException");
         assertThat(tempDir.resolve("danger.txt")).doesNotExist();
     }
 
-    @Test
-    void doesNotOverwriteExistingFilesByDefault() throws IOException, Exception {
-        final Path zip = createTestArchive(ArchiveType.ZIP, List.of("file.txt"));
+    @ParameterizedTest
+    @EnumSource(ArchiveType.class)
+    void doesNotOverwriteExistingFilesByDefault(ArchiveType type) throws IOException, Exception {
+        final Path archive = createTestArchive(type, List.of("file.txt"));
         final Path destination = Files.createDirectories(tempDir.resolve("destination"));
         final Path extractedFile = destination.resolve("file.txt");
         Files.writeString(extractedFile, "existing");
 
         final String sysErr = SystemLambda.tapSystemErr(() -> {
             final int exitCode = new CommandLine(new McImageHelper())
-                    .execute("archive", "extract", zip.toString(), destination.toString());
+                    .execute("archive", "extract", archive.toString(), destination.toString());
 
             assertThat(exitCode).isEqualTo(ExitCode.OK);
         });
@@ -119,16 +125,17 @@ public class ArchiveCommandTest {
         assertThat(extractedFile).hasContent("existing");
     }
 
-    @Test
-    void overwritesExistingFilesWhenRequested() throws IOException, Exception {
-        final Path zip = createTestArchive(ArchiveType.ZIP, List.of("file.txt"));
+    @ParameterizedTest
+    @EnumSource(ArchiveType.class)
+    void overwritesExistingFilesWhenRequested(ArchiveType type) throws IOException, Exception {
+        final Path archive = createTestArchive(type, List.of("file.txt"));
         final Path destination = Files.createDirectories(tempDir.resolve("destination"));
         final Path extractedFile = destination.resolve("file.txt");
         Files.writeString(extractedFile, "existing");
 
         final String sysErr = SystemLambda.tapSystemErr(() -> {
             final int exitCode = new CommandLine(new McImageHelper())
-                    .execute("archive", "extract", zip.toString(), destination.toString(), "--overwrite");
+                    .execute("archive", "extract", archive.toString(), destination.toString(), "--overwrite");
 
             assertThat(exitCode).isEqualTo(ExitCode.OK);
         });
