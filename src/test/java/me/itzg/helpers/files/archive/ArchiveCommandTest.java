@@ -4,9 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -19,6 +19,8 @@ import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 import org.apache.commons.compress.compressors.zstandard.ZstdCompressorOutputStream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import com.github.stefanbirkner.systemlambda.SystemLambda;
 
@@ -142,6 +144,65 @@ public class ArchiveCommandTest {
 
         assertThat(sysErr).isEmpty();
         assertThat(extractedFile).hasContent("data");
+    }
+
+    @ParameterizedTest
+    @EnumSource(ArchiveType.class)
+    void rejectsPathTraversalBeforeExtractingAnyEntries(ArchiveType type) throws IOException, Exception {
+        final LatchingExecutionExceptionHandler exceptionHandler = new LatchingExecutionExceptionHandler();
+        final Path archive = createTestArchive(type, List.of("safe/file.txt", "../danger.txt"));
+        final Path destination = tempDir.resolve("destination");
+
+        SystemLambda.tapSystemErr(() -> {
+            final int exitCode = new CommandLine(new McImageHelper())
+                    .setExecutionExceptionHandler(exceptionHandler)
+                    .execute("archive", "extract", archive.toString(), destination.toString());
+
+            assertThat(exitCode).isEqualTo(ExitCode.SOFTWARE);
+        });
+
+        assertThat(exceptionHandler.getExecutionException()).isInstanceOf(ArchiveException.class);
+        assertThat(destination.resolve("safe/file.txt")).doesNotExist();
+        assertThat(tempDir.resolve("danger.txt")).doesNotExist();
+    }
+
+    @ParameterizedTest
+    @EnumSource(ArchiveType.class)
+    void extractsExplicitDirectories(ArchiveType type) throws IOException, Exception {
+        final Path archive = createTestArchive(type,
+                List.of("nested/"), List.of("nested/file.txt"));
+        final Path destination = tempDir.resolve("destination");
+
+        final String sysErr = SystemLambda.tapSystemErr(() -> {
+            final int exitCode = new CommandLine(new McImageHelper())
+                    .execute("archive", "extract", archive.toString(), destination.toString());
+
+            assertThat(exitCode).isEqualTo(ExitCode.OK);
+        });
+
+        assertThat(sysErr).isEmpty();
+        assertThat(destination.resolve("nested")).isDirectory();
+        assertThat(destination.resolve("nested/file.txt")).hasContent("data");
+    }
+
+    @ParameterizedTest
+    @EnumSource(ArchiveType.class)
+    void extractsEmptyArchive(ArchiveType type) throws IOException, Exception {
+        final Path archive = createTestArchive(type, List.of());
+        final Path destination = tempDir.resolve("destination");
+
+        final String sysErr = SystemLambda.tapSystemErr(() -> {
+            final int exitCode = new CommandLine(new McImageHelper())
+                    .execute("archive", "extract", archive.toString(), destination.toString());
+
+            assertThat(exitCode).isEqualTo(ExitCode.OK);
+        });
+
+        assertThat(sysErr).isEmpty();
+        assertThat(destination).isDirectory();
+        try (var files = Files.list(destination)) {
+            assertThat(files.toList()).isEmpty();
+        }
     }
 
     @Test
