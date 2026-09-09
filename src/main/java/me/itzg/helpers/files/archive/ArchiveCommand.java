@@ -31,10 +31,10 @@ public class ArchiveCommand {
     public Integer extract(
             @Parameters(index = "0", paramLabel = "ARCHIVE", description = "Path to archive") Path archive,
             @Parameters(index = "1", paramLabel = "DESTINATION", description = "Output destination") Path destination,
-            @Option(names = "--no-overwrite", description = "Do not overwrite existing files") boolean noOverwrite)
+            @Option(names = "--overwrite", description = "Overwrite existing files") boolean overwrite)
             throws ArchiveException, IOException {
 
-        parseArchive(archive).extract(destination, !noOverwrite);
+        parseArchive(archive).extract(destination, overwrite);
         return ExitCode.OK;
     }
 
