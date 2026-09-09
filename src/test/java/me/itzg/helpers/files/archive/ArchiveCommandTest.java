@@ -2,16 +2,21 @@ package me.itzg.helpers.files.archive;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import org.apache.commons.compress.archivers.ArchiveException;
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
+import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
+import org.apache.commons.compress.compressors.zstandard.ZstdCompressorOutputStream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -31,7 +36,7 @@ public class ArchiveCommandTest {
     @Test
     void rejectsZipWithZipSlip() throws IOException, Exception {
         final LatchingExecutionExceptionHandler exceptionHandler = new LatchingExecutionExceptionHandler();
-        final Path slip = createTestZip(List.of("../../../../danger.txt"));
+        final Path slip = createTestArchive(ArchiveType.ZIP, List.of("../../../../danger.txt"));
 
         final String sysErr = SystemLambda.tapSystemErr(() -> {
             final int exitCode = new CommandLine(new McImageHelper())
@@ -47,7 +52,7 @@ public class ArchiveCommandTest {
 
     @Test
     void acceptsValidZip() throws IOException, Exception {
-        final Path slip = createTestZip(List.of("file.txt"));
+        final Path slip = createTestArchive(ArchiveType.ZIP, List.of("file.txt"));
 
         final String sysErr = SystemLambda.tapSystemErr(() -> {
             final int exitCode = new CommandLine(new McImageHelper())
@@ -61,7 +66,7 @@ public class ArchiveCommandTest {
 
     @Test
     void unzipsValidArchive() throws IOException, Exception {
-        final Path zip = createTestZip(List.of("nested/file.txt"));
+        final Path zip = createTestArchive(ArchiveType.ZIP, List.of("nested/file.txt"));
         final Path destination = tempDir.resolve("destination");
 
         final String sysErr = SystemLambda.tapSystemErr(() -> {
@@ -78,7 +83,7 @@ public class ArchiveCommandTest {
     @Test
     void rejectsZipSlipDuringUnzip() throws IOException, Exception {
         final LatchingExecutionExceptionHandler exceptionHandler = new LatchingExecutionExceptionHandler();
-        final Path zip = createTestZip(List.of("../danger.txt"));
+        final Path zip = createTestArchive(ArchiveType.ZIP, List.of("../danger.txt"));
         final Path destination = tempDir.resolve("destination");
 
         final String sysErr = SystemLambda.tapSystemErr(() -> {
@@ -98,7 +103,7 @@ public class ArchiveCommandTest {
 
     @Test
     void doesNotOverwriteExistingFilesByDefault() throws IOException, Exception {
-        final Path zip = createTestZip(List.of("file.txt"));
+        final Path zip = createTestArchive(ArchiveType.ZIP, List.of("file.txt"));
         final Path destination = Files.createDirectories(tempDir.resolve("destination"));
         final Path extractedFile = destination.resolve("file.txt");
         Files.writeString(extractedFile, "existing");
@@ -116,7 +121,7 @@ public class ArchiveCommandTest {
 
     @Test
     void overwritesExistingFilesWhenRequested() throws IOException, Exception {
-        final Path zip = createTestZip(List.of("file.txt"));
+        final Path zip = createTestArchive(ArchiveType.ZIP, List.of("file.txt"));
         final Path destination = Files.createDirectories(tempDir.resolve("destination"));
         final Path extractedFile = destination.resolve("file.txt");
         Files.writeString(extractedFile, "existing");
@@ -173,20 +178,64 @@ public class ArchiveCommandTest {
         assertThat(sysErr).contains("InvalidParameterException");
     }
 
-    Path createTestZip(List<String> entries) throws IOException {
-        final File zip = tempDir.resolve("test.zip").toFile();
+    Path createTestArchive(ArchiveType type, List<String> entries) throws IOException {
+        final Path archive = tempDir.resolve("test." + type.extension());
 
-        try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(zip))) {
+        switch (type) {
+            case ZIP -> createZip(archive, entries);
+            case TAR -> createTar(Files.newOutputStream(archive), entries);
+            case TAR_GZIP -> createTar(
+                    new GzipCompressorOutputStream(Files.newOutputStream(archive)), entries);
+            case TAR_BZIP2 -> createTar(
+                    new BZip2CompressorOutputStream(Files.newOutputStream(archive)), entries);
+            case TAR_ZSTD -> createTar(
+                    new ZstdCompressorOutputStream(Files.newOutputStream(archive)), entries);
+        }
+
+        return archive;
+    }
+
+    private void createZip(Path archive, List<String> entries) throws IOException {
+        try (ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(archive))) {
             for (String path : entries) {
                 ZipEntry entry = new ZipEntry(path);
                 zos.putNextEntry(entry);
-                zos.write("data".getBytes());
+                zos.write("data".getBytes(StandardCharsets.UTF_8));
+                zos.closeEntry();
             }
+        }
+    }
 
-            zos.close();
+    private void createTar(OutputStream output, List<String> entries) throws IOException {
+        try (output; TarArchiveOutputStream tos = new TarArchiveOutputStream(output)) {
+            final byte[] data = "data".getBytes(StandardCharsets.UTF_8);
+
+            for (String path : entries) {
+                TarArchiveEntry entry = new TarArchiveEntry(path);
+                entry.setSize(data.length);
+                tos.putArchiveEntry(entry);
+                tos.write(data);
+                tos.closeArchiveEntry();
+            }
+        }
+    }
+
+    enum ArchiveType {
+        ZIP("zip"),
+        TAR("tar"),
+        TAR_GZIP("tar.gz"),
+        TAR_BZIP2("tar.bz2"),
+        TAR_ZSTD("tar.zst");
+
+        private final String extension;
+
+        ArchiveType(String extension) {
+            this.extension = extension;
         }
 
-        return zip.toPath();
+        String extension() {
+            return extension;
+        }
     }
 
 }
