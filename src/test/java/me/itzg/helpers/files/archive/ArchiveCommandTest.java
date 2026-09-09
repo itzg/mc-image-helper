@@ -23,7 +23,7 @@ import me.itzg.helpers.errors.InvalidParameterException;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
 
-public class ZipCommandTest {
+public class ArchiveCommandTest {
 
     @TempDir
     Path tempDir;
