@@ -56,6 +56,10 @@ public interface Archive {
 
         return switch (contentType) {
             case "application/zip" -> new Zip(archive);
+            case "application/x-tar" -> new Tar(archive);
+            case "application/gzip", "application/x-gzip" -> new TarGzip(archive);
+            case "application/x-bzip2" -> new TarBzip2(archive);
+            case "application/zstd", "application/x-zstd" -> new TarZstd(archive);
             default -> throw new IOException("Failed to read file MIME type: " + archive.toAbsolutePath());
         };
     }
