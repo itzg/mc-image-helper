@@ -69,6 +69,7 @@ import picocli.CommandLine.Spec;
 @Command(name = "mc-image-helper",
     versionProvider = McImageHelper.AppVersionProvider.class,
     subcommands = {
+        ArchiveCommand.class,
         Asciify.class,
         AssertCommand.class,
         CompareVersionsCommand.class,
@@ -106,8 +107,7 @@ import picocli.CommandLine.Spec;
         TomlPathCommand.class,
         VanillaTweaksCommand.class,
         VersionFromModrinthProjectsCommand.class,
-        YamlPathCommand.class,
-        ArchiveCommand.class
+        YamlPathCommand.class
     }
 )
 @Slf4j
