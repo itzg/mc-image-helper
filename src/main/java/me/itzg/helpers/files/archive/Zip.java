@@ -1,18 +1,21 @@
-package me.itzg.helpers.files;
+package me.itzg.helpers.files.archive;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import org.apache.commons.compress.archivers.ArchiveException;
 
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class Zip {
+@AllArgsConstructor
+public class Zip implements Archive {
+
+    private final Path zip;
 
     /**
      * Checks if a Zip contains a Zip Slip.
@@ -23,20 +26,13 @@ public class Zip {
      * @return Boolean if zip slip is found within zip
      * @throws IOException
      */
-    public static boolean containsZipSlip(Path zip) throws IOException {
-        final Path extractionRoot = zip.toAbsolutePath().normalize().getParent();
+    @Override
+    public boolean containsPathTraversal() throws IOException {
+        final String unsafeEntry = findUnsafeEntry();
 
-        try (ZipInputStream zis = new ZipInputStream(Files.newInputStream(zip))) {
-            ZipEntry entry;
-
-            while ((entry = zis.getNextEntry()) != null) {
-                final Path output = extractionRoot.resolve(entry.getName()).normalize();
-
-                if (!output.startsWith(extractionRoot)) {
-                    log.warn("Zip slip detected at: " + entry.getName() + " in zip: " + zip.toAbsolutePath());
-                    return true;
-                }
-            }
+        if (unsafeEntry != null) {
+            log.warn("Zip slip detected at: " + unsafeEntry + " in zip: " + zip.toAbsolutePath());
+            return true;
         }
 
         return false;
@@ -51,36 +47,47 @@ public class Zip {
      * @return Path to extracted files
      * @throws IOException
      */
-    public static Path unzip(Path zip, Path destination, boolean overwrite) throws IOException, ArchiveException {
-        final Path extractionRoot = destination.toAbsolutePath().normalize();
+    @Override
+    public Path extract(Path destination, boolean overwrite) throws IOException, ArchiveException {
+        final String unsafeEntry = findUnsafeEntry();
+        if (unsafeEntry != null) {
+            throw new ArchiveException("Invalid Zip Entry; contains zip slip: " + unsafeEntry);
+        }
 
-        Files.createDirectories(extractionRoot); // Creates directory, does not fail if directory already exists
+        final Path extractionRoot = prepareDestination(destination);
 
         try (ZipInputStream zis = new ZipInputStream(Files.newInputStream(zip))) {
             ZipEntry entry;
 
             while ((entry = zis.getNextEntry()) != null) {
-                final Path output = extractionRoot.resolve(entry.getName()).normalize();
-
-                if (!output.startsWith(extractionRoot)) {
-                    throw new ArchiveException("Invalid Zip Entry; contains zip slip: " + entry.getName());
-                }
+                final Path output = resolveEntry(extractionRoot, entry.getName(),
+                        "Invalid Zip Entry; contains zip slip: ");
 
                 if (entry.isDirectory()) {
                     Files.createDirectories(output);
                 } else {
-                    Files.createDirectories(output.getParent());
-
-                    if (overwrite) {
-                        Files.copy(zis, output, StandardCopyOption.REPLACE_EXISTING);
-                    } else if (Files.notExists(output)) {
-                        Files.copy(zis, output);
-                    }
+                    copyEntry(zis, output, overwrite);
                 }
             }
         }
 
         return extractionRoot;
 
+    }
+
+    private String findUnsafeEntry() throws IOException {
+        final Path extractionRoot = zip.toAbsolutePath().normalize().getParent();
+
+        try (ZipInputStream zis = new ZipInputStream(Files.newInputStream(zip))) {
+            ZipEntry entry;
+
+            while ((entry = zis.getNextEntry()) != null) {
+                if (isUnsafeEntry(extractionRoot, entry.getName())) {
+                    return entry.getName();
+                }
+            }
+        }
+
+        return null;
     }
 }
