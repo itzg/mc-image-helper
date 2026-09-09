@@ -36,7 +36,7 @@ public class ZipCommandTest {
         final String sysErr = SystemLambda.tapSystemErr(() -> {
             final int exitCode = new CommandLine(new McImageHelper())
                     .setExecutionExceptionHandler(exceptionHandler)
-                    .execute("zip", "check-zip-slip", slip.toString());
+                    .execute("archive", "check-path-traversal", slip.toString());
 
             assertThat(exitCode).isEqualTo(ExitCode.SOFTWARE);
         });
@@ -51,7 +51,7 @@ public class ZipCommandTest {
 
         final String sysErr = SystemLambda.tapSystemErr(() -> {
             final int exitCode = new CommandLine(new McImageHelper())
-                    .execute("zip", "check-zip-slip", slip.toString());
+                    .execute("archive", "check-path-traversal", slip.toString());
 
             assertThat(exitCode).isEqualTo(ExitCode.OK);
         });
@@ -66,7 +66,7 @@ public class ZipCommandTest {
 
         final String sysErr = SystemLambda.tapSystemErr(() -> {
             final int exitCode = new CommandLine(new McImageHelper())
-                    .execute("zip", "unzip", zip.toString(), destination.toString());
+                    .execute("archive", "extract", zip.toString(), destination.toString());
 
             assertThat(exitCode).isEqualTo(ExitCode.OK);
         });
@@ -84,7 +84,7 @@ public class ZipCommandTest {
         final String sysErr = SystemLambda.tapSystemErr(() -> {
             final int exitCode = new CommandLine(new McImageHelper())
                     .setExecutionExceptionHandler(exceptionHandler)
-                    .execute("zip", "unzip", zip.toString(), destination.toString());
+                    .execute("archive", "extract", zip.toString(), destination.toString());
 
             assertThat(exitCode).isEqualTo(ExitCode.SOFTWARE);
         });
@@ -105,7 +105,7 @@ public class ZipCommandTest {
 
         final String sysErr = SystemLambda.tapSystemErr(() -> {
             final int exitCode = new CommandLine(new McImageHelper())
-                    .execute("zip", "unzip", zip.toString(), destination.toString());
+                    .execute("archive", "extract", zip.toString(), destination.toString());
 
             assertThat(exitCode).isEqualTo(ExitCode.OK);
         });
@@ -123,7 +123,7 @@ public class ZipCommandTest {
 
         final String sysErr = SystemLambda.tapSystemErr(() -> {
             final int exitCode = new CommandLine(new McImageHelper())
-                    .execute("zip", "unzip", zip.toString(), destination.toString(), "--overwrite");
+                    .execute("archive", "extract", zip.toString(), destination.toString(), "--overwrite");
 
             assertThat(exitCode).isEqualTo(ExitCode.OK);
         });
@@ -141,7 +141,7 @@ public class ZipCommandTest {
         final String sysErr = SystemLambda.tapSystemErr(() -> {
             final int exitCode = new CommandLine(new McImageHelper())
                     .setExecutionExceptionHandler(exceptionHandler)
-                    .execute("zip", "unzip", missingZip.toString(), destination.toString());
+                    .execute("archive", "extract", missingZip.toString(), destination.toString());
 
             assertThat(exitCode).isEqualTo(ExitCode.SOFTWARE);
         });
@@ -162,14 +162,14 @@ public class ZipCommandTest {
         final String sysErr = SystemLambda.tapSystemErr(() -> {
             final int exitCode = new CommandLine(new McImageHelper())
                     .setExecutionExceptionHandler(exceptionHandler)
-                    .execute("zip", "unzip", nonZip.toString(), destination.toString());
+                    .execute("archive", "extract", nonZip.toString(), destination.toString());
 
             assertThat(exitCode).isEqualTo(ExitCode.SOFTWARE);
         });
 
         assertThat(exceptionHandler.getExecutionException())
                 .isInstanceOf(InvalidParameterException.class)
-                .hasMessageContaining("File is not a zip");
+                .hasMessageContaining("File is not an archive/zip");
         assertThat(sysErr).contains("InvalidParameterException");
     }
 
