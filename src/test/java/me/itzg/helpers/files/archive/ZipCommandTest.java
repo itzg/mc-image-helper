@@ -1,4 +1,4 @@
-package me.itzg.helpers.files;
+package me.itzg.helpers.files.archive;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
