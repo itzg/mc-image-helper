@@ -44,7 +44,7 @@ public class ArchiveCommand {
         }
 
         try {
-            return ArchiveUtils.parseArchive(archive);
+            return ArchiveFactory.create(archive);
         } catch (IllegalArgumentException | IOException e) {
             throw new InvalidParameterException("File is not an archive/zip: " + archive.toAbsolutePath());
         }
