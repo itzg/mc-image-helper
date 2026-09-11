@@ -17,7 +17,7 @@ public class ArchiveCommand {
     @Option(names = { "--help", "-h" }, usageHelp = true)
     boolean help;
 
-    @Command(name = "check-path-traversal", description = "Checks if an archive contains path traversal")
+    @Command(name = "check-path-traversal", description = "Checks if an archive contains path traversal attack")
     public Integer checkPathTraversal(
             @Parameters(index = "0", paramLabel = "ARCHIVE", description = "Path to archive") Path archive)
             throws IOException {
