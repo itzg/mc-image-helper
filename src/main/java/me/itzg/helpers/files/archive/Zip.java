@@ -54,19 +54,19 @@ public class Zip implements Archive {
             throw new ArchiveException("Invalid Zip Entry; contains zip slip: " + unsafeEntry);
         }
 
-        final Path extractionRoot = prepareDestination(destination);
+        final Path extractionRoot = ArchiveUtils.prepareDestination(destination);
 
         try (ZipInputStream zis = new ZipInputStream(Files.newInputStream(zip))) {
             ZipEntry entry;
 
             while ((entry = zis.getNextEntry()) != null) {
-                final Path output = resolveEntry(extractionRoot, entry.getName(),
+                final Path output = ArchiveUtils.resolveEntry(extractionRoot, entry.getName(),
                         "Invalid Zip Entry; contains zip slip: ");
 
                 if (entry.isDirectory()) {
                     Files.createDirectories(output);
                 } else {
-                    copyEntry(zis, output, overwrite);
+                    ArchiveUtils.copyEntry(zis, output, overwrite);
                 }
             }
         }
@@ -82,7 +82,7 @@ public class Zip implements Archive {
             ZipEntry entry;
 
             while ((entry = zis.getNextEntry()) != null) {
-                if (isUnsafeEntry(extractionRoot, entry.getName())) {
+                if (ArchiveUtils.isUnsafeEntry(extractionRoot, entry.getName())) {
                     return entry.getName();
                 }
             }

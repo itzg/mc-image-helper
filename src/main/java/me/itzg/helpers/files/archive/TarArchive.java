@@ -45,19 +45,19 @@ abstract class TarArchive implements Archive {
             throw new ArchiveException("Invalid Archive Entry; contains path traversal: " + unsafeEntry);
         }
 
-        final Path extractionRoot = prepareDestination(destination);
+        final Path extractionRoot = ArchiveUtils.prepareDestination(destination);
 
         try (TarArchiveInputStream tar = new TarArchiveInputStream(openInputStream())) {
             TarArchiveEntry entry;
 
             while ((entry = tar.getNextEntry()) != null) {
-                final Path output = resolveEntry(extractionRoot, entry.getName(),
+                final Path output = ArchiveUtils.resolveEntry(extractionRoot, entry.getName(),
                         "Invalid Archive Entry; contains path traversal: ");
 
                 if (entry.isDirectory()) {
                     Files.createDirectories(output);
                 } else {
-                    copyEntry(tar, output, overwrite);
+                    ArchiveUtils.copyEntry(tar, output, overwrite);
                 }
             }
         }
@@ -72,7 +72,7 @@ abstract class TarArchive implements Archive {
             TarArchiveEntry entry;
 
             while ((entry = tar.getNextEntry()) != null) {
-                if (isUnsafeEntry(extractionRoot, entry.getName())) {
+                if (ArchiveUtils.isUnsafeEntry(extractionRoot, entry.getName())) {
                     return entry.getName();
                 }
             }
