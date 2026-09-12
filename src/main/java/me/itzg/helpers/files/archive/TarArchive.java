@@ -1,7 +1,6 @@
 package me.itzg.helpers.files.archive;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -9,22 +8,15 @@ import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-abstract class TarArchive implements Archive {
+@AllArgsConstructor
+class TarArchive implements Archive {
 
     private final Path archive;
-
-    TarArchive(Path archive) {
-        this.archive = archive;
-    }
-
-    protected final Path archive() {
-        return archive;
-    }
-
-    protected abstract InputStream openInputStream() throws IOException;
+    private final ArchiveOpener opener;
 
     @Override
     public boolean containsPathTraversal() throws IOException {
@@ -47,7 +39,7 @@ abstract class TarArchive implements Archive {
 
         final Path extractionRoot = ArchiveUtils.prepareDestination(destination);
 
-        try (TarArchiveInputStream tar = new TarArchiveInputStream(openInputStream())) {
+        try (TarArchiveInputStream tar = new TarArchiveInputStream(opener.open(archive))) {
             TarArchiveEntry entry;
 
             while ((entry = tar.getNextEntry()) != null) {
@@ -66,9 +58,10 @@ abstract class TarArchive implements Archive {
     }
 
     private String findUnsafeEntry() throws IOException {
+
         final Path extractionRoot = archive.toAbsolutePath().normalize().getParent();
 
-        try (TarArchiveInputStream tar = new TarArchiveInputStream(openInputStream())) {
+        try (TarArchiveInputStream tar = new TarArchiveInputStream(opener.open(archive))) {
             TarArchiveEntry entry;
 
             while ((entry = tar.getNextEntry()) != null) {
