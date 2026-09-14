@@ -92,7 +92,7 @@ dependencies {
   implementation(platform('ch.qos.logback:logback-parent:1.5.25'))
   // reactor-bom lags netty just a bit, so make sure it's the one preferred since we use reactor directly
   implementation enforcedPlatform('io.projectreactor:reactor-bom:2025.0.7')
-  implementation platform('io.netty:netty-bom:4.2.17.Final')
+  implementation platform('io.netty:netty-bom:4.2.18.Final')
 
   implementation 'ch.qos.logback:logback-core'
   implementation 'ch.qos.logback:logback-classic'
