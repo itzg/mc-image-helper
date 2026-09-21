@@ -110,7 +110,7 @@ public class ArchiveCommandTest {
     @ParameterizedTest
     @EnumSource(ArchiveType.class)
     void doesNotOverwriteExistingFilesByDefault(ArchiveType type) throws IOException, Exception {
-        final Path archive = createTestArchive(type, List.of("file.txt"));
+        final Path archive = createTestArchive(type, List.of("file.txt", "subsequent.txt"));
         final Path destination = Files.createDirectories(tempDir.resolve("destination"));
         final Path extractedFile = destination.resolve("file.txt");
         Files.writeString(extractedFile, "existing");
@@ -124,6 +124,7 @@ public class ArchiveCommandTest {
 
         assertThat(sysErr).isEmpty();
         assertThat(extractedFile).hasContent("existing");
+        assertThat(destination.resolve("subsequent.txt")).hasContent("data");
     }
 
     @ParameterizedTest
