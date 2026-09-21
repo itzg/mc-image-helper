@@ -35,10 +35,11 @@ public class ArchiveCommandTest {
     @TempDir
     Path tempDir;
 
-    @Test
-    void rejectsZipWithZipSlip() throws IOException, Exception {
+    @ParameterizedTest
+    @EnumSource(ArchiveType.class)
+    void rejectsArchiveWithPathTraversal(ArchiveType type) throws IOException, Exception {
         final LatchingExecutionExceptionHandler exceptionHandler = new LatchingExecutionExceptionHandler();
-        final Path slip = createTestArchive(ArchiveType.ZIP, List.of("../../../../danger.txt"));
+        final Path slip = createTestArchive(type, List.of("../../../../danger.txt"));
 
         final String sysErr = SystemLambda.tapSystemErr(() -> {
             final int exitCode = new CommandLine(new McImageHelper())
@@ -49,7 +50,7 @@ public class ArchiveCommandTest {
         });
 
         assertThat(sysErr)
-            .containsPattern("Zip slip detected at: .+? in zip: .+");
+            .containsPattern("Path traversal detected at: .+? in archive: .+");
     }
 
     @ParameterizedTest
@@ -101,9 +102,7 @@ public class ArchiveCommandTest {
 
         assertThat(exceptionHandler.getExecutionException())
                 .isInstanceOf(ArchiveException.class)
-                .hasMessageContaining(type == ArchiveType.ZIP
-                        ? "contains zip slip"
-                        : "contains path traversal");
+                .hasMessageContaining("contains path traversal");
         assertThat(sysErr).contains("ArchiveException");
         assertThat(tempDir.resolve("danger.txt")).doesNotExist();
     }
