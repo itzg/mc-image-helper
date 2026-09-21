@@ -2,9 +2,11 @@ package me.itzg.helpers.files.archive;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Path;
+
+import org.apache.commons.compress.archivers.ArchiveEntry;
+import org.apache.commons.compress.archivers.ArchiveInputStream;
 
 @FunctionalInterface
 interface ArchiveOpener {
-    InputStream open(Path path) throws IOException;
+    ArchiveInputStream<? extends ArchiveEntry> open(InputStream input) throws IOException;
 }
