@@ -1641,7 +1641,7 @@ Commands:
 ```
 
 ### check path traversal
-Checks that the archive does not contain path traversal entries (Zip Slip).
+Checks that the archive does not contain a [Path Traversal Attack / Zip Slip](https://security.snyk.io/research/zip-slip-vulnerability).
 
 ```
 Usage: mc-image-helper archive check-path-traversal ARCHIVE
