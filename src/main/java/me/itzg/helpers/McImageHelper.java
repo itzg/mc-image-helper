@@ -240,16 +240,31 @@ public class McImageHelper {
 
             spec.parent().subcommands().entrySet().stream()
                 .sorted(Map.Entry.comparingByKey())
-                .forEach(entry -> {
-                    System.out.printf("### %s%n", entry.getKey());
-                    System.out.println();
-                    System.out.println("```");
-                    entry.getValue().usage(System.out);
-                    System.out.println("```");
-                    System.out.println();
-                });
+                .forEach(entry -> showUsage(entry.getKey(), entry.getValue()));
 
             return ExitCode.OK;
+        }
+
+        /**
+         * Renders the usage of the given command as a markdown section and then recurses into
+         * any of its own subcommands, so that nested commands, such as {@code archive extract},
+         * also get their usage rendered instead of being summarized under their parent's usage.
+         *
+         * @param name the command's name qualified with its ancestors' names, space separated,
+         *             e.g. {@code archive} or {@code archive extract}
+         * @param commandLine the command whose usage to render
+         */
+        private static void showUsage(String name, CommandLine commandLine) {
+            System.out.printf("### %s%n", name);
+            System.out.println();
+            System.out.println("```");
+            commandLine.usage(System.out);
+            System.out.println("```");
+            System.out.println();
+
+            commandLine.getSubcommands().entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .forEach(entry -> showUsage(name + " " + entry.getKey(), entry.getValue()));
         }
     }
 
