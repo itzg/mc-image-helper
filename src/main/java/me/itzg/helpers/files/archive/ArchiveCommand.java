@@ -3,6 +3,7 @@ package me.itzg.helpers.files.archive;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 import org.apache.commons.compress.archivers.ArchiveException;
 
@@ -31,10 +32,17 @@ public class ArchiveCommand {
     public Integer extract(
             @Parameters(index = "0", paramLabel = "ARCHIVE", description = "Path to archive") Path archive,
             @Parameters(index = "1", paramLabel = "DESTINATION", description = "Output destination") Path destination,
-            @Option(names = "--overwrite", description = "Overwrite existing files") boolean overwrite)
+            @Option(names = "--overwrite", description = "Overwrite existing files") boolean overwrite,
+            @Parameters(index = "2..*", arity = "0..*", paramLabel = "FILE",
+                    description = "Exact archive file paths to extract; extracts everything when omitted") List<String> files)
             throws ArchiveException, IOException {
 
-        parseArchive(archive).extract(destination, overwrite);
+        final Archive source = parseArchive(archive);
+        if (files == null || files.isEmpty()) {
+            source.extract(destination, overwrite);
+        } else {
+            source.extract(destination, files, overwrite);
+        }
         return ExitCode.OK;
     }
 

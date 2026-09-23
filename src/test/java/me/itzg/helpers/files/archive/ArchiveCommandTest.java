@@ -7,6 +7,7 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -244,6 +245,105 @@ public class ArchiveCommandTest {
                 .isInstanceOf(InvalidParameterException.class)
                 .hasMessageContaining("File is not an archive/zip");
         assertThat(sysErr).contains("InvalidParameterException");
+    }
+
+    @ParameterizedTest
+    @EnumSource(ArchiveType.class)
+    void extractsOnlySelectedFiles(ArchiveType type) throws Exception {
+        final Path archive = createTestArchive(type, List.of("unused/"),
+                List.of("before.txt", "nested/selected file.txt", "between.txt", "-last.txt"));
+
+        for (List<String> selection : List.of(
+                List.of("nested/selected file.txt"),
+                List.of("-last.txt", "nested/selected file.txt", "nested/selected file.txt"))) {
+            final Path destination = tempDir.resolve("destination-" + selection.size());
+            final List<String> args = new ArrayList<>(List.of(
+                    "archive", "extract", "--", archive.toString(), destination.toString()));
+            args.addAll(selection);
+
+            final String sysErr = SystemLambda.tapSystemErr(() ->
+                    assertThat(new CommandLine(new McImageHelper()).execute(args.toArray(String[]::new)))
+                            .isEqualTo(ExitCode.OK));
+
+            assertThat(sysErr).isEmpty();
+            assertThat(destination.resolve("nested/selected file.txt")).hasContent("data");
+            assertThat(destination.resolve("before.txt")).doesNotExist();
+            assertThat(destination.resolve("between.txt")).doesNotExist();
+            assertThat(destination.resolve("unused")).doesNotExist();
+            if (selection.contains("-last.txt")) {
+                assertThat(destination.resolve("-last.txt")).hasContent("data");
+            } else {
+                assertThat(destination.resolve("-last.txt")).doesNotExist();
+            }
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(ArchiveType.class)
+    void rejectsMissingSelectedFilesBeforeCreatingDestination(ArchiveType type) throws Exception {
+        final Path archive = createTestArchive(type, List.of("nested/"), List.of("file.txt"));
+        final Path destination = tempDir.resolve("destination");
+        final LatchingExecutionExceptionHandler exceptionHandler = new LatchingExecutionExceptionHandler();
+
+        SystemLambda.tapSystemErr(() -> {
+            final int exitCode = new CommandLine(new McImageHelper())
+                    .setExecutionExceptionHandler(exceptionHandler)
+                    .execute("archive", "extract", archive.toString(), destination.toString(),
+                            "file.txt", "missing.txt", "FILE.txt", "nested/");
+            assertThat(exitCode).isEqualTo(ExitCode.SOFTWARE);
+        });
+
+        assertThat(exceptionHandler.getExecutionException())
+                .isInstanceOf(ArchiveException.class)
+                .hasMessage("Files not found in archive: missing.txt, FILE.txt, nested/");
+        assertThat(destination).doesNotExist();
+    }
+
+    @ParameterizedTest
+    @EnumSource(ArchiveType.class)
+    void rejectsUnselectedPathTraversalBeforeCreatingDestination(ArchiveType type) throws Exception {
+        final Path archive = createTestArchive(type, List.of("safe.txt", "../danger.txt"));
+        final Path destination = tempDir.resolve("destination");
+        final LatchingExecutionExceptionHandler exceptionHandler = new LatchingExecutionExceptionHandler();
+
+        SystemLambda.tapSystemErr(() -> {
+            final int exitCode = new CommandLine(new McImageHelper())
+                    .setExecutionExceptionHandler(exceptionHandler)
+                    .execute("archive", "extract", archive.toString(), destination.toString(), "safe.txt");
+            assertThat(exitCode).isEqualTo(ExitCode.SOFTWARE);
+        });
+
+        assertThat(exceptionHandler.getExecutionException())
+                .isInstanceOf(ArchiveException.class)
+                .hasMessageContaining("contains path traversal");
+        assertThat(destination).doesNotExist();
+        assertThat(tempDir.resolve("danger.txt")).doesNotExist();
+    }
+
+    @ParameterizedTest
+    @EnumSource(ArchiveType.class)
+    void respectsOverwriteForSelectedFiles(ArchiveType type) throws Exception {
+        final Path archive = createTestArchive(type, List.of("file.txt", "unselected.txt", "subsequent.txt"));
+
+        for (boolean overwrite : List.of(false, true)) {
+            final Path destination = Files.createDirectories(tempDir.resolve("destination-" + overwrite));
+            Files.writeString(destination.resolve("file.txt"), "existing");
+            Files.writeString(destination.resolve("unselected.txt"), "untouched");
+            final List<String> args = new ArrayList<>(List.of("archive", "extract"));
+            if (overwrite) {
+                args.add("--overwrite");
+            }
+            args.addAll(List.of("--", archive.toString(), destination.toString(), "file.txt", "subsequent.txt"));
+
+            final String sysErr = SystemLambda.tapSystemErr(() ->
+                    assertThat(new CommandLine(new McImageHelper()).execute(args.toArray(String[]::new)))
+                            .isEqualTo(ExitCode.OK));
+
+            assertThat(sysErr).isEmpty();
+            assertThat(destination.resolve("file.txt")).hasContent(overwrite ? "data" : "existing");
+            assertThat(destination.resolve("unselected.txt")).hasContent("untouched");
+            assertThat(destination.resolve("subsequent.txt")).hasContent("data");
+        }
     }
 
     Path createTestArchive(ArchiveType type, List<String> entries) throws IOException {
