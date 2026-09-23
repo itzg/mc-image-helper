@@ -73,7 +73,23 @@ public class ShowAllSubcommandUsage implements Callable<Integer> {
     private String renderSubcommandUsage() {
         return spec.parent().subcommands().entrySet().stream()
                 .sorted(Map.Entry.comparingByKey())
-                .map(entry -> "### " + entry.getKey() + "\n\n" + renderUsage(entry.getValue()))
+                .map(entry -> renderUsageSections(entry.getKey(), entry.getValue()))
+                .collect(Collectors.joining());
+    }
+
+    /**
+     * Renders the usage of the given command as a markdown section and then recurses into
+     * any of its own subcommands, so that nested commands, such as {@code archive extract},
+     * also get a section instead of only being summarized under their parent's usage.
+     *
+     * @param name the command's name qualified with its ancestors' names, space separated
+     * @param command the command whose usage to render
+     */
+    private String renderUsageSections(String name, CommandLine command) {
+        return "### " + name + "\n\n" + renderUsage(command)
+                + command.getSubcommands().entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .map(entry -> renderUsageSections(name + " " + entry.getKey(), entry.getValue()))
                 .collect(Collectors.joining());
     }
 
