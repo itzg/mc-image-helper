@@ -10,8 +10,20 @@ import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.compress.compressors.zstandard.ZstdCompressorInputStream;
 
+/**
+ * Chooses the archive reader and decompressor from the file's MIME type.
+ * Supports ZIP, TAR, TAR.GZ, TAR.BZ2, and TAR.ZST.
+ */
 public final class ArchiveFactory {
 
+    /**
+     * Creates an archive helper for the detected file type, without reading its entries.
+     *
+     * @param archive source archive path
+     * @return an archive helper with the appropriate reader
+     * @throws IllegalArgumentException if the path does not exist or is not a regular file
+     * @throws IOException if the file type cannot be detected or is unsupported
+     */
     static Archive create(Path archive) throws IOException {
         if (!Files.exists(archive)) {
             throw new IllegalArgumentException("File does not exist: " + archive.toAbsolutePath());

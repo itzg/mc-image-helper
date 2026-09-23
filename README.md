@@ -1628,3 +1628,78 @@ One of the following identifiers or can be prefixed with `list of ` to indicate 
   "required" : [ "remove", "translateLiteralNewlines" ]
 }
 ```
+
+## Extract command
+
+```
+Usage: mc-image-helper archive [-h] [COMMAND]
+Archive helpers, checking for path traversal and extracting archives
+  -h, --help
+Commands:
+  check-path-traversal  Checks if an archive contains path traversal attack
+  extract               Extracts an archive, checking for path traversal
+```
+
+### check path traversal
+Checks that the archive does not contain a [Path Traversal Attack / Zip Slip](https://security.snyk.io/research/zip-slip-vulnerability).
+
+```
+Usage: mc-image-helper archive check-path-traversal ARCHIVE
+Checks if an archive contains path traversal attack
+      ARCHIVE   Path to archive
+```
+
+### Extract
+
+```
+Usage: mc-image-helper archive extract [--overwrite] ARCHIVE DESTINATION
+                                       [FILE...]
+Extracts an archive, checking for path traversal
+      ARCHIVE       Path to archive
+      DESTINATION   Output destination
+      [FILE...]     Exact archive file paths to extract; extracts everything
+                      when omitted
+      --overwrite   Overwrite existing files
+```
+
+- Supported formats are ZIP, TAR, TAR.GZ, TAR.BZ2, and TAR.ZST.
+- File arguments must exactly match paths inside the archive, including case. Wildcards and directory selection are not supported.
+- Extracted files retain their archive paths. For example, `config/server.properties` is written beneath the destination as `config/server.properties`.
+- Existing files are skipped unless `--overwrite` is supplied.
+
+#### Examples
+
+Extract an entire ZIP archive into a directory:
+
+```bash
+mc-image-helper archive extract server.zip ./server
+```
+
+Extract a compressed TAR archive, replacing existing files:
+
+```bash
+mc-image-helper archive extract --overwrite server.tar.gz ./server
+```
+
+Extract a single file:
+
+```bash
+mc-image-helper archive extract server.zip ./server config/server.properties
+```
+
+Extract multiple files, quoting names that contain spaces:
+
+```bash
+mc-image-helper archive extract server.tar.zst ./server \
+  config/server.properties \
+  "mods/example mod.jar"
+```
+
+Forward file arguments from a Bash script or function:
+
+```bash
+mc-image-helper archive extract --overwrite -- "${src}" "${destDir}" "$@"
+```
+
+The `--` ends option parsing, allowing subsequent paths to begin with `-`.
+If `"$@"` contains no arguments, the entire archive is extracted.
