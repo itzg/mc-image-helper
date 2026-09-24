@@ -1,6 +1,7 @@
 package me.itzg.helpers.patch.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
@@ -9,6 +10,7 @@ import java.util.List;
 import lombok.Data;
 
 @Data
+@JsonIgnoreProperties(value = { "$schema" }, ignoreUnknown = false)
 public class PatchDefinition {
     @JsonProperty(required = true)
     @JsonPropertyDescription("Path to the file to patch")
