@@ -69,6 +69,21 @@ application {
   mainClass = 'me.itzg.helpers.McImageHelper'
 }
 
+tasks.register('checkReadme', JavaExec) {
+  group = 'verification'
+  description = 'Checks that generated README documentation is up to date'
+
+  dependsOn tasks.named('classes')
+  classpath = sourceSets.main.runtimeClasspath
+  mainClass = application.mainClass
+
+  args 'show-all-subcommand-usage', 'check-readme', file('README.md').absolutePath
+}
+
+tasks.named('check') {
+  dependsOn checkReadme
+}
+
 project.tasks.distTar {
   compression = Compression.GZIP
 }
