@@ -40,4 +40,12 @@ To check whether the generated documentation is up to date without modifying the
 ./gradlew run --args="show-all-subcommand-usage check-readme"
 ```
 
+The same check is available as a Gradle verification task:
+
+```shell
+./gradlew checkReadme
+```
+
+This task compiles the application as needed and is included in `./gradlew check` and `./gradlew build`. Stale documentation, invalid markers, or file errors fail the task and the build.
+
 Both commands accept an optional README path, defaulting to `./README.md`. They use the HTML START/END comments around each generated section, preserving handwritten content outside those sections. Keep each marker exactly once and in its original order.
