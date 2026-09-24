@@ -62,6 +62,7 @@ import picocli.CommandLine.Option;
 
 @Command(name = "mc-image-helper",
     versionProvider = McImageHelper.AppVersionProvider.class,
+    sortSynopsis = false,
     subcommands = {
         ArchiveCommand.class,
         Asciify.class,
@@ -116,10 +117,10 @@ public class McImageHelper {
     public static final String VERSION_REGEX = "\\d+(\\.\\d+)+";
 
     @Option(names = {"-h",
-        "--help"}, usageHelp = true, description = "Show this usage and exit")
+        "--help"}, order = 0, usageHelp = true, description = "Show this usage and exit")
     boolean showHelp;
 
-    @Option(names = {"-V", "--version"}, versionHelp = true)
+    @Option(names = {"-V", "--version"}, order = 2, versionHelp = true)
     boolean showVersion;
 
     @SuppressWarnings("unused") // processed by setters
@@ -128,14 +129,15 @@ public class McImageHelper {
 
     static class LoggingOptions {
 
-        @Option(names = "--debug", description = "Enable debug output."
+        @Option(names = "--debug", order = 0, description = "Enable debug output."
             + " Can also set environment variables DEBUG_HELPER or DEBUG",
             defaultValue = "${env:DEBUG_HELPER:-${env:DEBUG}}")
         void setDebug(boolean enabled) {
             setLevel(enabled, Level.DEBUG);
         }
 
-        @Option(names = "--logging", description = "Set logging to specific level.\nValid values: ${COMPLETION-CANDIDATES}",
+        @Option(names = "--logging", order = 1,
+            description = "Set logging to specific level.\nValid values: ${COMPLETION-CANDIDATES}",
             defaultValue = "${env:HELPER_LOGGING_LEVEL}",
             converter = LogbackLevelConverter.class
         )
@@ -161,7 +163,7 @@ public class McImageHelper {
     }
 
 
-    @Option(names = {"-s", "--silent"}, description = "Don't output logs even if there's an error")
+    @Option(names = {"-s", "--silent"}, order = 1, description = "Don't output logs even if there's an error")
     @Getter
     boolean silent;
 
