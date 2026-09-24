@@ -16,23 +16,14 @@
     },
     "file": {
       "description": "Path to the file to patch. Placeholders of the form ${...} are replaced from environment variables. If the file does not exist, the patch is skipped with a warning.",
-      "type": "string",
-      "examples": [
-        "",
-        "/data/paper.yml"
-      ]
+      "type": "string"
     },
     "ops": {
       "type": "array",
       "description": "Operations to apply to the file, in order.",
       "items": {
         "$ref": "#/$defs/PatchOperation"
-      },
-      "examples": [
-        [
-          {}
-        ]
-      ]
+      }
     },
     "file-format": {
       "description": "Overrides format detection. When omitted, the format is detected from the file's suffix.",
@@ -50,11 +41,7 @@
     "JsonPath": {
       "type": "string",
       "description": "The JSONPath to the field to modify. For example: \"$.store.book[0].title\". See https://github.com/json-path/JsonPath#readme for the full syntax.",
-      "markdownDescription": "The JSONPath to the field to modify.\n\nFor example, `$.store.book[0].title` selects the `title` field of the first element of the `book` array.\n\nSee the [JsonPath documentation](https://github.com/json-path/JsonPath#readme) for the full syntax.",
-      "examples": [
-        "$.verbose",
-        "$.settings['velocity-support'].enabled"
-      ]
+      "markdownDescription": "The JSONPath to the field to modify.\n\nFor example, `$.store.book[0].title` selects the `title` field of the first element of the `book` array.\n\nSee the [JsonPath documentation](https://github.com/json-path/JsonPath#readme) for the full syntax."
     },
     "Value": {
       "description": "The value for the operation. String values support placeholders of the form ${...}, which are replaced from environment variables; if a referenced variable is not set, the operation is skipped with a warning. The interpolated string can be converted to another type with value-type. Non-string values are used as-is.",
@@ -98,13 +85,6 @@
             "value"
           ],
           "additionalProperties": false,
-          "examples": [
-            {},
-            {
-              "path": "$.verbose",
-              "value": true
-            }
-          ],
           "properties": {
             "path": {
               "$ref": "#/$defs/JsonPath"
@@ -135,14 +115,6 @@
             "value"
           ],
           "additionalProperties": false,
-          "examples": [
-            {},
-            {
-              "path": "$.settings",
-              "key": "my-test-setting",
-              "value": "testing"
-            }
-          ],
           "properties": {
             "path": {
               "$ref": "#/$defs/JsonPath"
@@ -176,13 +148,6 @@
             "value"
           ],
           "additionalProperties": false,
-          "examples": [
-            {},
-            {
-              "path": "$.my-array",
-              "value": 12
-            }
-          ],
           "properties": {
             "path": {
               "$ref": "#/$defs/JsonPath"
