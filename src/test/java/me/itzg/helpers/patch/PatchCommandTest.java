@@ -46,7 +46,7 @@ class PatchCommandTest {
             : definition;
 
         if  (addSchemaField) {
-            // the specific url doesn't matter, just testing if adding the field breaks intended the behavior
+            // the specific url doesn't matter, just testing if adding the field breaks intended behavior
             patchOrPatchSet.put("$schema", "https://itzg.github.io/mc-image-helper/schemas/patch-set.jsonc");
         }
 
