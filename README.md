@@ -1402,13 +1402,14 @@ Extracts a path from a YAML file using json-path syntax
 ## Patch Schemas
 
 ### PatchSet
-
+- `$schema` : **optional** JSON Schema reference used by editors for completion and validation; ignored by the patch processor.
 - `patches` : array of [PatchDefinition](#patchdefinition)
 
 Example
 
 ```json
 {
+  "$schema": "https://itzg.github.io/mc-image-helper/schemas/patch-set.jsonc",
   "patches": [
     {
       "file": "/data/paper.yml",
@@ -1441,6 +1442,7 @@ Example
 
 ### PatchDefinition
 
+- `$schema` : **optional** JSON Schema reference used by editors for completion and validation; ignored by the patch processor.
 - `file` : Path to the file to patch
 - `file-format` : **optional** If non-null, declares a specifically supported format name: json, json5, yaml, toml, properties. Otherwise, the file format is detected by the file's suffix.
 - `ops` : array of [PatchOperation](#patchoperation)
@@ -1449,6 +1451,7 @@ Example:
 
 ```json
 {
+  "$schema": "https://itzg.github.io/mc-image-helper/schemas/patch-definition.jsonc",
   "file": "/data/paper.yml",
   "ops": [
     {
