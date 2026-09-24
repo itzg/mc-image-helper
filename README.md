@@ -1,6 +1,8 @@
 [![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/itzg/mc-image-helper?sort=semver)](https://github.com/itzg/mc-image-helper/releases/latest)
+![GitHub Issues](https://img.shields.io/github/issues/itzg/mc-image-helper)
 [![test](https://github.com/itzg/mc-image-helper/actions/workflows/test.yml/badge.svg)](https://github.com/itzg/mc-image-helper/actions/workflows/test.yml)
-![LOC](https://img.shields.io/endpoint?url=https%3A%2F%2Fshields-codetab-code-loc-bridge.vercel.app%2Fapi%2Fcodeloc%3Fgithub%3Ditzg%2Fmc-image-helper%26language%3Djava)
+[![Discord](https://img.shields.io/discord/660567679458869252?label=discord)](https://discord.gg/JK2v3rJ9ec)
+[![Buy me a coffee](https://img.shields.io/badge/Donate-Buy%20me%20a%20coffee-orange.svg)](https://www.buymeacoffee.com/itzg)
 
 This tool does the complicated bits for the [itzg/minecraft-server](https://github.com/itzg/docker-minecraft-server) and [itzg/docker-mc-proxy](https://github.com/itzg/docker-mc-proxy) Docker images.
 
