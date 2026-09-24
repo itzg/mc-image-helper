@@ -11,7 +11,7 @@ This tool does the complicated bits for the [itzg/minecraft-server](https://gith
 <!-- START of documentation generated using `mc-image-helper --help` -->
 
 ```
-Usage: mc-image-helper [-hsV] [--logging=<loggingLevel> | --debug] [COMMAND]
+Usage: mc-image-helper [-hsV] [--debug | --logging=<loggingLevel>] [COMMAND]
       --debug     Enable debug output. Can also set environment variables
                     DEBUG_HELPER or DEBUG
   -h, --help      Show this usage and exit
@@ -824,10 +824,9 @@ Installs selected PaperMC
 Usage: mc-image-helper install-purpur [--clean-libraries]
                                       [--base-url=<baseUrl>]
                                       [-o=<outputDirectory>]
-                                      [--results-file=FILE]
-                                      [--url=<downloadUrl> |
-                                      [[--version=<version>]
-                                      [--build=<build>]]] [[--use-http2] |
+                                      [--results-file=FILE] [[[--build=<build>]
+                                      [--version=<version>]] |
+                                      --url=<downloadUrl>] [[--use-http2] |
                                       [--wiretap]]
 Downloads latest or selected version of Purpur
       --base-url=<baseUrl>
