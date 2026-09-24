@@ -1,0 +1,249 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://itzg.github.io/mc-image-helper/schemas/patch-definition.jsonc",
+  "title": "PatchDefinition",
+  "description": "A single patch: the file to modify and the operations to apply to it. Can be processed on its own or as part of a PatchSet.",
+  "type": "object",
+  "required": [
+    "file",
+    "ops"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "description": "JSON Schema reference used by editors for completion and validation; ignored by the patch processor.",
+      "type": "string"
+    },
+    "file": {
+      "description": "Path to the file to patch. Placeholders of the form ${...} are replaced from environment variables. If the file does not exist, the patch is skipped with a warning.",
+      "type": "string",
+      "examples": [
+        "",
+        "/data/paper.yml"
+      ]
+    },
+    "ops": {
+      "type": "array",
+      "description": "Operations to apply to the file, in order.",
+      "items": {
+        "$ref": "#/$defs/PatchOperation"
+      },
+      "examples": [
+        [
+          {}
+        ]
+      ]
+    },
+    "file-format": {
+      "description": "Overrides format detection. When omitted, the format is detected from the file's suffix.",
+      "type": "string",
+      "enum": [
+        "json",
+        "json5",
+        "yaml",
+        "toml",
+        "properties"
+      ]
+    }
+  },
+  "$defs": {
+    "JsonPath": {
+      "type": "string",
+      "description": "The JSONPath to the field to modify. For example: \"$.store.book[0].title\". See https://github.com/json-path/JsonPath#readme for the full syntax.",
+      "markdownDescription": "The JSONPath to the field to modify.\n\nFor example, `$.store.book[0].title` selects the `title` field of the first element of the `book` array.\n\nSee the [JsonPath documentation](https://github.com/json-path/JsonPath#readme) for the full syntax.",
+      "examples": [
+        "$.verbose",
+        "$.settings['velocity-support'].enabled"
+      ]
+    },
+    "Value": {
+      "description": "The value for the operation. String values support placeholders of the form ${...}, which are replaced from environment variables; if a referenced variable is not set, the operation is skipped with a warning. The interpolated string can be converted to another type with value-type. Non-string values are used as-is.",
+      "type": [
+        "string",
+        "number",
+        "boolean",
+        "object",
+        "array",
+        "null"
+      ]
+    },
+    "ValueType": {
+      "description": "Converts the string value, after placeholder interpolation, to another type: one of the basic types, or 'list of ...' to parse a list from a comma-separated string. 'auto' converts to int, float, or bool as appropriate; 'bool' accepts true/false/yes/no. Useful with environment variable placeholders, which are always strings. When omitted, the value remains a string.",
+      "type": "string",
+      "enum": [
+        "int",
+        "float",
+        "bool",
+        "string",
+        "auto",
+        "list of int",
+        "list of float",
+        "list of bool",
+        "list of string",
+        "list of auto"
+      ]
+    },
+    "SetOperation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "$set"
+      ],
+      "properties": {
+        "$set": {
+          "type": "object",
+          "description": "Sets an existing field to a new value. To add a new field, use the $put operation.",
+          "required": [
+            "path",
+            "value"
+          ],
+          "additionalProperties": false,
+          "examples": [
+            {},
+            {
+              "path": "$.verbose",
+              "value": true
+            }
+          ],
+          "properties": {
+            "path": {
+              "$ref": "#/$defs/JsonPath"
+            },
+            "value": {
+              "$ref": "#/$defs/Value"
+            },
+            "value-type": {
+              "$ref": "#/$defs/ValueType"
+            }
+          }
+        }
+      }
+    },
+    "PutOperation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "$put"
+      ],
+      "properties": {
+        "$put": {
+          "type": "object",
+          "description": "Adds or updates a field with the given key within an object.",
+          "required": [
+            "path",
+            "key",
+            "value"
+          ],
+          "additionalProperties": false,
+          "examples": [
+            {},
+            {
+              "path": "$.settings",
+              "key": "my-test-setting",
+              "value": "testing"
+            }
+          ],
+          "properties": {
+            "path": {
+              "$ref": "#/$defs/JsonPath"
+            },
+            "key": {
+              "description": "The key to set",
+              "type": "string"
+            },
+            "value": {
+              "$ref": "#/$defs/Value"
+            },
+            "value-type": {
+              "$ref": "#/$defs/ValueType"
+            }
+          }
+        }
+      }
+    },
+    "AddOperation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "$add"
+      ],
+      "properties": {
+        "$add": {
+          "type": "object",
+          "description": "Adds a value to an array.",
+          "required": [
+            "path",
+            "value"
+          ],
+          "additionalProperties": false,
+          "examples": [
+            {},
+            {
+              "path": "$.my-array",
+              "value": 12
+            }
+          ],
+          "properties": {
+            "path": {
+              "$ref": "#/$defs/JsonPath"
+            },
+            "value": {
+              "$ref": "#/$defs/Value"
+            },
+            "value-type": {
+              "$ref": "#/$defs/ValueType"
+            }
+          }
+        }
+      }
+    },
+    "PatchOperation": {
+      "description": "A single operation: an object with one key ($set, $put, or $add) whose value is the operation's arguments. Example: { \"$set\": { \"path\": \"$.verbose\", \"value\": true } }",
+      "markdownDescription": "A single operation: an object with one key (`$set`, `$put`, or `$add`) whose value is the operation's arguments.\n\nExample:\n```json\n{ \"$set\": { \"path\": \"$.verbose\", \"value\": true } }\n```",
+      "defaultSnippets": [
+        {
+          "label": "$set operation",
+          "description": "Set an existing field to a new value",
+          "body": {
+            "$set": {
+              "path": "${1:$.path}",
+              "value": "$2"
+            }
+          }
+        },
+        {
+          "label": "$put operation",
+          "description": "Add or update a field within an object",
+          "body": {
+            "$put": {
+              "path": "${1:$.path}",
+              "key": "$2",
+              "value": "$3"
+            }
+          }
+        },
+        {
+          "label": "$add operation",
+          "description": "Add a value to an array",
+          "body": {
+            "$add": {
+              "path": "${1:$.path}",
+              "value": "$2"
+            }
+          }
+        }
+      ],
+      "oneOf": [
+        {
+          "$ref": "#/$defs/SetOperation"
+        },
+        {
+          "$ref": "#/$defs/PutOperation"
+        },
+        {
+          "$ref": "#/$defs/AddOperation"
+        }
+      ]
+    }
+  }
+}

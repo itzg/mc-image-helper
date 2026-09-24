@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://itzg.github.io/mc-image-helper/schemas/patch-set.jsonc",
+  "title": "PatchSet",
+  "description": "A set of patches applied in order. The patch command also accepts a single patch definition file or a directory of patch definition files.",
+  "type": "object",
+  "required": [
+    "patches"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "description": "JSON Schema reference used by editors for completion and validation; ignored by the patch processor.",
+      "type": "string"
+    },
+    "patches": {
+      "description": "Patch definitions to apply, in order.",
+      "type": "array",
+      "items": {
+        "$ref": "https://itzg.github.io/mc-image-helper/schemas/patch-definition.jsonc"
+      }
+    }
+  }
+}
