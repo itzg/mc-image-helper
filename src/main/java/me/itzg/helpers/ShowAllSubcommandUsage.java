@@ -21,10 +21,10 @@ import picocli.CommandLine.Spec;
 @Slf4j
 public class ShowAllSubcommandUsage implements Callable<Integer> {
 
-    private static final String OVERVIEW_START = "<!-- START of documentation generated using `mc-image-helper --help` -->";
-    private static final String OVERVIEW_END = "<!-- END of documentation generated using `mc-image-helper --help` -->";
-    private static final String SUBCOMMANDS_START = "<!-- START of documentation generated using `mc-image-helper show-all-subcommand-usage` -->";
-    private static final String SUBCOMMANDS_END = "<!-- END of documentation generated using `mc-image-helper show-all-subcommand-usage` -->";
+    static final String OVERVIEW_START = "<!-- START of documentation generated using `mc-image-helper --help` -->";
+    static final String OVERVIEW_END = "<!-- END of documentation generated using `mc-image-helper --help` -->";
+    static final String SUBCOMMANDS_START = "<!-- START of documentation generated using `mc-image-helper show-all-subcommand-usage` -->";
+    static final String SUBCOMMANDS_END = "<!-- END of documentation generated using `mc-image-helper show-all-subcommand-usage` -->";
 
     @Spec
     CommandSpec spec;
