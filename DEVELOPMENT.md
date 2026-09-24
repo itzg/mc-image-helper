@@ -26,3 +26,18 @@ Run the script using:
 ./build/install/mc-image-helper/bin/mc-image-helper ...args...
 ```
 
+## Updating command documentation
+
+After adding or changing commands or options, regenerate the README's command overview and subcommand documentation:
+
+```shell
+./gradlew run --args="show-all-subcommand-usage update-readme"
+```
+
+To check whether the generated documentation is up to date without modifying the file:
+
+```shell
+./gradlew run --args="show-all-subcommand-usage check-readme"
+```
+
+Both commands accept an optional README path, defaulting to `./README.md`. They use the HTML START/END comments around each generated section, preserving handwritten content outside those sections. Keep each marker exactly once and in its original order.
