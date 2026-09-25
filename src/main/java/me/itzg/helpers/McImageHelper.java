@@ -238,18 +238,24 @@ public class McImageHelper {
 
             System.out.printf("%n_The following is generated using `%s`_%n%n", spec.qualifiedName());
 
-            spec.parent().subcommands().entrySet().stream()
+            renderSubcommands(spec.parent().subcommands(), 3);
+
+            return ExitCode.OK;
+        }
+
+        private void renderSubcommands(Map<String, CommandLine> subcommands, int headingLevel) {
+            subcommands.entrySet().stream()
                 .sorted(Map.Entry.comparingByKey())
                 .forEach(entry -> {
-                    System.out.printf("### %s%n", entry.getKey());
+                    System.out.printf("%s %s%n", "#".repeat(headingLevel), entry.getKey());
                     System.out.println();
                     System.out.println("```");
                     entry.getValue().usage(System.out);
                     System.out.println("```");
                     System.out.println();
-                });
 
-            return ExitCode.OK;
+                    renderSubcommands(entry.getValue().getCommandSpec().subcommands(), headingLevel + 1);
+                });
         }
     }
 
