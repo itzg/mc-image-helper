@@ -31,7 +31,7 @@ Run the script using:
 After adding or changing commands or options, regenerate the README's command overview and subcommand documentation:
 
 ```shell
-./gradlew run --args="show-all-subcommand-usage update-readme"
+./gradlew updateReadme
 ```
 
 To check whether the generated documentation is up to date without modifying the file:
