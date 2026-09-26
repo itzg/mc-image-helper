@@ -69,6 +69,34 @@ application {
   mainClass = 'me.itzg.helpers.McImageHelper'
 }
 
+tasks.register('updateReadme', JavaExec) {
+  group = 'verification'
+  description = 'Updates the generated README command documentation'
+
+  dependsOn tasks.named('classes')
+  classpath = sourceSets.main.runtimeClasspath
+  mainClass = application.mainClass
+
+  args 'show-all-subcommand-usage', 'update-readme', file('README.md').absolutePath
+}
+
+tasks.register('commitUpdatedReadme', Exec) {
+  group = 'verification'
+  description = 'Updates README documentation and commits it locally if changed'
+  dependsOn tasks.named('updateReadme')
+
+  def readmeStatus = providers.exec {
+    workingDir layout.projectDirectory
+    commandLine 'git', 'status', '--porcelain', '--', 'README.md'
+  }
+  onlyIf('README.md has changes') {
+    !readmeStatus.standardOutput.asText.get().trim().isEmpty()
+  }
+
+  workingDir layout.projectDirectory
+  commandLine 'git', 'commit', '--only', '-m', 'docs(readme): regenerate command usage', '--', 'README.md'
+}
+
 tasks.register('checkReadme', JavaExec) {
   group = 'verification'
   description = 'Checks that generated README documentation is up to date'
