@@ -58,7 +58,7 @@ public class SharedFetchArgs {
         optionsBuilder.pendingAcquireTimeout(timeout);
     }
 
-    @Option(names = "--use-http2", defaultValue = "${env:FETCH_USE_HTTP2:-true}",
+    @Option(names = "--use-http2", order = 0, defaultValue = "${env:FETCH_USE_HTTP2:-true}",
         description = "Whether to use HTTP/2." 
             + "%nDefault: ${DEFAULT-VALUE}" 
             + "%nEnv: FETCH_USE_HTTP2"
@@ -89,7 +89,7 @@ public class SharedFetchArgs {
         optionsBuilder.http2MaxFrameSize(size);
     }
 
-    @Option(names = "--wiretap", defaultValue = "${env:FETCH_WIRETAP:-false}",
+    @Option(names = "--wiretap", order = 1, defaultValue = "${env:FETCH_WIRETAP:-false}",
         description = "Whether to enable Reactor Netty wiretap logging. Make sure to set logging level to trace."
             + "%nDefault: ${DEFAULT-VALUE}" 
             + "%nEnv: FETCH_WIRETAP"

@@ -6,15 +6,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.Enumeration;
-import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.jar.Attributes;
 import java.util.jar.Attributes.Name;
 import java.util.jar.Manifest;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import me.itzg.helpers.McImageHelper.ShowAllSubcommandUsage;
 import me.itzg.helpers.assertcmd.AssertCommand;
 import me.itzg.helpers.curseforge.CurseForgeFilesCommand;
 import me.itzg.helpers.curseforge.InstallCurseForgeCommand;
@@ -59,15 +56,13 @@ import org.slf4j.LoggerFactory;
 import picocli.CommandLine;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
-import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.ITypeConverter;
 import picocli.CommandLine.IVersionProvider;
-import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
-import picocli.CommandLine.Spec;
 
 @Command(name = "mc-image-helper",
     versionProvider = McImageHelper.AppVersionProvider.class,
+    sortSynopsis = false,
     subcommands = {
         ArchiveCommand.class,
         Asciify.class,
@@ -122,10 +117,10 @@ public class McImageHelper {
     public static final String VERSION_REGEX = "\\d+(\\.\\d+)+";
 
     @Option(names = {"-h",
-        "--help"}, usageHelp = true, description = "Show this usage and exit")
+        "--help"}, order = 0, usageHelp = true, description = "Show this usage and exit")
     boolean showHelp;
 
-    @Option(names = {"-V", "--version"}, versionHelp = true)
+    @Option(names = {"-V", "--version"}, order = 2, versionHelp = true)
     boolean showVersion;
 
     @SuppressWarnings("unused") // processed by setters
@@ -134,14 +129,15 @@ public class McImageHelper {
 
     static class LoggingOptions {
 
-        @Option(names = "--debug", description = "Enable debug output."
+        @Option(names = "--debug", order = 0, description = "Enable debug output."
             + " Can also set environment variables DEBUG_HELPER or DEBUG",
             defaultValue = "${env:DEBUG_HELPER:-${env:DEBUG}}")
         void setDebug(boolean enabled) {
             setLevel(enabled, Level.DEBUG);
         }
 
-        @Option(names = "--logging", description = "Set logging to specific level.\nValid values: ${COMPLETION-CANDIDATES}",
+        @Option(names = "--logging", order = 1,
+            description = "Set logging to specific level.\nValid values: ${COMPLETION-CANDIDATES}",
             defaultValue = "${env:HELPER_LOGGING_LEVEL}",
             converter = LogbackLevelConverter.class
         )
@@ -167,7 +163,7 @@ public class McImageHelper {
     }
 
 
-    @Option(names = {"-s", "--silent"}, description = "Don't output logs even if there's an error")
+    @Option(names = {"-s", "--silent"}, order = 1, description = "Don't output logs even if there's an error")
     @Getter
     boolean silent;
 
@@ -224,32 +220,6 @@ public class McImageHelper {
         @Override
         public Level convert(String value) {
             return Level.toLevel(value);
-        }
-    }
-
-    @Command(name = "show-all-subcommand-usage", description = "Renders all of the subcommand usage as markdown sections for README")
-    public static class ShowAllSubcommandUsage implements Callable<Integer> {
-
-        @Spec
-        CommandSpec spec;
-
-        @Override
-        public Integer call() throws Exception {
-
-            System.out.printf("%n_The following is generated using `%s`_%n%n", spec.qualifiedName());
-
-            spec.parent().subcommands().entrySet().stream()
-                .sorted(Map.Entry.comparingByKey())
-                .forEach(entry -> {
-                    System.out.printf("### %s%n", entry.getKey());
-                    System.out.println();
-                    System.out.println("```");
-                    entry.getValue().usage(System.out);
-                    System.out.println("```");
-                    System.out.println();
-                });
-
-            return ExitCode.OK;
         }
     }
 

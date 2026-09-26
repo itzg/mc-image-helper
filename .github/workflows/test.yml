@@ -15,7 +15,7 @@ jobs:
   test:
     uses: itzg/github-workflows/.github/workflows/gradle-build.yml@main
     with:
-      arguments: test
+      arguments: check
       include-test-report: true
       retest-showing-standard-streams: true
     secrets:

@@ -34,7 +34,7 @@ import picocli.CommandLine.Spec;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
-@Command(name = "install-purpur", description = "Downloads latest or selected version of Purpur")
+@Command(name = "install-purpur", description = "Downloads latest or selected version of Purpur", sortSynopsis = false)
 @Slf4j
 public class InstallPurpurCommand implements Callable<Integer> {
 
@@ -43,10 +43,11 @@ public class InstallPurpurCommand implements Callable<Integer> {
 
     static class Inputs {
 
-        @Option(names = "--url", description = "Use a custom URL location")
+        @Option(names = "--url", order = 1, description = "Use a custom URL location")
         URI downloadUrl;
 
-        @ArgGroup(exclusive = false)
+        // Picocli 4.7.7 needs the nested group first to retain '|' with sortSynopsis=false.
+        @ArgGroup(exclusive = false, order = 0)
         Coordinates coordinates = new Coordinates();
 
         static class Coordinates {
@@ -54,13 +55,13 @@ public class InstallPurpurCommand implements Callable<Integer> {
             @Spec
             CommandLine.Model.CommandSpec spec;
 
-            @Option(names = "--version", defaultValue = "latest", description = DESCRIPTION_MINECRAFT_VERSION)
+            @Option(names = "--version", order = 1, defaultValue = "latest", description = DESCRIPTION_MINECRAFT_VERSION)
             public void setVersion(String version) {
                 this.version = Validators.validateMinecraftVersion(spec, version);
             }
             String version;
 
-            @Option(names = "--build")
+            @Option(names = "--build", order = 0)
             public void setBuild(String build) {
                 if (build != null && build.equalsIgnoreCase("latest")) {
                     this.build = null;
@@ -73,16 +74,17 @@ public class InstallPurpurCommand implements Callable<Integer> {
         }
     }
 
-    @Option(names = {"--output-directory", "-o"}, defaultValue = ".")
+    @Option(names = {"--output-directory", "-o"}, order = 2, defaultValue = ".")
     Path outputDirectory;
 
-    @Option(names = "--base-url", defaultValue = "https://api.purpurmc.org")
+    @Option(names = "--base-url", order = 1, defaultValue = "https://api.purpurmc.org")
     String baseUrl;
 
-    @Option(names = "--results-file", description = ResultsFileWriter.OPTION_DESCRIPTION, paramLabel = "FILE")
+    @Option(names = "--results-file", order = 3, description = ResultsFileWriter.OPTION_DESCRIPTION, paramLabel = "FILE")
     Path resultsFile;
 
-    @Option(names = "--clean-libraries", defaultValue = "false", description = "Remove currently installed and not required libraries")
+    @Option(names = "--clean-libraries", order = 0, defaultValue = "false",
+        description = "Remove currently installed and not required libraries")
     Boolean cleanLibraries;
     @ArgGroup
     SharedFetchArgs sharedFetchArgs = new SharedFetchArgs();
