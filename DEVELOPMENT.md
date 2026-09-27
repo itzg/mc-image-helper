@@ -10,7 +10,7 @@ Beyond the unit tests, ad hoc "integration testing" can be done by running via G
 
 Create an "Application" run configuration, such as shown here:
 
-![intellij-run-config](docs/intellij-run-config.png)
+![intellij-run-config](dev/intellij-run-config.png)
 
 ### Build and use application script
 
