@@ -1363,7 +1363,7 @@ Example
 
 ```json
 {
-  "$schema": "https://itzg.github.io/mc-image-helper/schemas/patch-set.jsonc",
+  "$schema": "https://itzg.github.io/mc-image-helper/schemas/patch-set.json",
   "patches": [
     {
       "file": "/data/paper.yml",
@@ -1405,7 +1405,7 @@ Example:
 
 ```json
 {
-  "$schema": "https://itzg.github.io/mc-image-helper/schemas/patch-definition.jsonc",
+  "$schema": "https://itzg.github.io/mc-image-helper/schemas/patch-definition.json",
   "file": "/data/paper.yml",
   "ops": [
     {
