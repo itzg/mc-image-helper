@@ -113,7 +113,7 @@ public class ProvidedInstallerResolver implements InstallerResolver {
         final JsonNode inheritsFromNode = parsed.get(PROP_INHERITS_FROM);
         // TODO: Temp fix for Cleanroom until new helper for Cleanroom implemented
         // Reason: New cleanroom installer version.json file do not have inheritFrom to prevent LWJGL2 from downloaded
-        if (id.contains("Cleanroom") || inheritsFromNode.isMissingNode()) {
+        if (!(id.contains("Cleanroom")) && inheritsFromNode.isMissingNode()) {
             throw new GenericException("Installer version.json is missing " + PROP_INHERITS_FROM);
         }
         // TODO: Temp fix for Cleanroom until new helper for Cleanroom implemented
