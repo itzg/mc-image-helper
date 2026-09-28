@@ -123,7 +123,7 @@ public class CleanroomInstaller {
 
         try (ResultsFileWriter results = new ResultsFileWriter(resultsFile)) {
             results.write("SERVER", serverEntry);
-            results.write("FAMILY", "CLEANROOM");
+            results.write("FAMILY", "FORGE");
             results.writeVersion(cleanroomVersion.cleanroomVersion());
             results.writeType("CLEANROOM");
         }
