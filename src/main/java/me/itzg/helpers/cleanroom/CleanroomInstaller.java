@@ -44,7 +44,7 @@ public class CleanroomInstaller {
             throw new GenericException("Failed to load existing cleanroom manifest", e);
         }
 
-        final CleanroomVersion resolved = installerResolver.resolve(prevManifest);
+        final CleanroomVersion resolved = installerResolver.resolve(prevManifest, null);
         if (resolved == null) {
             throw new InvalidParameterException("Unable to find suitable version for " +
                 installerResolver.getDescription());

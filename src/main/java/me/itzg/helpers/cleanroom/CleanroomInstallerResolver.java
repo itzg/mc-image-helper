@@ -48,7 +48,7 @@ public class CleanroomInstallerResolver {
         this.releaseUrl = releaseUrl;
     }
 
-    public CleanroomVersion resolve(CleanroomManifest prevManifest) {
+    public CleanroomVersion resolve(CleanroomManifest prevManifest, String expectedVersion) {
         if (prevManifest != null) {
             final String prevInstallerVersion = prevManifest.getInstallerVersion();
             if (prevInstallerVersion.equals(requestedInstallerVersion)) {
@@ -57,7 +57,7 @@ public class CleanroomInstallerResolver {
             }
         }
 
-        return resolveInstallerVersion(requestedInstallerVersion);
+        return resolveInstallerVersion(requestedInstallerVersion, expectedVersion);
     }
 
     public Path download(CleanroomVersion cleanroomVersion, Path outputDir) {
@@ -103,9 +103,9 @@ public class CleanroomInstallerResolver {
         return String.format("Cleanroom installer %s (Loader version: %s)", requestedInstallerVersion, requestedCleanroomVersion);
     }
 
-    private CleanroomVersion resolveInstallerVersion(String installerVersion) {
-        final String normalized = installerVersion.toLowerCase();
-        if (!normalized.equals(LATEST)) {
+    private CleanroomVersion resolveInstallerVersion(String installerVersion, String expected) {
+        final String version = installerVersion.toLowerCase();
+        if (!version.equals(LATEST) && expected == null) {
             return new CleanroomVersion(installerVersion, requestedCleanroomVersion);
         }
 
@@ -114,6 +114,7 @@ public class CleanroomInstallerResolver {
             .toObjectList(CleanroomInstallerEntry.class)
             .assemble()
             .flatMap(installerEntries -> installerEntries.stream()
+                .filter(installerEntry -> version.equals(LATEST) || installerEntry.getName().equals(expected))
                 .findFirst()
                 .map(installerEntry -> Mono.just(installerEntry.getName()))
                 .orElseGet(
