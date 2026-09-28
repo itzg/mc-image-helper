@@ -103,17 +103,6 @@ public class InstallCleanroomLoaderCommand implements Callable<Integer> {
     @Override
     public Integer call() throws Exception {
         try (SharedFetch sharedFetch = Fetch.sharedFetch("install-cleanroom", sharedFetchArgs.options())) {
-
-//            final CleanroomInstaller installer = new CleanroomInstaller(
-//                versionOrInstaller.installer != null ?
-//                    new ProvidedInstallerResolver(versionOrInstaller.installer)
-//                    : new InstallerResolver(
-//                        sharedFetch, versionOrInstaller.installerVersion, versionOrInstaller.cleanroomVersion,
-//                        cleanroomUrlArgs.getPromotionsUrl(), cleanroomUrlArgs.getMavenRepoUrl()
-//                    )
-//
-//            );
-
             final CleanroomInstaller installer = new CleanroomInstaller(new InstallerResolver(
                         sharedFetch, versionOrInstaller.installerVersion, versionOrInstaller.cleanroomVersion,
                         cleanroomUrlArgs.getReleaseUrl()
