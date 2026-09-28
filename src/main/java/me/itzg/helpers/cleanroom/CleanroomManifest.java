@@ -8,7 +8,10 @@ import me.itzg.helpers.files.BaseManifest;
 @Getter
 @SuperBuilder
 @Jacksonized
-public class Manifest extends BaseManifest {
+public class CleanroomManifest extends BaseManifest {
+
+    public static final String manifestId = "cleanroom";
+
     String installerVersion;
 
     String cleanroomVersion;

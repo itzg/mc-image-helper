@@ -52,7 +52,7 @@ public class InstallerResolver {
         this.installerUrl = installerUrl;
     }
 
-    public CleanroomVersion resolve(Manifest prevManifest) {
+    public CleanroomVersion resolve(CleanroomManifest prevManifest) {
         if (prevManifest != null) {
             final String prevInstallerVersion = prevManifest.getInstallerVersion();
             if (prevInstallerVersion.equals(requestedInstallerVersion)) {

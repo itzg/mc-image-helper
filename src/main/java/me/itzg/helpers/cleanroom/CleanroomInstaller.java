@@ -39,7 +39,7 @@ public class CleanroomInstaller {
         @Nullable Path resultsFile,
         boolean forceReinstall
     ) {
-        final Manifest prevManifest;
+        final CleanroomManifest prevManifest;
         try {
             prevManifest = loadManifest(outputDir);
         } catch (IOException e) {
@@ -81,7 +81,7 @@ public class CleanroomInstaller {
             needsInstall = true;
         }
 
-        final Manifest newManifest;
+        final CleanroomManifest newManifest;
         if (needsInstall) {
             final Path cleanroomInstallerJar = installerResolver.download(resolved, outputDir);
 
@@ -115,7 +115,7 @@ public class CleanroomInstaller {
             || Files.exists(outputDir.resolve(serverEntry));
     }
 
-    private Manifest loadManifest(Path outputDir) throws IOException {
+    private CleanroomManifest loadManifest(Path outputDir) throws IOException {
         // new manifest, don't need to load legacy
         return Manifests.load(outputDir, manifestId, Manifest.class);
     }
@@ -134,7 +134,7 @@ public class CleanroomInstaller {
     /**
      *
      */
-    private Manifest install(Path installerJar, Path outputDir, CleanroomVersion cleanroomVersion) {
+    private CleanroomManifest install(Path installerJar, Path outputDir, CleanroomVersion cleanroomVersion) {
         log.info("Installing Cleanroom {} using installer {}. This might take a while...",
             cleanroomVersion.cleanroomVersion(), cleanroomVersion.installerVersion()
         );
@@ -203,7 +203,7 @@ public class CleanroomInstaller {
                 relativeServerEntry = entryFile.toString();
             }
 
-            return Manifest.builder()
+            return CleanroomManifest.builder()
                 .timestamp(Instant.now())
                 .installerVersion(cleanroomVersion.installerVersion())
                 .cleanroomVersion(loaderVersion)
