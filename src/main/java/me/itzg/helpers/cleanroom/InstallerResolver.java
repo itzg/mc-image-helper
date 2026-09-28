@@ -19,11 +19,7 @@ import java.util.Collections;
 public class InstallerResolver {
 
     public static final String LATEST = "latest";
-    public static final String DEFAULT_RELEASES_URL = "https://api.github.com/repos/CleanroomMC/Installer/releases";
-    /**
-     * Where release artifacts live. {@code repo.cleanroommc.com/releases} mirrors this host.
-     */
-    public static final String DEFAULT_INSTALLER_URL = "https://github.com/CleanroomMC/Installer/releases/download";
+    public static final String DEFAULT_RELEASE_URL = "https://api.github.com/repos/CleanroomMC/Installer/releases";
 
     /**
      * Retry attempts for metadata, non-downloads
@@ -36,7 +32,7 @@ public class InstallerResolver {
     @Setter
     private Duration retryMinBackoff = Duration.ofMillis(500);
 
-    private final String installerUrl;
+    private final String releaseUrl;
     private final SharedFetch sharedFetch;
     private final String requestedInstallerVersion;
     private final String requestedCleanroomVersion;
@@ -44,12 +40,12 @@ public class InstallerResolver {
     public InstallerResolver(SharedFetch sharedFetch,
                              String requestedInstallerVersion,
                              String requestedCleanroomVersion,
-                             String installerUrl
+                             String releaseUrl
     ) {
         this.sharedFetch = sharedFetch;
         this.requestedInstallerVersion = requestedInstallerVersion;
         this.requestedCleanroomVersion = requestedCleanroomVersion;
-        this.installerUrl = installerUrl;
+        this.releaseUrl = releaseUrl;
     }
 
     public CleanroomVersion resolve(CleanroomManifest prevManifest) {
@@ -72,7 +68,7 @@ public class InstallerResolver {
         ) + ".jar");
 
         final Path result = sharedFetch.fetch(Uris.populateToUri(
-                DEFAULT_INSTALLER_URL
+                releaseUrl
                     + "/{version}/installer-{version}.jar",
                 cleanroomVersion.installerVersion(), cleanroomVersion.installerVersion()
             ))
@@ -113,7 +109,7 @@ public class InstallerResolver {
             return new CleanroomVersion(installerVersion, requestedCleanroomVersion);
         }
 
-        installerVersion = sharedFetch.fetch(URI.create(installerUrl))
+        installerVersion = sharedFetch.fetch(URI.create(releaseUrl))
             .userAgentCommand("CleanroomMCAgent")
             .toObjectList(InstallerEntry.class)
             .assemble()
@@ -121,7 +117,7 @@ public class InstallerResolver {
                 .findFirst()
                 .map(installerEntry -> Mono.just(installerEntry.getName()))
                 .orElseGet(
-                    () -> Mono.error(new GenericException("Failed to find installer from " + installerUrl))
+                    () -> Mono.error(new GenericException("Failed to find installer from " + releaseUrl))
                 )
             )
             .retryWhen(Retry.backoff(retryMaxAttempts, retryMinBackoff).filter(IOException.class::isInstance))
