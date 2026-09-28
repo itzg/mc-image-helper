@@ -23,8 +23,6 @@ import java.util.regex.Pattern;
 @Slf4j
 public class CleanroomInstaller {
 
-    private static final String manifestId = "cleanroom";
-
     private static final Pattern RESULT_INFO = Pattern.compile(
         "Fetching Cleanroom \\s+(?<version>.+)");
 
@@ -91,7 +89,7 @@ public class CleanroomInstaller {
                 installerResolver.cleanup(cleanroomInstallerJar);
             }
 
-            Manifests.save(outputDir, manifestId, newManifest);
+            Manifests.save(outputDir, CleanroomManifest.manifestId, newManifest);
         }
         else {
             newManifest = null;
@@ -117,7 +115,7 @@ public class CleanroomInstaller {
 
     private CleanroomManifest loadManifest(Path outputDir) throws IOException {
         // new manifest, don't need to load legacy
-        return Manifests.load(outputDir, manifestId, Manifest.class);
+        return Manifests.load(outputDir, CleanroomManifest.manifestId, CleanroomManifest.class);
     }
 
     private void populateResultsFile(Path resultsFile, String serverEntry, CleanroomVersion cleanroomVersion) throws IOException {
