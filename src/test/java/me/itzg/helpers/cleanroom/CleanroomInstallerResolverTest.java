@@ -65,8 +65,7 @@ public class CleanroomInstallerResolverTest {
             "java", "-jar",
             CleanroomInstallerResolverTest.class.getResource("/cleanroom/installer-0.1.4.jar").getPath(),
             "server", "--dry-run", "--version", loaderVersion != null ? loaderVersion : "latest"
-        )
-            .start();
+        ).start();
 
         try {
             final int exitCode = process.waitFor();
