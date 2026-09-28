@@ -24,7 +24,7 @@ public class InstallCleanroomLoaderCommand implements Callable<Integer> {
     boolean help;
 
     public static final Pattern ALLOWED_VERSION = Pattern.compile(
-        String.join("|", InstallerResolver.LATEST, /*CleanroomInstallerResolver.RECOMMENDED,*/ VERSION_REGEX),
+        String.join("|", InstallerResolver.LATEST, VERSION_REGEX),
         Pattern.CASE_INSENSITIVE
     );
 
@@ -37,7 +37,7 @@ public class InstallCleanroomLoaderCommand implements Callable<Integer> {
         String cleanroomVersion;
 
         @Option(names = "--installer-version", required = true, defaultValue = InstallerResolver.LATEST,
-            description = "A specific Cleanroom version or to auto-resolve the version provide 'latest'."
+            description = "A specific Cleanroom installer version or to auto-resolve the version provide 'latest'."
                 + " Default value is ${DEFAULT-VALUE}"
         )
         public void setInstallerVersion(String installerVersion) {
@@ -50,7 +50,7 @@ public class InstallCleanroomLoaderCommand implements Callable<Integer> {
         }
 
         @Option(names = "--cleanroom-version", required = true, defaultValue = InstallerResolver.LATEST,
-            description = "A specific Cleanroom version or to auto-resolve the version provide 'latest'."
+            description = "A specific Cleanroom Loader version or to auto-resolve the version provide 'latest'."
                 + " Default value is ${DEFAULT-VALUE}"
         )
         public void setCleanroomVersion(String cleanroomVersion) {
@@ -84,25 +84,25 @@ public class InstallCleanroomLoaderCommand implements Callable<Integer> {
     SharedFetchArgs sharedFetchArgs = new SharedFetchArgs();
 
     @ArgGroup(exclusive = false)
-    CleanroomUrlArgs forgeUrlArgs = new CleanroomUrlArgs();
+    CleanroomUrlArgs cleanroomUrlArgs = new CleanroomUrlArgs();
 
     @Override
     public Integer call() throws Exception {
-        try (SharedFetch sharedFetch = Fetch.sharedFetch("install-forge", sharedFetchArgs.options())) {
+        try (SharedFetch sharedFetch = Fetch.sharedFetch("install-cleanroom", sharedFetchArgs.options())) {
 
 //            final CleanroomInstaller installer = new CleanroomInstaller(
 //                versionOrInstaller.installer != null ?
 //                    new ProvidedInstallerResolver(versionOrInstaller.installer)
 //                    : new InstallerResolver(
 //                        sharedFetch, versionOrInstaller.installerVersion, versionOrInstaller.cleanroomVersion,
-//                        forgeUrlArgs.getPromotionsUrl(), forgeUrlArgs.getMavenRepoUrl()
+//                        cleanroomUrlArgs.getPromotionsUrl(), cleanroomUrlArgs.getMavenRepoUrl()
 //                    )
 //
 //            );
 
             final CleanroomInstaller installer = new CleanroomInstaller(new InstallerResolver(
                         sharedFetch, versionOrInstaller.installerVersion, versionOrInstaller.cleanroomVersion,
-                        forgeUrlArgs.getPromotionsUrl()
+                        cleanroomUrlArgs.getReleaseUrl()
             ));
 
             installer.install(outputDirectory, resultsFile, forceReinstall);

@@ -49,6 +49,8 @@ Commands:
                                     instances
   install-forge                   Downloads and installs a requested version of
                                     Forge
+  install-cleanroom               Downloads and installs a requested version of
+                                    Cleanroom
   install-modrinth-modpack        Supports installation of Modrinth modpacks
                                     along with the associated mod loader
   install-neoforge                Downloads and installs a requested version of
@@ -361,6 +363,47 @@ Extracts a field from an INI file
       ref           section/option, section/option[index], /option, /option
                       [index]
       --file=FILE   An INI file to query. If not set, reads stdin
+```
+
+### install-cleanroom
+
+```
+Usage: mc-image-helper install-cleanroom [-h] [--force-reinstall]
+       [--output-directory=DIR] [--results-file=FILE]
+       [--cleanroom-installer=FILE | [--installer-version=<installerVersion>] |
+       [--cleanroom-version=<cleanroomVersion>]] [[--use-http2] [--wiretap]]
+       [[--cleanroom_installer_releases-url=URL]]
+Downloads and installs a requested version of Cleanroom
+      --cleanroom-installer=FILE
+                            Use a local cleanroom installer
+      --cleanroom-version=<cleanroomVersion>
+                            A specific Cleanroom Loader version or to
+                              auto-resolve the version provide 'latest'.
+                              Default value is latest
+      --cleanroom_installer_releases-url=URL
+                            URL for Cleanroom installer JSON.
+                            Can also be set via env var
+                              CLEANROOM_INSTALLER_RELEASE_URL
+                            Default is https://api.github.
+                              com/repos/CleanroomMC/Installer/releases
+      --force-reinstall
+  -h, --help
+      --installer-version=<installerVersion>
+                            A specific Cleanroom installer version or to
+                              auto-resolve the version provide 'latest'.
+                              Default value is latest
+      --output-directory=DIR
+
+      --results-file=FILE   A key=value file suitable for scripted environment
+                              variables. Currently includes
+                              SERVER: the entry point jar or script
+      --use-http2           Whether to use HTTP/2.
+                            Default: true
+                            Env: FETCH_USE_HTTP2
+      --wiretap             Whether to enable Reactor Netty wiretap logging.
+                              Make sure to set logging level to trace.
+                            Default: false
+                            Env: FETCH_WIRETAP
 ```
 
 ### install-curseforge
