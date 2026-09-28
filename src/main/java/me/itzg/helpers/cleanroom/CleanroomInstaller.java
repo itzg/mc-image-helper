@@ -26,9 +26,9 @@ public class CleanroomInstaller {
     private static final Pattern RESULT_INFO = Pattern.compile(
         "Fetching Cleanroom \\s+(?<version>.+)");
 
-    private final InstallerResolver installerResolver;
+    private final CleanroomInstallerResolver installerResolver;
 
-    public CleanroomInstaller(InstallerResolver installerResolver) {
+    public CleanroomInstaller(CleanroomInstallerResolver installerResolver) {
         this.installerResolver = installerResolver;
     }
 

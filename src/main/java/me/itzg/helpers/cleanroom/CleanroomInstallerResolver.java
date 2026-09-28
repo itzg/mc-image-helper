@@ -16,7 +16,7 @@ import java.time.Duration;
 import java.util.Collections;
 
 @Slf4j
-public class InstallerResolver {
+public class CleanroomInstallerResolver {
 
     public static final String LATEST = "latest";
     public static final String DEFAULT_RELEASE_URL = "https://api.github.com/repos/CleanroomMC/Installer/releases";
@@ -37,7 +37,7 @@ public class InstallerResolver {
     private final String requestedInstallerVersion;
     private final String requestedCleanroomVersion;
 
-    public InstallerResolver(SharedFetch sharedFetch,
+    public CleanroomInstallerResolver(SharedFetch sharedFetch,
                              String requestedInstallerVersion,
                              String requestedCleanroomVersion,
                              String releaseUrl
@@ -111,7 +111,7 @@ public class InstallerResolver {
 
         installerVersion = sharedFetch.fetch(URI.create(releaseUrl))
             .userAgentCommand("CleanroomMCAgent")
-            .toObjectList(InstallerEntry.class)
+            .toObjectList(CleanroomInstallerEntry.class)
             .assemble()
             .flatMap(installerEntries -> installerEntries.stream()
                 .findFirst()

@@ -24,7 +24,7 @@ public class InstallCleanroomLoaderCommand implements Callable<Integer> {
     boolean help;
 
     public static final Pattern ALLOWED_VERSION = Pattern.compile(
-        String.join("|", InstallerResolver.LATEST, VERSION_REGEX),
+        String.join("|", CleanroomInstallerResolver.LATEST, VERSION_REGEX),
         Pattern.CASE_INSENSITIVE
     );
 
@@ -36,7 +36,7 @@ public class InstallCleanroomLoaderCommand implements Callable<Integer> {
         String installerVersion;
         String cleanroomVersion;
 
-        @Option(names = "--installer-version", required = true, defaultValue = InstallerResolver.LATEST,
+        @Option(names = "--installer-version", required = true, defaultValue = CleanroomInstallerResolver.LATEST,
             description = "A specific Cleanroom installer version or to auto-resolve the version provide 'latest'."
                 + " Default value is ${DEFAULT-VALUE}"
         )
@@ -49,7 +49,7 @@ public class InstallCleanroomLoaderCommand implements Callable<Integer> {
             this.installerVersion = installerVersion.toLowerCase();
         }
 
-        @Option(names = "--cleanroom-version", required = true, defaultValue = InstallerResolver.LATEST,
+        @Option(names = "--cleanroom-version", required = true, defaultValue = CleanroomInstallerResolver.LATEST,
             description = "A specific Cleanroom Loader version or to auto-resolve the version provide 'latest'."
                 + " Default value is ${DEFAULT-VALUE}"
         )
@@ -85,7 +85,7 @@ public class InstallCleanroomLoaderCommand implements Callable<Integer> {
 
     static class CleanroomUrlArgs {
         @Option(names = "--cleanroom_installer_releases-url", paramLabel = "URL",
-            defaultValue = "${CLEANROOM_INSTALLER_RELEASE_URL:-" + InstallerResolver.DEFAULT_RELEASE_URL + "}",
+            defaultValue = "${CLEANROOM_INSTALLER_RELEASE_URL:-" + CleanroomInstallerResolver.DEFAULT_RELEASE_URL + "}",
             description = "URL for Cleanroom installer JSON.%n"
                 + "Can also be set via env var CLEANROOM_INSTALLER_RELEASE_URL%n"
                 + "Default is ${DEFAULT-VALUE}"
@@ -93,7 +93,7 @@ public class InstallCleanroomLoaderCommand implements Callable<Integer> {
         String releaseUrl;
 
         public String getReleaseUrl() {
-            return releaseUrl != null ? releaseUrl : InstallerResolver.DEFAULT_RELEASE_URL;
+            return releaseUrl != null ? releaseUrl : CleanroomInstallerResolver.DEFAULT_RELEASE_URL;
         }
     }
 
@@ -103,7 +103,7 @@ public class InstallCleanroomLoaderCommand implements Callable<Integer> {
     @Override
     public Integer call() throws Exception {
         try (SharedFetch sharedFetch = Fetch.sharedFetch("install-cleanroom", sharedFetchArgs.options())) {
-            final CleanroomInstaller installer = new CleanroomInstaller(new InstallerResolver(
+            final CleanroomInstaller installer = new CleanroomInstaller(new CleanroomInstallerResolver(
                         sharedFetch, versionOrInstaller.installerVersion, versionOrInstaller.cleanroomVersion,
                         cleanroomUrlArgs.getReleaseUrl()
             ));
