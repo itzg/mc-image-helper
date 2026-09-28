@@ -1,12 +1,14 @@
 package me.itzg.helpers.cleanroom;
 
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
+import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.http.Fetch;
 import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.http.SharedFetch.Options;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import java.io.IOException;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -46,6 +48,33 @@ public class CleanroomInstallerResolverTest {
             assertThat(versionPair).isNotNull();
             assertThat(versionPair.installerVersion()).isEqualTo(expectedInstallerVersion);
         }
+    }
+
+    public static Stream<Arguments> testVersion() {
+        // loaderVersion, errorCode
+        return Stream.of(
+            arguments("0.6.13-alpha", 0),
+            arguments("0.6.13", 2)
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("testVersion")
+    void loaderVersionList(String loaderVersion, int errorCode) throws IOException {
+        final Process process = new ProcessBuilder(
+            "java", "-jar",
+            CleanroomInstallerResolverTest.class.getResource("/cleanroom/installer-0.1.4.jar").getPath(),
+            "server", "--dry-run", "--version", loaderVersion != null ? loaderVersion : "latest"
+        )
+            .start();
+
+        try {
+            final int exitCode = process.waitFor();
+            assertThat(exitCode).isEqualTo(errorCode);
+        } catch (InterruptedException e) {
+            throw new GenericException("Interrupted waiting for cleanroom installer", e);
+        }
+
     }
 
 }
