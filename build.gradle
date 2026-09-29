@@ -165,6 +165,8 @@ dependencies {
   // https://commons.apache.org/proper/commons-compress/zip.html
   // For IMPLODE compression used by some CurseForge modpacks
   implementation 'org.apache.commons:commons-compress:1.28.0'
+  // Commons Compress's optional Zstandard implementation; compatible with Java 8.
+  implementation 'com.github.luben:zstd-jni:1.5.7-4'
 
   testImplementation 'org.assertj:assertj-core:3.27.7'
   // https://github.com/webcompere/model-assert
