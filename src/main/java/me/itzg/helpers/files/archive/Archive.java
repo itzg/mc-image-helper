@@ -4,12 +4,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveException;
+import org.apache.commons.compress.archivers.ArchiveInputStream;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,7 +35,7 @@ public final class Archive {
     }
 
     public Path extract(Path destination, boolean overwrite) throws IOException, ArchiveException {
-        return extract(destination, List.of(), overwrite);
+        return extract(destination, Collections.<String>emptyList(), overwrite);
     }
 
     public Path extract(Path destination, List<String> files, boolean overwrite)
@@ -44,7 +46,7 @@ public final class Archive {
         final Path extractionRoot = ArchiveUtils.prepareDestination(destination);
 
         try (InputStream source = Files.newInputStream(archive);
-                var input = opener.open(source)) {
+                ArchiveInputStream<? extends ArchiveEntry> input = opener.open(source)) {
             ArchiveEntry entry;
 
             while ((entry = input.getNextEntry()) != null) {
@@ -71,7 +73,7 @@ public final class Archive {
         final Path extractionRoot = archive.toAbsolutePath().normalize().getParent();
 
         try (InputStream source = Files.newInputStream(archive);
-                var input = opener.open(source)) {
+                ArchiveInputStream<? extends ArchiveEntry> input = opener.open(source)) {
             ArchiveEntry entry;
 
             while ((entry = input.getNextEntry()) != null) {
@@ -94,7 +96,7 @@ public final class Archive {
         final Path extractionRoot = archive.toAbsolutePath().normalize().getParent();
 
         try (InputStream source = Files.newInputStream(archive);
-                var input = opener.open(source)) {
+                ArchiveInputStream<? extends ArchiveEntry> input = opener.open(source)) {
             ArchiveEntry entry;
 
             while ((entry = input.getNextEntry()) != null) {

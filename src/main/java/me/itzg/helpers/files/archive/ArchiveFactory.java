@@ -10,6 +10,9 @@ import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.compress.compressors.zstandard.ZstdCompressorInputStream;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public final class ArchiveFactory {
 
     static Archive create(Path archive) throws IOException {
@@ -20,21 +23,32 @@ public final class ArchiveFactory {
         }
 
         final String contentType = Files.probeContentType(archive);
+        log.debug("Detected archive MIME type '{}' for {}", contentType, archive);
 
         if (contentType == null) {
             throw new IOException("Failed to read file MIME type: " + archive.toAbsolutePath());
         }
 
-        return switch (contentType) {
-            case "application/zip" -> new Archive(archive, ZipArchiveInputStream::new);
-            case "application/x-tar" -> new Archive(archive, TarArchiveInputStream::new);
-            case "application/gzip", "application/x-gzip" -> new Archive(archive,
-                    input -> new TarArchiveInputStream(new GzipCompressorInputStream(input)));
-            case "application/x-bzip2", "application/bz2", "application/x-bzip" -> new Archive(archive,
-                    input -> new TarArchiveInputStream(new BZip2CompressorInputStream(input)));
-            case "application/zstd", "application/x-zstd" -> new Archive(archive,
-                    input -> new TarArchiveInputStream(new ZstdCompressorInputStream(input)));
-            default -> throw new IOException("Failed to read file MIME type: " + archive.toAbsolutePath());
-        };
+        switch (contentType) {
+            case "application/zip":
+                return new Archive(archive, ZipArchiveInputStream::new);
+            case "application/x-tar":
+                return new Archive(archive, TarArchiveInputStream::new);
+            case "application/gzip":
+            case "application/x-gzip":
+                return new Archive(archive,
+                        input -> new TarArchiveInputStream(new GzipCompressorInputStream(input)));
+            case "application/x-bzip2":
+            case "application/bz2":
+            case "application/x-bzip":
+                return new Archive(archive,
+                        input -> new TarArchiveInputStream(new BZip2CompressorInputStream(input)));
+            case "application/zstd":
+            case "application/x-zstd":
+                return new Archive(archive,
+                        input -> new TarArchiveInputStream(new ZstdCompressorInputStream(input)));
+            default:
+                throw new IOException("Failed to read file MIME type: " + archive.toAbsolutePath());
+        }
     }
 }

@@ -8,7 +8,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -40,7 +43,7 @@ public class ArchiveCommandTest {
     @EnumSource(ArchiveType.class)
     void rejectsArchiveWithPathTraversal(ArchiveType type) throws IOException, Exception {
         final LatchingExecutionExceptionHandler exceptionHandler = new LatchingExecutionExceptionHandler();
-        final Path slip = createTestArchive(type, List.of("../../../../danger.txt"));
+        final Path slip = createTestArchive(type, Arrays.asList("../../../../danger.txt"));
 
         final String sysErr = SystemLambda.tapSystemErr(() -> {
             final int exitCode = new CommandLine(new McImageHelper())
@@ -57,7 +60,7 @@ public class ArchiveCommandTest {
     @ParameterizedTest
     @EnumSource(ArchiveType.class)
     void acceptsValidArchive(ArchiveType type) throws IOException, Exception {
-        final Path archive = createTestArchive(type, List.of("file.txt"));
+        final Path archive = createTestArchive(type, Arrays.asList("file.txt"));
 
         final String sysErr = SystemLambda.tapSystemErr(() -> {
             final int exitCode = new CommandLine(new McImageHelper())
@@ -72,7 +75,7 @@ public class ArchiveCommandTest {
     @ParameterizedTest
     @EnumSource(ArchiveType.class)
     void extractsValidArchive(ArchiveType type) throws IOException, Exception {
-        final Path archive = createTestArchive(type, List.of("nested/file.txt"));
+        final Path archive = createTestArchive(type, Arrays.asList("nested/file.txt"));
         final Path destination = tempDir.resolve("destination");
 
         final String sysErr = SystemLambda.tapSystemErr(() -> {
@@ -90,7 +93,7 @@ public class ArchiveCommandTest {
     @EnumSource(ArchiveType.class)
     void rejectsPathTraversalDuringExtraction(ArchiveType type) throws IOException, Exception {
         final LatchingExecutionExceptionHandler exceptionHandler = new LatchingExecutionExceptionHandler();
-        final Path archive = createTestArchive(type, List.of("../danger.txt"));
+        final Path archive = createTestArchive(type, Arrays.asList("../danger.txt"));
         final Path destination = tempDir.resolve("destination");
 
         final String sysErr = SystemLambda.tapSystemErr(() -> {
@@ -111,10 +114,10 @@ public class ArchiveCommandTest {
     @ParameterizedTest
     @EnumSource(ArchiveType.class)
     void doesNotOverwriteExistingFilesByDefault(ArchiveType type) throws IOException, Exception {
-        final Path archive = createTestArchive(type, List.of("file.txt", "subsequent.txt"));
+        final Path archive = createTestArchive(type, Arrays.asList("file.txt", "subsequent.txt"));
         final Path destination = Files.createDirectories(tempDir.resolve("destination"));
         final Path extractedFile = destination.resolve("file.txt");
-        Files.writeString(extractedFile, "existing");
+        Files.write(extractedFile, "existing".getBytes(StandardCharsets.UTF_8));
 
         final String sysErr = SystemLambda.tapSystemErr(() -> {
             final int exitCode = new CommandLine(new McImageHelper())
@@ -131,10 +134,10 @@ public class ArchiveCommandTest {
     @ParameterizedTest
     @EnumSource(ArchiveType.class)
     void overwritesExistingFilesWhenRequested(ArchiveType type) throws IOException, Exception {
-        final Path archive = createTestArchive(type, List.of("file.txt"));
+        final Path archive = createTestArchive(type, Arrays.asList("file.txt"));
         final Path destination = Files.createDirectories(tempDir.resolve("destination"));
         final Path extractedFile = destination.resolve("file.txt");
-        Files.writeString(extractedFile, "existing");
+        Files.write(extractedFile, "existing".getBytes(StandardCharsets.UTF_8));
 
         final String sysErr = SystemLambda.tapSystemErr(() -> {
             final int exitCode = new CommandLine(new McImageHelper())
@@ -151,7 +154,7 @@ public class ArchiveCommandTest {
     @EnumSource(ArchiveType.class)
     void rejectsPathTraversalBeforeExtractingAnyEntries(ArchiveType type) throws IOException, Exception {
         final LatchingExecutionExceptionHandler exceptionHandler = new LatchingExecutionExceptionHandler();
-        final Path archive = createTestArchive(type, List.of("safe/file.txt", "../danger.txt"));
+        final Path archive = createTestArchive(type, Arrays.asList("safe/file.txt", "../danger.txt"));
         final Path destination = tempDir.resolve("destination");
 
         SystemLambda.tapSystemErr(() -> {
@@ -171,7 +174,7 @@ public class ArchiveCommandTest {
     @EnumSource(ArchiveType.class)
     void extractsExplicitDirectories(ArchiveType type) throws IOException, Exception {
         final Path archive = createTestArchive(type,
-                List.of("nested/"), List.of("nested/file.txt"));
+                Arrays.asList("nested/"), Arrays.asList("nested/file.txt"));
         final Path destination = tempDir.resolve("destination");
 
         final String sysErr = SystemLambda.tapSystemErr(() -> {
@@ -189,7 +192,7 @@ public class ArchiveCommandTest {
     @ParameterizedTest
     @EnumSource(ArchiveType.class)
     void extractsEmptyArchive(ArchiveType type) throws IOException, Exception {
-        final Path archive = createTestArchive(type, List.of());
+        final Path archive = createTestArchive(type, Collections.<String>emptyList());
         final Path destination = tempDir.resolve("destination");
 
         final String sysErr = SystemLambda.tapSystemErr(() -> {
@@ -201,8 +204,8 @@ public class ArchiveCommandTest {
 
         assertThat(sysErr).isEmpty();
         assertThat(destination).isDirectory();
-        try (var files = Files.list(destination)) {
-            assertThat(files.toList()).isEmpty();
+        try (Stream<Path> files = Files.list(destination)) {
+            assertThat(files.count()).isZero();
         }
     }
 
@@ -231,7 +234,7 @@ public class ArchiveCommandTest {
         final LatchingExecutionExceptionHandler exceptionHandler = new LatchingExecutionExceptionHandler();
         final Path nonZip = tempDir.resolve("not-a-zip.txt");
         final Path destination = tempDir.resolve("destination");
-        Files.writeString(nonZip, "not a zip");
+        Files.write(nonZip, "not a zip".getBytes(StandardCharsets.UTF_8));
 
         final String sysErr = SystemLambda.tapSystemErr(() -> {
             final int exitCode = new CommandLine(new McImageHelper())
@@ -250,19 +253,19 @@ public class ArchiveCommandTest {
     @ParameterizedTest
     @EnumSource(ArchiveType.class)
     void extractsOnlySelectedFiles(ArchiveType type) throws Exception {
-        final Path archive = createTestArchive(type, List.of("unused/"),
-                List.of("before.txt", "nested/selected file.txt", "between.txt", "-last.txt"));
+        final Path archive = createTestArchive(type, Arrays.asList("unused/"),
+                Arrays.asList("before.txt", "nested/selected file.txt", "between.txt", "-last.txt"));
 
-        for (List<String> selection : List.of(
-                List.of("nested/selected file.txt"),
-                List.of("-last.txt", "nested/selected file.txt", "nested/selected file.txt"))) {
+        for (List<String> selection : Arrays.asList(
+                Arrays.asList("nested/selected file.txt"),
+                Arrays.asList("-last.txt", "nested/selected file.txt", "nested/selected file.txt"))) {
             final Path destination = tempDir.resolve("destination-" + selection.size());
-            final List<String> args = new ArrayList<>(List.of(
+            final List<String> args = new ArrayList<>(Arrays.asList(
                     "archive", "extract", "--", archive.toString(), destination.toString()));
             args.addAll(selection);
 
             final String sysErr = SystemLambda.tapSystemErr(() ->
-                    assertThat(new CommandLine(new McImageHelper()).execute(args.toArray(String[]::new)))
+                    assertThat(new CommandLine(new McImageHelper()).execute(args.toArray(new String[args.size()])))
                             .isEqualTo(ExitCode.OK));
 
             assertThat(sysErr).isEmpty();
@@ -281,7 +284,7 @@ public class ArchiveCommandTest {
     @ParameterizedTest
     @EnumSource(ArchiveType.class)
     void rejectsMissingSelectedFilesBeforeCreatingDestination(ArchiveType type) throws Exception {
-        final Path archive = createTestArchive(type, List.of("nested/"), List.of("file.txt"));
+        final Path archive = createTestArchive(type, Arrays.asList("nested/"), Arrays.asList("file.txt"));
         final Path destination = tempDir.resolve("destination");
         final LatchingExecutionExceptionHandler exceptionHandler = new LatchingExecutionExceptionHandler();
 
@@ -302,7 +305,7 @@ public class ArchiveCommandTest {
     @ParameterizedTest
     @EnumSource(ArchiveType.class)
     void rejectsUnselectedPathTraversalBeforeCreatingDestination(ArchiveType type) throws Exception {
-        final Path archive = createTestArchive(type, List.of("safe.txt", "../danger.txt"));
+        final Path archive = createTestArchive(type, Arrays.asList("safe.txt", "../danger.txt"));
         final Path destination = tempDir.resolve("destination");
         final LatchingExecutionExceptionHandler exceptionHandler = new LatchingExecutionExceptionHandler();
 
@@ -323,20 +326,20 @@ public class ArchiveCommandTest {
     @ParameterizedTest
     @EnumSource(ArchiveType.class)
     void respectsOverwriteForSelectedFiles(ArchiveType type) throws Exception {
-        final Path archive = createTestArchive(type, List.of("file.txt", "unselected.txt", "subsequent.txt"));
+        final Path archive = createTestArchive(type, Arrays.asList("file.txt", "unselected.txt", "subsequent.txt"));
 
-        for (boolean overwrite : List.of(false, true)) {
+        for (boolean overwrite : Arrays.asList(false, true)) {
             final Path destination = Files.createDirectories(tempDir.resolve("destination-" + overwrite));
-            Files.writeString(destination.resolve("file.txt"), "existing");
-            Files.writeString(destination.resolve("unselected.txt"), "untouched");
-            final List<String> args = new ArrayList<>(List.of("archive", "extract"));
+            Files.write(destination.resolve("file.txt"), "existing".getBytes(StandardCharsets.UTF_8));
+            Files.write(destination.resolve("unselected.txt"), "untouched".getBytes(StandardCharsets.UTF_8));
+            final List<String> args = new ArrayList<>(Arrays.asList("archive", "extract"));
             if (overwrite) {
                 args.add("--overwrite");
             }
-            args.addAll(List.of("--", archive.toString(), destination.toString(), "file.txt", "subsequent.txt"));
+            args.addAll(Arrays.asList("--", archive.toString(), destination.toString(), "file.txt", "subsequent.txt"));
 
             final String sysErr = SystemLambda.tapSystemErr(() ->
-                    assertThat(new CommandLine(new McImageHelper()).execute(args.toArray(String[]::new)))
+                    assertThat(new CommandLine(new McImageHelper()).execute(args.toArray(new String[args.size()])))
                             .isEqualTo(ExitCode.OK));
 
             assertThat(sysErr).isEmpty();
@@ -347,21 +350,30 @@ public class ArchiveCommandTest {
     }
 
     Path createTestArchive(ArchiveType type, List<String> entries) throws IOException {
-        return createTestArchive(type, List.of(), entries);
+        return createTestArchive(type, Collections.<String>emptyList(), entries);
     }
 
     Path createTestArchive(ArchiveType type, List<String> directories, List<String> files) throws IOException {
         final Path archive = tempDir.resolve("test." + type.extension());
 
         switch (type) {
-            case ZIP -> createZip(archive, directories, files);
-            case TAR -> createTar(Files.newOutputStream(archive), directories, files);
-            case TAR_GZIP -> createTar(
-                    new GzipCompressorOutputStream(Files.newOutputStream(archive)), directories, files);
-            case TAR_BZIP2 -> createTar(
-                    new BZip2CompressorOutputStream(Files.newOutputStream(archive)), directories, files);
-            case TAR_ZSTD -> createTar(
-                    new ZstdCompressorOutputStream(Files.newOutputStream(archive)), directories, files);
+            case ZIP:
+                createZip(archive, directories, files);
+                break;
+            case TAR:
+                createTar(Files.newOutputStream(archive), directories, files);
+                break;
+            case TAR_GZIP:
+                createTar(new GzipCompressorOutputStream(Files.newOutputStream(archive)), directories, files);
+                break;
+            case TAR_BZIP2:
+                createTar(new BZip2CompressorOutputStream(Files.newOutputStream(archive)), directories, files);
+                break;
+            case TAR_ZSTD:
+                createTar(new ZstdCompressorOutputStream(Files.newOutputStream(archive)), directories, files);
+                break;
+            default:
+                throw new IllegalArgumentException("Unsupported archive type: " + type);
         }
 
         return archive;
@@ -385,7 +397,7 @@ public class ArchiveCommandTest {
     }
 
     private void createTar(OutputStream output, List<String> directories, List<String> files) throws IOException {
-        try (output; TarArchiveOutputStream tos = new TarArchiveOutputStream(output)) {
+        try (TarArchiveOutputStream tos = new TarArchiveOutputStream(output)) {
             final byte[] data = "data".getBytes(StandardCharsets.UTF_8);
 
             for (String path : directories) {
