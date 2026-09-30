@@ -26,6 +26,35 @@ Run the script using:
 ./build/install/mc-image-helper/bin/mc-image-helper ...args...
 ```
 
+## Mocking API requests with WireMock
+
+For command tests that call an API, use WireMock instead of making requests to the real service. Commands should allow their default API base URL to be overridden; point that setting at WireMock's per-test URL, then stub the expected request:
+
+```java
+@WireMockTest
+class SomeCommandTest {
+    @Test
+    void handlesApiResponse(WireMockRuntimeInfo wm) {
+        stubFor(get(urlPathEqualTo("/v1/example"))
+            .willReturn(jsonResponse("{\"data\": []}", 200))
+        );
+
+        final int status =
+                new CommandLine(new SomeCommand())
+                        .execute(
+                            "--api-base-url",
+                            wm.getHttpBaseUrl()
+                        );
+
+        assertThat(status).isEqualTo(0);
+
+        verify(getRequestedFor(urlPathEqualTo("/v1/example")));
+    }
+}
+```
+
+Replace `SomeCommand` with the command under test and pass the mocked base URL and any other arguments to the Picocli's `execute`. Be sure to match relevant paths, query parameters, and headers in stubs; however, Wiremock provides helpful output if you miss any. Verify requests when the test needs to assert that the command called the API as expected.
+
 ## Updating command documentation
 
 After adding or changing commands or options, regenerate the README's command overview and subcommand documentation:
