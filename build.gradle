@@ -150,7 +150,7 @@ dependencies {
     //	at reactor.netty.http.internal.Http3.isHttp3Available(Http3.java:35)
     exclude group: 'io.netty', module: 'netty-codec-native-quic'
   }
-  implementation 'org.apache.maven:maven-artifact:3.9.16'
+  implementation 'org.apache.maven:maven-artifact:3.10.0'
   implementation 'commons-codec:commons-codec:1.22.1'
   // for RFC5987 parsing of content-disposition filename*
   implementation('org.apache.cxf:cxf-core') {
