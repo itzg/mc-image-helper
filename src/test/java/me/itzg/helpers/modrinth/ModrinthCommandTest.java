@@ -12,7 +12,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -37,7 +36,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
 
-@SuppressWarnings("CodeBlock2Expr")
+@SuppressWarnings({"CodeBlock2Expr", "SameParameterValue"})
 class ModrinthCommandTest {
 
     public static final String PROJECT_ID_GLITCHCORE = "s3dmwKy5";
@@ -564,7 +563,7 @@ class ModrinthCommandTest {
     }
 
     @Test
-    void handlesDependencyChain(@TempDir Path tempDir) throws IOException {
+    void handlesDependencyChain(@TempDir Path tempDir) {
         // such as Tech Reborn ──> requires RebornCore ──> requires Fabric API
         // techreborn(3eMENr4V) -> reborncore(3NCrJdj3) -> fabric-api(P7dR8mSH)
         // NOTE: normally techreborn (like most) depends on fabric-api, but for this test, we are going to make it depend on reborncore instead, which will then depend on fabric-api
