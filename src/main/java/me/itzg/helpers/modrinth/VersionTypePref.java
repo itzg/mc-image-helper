@@ -29,6 +29,13 @@ public class VersionTypePref {
         return new VersionTypePref(versionType, false);
     }
 
+    public static VersionTypePref of(VersionType versionType, boolean prefersBest) {
+        if (versionType == null) {
+            return null;
+        }
+        return new VersionTypePref(versionType, prefersBest);
+    }
+
     public static class Converter implements CommandLine.ITypeConverter<VersionTypePref> {
         @Override
         public VersionTypePref convert(String value) throws Exception {

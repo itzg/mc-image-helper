@@ -37,6 +37,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
 
+@SuppressWarnings("CodeBlock2Expr")
 class ModrinthCommandTest {
 
     public static final String PROJECT_ID_GLITCHCORE = "s3dmwKy5";

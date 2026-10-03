@@ -201,7 +201,7 @@ public class ModrinthApiClient implements AutoCloseable {
                 .distinct()
                 .collect(Collectors.toList())
             )
-            .doOnNext(versions -> {log.debug("Resolved game versions for {}: {}", projectRef, versions);});
+            .doOnNext(versions -> log.debug("Resolved game versions for {}: {}", projectRef, versions));
     }
 
     public Mono<Path> downloadMrPack(VersionFile versionFile) {

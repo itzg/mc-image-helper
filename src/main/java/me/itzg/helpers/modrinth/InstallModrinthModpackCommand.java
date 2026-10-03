@@ -113,11 +113,12 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
 
     @Option(names = "--overrides-exclusions",
         split = "\n|,", splitSynopsisLabel = "NL or ,",
-        description = "Excludes files from the overrides that match these ant-style patterns\n"
-            + "*  : matches any non-slash characters\n"
-            + "** : matches any characters\n"
-            + "?  : matches one character"
-            + "%nEmbedded comments are allowed."
+        description = """
+            Excludes files from the overrides that match these ant-style patterns
+            *  : matches any non-slash characters
+            ** : matches any characters
+            ?  : matches one character\
+            %nEmbedded comments are allowed."""
     )
     public void setOverridesExclusions(List<String> overridesExclusions) {
         this.overridesExclusions = normalizeOptionList(overridesExclusions);
