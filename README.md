@@ -382,8 +382,8 @@ Usage: mc-image-helper install-curseforge [-h] [--disable-api-caching]
        |<nl><ignoreMissingFiles>...]]...
        [--overrides-exclusions=<overridesExclusions>[NL or ,
        <overridesExclusions>...]]... [[--exclude-include-file=FILE|URI]
-       [--exclude-all-mods] [[--excludes=PROJECT_ID|SLUG[,
-       |<nl>PROJECT_ID|SLUG...]]... [--force-includes=PROJECT_ID|SLUG[,
+       [--exclude-all-mods] [[--force-includes=PROJECT_ID|SLUG[,
+       |<nl>PROJECT_ID|SLUG...]]... [--excludes=PROJECT_ID|SLUG[,
        |<nl>PROJECT_ID|SLUG...]]...]] [[--use-http2] [--wiretap]]
        [[--api-cache-ttl=OPERATION=DURATION]...
        [--api-cache-default-ttl=DURATION]] [[--forge-promotions-url=URL]
@@ -625,7 +625,8 @@ Supports installation of Modrinth modpacks along with the associated mod loader
                               exclude/include declarations. See README for
                               schema.
       --default-version-type=TYPE
-                            Valid values: release, beta, alpha
+                            Valid values: release, beta, alpha (optional '+'
+                              suffix)
                             Default: release
       --exclude-files=<excludeFiles>[,|<nl><excludeFiles>...]
                             Files to exclude, such as improperly declared
@@ -1089,7 +1090,8 @@ Usage: mc-image-helper modrinth [--skip-existing] [--skip-up-to-date]
                                 [[--use-http2] [--wiretap]]
 Automates downloading of modrinth resources
       --allowed-version-type=<defaultVersionType>
-                          Valid values: release, beta, alpha
+                          Valid values: release, beta, alpha (optional '+'
+                            suffix)
       --api-base-url=<baseUrl>
                           Default: https://api.modrinth.com
       --download-dependencies=<downloadDependencies>
