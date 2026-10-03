@@ -12,12 +12,10 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
 import me.itzg.helpers.errors.InvalidParameterException;
-import me.itzg.helpers.modrinth.model.VersionType;
 import org.jetbrains.annotations.Nullable;
 
 @Getter
@@ -40,7 +38,7 @@ public class ProjectRef {
      * Either a remote URI or a file URI for a locally provided file
      */
     private final URI projectUri;
-    private final VersionType versionType;
+    private final VersionTypePref versionType;
     private final String versionId;
     private final String versionNumber;
 
@@ -114,21 +112,21 @@ public class ProjectRef {
 
     /**
      *
-     * @param version can be a {@link VersionType}, ID, or name/number
+     * @param version can be a {@link VersionTypePref}, ID, or name/number
      */
     public ProjectRef(String projectSlug, String version) {
         this(projectSlug, version, null, false);
     }
 
     /**
-     * @param version  can be a {@link VersionType}, ID, or name/number
+     * @param version  can be a {@link VersionTypePref}, ID, or name/number
      */
     public ProjectRef(String projectSlug, @Nullable String version, Loader loader) {
         this(projectSlug, version, loader, false);
     }
 
     /**
-     * @param version  can be a {@link VersionType}, ID, or name/number
+     * @param version  can be a {@link VersionTypePref}, ID, or name/number
      * @param optional whether the project is optional (skip on failure)
      */
     public ProjectRef(String projectSlug, @Nullable String version, Loader loader, boolean optional) {
@@ -238,12 +236,12 @@ public class ProjectRef {
         return version != null && VERSIONS.matcher(version).matches();
     }
 
-    private VersionType parseVersionType(String version) {
+    private VersionTypePref parseVersionType(String version) {
         if (version == null) {
             return null;
         }
         try {
-            return VersionType.valueOf(version);
+            return VersionTypePref.parse(version);
         } catch (IllegalArgumentException e) {
             return null;
         }

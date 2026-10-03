@@ -12,7 +12,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -37,6 +36,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
 
+@SuppressWarnings({"CodeBlock2Expr", "SameParameterValue"})
 class ModrinthCommandTest {
 
     public static final String PROJECT_ID_GLITCHCORE = "s3dmwKy5";
@@ -486,7 +486,11 @@ class ModrinthCommandTest {
         stubProjectVersionsRequest(PROJECT_ID_GLITCHCORE, "fabric", "1.21.1", versions -> {
             addProjectVersion(versions, "FsKFwxzd", PROJECT_ID_GLITCHCORE, "beta", new String[]{"fabric"},
                 files -> {
-                addFile(files, wm.getRuntimeInfo().getHttpBaseUrl() + "/cdn/FsKFwxzd", "glitchcore-1.0.0.jar");
+                addFile(files, wm.getRuntimeInfo().getHttpBaseUrl() + "/cdn/FsKFwxzd", "glitchcore-1.1.0-alpha.jar");
+            }, deps -> {});
+            addProjectVersion(versions, "TsKFwxzd", PROJECT_ID_GLITCHCORE, "release", new String[]{"fabric"},
+                files -> {
+                addFile(files, wm.getRuntimeInfo().getHttpBaseUrl() + "/cdn/TsKFwxzd", "glitchcore-1.0.0.jar");
             }, deps -> {});
         });
         stubAnyDownload();
@@ -508,8 +512,7 @@ class ModrinthCommandTest {
         assertThat(tempDir.resolve("mods/biomes-o-plenty-1.0.0.jar")).exists();
         verifyVersionRequest(PROJECT_ID_BIOMES_O_PLENTY);
 
-        assertThat(tempDir.resolve("mods")).isDirectoryNotContaining(path -> path.getFileName().toString().startsWith("glitchcore"));
-        // glitchcore with beta
+        assertThat(tempDir.resolve("mods/biomes-o-plenty-1.0.0.jar")).exists();
         verifyProjectVersionsRequest(PROJECT_ID_GLITCHCORE, "fabric", "1.21.1");
     }
 
@@ -560,7 +563,7 @@ class ModrinthCommandTest {
     }
 
     @Test
-    void handlesDependencyChain(@TempDir Path tempDir) throws IOException {
+    void handlesDependencyChain(@TempDir Path tempDir) {
         // such as Tech Reborn ──> requires RebornCore ──> requires Fabric API
         // techreborn(3eMENr4V) -> reborncore(3NCrJdj3) -> fabric-api(P7dR8mSH)
         // NOTE: normally techreborn (like most) depends on fabric-api, but for this test, we are going to make it depend on reborncore instead, which will then depend on fabric-api
@@ -612,6 +615,39 @@ class ModrinthCommandTest {
         assertThat(modsDir.resolve("fabric-api-1.0.0.jar")).exists();
     }
 
+    @Test
+    void prefersBestVersionType(@TempDir Path tempDir) {
+        stubProjectBulkRequestMulti("c2me-fabric", "VSNURh3q");
+        stubProjectVersionsRequest("VSNURh3q", "fabric", "1.21.11", versions -> {
+            addProjectVersion(versions, "vhn7vj66", "VSNURh3q", "alpha", new String[]{"fabric"},
+                files -> {
+                addFile(files, wm.getRuntimeInfo().getHttpBaseUrl() + "/cdn/vhn7vj66", "c2me-fabric-mc1.21.11-0.3.7+alpha.0.6.jar");
+            }, deps -> {});
+            addProjectVersion(versions, "olrVZpJd", "VSNURh3q", "release", new String[]{"fabric"},
+                files -> {
+                addFile(files, wm.getRuntimeInfo().getHttpBaseUrl() + "/cdn/olrVZpJd", "c2me-fabric-mc1.21.11-0.3.6.0.0.jar");
+            }, deps -> {});
+        });
+        stubAnyDownload();
+
+        final int exitCode = new CommandLine(
+            new ModrinthCommand()
+        )
+            .execute(
+                "--api-base-url", wm.getRuntimeInfo().getHttpBaseUrl(),
+                "--output-directory", tempDir.toString(),
+                "--game-version", "1.21.11",
+                "--loader", "fabric",
+                "--download-dependencies", DownloadDependencies.REQUIRED.name(),
+                "--projects",
+                "c2me-fabric:alpha+"
+            );
+
+        assertThat(exitCode).isEqualTo(ExitCode.OK);
+        final Path modsDir = tempDir.resolve("mods");
+        assertThat(modsDir.resolve("c2me-fabric-mc1.21.11-0.3.6.0.0.jar")).exists();
+    }
+
     @NotNull
     private static RequestPatternBuilder projectVersionsRequest(String projectId) {
         return getRequestedFor(urlPathEqualTo("/v2/project/" + projectId + "/version"));
@@ -639,6 +675,9 @@ class ModrinthCommandTest {
         );
     }
 
+    /**
+     * @param projectsSlugsIds pairs of project slug and id
+     */
     private void stubProjectBulkRequestMulti(String... projectsSlugsIds) {
         final ArrayNode projectResp = objectMapper.createArrayNode();
         assertThat(projectsSlugsIds.length % 2).isEqualTo(0);

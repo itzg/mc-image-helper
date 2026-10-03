@@ -1,3 +1,5 @@
+# Modrinth API docs at https://docs.modrinth.com/api
+
 ###
 GET https://api.modrinth.com/v2/project/cobblemon-fabric
 
@@ -36,10 +38,10 @@ GET https://api.modrinth.com/v2/project/{{id}}/dependencies
 GET https://api.modrinth.com/v2/project/ae2/version?loaders=fabric&game_versions=1.20.1
 
 ###
-@projectId =3eMENr4V
+@projectIdOrSlug =c2me-fabric
 @loaders =fabric
-@gameVersion =1.21.1
-GET https://api.modrinth.com/v2/project/{{projectId}}/version?loaders=["{{loaders}}"]&game_versions=["{{gameVersion}}"]
+@gameVersion =1.21.11
+GET https://api.modrinth.com/v2/project/{{projectIdOrSlug}}/version?loaders=["{{loaders}}"]&game_versions=["{{gameVersion}}"]
 
 ###
 GET https://api.modrinth.com/v2/project/datacraft/version?loaders=neoforge&game_versions=1.20.1

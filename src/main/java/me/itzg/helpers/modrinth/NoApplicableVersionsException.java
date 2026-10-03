@@ -6,7 +6,6 @@ import lombok.Getter;
 import lombok.ToString;
 import me.itzg.helpers.modrinth.model.Project;
 import me.itzg.helpers.modrinth.model.Version;
-import me.itzg.helpers.modrinth.model.VersionType;
 
 @Getter
 @ToString
@@ -14,9 +13,9 @@ public class NoApplicableVersionsException extends RuntimeException {
 
     private final Project project;
     private final List<Version> versions;
-    private final VersionType versionType;
+    private final VersionTypePref versionType;
 
-    public NoApplicableVersionsException(Project project, List<Version> versions, VersionType versionType) {
+    public NoApplicableVersionsException(Project project, List<Version> versions, VersionTypePref versionType) {
         super(
             String.format("No candidate versions of '%s' [%s] matched versionType=%s",
                 project.getTitle(),
