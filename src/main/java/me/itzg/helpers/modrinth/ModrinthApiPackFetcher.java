@@ -9,7 +9,6 @@ import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.http.FailedRequestException;
 import me.itzg.helpers.modrinth.model.Version;
-import me.itzg.helpers.modrinth.model.VersionType;
 import org.jetbrains.annotations.Nullable;
 import reactor.core.publisher.Mono;
 
@@ -21,7 +20,7 @@ public class ModrinthApiPackFetcher implements ModrinthPackFetcher {
 
     private final Loader modLoaderType;
     private final String gameVersion;
-    private final VersionType defaultVersionType;
+    private final VersionTypePref defaultVersionType;
     private final boolean forceSynchronize;
     private final Path modpackOutputDirectory;
 
@@ -32,7 +31,7 @@ public class ModrinthApiPackFetcher implements ModrinthPackFetcher {
             ModrinthApiClient apiClient, ProjectRef projectRef,
             boolean forceSynchronize,
             Path outputDirectory, String gameVersion,
-            VersionType defaultVersionType, @Nullable Loader loader)
+            VersionTypePref defaultVersionType, @Nullable Loader loader)
     {
         this.apiClient = apiClient;
         this.modpackProjectRef = projectRef;

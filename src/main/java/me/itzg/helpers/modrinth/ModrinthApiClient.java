@@ -157,7 +157,7 @@ public class ModrinthApiClient implements AutoCloseable {
      */
     public Mono<Version> resolveProjectVersion(Project project, ProjectRef projectRef,
                                                @Nullable Loader loader, String gameVersion,
-                                               VersionType defaultVersionType) {
+                                               VersionTypePref defaultVersionType) {
 
         if (projectRef.hasVersionName()) {
             return getVersionsForProject(project.getId(), loader, gameVersion)
@@ -296,16 +296,8 @@ public class ModrinthApiClient implements AutoCloseable {
             .assemble();
     }
 
-    private Version pickVersion(Project project, List<Version> versions, VersionType versionType) {
-        for (final Version version : versions) {
-            if (version.getVersionType().sufficientFor(versionType)) {
-                return version;
-            }
-        }
-        if (!versions.isEmpty()) {
-            throw new NoApplicableVersionsException(project, versions, versionType);
-        }
-        return null;
+    private Version pickVersion(Project project, List<Version> versions, VersionTypePref versionTypePref) {
+        return VersionEvaluator.pickVersion(project, versions, versionTypePref);
     }
 
     @Override

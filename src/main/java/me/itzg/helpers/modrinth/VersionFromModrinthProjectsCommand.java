@@ -120,7 +120,7 @@ public class VersionFromModrinthProjectsCommand implements Callable<Integer> {
             .flatMapSequential(projectRef -> {
                 final Loader loader = projectRef.getLoader() != null ? projectRef.getLoader() : defaultLoader;
                 final VersionType allowedVersionType = projectRef.hasVersionType()
-                    ? projectRef.getVersionType()
+                    ? projectRef.getVersionType().getVersionType()
                     : defaultVersionType;
 
                 return modrinthApiClient.resolveProjectGameVersions(projectRef, loader, null, allowedVersionType)

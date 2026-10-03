@@ -40,7 +40,7 @@ public class ModrinthApiPackFetcherTest {
 
         ModrinthApiPackFetcher fetcherUT = new ModrinthApiPackFetcher(
             apiClient, testProjectRef, false, tempDir, "",
-            VersionType.release, ModpackLoader.forge.asLoader());
+            VersionTypePref.of(VersionType.release), ModpackLoader.forge.asLoader());
 
         final FetchedPack fetchedPack = fetcherUT.fetchModpack(null).block();
         assertThat(fetchedPack).isNotNull();
@@ -70,7 +70,7 @@ public class ModrinthApiPackFetcherTest {
 
         ModrinthApiPackFetcher fetcherUT = new ModrinthApiPackFetcher(
             apiClient, testProjectRef, false, tempDir, "",
-            VersionType.release, ModpackLoader.forge.asLoader()
+            VersionTypePref.of(VersionType.release), ModpackLoader.forge.asLoader()
         )
             .setIgnoreMissingFiles(Collections.singletonList("config/temp.txt"));
 
@@ -119,7 +119,7 @@ public class ModrinthApiPackFetcherTest {
 
         ModrinthApiPackFetcher fetcherUT = new ModrinthApiPackFetcher(
             apiClient, testProjectRef, false, tempDir, "",
-            VersionType.release, ModpackLoader.forge.asLoader()
+            VersionTypePref.of(VersionType.release), ModpackLoader.forge.asLoader()
         );
 
         final FetchedPack fetchedPack = fetcherUT.fetchModpack(null).block();
@@ -154,7 +154,7 @@ public class ModrinthApiPackFetcherTest {
 
         ModrinthApiPackFetcher fetcherUT = new ModrinthApiPackFetcher(
             apiClient, testProjectRef, false, tempDir, "",
-            VersionType.release, ModpackLoader.forge.asLoader());
+            VersionTypePref.of(VersionType.release), ModpackLoader.forge.asLoader());
 
         final FetchedPack fetchedPack = fetcherUT.fetchModpack(null).block();
         assertThat(fetchedPack).isNotNull();
