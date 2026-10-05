@@ -1,7 +1,9 @@
 package me.itzg.helpers.files.archive;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
@@ -9,6 +11,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -21,12 +24,17 @@ import org.apache.commons.compress.compressors.zstandard.ZstdCompressorOutputStr
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import com.github.stefanbirkner.systemlambda.SystemLambda;
 
 import me.itzg.helpers.LatchingExecutionExceptionHandler;
 import me.itzg.helpers.McImageHelper;
+import me.itzg.helpers.errors.ExceptionHandler;
+import me.itzg.helpers.errors.ExitCodeMapper;
 import me.itzg.helpers.errors.InvalidParameterException;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
@@ -346,6 +354,87 @@ public class ArchiveCommandTest {
             assertThat(destination.resolve("unselected.txt")).hasContent("untouched");
             assertThat(destination.resolve("subsequent.txt")).hasContent("data");
         }
+    }
+
+    @ParameterizedTest
+    @EnumSource(ArchiveType.class)
+    void extractsArchiveRegardlessOfFilename(ArchiveType type) throws Exception {
+        final Path source = createTestArchive(type, List.of("file.txt"));
+        for (String filename : List.of("archive", type == ArchiveType.ZIP ? "archive.tar" : "archive.zip")) {
+            final Path archive = Files.copy(source, tempDir.resolve(filename));
+            final Path destination = tempDir.resolve(filename + "-destination");
+            assertThat(new ArchiveCommand().extract(archive, destination, false, null)).isEqualTo(ExitCode.OK);
+            assertThat(destination.resolve("file.txt")).hasContent("data");
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {1024, 10240})
+    void extractsZeroFilledEmptyTar(int size) throws Exception {
+        final Path archive = Files.write(tempDir.resolve("empty-tar"), new byte[size]);
+        final Path destination = tempDir.resolve("destination");
+        assertThat(new ArchiveCommand().extract(archive, destination, false, null)).isEqualTo(ExitCode.OK);
+        assertThat(destination).isDirectory();
+        try (var files = Files.list(destination)) {
+            assertThat(files.toList()).isEmpty();
+        }
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("invalidArchiveInputs")
+    void rejectsInvalidArchiveInputs(String description, byte[] contents) throws IOException {
+        final Path archive = Files.write(tempDir.resolve("invalid"), contents);
+        final Path destination = tempDir.resolve("destination");
+        assertThatThrownBy(() -> new ArchiveCommand().extract(archive, destination, false, null))
+                .isInstanceOf(InvalidParameterException.class)
+                .hasMessageStartingWith("File is not an archive/zip")
+                .hasCauseInstanceOf(IOException.class);
+        assertThat(destination).doesNotExist();
+    }
+
+    static Stream<Arguments> invalidArchiveInputs() throws IOException {
+        final byte[] trailingData = new byte[1536];
+        trailingData[1024] = 1;
+        final var compressed = new ByteArrayOutputStream();
+        try (var output = new GzipCompressorOutputStream(compressed)) {
+            output.write(new byte[512]);
+        }
+        return Stream.of(
+                Arguments.of("zero-byte file", new byte[0]),
+                Arguments.of("single zero record", new byte[512]),
+                Arguments.of("partial zero record", new byte[1025]),
+                Arguments.of("nonzero trailing data", trailingData),
+                Arguments.of("gzip single zero record", compressed.toByteArray()),
+                Arguments.of("malformed gzip", new byte[] {0x1f, (byte) 0x8b, 8}),
+                Arguments.of("malformed bzip2", new byte[] {'B', 'Z', 'h', '9'}),
+                Arguments.of("malformed Zstandard", new byte[] {0x28, (byte) 0xb5, 0x2f, (byte) 0xfd}),
+                Arguments.of("unsupported AR", "!<arch>\n".getBytes(StandardCharsets.US_ASCII)));
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void reportsUnsupportedCompressedPayloadWithoutChangingParameterExitCode(boolean zipPayload) throws Exception {
+        final Path archive = tempDir.resolve("not-tar.gz");
+        final Path destination = tempDir.resolve("destination");
+        final byte[] payload = zipPayload
+                ? Files.readAllBytes(createTestArchive(ArchiveType.ZIP, List.of("file.txt")))
+                : "not a TAR".getBytes(StandardCharsets.UTF_8);
+        try (var output = new GzipCompressorOutputStream(Files.newOutputStream(archive))) {
+            output.write(payload);
+        }
+        final McImageHelper rootCommand = new McImageHelper();
+        final String sysErr = SystemLambda.tapSystemErr(() -> {
+            final int exitCode = new CommandLine(rootCommand)
+                    .setExitCodeExceptionMapper(new ExitCodeMapper())
+                    .setExecutionExceptionHandler(new ExceptionHandler(rootCommand))
+                    .execute("archive", "extract", archive.toString(), destination.toString());
+            assertThat(exitCode).isEqualTo(ExitCode.USAGE);
+        });
+        assertThat(sysErr)
+                .contains("File is not an archive/zip")
+                .contains("Unsupported gz compressed payload")
+                .contains("expected TAR");
+        assertThat(destination).doesNotExist();
     }
 
     Path createTestArchive(ArchiveType type, List<String> entries) throws IOException {
