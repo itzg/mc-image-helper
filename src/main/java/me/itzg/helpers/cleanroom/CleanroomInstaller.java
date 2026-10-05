@@ -134,13 +134,14 @@ public class CleanroomInstaller
         // If not forced, check condition first
         if (!this.forceReinstall && prevManifest != null) {
             // installerVersion empty mean server is legacy
-            if (prevManifest.installerVersion.isEmpty() && prevManifest.loaderVersion.equals(legacyLoaderVersion)   // legacy
-                || prevManifest.loaderVersion.equals(this.loaderVersion)) {                     // new
-                // check if missing server file
-                if (serverEntryExists(this.outputDirectory, prevManifest.getServerEntry()))
-                    log.info("Cleanroom version {} is already installed", prevManifest.loaderVersion);
-                else
-                    log.warn("Server entry for Cleanroom {} is missing. Re-installing.", prevManifest.getLoaderVersion());
+            if (prevManifest.getInstallerVersion().isEmpty() && prevManifest.getLoaderVersion().equals(legacyLoaderVersion)// legacy
+                || prevManifest.getLoaderVersion().equals(this.loaderVersion)) {                                           // new
+                // check if missing entry file
+                if (serverEntryExists(this.outputDirectory, prevManifest.getServerEntry())) {
+                    log.info("Cleanroom version {} is already installed", prevManifest.getLoaderVersion());
+                    return true;
+                }
+                else log.warn("Server entry for Cleanroom {} is missing. Re-installing.", prevManifest.getLoaderVersion());
             }
 
             log.info("Re-installing Cleanroom due to version change from {} to {}",
@@ -183,6 +184,7 @@ public class CleanroomInstaller
                         if (exec != null) {
                             loaderVersion = exec;
                             log.debug("Observed Cleanroom loader version from \"Fetching\" line: {}", loaderVersion);
+                            break;
                         }
                     }
                 }
