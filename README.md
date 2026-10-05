@@ -169,7 +169,7 @@ Usage: mc-image-helper curseforge-files [-h] [--disable-api-caching]
                                         [--mod-loader=<modLoaderType>] [-o=DIR]
                                         [[--api-cache-ttl=OPERATION=DURATION]...
                                          [--api-cache-default-ttl=DURATION]]
-                                        [[--wiretap] [--use-http2]] [REF[,
+                                        [[--use-http2] [--wiretap]] [REF[,
                                         |<nl>REF...]...]
 Download and manage individual mod/plugin files from CurseForge
       [REF[,|<nl>REF...]...]
@@ -370,28 +370,29 @@ Extracts a field from an INI file
 ```
 Usage: mc-image-helper install-cleanroom [-h] [--force-reinstall]
        [--output-directory=DIR] [--results-file=FILE]
-       [--cleanroom-installer=FILE | [--installer-version=<installerVersion>] |
-       [--cleanroom-version=<cleanroomVersion>]] [[--use-http2] [--wiretap]]
-       [[--cleanroom_installer_releases-url=URL]]
+       [[--installer-version=<installerVersion>] |
+       [--cleanroom-version=<cleanroomVersion>]] [[--cleanroom-maven=URL] |
+       --from-local-file=FILE | --from-url=URL] [[--use-http2] [--wiretap]]
 Downloads and installs a requested version of Cleanroom
-      --cleanroom-installer=FILE
-                            Use a local cleanroom installer
+      --cleanroom-maven=URL URL for Cleanroom installer JSON.
+                            Can also be set via env var CLEANROOM_MAVEN
+                            Default is https://maven.cleanroommc.com/
       --cleanroom-version=<cleanroomVersion>
                             A specific Cleanroom Loader version or to
-                              auto-resolve the version provide 'latest'.
-                              Default value is latest
-      --cleanroom_installer_releases-url=URL
-                            URL for Cleanroom installer JSON.
-                            Can also be set via env var
-                              CLEANROOM_INSTALLER_RELEASE_URL
-                            Default is https://api.github.
-                              com/repos/CleanroomMC/Installer/releases
+                              auto-resolve by installer.
+                            Ignored if only a valid local/remote legacy
+                              installer is provided. Default value is latest
       --force-reinstall
+      --from-local-file=FILE
+                            Use a local installer, first entry before remote.
+      --from-url=URL        Use a remote installer.
+
   -h, --help
       --installer-version=<installerVersion>
                             A specific Cleanroom installer version or to
                               auto-resolve the version provide 'latest'.
-                              Default value is latest
+                            Ignored if valid a local/remote (included legacy)
+                              is provided. Default value is latest
       --output-directory=DIR
 
       --results-file=FILE   A key=value file suitable for scripted environment
@@ -425,9 +426,9 @@ Usage: mc-image-helper install-curseforge [-h] [--disable-api-caching]
        |<nl><ignoreMissingFiles>...]]...
        [--overrides-exclusions=<overridesExclusions>[NL or ,
        <overridesExclusions>...]]... [[--exclude-include-file=FILE|URI]
-       [--exclude-all-mods] [[--force-includes=PROJECT_ID|SLUG[,
-       |<nl>PROJECT_ID|SLUG...]]... [--excludes=PROJECT_ID|SLUG[,
-       |<nl>PROJECT_ID|SLUG...]]...]] [[--wiretap] [--use-http2]]
+       [--exclude-all-mods] [[--excludes=PROJECT_ID|SLUG[,
+       |<nl>PROJECT_ID|SLUG...]]... [--force-includes=PROJECT_ID|SLUG[,
+       |<nl>PROJECT_ID|SLUG...]]...]] [[--use-http2] [--wiretap]]
        [[--api-cache-ttl=OPERATION=DURATION]...
        [--api-cache-default-ttl=DURATION]] [[--forge-promotions-url=URL]
        [--forge-maven-repo-url=URL]] [COMMAND]
@@ -559,7 +560,7 @@ Usage: mc-image-helper install-fabric-loader [-h] [--force-reinstall]
        [--fabric-meta-base-url=<fabricMetaBaseUrl>] [--output-directory=DIR]
        [--results-file=FILE] [--from-local-file=FILE | --from-url=URL |
        [[--installer-version=VERSION] [--loader-version=VERSION]
-       [--minecraft-version=VERSION]]] [[--wiretap] [--use-http2]]
+       [--minecraft-version=VERSION]]] [[--use-http2] [--wiretap]]
 Provides a few ways to obtain a Fabric loader with simple cleanup of previous
 loader instances
       --fabric-meta-base-url=<fabricMetaBaseUrl>
@@ -600,8 +601,8 @@ Usage: mc-image-helper install-forge [-h] [--clean-libraries]
                                      [--output-directory=DIR]
                                      [--results-file=FILE]
                                      [--forge-installer=FILE |
-                                     [--forge-version=<version>]] [[--wiretap]
-                                     [--use-http2]]
+                                     [--forge-version=<version>]]
+                                     [[--use-http2] [--wiretap]]
                                      [[--forge-promotions-url=URL]
                                      [--forge-maven-repo-url=URL]]
 Downloads and installs a requested version of Forge
@@ -658,7 +659,7 @@ Usage: mc-image-helper install-modrinth-modpack [--force-modloader-reinstall]
        [--ignore-missing-files=<ignoreMissingFiles>[,
        |<nl><ignoreMissingFiles>...]]...
        [--overrides-exclusions=<overridesExclusions>[NL or ,
-       <overridesExclusions>...]]... [[--wiretap] [--use-http2]]
+       <overridesExclusions>...]]... [[--use-http2] [--wiretap]]
        [[--forge-promotions-url=URL] [--forge-maven-repo-url=URL]]
 Supports installation of Modrinth modpacks along with the associated mod loader
       --api-base-url=<baseUrl>
@@ -752,7 +753,7 @@ Usage: mc-image-helper install-neoforge [-h] [--force-reinstall]
                                         [--results-file=FILE]
                                         [--neoforge-installer=FILE |
                                         [--neoforge-version=<version>]]
-                                        [[--wiretap] [--use-http2]]
+                                        [[--use-http2] [--wiretap]]
 Downloads and installs a requested version of NeoForge
       --force-reinstall
   -h, --help
@@ -836,8 +837,8 @@ Usage: mc-image-helper install-paper [-h] [--check-updates] [--clean-libraries]
                                      [--results-file=FILE] [--url=<downloadUrl>
                                      | [[--project=<project>] [--build=<build>]
                                      [--channel=<channel>]
-                                     [--version=<version>]]] [[--wiretap] |
-                                     [--use-http2]]
+                                     [--version=<version>]]] [[--use-http2] |
+                                     [--wiretap]]
 Installs selected PaperMC
       --base-url=<baseUrl>
       --build=<build>
@@ -905,7 +906,7 @@ Usage: mc-image-helper install-quilt [-h] [--force-reinstall]
                                      [--repo-url=<repoUrl>]
                                      [--results-file=FILE] [--installer-url=URL
                                      | --installer-version=VERSION]
-                                     [[--wiretap] [--use-http2]]
+                                     [[--use-http2] [--wiretap]]
 Installs Quilt mod loader
       --force-reinstall
   -h, --help
@@ -937,8 +938,8 @@ Installs Quilt mod loader
 Usage: mc-image-helper install-vanilla [-h] [--force-reinstall]
                                        [--output-directory=DIR]
                                        [--results-file=FILE]
-                                       [--version=VERSION] [[--wiretap]
-                                       [--use-http2]]
+                                       [--version=VERSION] [[--use-http2]
+                                       [--wiretap]]
 Downloads and installs a requested version of vanilla Minecraft
       --force-reinstall
   -h, --help
@@ -1002,8 +1003,8 @@ Usage: mc-image-helper manage-users [-fh] [--existing=<existingFileBehavior>]
                                     [--playerdb-api-base-url=<playerdbApiBaseUrl
                                     >] -t=<type>
                                     [--user-api-provider=<userApiProvider>]
-                                    [--version=<version>] [[--wiretap]
-                                    [--use-http2]] [INPUT[,INPUT...]...]
+                                    [--version=<version>] [[--use-http2]
+                                    [--wiretap]] [INPUT[,INPUT...]...]
       [INPUT[,INPUT...]...] One or more Mojang usernames, UUID, or ID (UUID
                               without dashes); however, when offline, only
                               UUID/IDs can be provided.
@@ -1044,7 +1045,7 @@ Usage: mc-image-helper maven-download [-h] [--print-filename] [--skip-existing]
                                       [--output-directory=<outputDirectory>]
                                       [--packaging=<packaging>]
                                       [-r=<mavenRepo>] [-v=<version>]
-                                      [[--wiretap] [--use-http2]]
+                                      [[--use-http2] [--wiretap]]
 Downloads a maven artifact from a Maven repository
   -a, -m, --module, --artifact=<artifact>
 
@@ -1079,8 +1080,8 @@ Usage: mc-image-helper mcopy [-hz] [--file-is-listing]
                              [--ignore-missing-sources] [--quiet-when-skipped]
                              [--skip-existing] [--glob=GLOB]
                              [--max-concurrent-sources=<maxConccurentSources>]
-                             [--scope=<manifestId>] --to=<dest> [[--wiretap]
-                             [--use-http2]] [SRC[,|<nl>SRC...]...]
+                             [--scope=<manifestId>] --to=<dest> [[--use-http2]
+                             [--wiretap]] [SRC[,|<nl>SRC...]...]
 Multi-source file copy operation with with managed cleanup. Supports
 auto-detected sourcing from file list, directories, and URLs
       [SRC[,|<nl>SRC...]...] Any mix of source file, directory, or URLs
@@ -1130,7 +1131,7 @@ Usage: mc-image-helper modrinth [--skip-existing] [--skip-up-to-date]
                                 [--world-directory=<worldDirectory>]
                                 [--projects=[loader:]id|slug[?][:version][,|<nl>
                                 [loader:]id|slug[?][:version]...]]...
-                                [[--wiretap] [--use-http2]]
+                                [[--use-http2] [--wiretap]]
 Automates downloading of modrinth resources
       --allowed-version-type=<defaultVersionType>
                           Valid values: release, beta, alpha (optional '+'
@@ -1216,7 +1217,7 @@ Supports the file formats:
 ### resolve-minecraft-version
 
 ```
-Usage: mc-image-helper resolve-minecraft-version [[--wiretap] [--use-http2]]
+Usage: mc-image-helper resolve-minecraft-version [[--use-http2] [--wiretap]]
        <inputVersion>
 Resolves and validate latest, snapshot, and specific versions
       <inputVersion>
@@ -1326,7 +1327,7 @@ Usage: mc-image-helper vanillatweaks [--force-synchronize]
                                      [--world-subdir=<worldSubdir>]
                                      [--pack-files=FILE[,|<nl>FILE...]]...
                                      [--share-codes=CODE[,|<nl>CODE...]]...
-                                     [[--wiretap] [--use-http2]]
+                                     [[--use-http2] [--wiretap]]
 Downloads Vanilla Tweaks resource packs, data packs, or crafting tweaks given a
 share code or pack file
       --base-url=<baseUrl>
@@ -1353,7 +1354,7 @@ share code or pack file
 Usage: mc-image-helper version-from-modrinth-projects
        [--allowed-version-type=<defaultVersionType>] [--api-base-url=<baseUrl>]
        [--loader=<loader>] [--projects=[loader:]id|slug[?][:version][,|<nl>
-       [loader:]id|slug[?][:version]...]...]... [[--wiretap] [--use-http2]]
+       [loader:]id|slug[?][:version]...]...]... [[--use-http2] [--wiretap]]
 Finds a compatible Minecraft version across given Modrinth projects
       --allowed-version-type=<defaultVersionType>
                           Valid values: release, beta, alpha
