@@ -1,7 +1,5 @@
 package me.itzg.helpers.cleanroom;
 
-import me.itzg.helpers.http.Fetch;
-import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.http.SharedFetchArgs;
 import picocli.CommandLine;
 import picocli.CommandLine.ArgGroup;
@@ -10,6 +8,7 @@ import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.ParameterException;
 import picocli.CommandLine.Spec;
+import java.net.URI;
 import java.nio.file.Path;
 import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
@@ -24,11 +23,11 @@ public class InstallCleanroomLoaderCommand implements Callable<Integer> {
     boolean help;
 
     public static final Pattern ALLOWED_VERSION = Pattern.compile(
-        String.join("|", CleanroomInstallerResolver.LATEST, VERSION_REGEX),
+        String.join("|", CleanroomInstaller.LATEST, VERSION_REGEX),
         Pattern.CASE_INSENSITIVE
     );
 
-    static class VersionOrInstaller {
+    static class Version {
 
         @Spec
         CommandLine.Model.CommandSpec spec;
@@ -36,8 +35,9 @@ public class InstallCleanroomLoaderCommand implements Callable<Integer> {
         String installerVersion;
         String cleanroomVersion;
 
-        @Option(names = "--installer-version", required = true, defaultValue = CleanroomInstallerResolver.LATEST,
-            description = "A specific Cleanroom installer version or to auto-resolve the version provide 'latest'."
+        @Option(names = "--installer-version", required = true, defaultValue = CleanroomInstaller.LATEST,
+            description = "A specific Cleanroom installer version or to auto-resolve the version provide 'latest'.%n"
+                + "Ignored if valid a local/remote (included legacy) is provided."
                 + " Default value is ${DEFAULT-VALUE}"
         )
         public void setInstallerVersion(String installerVersion) {
@@ -49,8 +49,9 @@ public class InstallCleanroomLoaderCommand implements Callable<Integer> {
             this.installerVersion = installerVersion.toLowerCase();
         }
 
-        @Option(names = "--cleanroom-version", required = true, defaultValue = CleanroomInstallerResolver.LATEST,
-            description = "A specific Cleanroom Loader version or to auto-resolve the version provide 'latest'."
+        @Option(names = "--cleanroom-version", required = true, defaultValue = CleanroomInstaller.LATEST,
+            description = "A specific Cleanroom Loader version or to auto-resolve by installer.%n"
+                + "Ignored if only a valid local/remote legacy installer is provided."
                 + " Default value is ${DEFAULT-VALUE}"
         )
         public void setCleanroomVersion(String cleanroomVersion) {
@@ -61,13 +62,31 @@ public class InstallCleanroomLoaderCommand implements Callable<Integer> {
             }
             this.cleanroomVersion = cleanroomVersion.toLowerCase();
         }
+    }
 
-        @Option(names = "--cleanroom-installer", description = "Use a local cleanroom installer", paramLabel = "FILE")
-        Path installer;
+    static class Source {
+        @Option(names = "--cleanroom-maven", paramLabel = "URL",
+            defaultValue = "${CLEANROOM_MAVEN:-" + CleanroomManifest.DEFAULT_MAVEN_URL + "}",
+            description = "URL for Cleanroom installer JSON.%n"
+                + "Can also be set via env var CLEANROOM_MAVEN%n"
+                + "Default is ${DEFAULT-VALUE}"
+        )
+        String mavenUrl;
+
+        @Option(names = "--from-local-file", description = "Use a local installer, first entry before remote.",
+            paramLabel = "FILE")
+        Path local_file;
+
+        @Option(names = "--from-url", description = "Use a remote installer.%n",
+            paramLabel = "URL")
+        URI remote_file;
     }
 
     @ArgGroup
-    InstallCleanroomLoaderCommand.VersionOrInstaller versionOrInstaller = new InstallCleanroomLoaderCommand.VersionOrInstaller();
+    InstallCleanroomLoaderCommand.Version version = new InstallCleanroomLoaderCommand.Version();
+
+    @ArgGroup
+    InstallCleanroomLoaderCommand.Source source = new InstallCleanroomLoaderCommand.Source();
 
     @Option(names = "--output-directory", defaultValue = ".", paramLabel = "DIR")
     Path outputDirectory;
@@ -83,34 +102,23 @@ public class InstallCleanroomLoaderCommand implements Callable<Integer> {
     @ArgGroup(exclusive = false)
     SharedFetchArgs sharedFetchArgs = new SharedFetchArgs();
 
-    static class CleanroomUrlArgs {
-        @Option(names = "--cleanroom_installer_releases-url", paramLabel = "URL",
-            defaultValue = "${CLEANROOM_INSTALLER_RELEASE_URL:-" + CleanroomInstallerResolver.DEFAULT_RELEASE_URL + "}",
-            description = "URL for Cleanroom installer JSON.%n"
-                + "Can also be set via env var CLEANROOM_INSTALLER_RELEASE_URL%n"
-                + "Default is ${DEFAULT-VALUE}"
-        )
-        String releaseUrl;
-
-        public String getReleaseUrl() {
-            return releaseUrl != null ? releaseUrl : CleanroomInstallerResolver.DEFAULT_RELEASE_URL;
-        }
-    }
-
-    @ArgGroup(exclusive = false)
-    CleanroomUrlArgs cleanroomUrlArgs = new CleanroomUrlArgs();
-
     @Override
     public Integer call() throws Exception {
-        try (SharedFetch sharedFetch = Fetch.sharedFetch("install-cleanroom", sharedFetchArgs.options())) {
-            final CleanroomInstaller installer = new CleanroomInstaller(new CleanroomInstallerResolver(
-                        sharedFetch, versionOrInstaller.installerVersion, versionOrInstaller.cleanroomVersion,
-                        cleanroomUrlArgs.getReleaseUrl()
-            ));
+        final CleanroomInstaller installer = new CleanroomInstaller()
+            .outputDirectory(outputDirectory)
+            .resultsFile(resultsFile)
+            .mavenUrl(source.mavenUrl)
+            .sharedFetchOptions(sharedFetchArgs.options())
+            .forceReinstall(forceReinstall)
+            .installerVersion(version.installerVersion)
+            .loaderVersion(version.cleanroomVersion);
 
-            installer.install(outputDirectory, resultsFile, forceReinstall);
-        }
+        if (source.local_file != null)
+            return installer.install(source.local_file) ? ExitCode.OK : ExitCode.SOFTWARE;
 
-        return ExitCode.OK;
+        if (source.remote_file != null)
+            return installer.install(source.remote_file) ? ExitCode.OK : ExitCode.SOFTWARE;
+
+        return installer.install() ? ExitCode.OK : ExitCode.SOFTWARE;
     }
 }
