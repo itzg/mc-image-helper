@@ -30,19 +30,19 @@ public class ProjectRefTest {
     void testProjectRefHasVersionTypeWhenVersionIsType() {
         projectRefUT = new ProjectRef(this.expectedSlug, "release");
         assertThat(projectRefUT.getVersionType())
-            .isEqualTo(VersionType.release);
+            .isEqualTo(VersionTypePref.of(VersionType.release));
         assertThat(projectRefUT.hasVersionId()).isFalse();
         assertThat(projectRefUT.hasVersionName()).isFalse();
 
         projectRefUT = new ProjectRef(this.expectedSlug, "beta");
         assertThat(projectRefUT.getVersionType())
-            .isEqualTo(VersionType.beta);
+            .isEqualTo(VersionTypePref.of(VersionType.beta));
         assertThat(projectRefUT.hasVersionId()).isFalse();
         assertThat(projectRefUT.hasVersionName()).isFalse();
 
         projectRefUT = new ProjectRef(this.expectedSlug, "alpha");
         assertThat(projectRefUT.getVersionType())
-            .isEqualTo(VersionType.alpha);
+            .isEqualTo(VersionTypePref.of(VersionType.alpha));
         assertThat(projectRefUT.hasVersionId()).isFalse();
         assertThat(projectRefUT.hasVersionName()).isFalse();
     }
@@ -139,10 +139,10 @@ public class ProjectRefTest {
 
     @ParameterizedTest
     @MethodSource("parseProjectRef_parameters")
-    void parseProjectRef(String input, String slugId, VersionType versionType, String versionId, String versionName, Loader loader) {
+    void parseProjectRef(String input, String slugId, VersionTypePref versionTypePref, String versionId, String versionName, Loader loader) {
         final ProjectRef result = ProjectRef.parse(input);
         assertThat(result.getIdOrSlug()).isEqualTo(slugId);
-        assertThat(result.getVersionType()).isEqualTo(versionType);
+        assertThat(result.getVersionType()).isEqualTo(versionTypePref);
         assertThat(result.getVersionId()).isEqualTo(versionId);
         assertThat(result.getVersionNumber()).isEqualTo(versionName);
         assertThat(result.getLoader()).isEqualTo(loader);
@@ -153,7 +153,8 @@ public class ProjectRefTest {
             argumentSet("just slugId","terralith", "terralith", null, null, null, null),
             argumentSet("with loader prefix","fabric:terralith", "terralith", null, null, null, Loader.fabric),
             argumentSet("with loader and version ID","paper:terralith:rEF3UnUI", "terralith", null, "rEF3UnUI", null, Loader.paper),
-            argumentSet("with loader and version type","datapack:terralith:release", "terralith", VersionType.release, null, null, Loader.datapack),
+            argumentSet("with loader and version type","datapack:terralith:release", "terralith", VersionTypePref.of(VersionType.release), null, null, Loader.datapack),
+            argumentSet("with version type preference","c2me-fabric:alpha+", "c2me-fabric", VersionTypePref.of(VersionType.alpha, true), null, null, null),
             argumentSet("with loader and version name","forge:terralith:2.5.5", "terralith", null, null, "2.5.5", Loader.forge)
         );
     }

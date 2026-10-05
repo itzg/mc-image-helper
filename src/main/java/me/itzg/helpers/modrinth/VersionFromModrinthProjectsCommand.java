@@ -120,7 +120,7 @@ public class VersionFromModrinthProjectsCommand implements Callable<Integer> {
             .flatMapSequential(projectRef -> {
                 final Loader loader = projectRef.getLoader() != null ? projectRef.getLoader() : defaultLoader;
                 final VersionType allowedVersionType = projectRef.hasVersionType()
-                    ? projectRef.getVersionType()
+                    ? projectRef.getVersionType().getVersionType()
                     : defaultVersionType;
 
                 return modrinthApiClient.resolveProjectGameVersions(projectRef, loader, null, allowedVersionType)
@@ -181,14 +181,14 @@ public class VersionFromModrinthProjectsCommand implements Callable<Integer> {
                         final List<Integer> blockingProjects = IntStream.range(0, projectCount)
                             .filter(projectIndex -> !allGameVersions.get(projectIndex).contains(version))
                             .boxed()
-                            .collect(Collectors.toList());
+                            .toList();
 
                         if (!blockingProjects.isEmpty()) {
                             loggedBlockedVersions.add(version);
                             log.debug("Minecraft version {} is blocked by projects {}", version, 
                                     blockingProjects.stream()
                                     .map(projects::get)
-                                    .map(p -> p.getIdOrSlug())
+                                    .map(ProjectRef::getIdOrSlug)
                                     .collect(Collectors.toList()));
                         }
                     }

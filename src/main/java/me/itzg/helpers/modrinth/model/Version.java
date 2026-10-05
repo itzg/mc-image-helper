@@ -5,14 +5,17 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import java.time.Instant;
 import java.util.List;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
 @Data
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 @ToString(onlyExplicitlyIncluded = true)
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Version {
 
     @ToString.Include
+    @EqualsAndHashCode.Include
     private String id;
 
     @ToString.Include

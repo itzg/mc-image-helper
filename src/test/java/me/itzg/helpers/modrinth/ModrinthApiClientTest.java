@@ -134,7 +134,7 @@ class ModrinthApiClientTest {
             )) {
                 final Version result = client.resolveProjectVersion(project("fALzjamp", "chunky"), ProjectRef.parse("chunky"),
                         Loader.fabric,
-                        "1.21.1", VersionType.release
+                        "1.21.1", VersionTypePref.of(VersionType.release)
                     )
                     .block();
 
@@ -173,7 +173,7 @@ class ModrinthApiClientTest {
                         client.resolveProjectVersion(project("3wmN97b8", "multiverse-core"), ProjectRef.parse("multiverse-core"),
                                 // mismatching loader type
                                 Loader.fabric,
-                                "1.21.1", VersionType.release
+                                "1.21.1", VersionTypePref.of(VersionType.release)
                             )
                             .block())
                     .isInstanceOf(NoFilesAvailableException.class);
@@ -198,7 +198,7 @@ class ModrinthApiClientTest {
                 Assertions.assertThatThrownBy(() ->
                         client.resolveProjectVersion(project("3wmN97b8", "multiverse-core"), ProjectRef.parse("multiverse-core"),
                                 Loader.purpur,
-                                "1.21.1", VersionType.release
+                                "1.21.1", VersionTypePref.of(VersionType.release)
                             )
                             .block())
                     .isInstanceOf(NoApplicableVersionsException.class);

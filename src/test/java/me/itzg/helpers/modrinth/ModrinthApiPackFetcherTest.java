@@ -2,7 +2,6 @@ package me.itzg.helpers.modrinth;
 
 import static me.itzg.helpers.modrinth.ModrinthTestHelpers.createModrinthProjectVersion;
 import static me.itzg.helpers.modrinth.ModrinthTestHelpers.stubModrinthModpackApi;
-import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
@@ -15,18 +14,22 @@ import java.util.Collections;
 import me.itzg.helpers.http.SharedFetchArgs;
 import me.itzg.helpers.modrinth.model.Version;
 import me.itzg.helpers.modrinth.model.VersionType;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 @WireMockTest
 public class ModrinthApiPackFetcherTest {
+
+    private final RandomStringUtils randString = RandomStringUtils.insecure();
+
     @Test
     void testApiFetcherFetchesModpackBySlugAndVersionId(
             WireMockRuntimeInfo wm, @TempDir Path tempDir
         ) {
         String projectName = "test_project1";
-        String projectId = randomAlphanumeric(8);
-        String projectVersionId = randomAlphanumeric(8);
+        String projectId = randString.nextAlphanumeric(8);
+        String projectVersionId = randString.nextAlphanumeric(8);
         byte[] expectedModpackData = "test_data".getBytes();
         Version projectVersion = createModrinthProjectVersion(projectVersionId);
 
@@ -40,7 +43,7 @@ public class ModrinthApiPackFetcherTest {
 
         ModrinthApiPackFetcher fetcherUT = new ModrinthApiPackFetcher(
             apiClient, testProjectRef, false, tempDir, "",
-            VersionType.release, ModpackLoader.forge.asLoader());
+            VersionTypePref.of(VersionType.release), ModpackLoader.forge.asLoader());
 
         final FetchedPack fetchedPack = fetcherUT.fetchModpack(null).block();
         assertThat(fetchedPack).isNotNull();
@@ -55,8 +58,8 @@ public class ModrinthApiPackFetcherTest {
             WireMockRuntimeInfo wm, @TempDir Path tempDir
         ) throws IOException {
         String projectName = "test_project1";
-        String projectId = randomAlphanumeric(8);
-        String projectVersionId = randomAlphanumeric(8);
+        String projectId = randString.nextAlphanumeric(8);
+        String projectVersionId = randString.nextAlphanumeric(8);
         byte[] expectedModpackData = "test_data".getBytes();
         Version projectVersion = createModrinthProjectVersion(projectVersionId);
 
@@ -70,7 +73,7 @@ public class ModrinthApiPackFetcherTest {
 
         ModrinthApiPackFetcher fetcherUT = new ModrinthApiPackFetcher(
             apiClient, testProjectRef, false, tempDir, "",
-            VersionType.release, ModpackLoader.forge.asLoader()
+            VersionTypePref.of(VersionType.release), ModpackLoader.forge.asLoader()
         )
             .setIgnoreMissingFiles(Collections.singletonList("config/temp.txt"));
 
@@ -96,8 +99,8 @@ public class ModrinthApiPackFetcherTest {
             WireMockRuntimeInfo wm,  @TempDir Path tempDir
         ) {
         String projectName = "test_project1";
-        String projectId = randomAlphanumeric(8);
-        String projectVersionId = randomAlphanumeric(8);
+        String projectId = randString.nextAlphanumeric(8);
+        String projectVersionId = randString.nextAlphanumeric(8);
         byte[] expectedModpackData = "test_data".getBytes();
         Version projectVersion = createModrinthProjectVersion(projectVersionId)
             .setVersionType(VersionType.release);
@@ -119,7 +122,7 @@ public class ModrinthApiPackFetcherTest {
 
         ModrinthApiPackFetcher fetcherUT = new ModrinthApiPackFetcher(
             apiClient, testProjectRef, false, tempDir, "",
-            VersionType.release, ModpackLoader.forge.asLoader()
+            VersionTypePref.of(VersionType.release), ModpackLoader.forge.asLoader()
         );
 
         final FetchedPack fetchedPack = fetcherUT.fetchModpack(null).block();
@@ -136,10 +139,10 @@ public class ModrinthApiPackFetcherTest {
             WireMockRuntimeInfo wm,  @TempDir Path tempDir
         ) {
         String projectName = "test_project1";
-        String projectId = randomAlphanumeric(8);
+        String projectId = randString.nextAlphanumeric(8);
         String projectVersionNumber = "1.0.0";
         byte[] expectedModpackData = "test_data".getBytes();
-        final String projectVersionId = randomAlphanumeric(8);
+        final String projectVersionId = randString.nextAlphanumeric(8);
         Version projectVersion = createModrinthProjectVersion(projectVersionId)
             .setVersionType(VersionType.release)
             .setVersionNumber(projectVersionNumber);
@@ -154,7 +157,7 @@ public class ModrinthApiPackFetcherTest {
 
         ModrinthApiPackFetcher fetcherUT = new ModrinthApiPackFetcher(
             apiClient, testProjectRef, false, tempDir, "",
-            VersionType.release, ModpackLoader.forge.asLoader());
+            VersionTypePref.of(VersionType.release), ModpackLoader.forge.asLoader());
 
         final FetchedPack fetchedPack = fetcherUT.fetchModpack(null).block();
         assertThat(fetchedPack).isNotNull();

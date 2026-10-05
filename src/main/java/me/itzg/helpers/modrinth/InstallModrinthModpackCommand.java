@@ -22,7 +22,6 @@ import me.itzg.helpers.http.PathOrUriConverter;
 import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.http.SharedFetchArgs;
 import me.itzg.helpers.json.ObjectMappers;
-import me.itzg.helpers.modrinth.model.VersionType;
 import org.jetbrains.annotations.VisibleForTesting;
 import picocli.CommandLine;
 import picocli.CommandLine.ArgGroup;
@@ -37,6 +36,7 @@ import reactor.core.scheduler.Schedulers;
 )
 @Slf4j
 public class InstallModrinthModpackCommand implements Callable<Integer> {
+
     @Option(names = "--project", required = true,
         description = "One of"
             + "%n- Project ID or slug"
@@ -62,10 +62,11 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
     ModpackLoader loader;
 
     @Option(names = "--default-version-type", defaultValue = "release", paramLabel = "TYPE",
-        description = "Valid values: ${COMPLETION-CANDIDATES}" +
-            "%nDefault: ${DEFAULT-VALUE}"
+        description = VersionTypePref.OPTION_DESCRIPTION +
+            "%nDefault: ${DEFAULT-VALUE}",
+        converter = VersionTypePref.Converter.class
     )
-    VersionType defaultVersionType;
+    VersionTypePref defaultVersionType;
 
     @Option(names = "--output-directory", defaultValue = ".", paramLabel = "DIR")
     Path outputDirectory;
@@ -112,11 +113,12 @@ public class InstallModrinthModpackCommand implements Callable<Integer> {
 
     @Option(names = "--overrides-exclusions",
         split = "\n|,", splitSynopsisLabel = "NL or ,",
-        description = "Excludes files from the overrides that match these ant-style patterns\n"
-            + "*  : matches any non-slash characters\n"
-            + "** : matches any characters\n"
-            + "?  : matches one character"
-            + "%nEmbedded comments are allowed."
+        description = """
+            Excludes files from the overrides that match these ant-style patterns
+            *  : matches any non-slash characters
+            ** : matches any characters
+            ?  : matches one character\
+            %nEmbedded comments are allowed."""
     )
     public void setOverridesExclusions(List<String> overridesExclusions) {
         this.overridesExclusions = normalizeOptionList(overridesExclusions);

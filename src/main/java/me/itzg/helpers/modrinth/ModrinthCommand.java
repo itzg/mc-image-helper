@@ -36,7 +36,6 @@ import me.itzg.helpers.modrinth.model.ProjectType;
 import me.itzg.helpers.modrinth.model.Version;
 import me.itzg.helpers.modrinth.model.VersionDependency;
 import me.itzg.helpers.modrinth.model.VersionFile;
-import me.itzg.helpers.modrinth.model.VersionType;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.ExitCode;
@@ -97,8 +96,11 @@ public class ModrinthCommand implements Callable<Integer> {
         OPTIONAL,
     }
 
-    @Option(names = "--allowed-version-type", defaultValue = "release", description = "Valid values: ${COMPLETION-CANDIDATES}")
-    VersionType defaultVersionType;
+    @Option(names = "--allowed-version-type", defaultValue = "release",
+        description = VersionTypePref.OPTION_DESCRIPTION,
+        converter = VersionTypePref.Converter.class
+    )
+    VersionTypePref defaultVersionType;
 
     @Option(names = "--api-base-url", defaultValue = "${env:MODRINTH_API_BASE_URL:-https://api.modrinth.com}",
         description = "Default: ${DEFAULT-VALUE}"
@@ -118,7 +120,7 @@ public class ModrinthCommand implements Callable<Integer> {
     private final Set<String/*projectId*/> explicitProjectIds = new HashSet<>();
     private final Set<String/*projectId*/> dependencyProjectsWithVersion = new HashSet<>();
 
-    private final Map<String/*projectId*/, VersionType> allowedVersionTypesByProject = new HashMap<>();
+    private final Map<Object, VersionTypePref> allowedVersionTypesByProject = new HashMap<>();
 
     @Override
     public Integer call() throws Exception {
@@ -347,18 +349,13 @@ public class ModrinthCommand implements Callable<Integer> {
     }
 
     private Version pickVersion(String projectId, List<Version> versions) {
-        return this.pickVersion(versions,
+        return this.pickVersion(projectId, versions,
             allowedVersionTypesByProject.getOrDefault(projectId, defaultVersionType)
             );
     }
 
-    private Version pickVersion(List<Version> versions, VersionType versionType) {
-        for (final Version version : versions) {
-            if (version.getVersionType().sufficientFor(versionType)) {
-                return version;
-            }
-        }
-        return null;
+    private Version pickVersion(String projectId, List<Version> versions, VersionTypePref versionType) {
+        return VersionEvaluator.pickVersion(new Project().setId(projectId).setTitle(projectId), versions, versionType);
     }
 
     private Path download(SharedFetch sharedFetch, Loader loader, VersionFile versionFile) {
