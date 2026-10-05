@@ -380,9 +380,9 @@ public class ArchiveCommandTest {
         }
     }
 
-    @ParameterizedTest(name = "{0}")
+    @ParameterizedTest
     @MethodSource("invalidArchiveInputs")
-    void rejectsInvalidArchiveInputs(String description, byte[] contents) throws IOException {
+    void rejectsInvalidArchiveInputs(byte[] contents) throws IOException {
         final Path archive = Files.write(tempDir.resolve("invalid"), contents);
         final Path destination = tempDir.resolve("destination");
         assertThatThrownBy(() -> new ArchiveCommand().extract(archive, destination, false, null))
@@ -400,15 +400,15 @@ public class ArchiveCommandTest {
             output.write(new byte[512]);
         }
         return Stream.of(
-                Arguments.of("zero-byte file", new byte[0]),
-                Arguments.of("single zero record", new byte[512]),
-                Arguments.of("partial zero record", new byte[1025]),
-                Arguments.of("nonzero trailing data", trailingData),
-                Arguments.of("gzip single zero record", compressed.toByteArray()),
-                Arguments.of("malformed gzip", new byte[] {0x1f, (byte) 0x8b, 8}),
-                Arguments.of("malformed bzip2", new byte[] {'B', 'Z', 'h', '9'}),
-                Arguments.of("malformed Zstandard", new byte[] {0x28, (byte) 0xb5, 0x2f, (byte) 0xfd}),
-                Arguments.of("unsupported AR", "!<arch>\n".getBytes(StandardCharsets.US_ASCII)));
+                Arguments.argumentSet("zero-byte file", new byte[0]),
+                Arguments.argumentSet("single zero record", new byte[512]),
+                Arguments.argumentSet("partial zero record", new byte[1025]),
+                Arguments.argumentSet("nonzero trailing data", trailingData),
+                Arguments.argumentSet("gzip single zero record", compressed.toByteArray()),
+                Arguments.argumentSet("malformed gzip", new byte[] {0x1f, (byte) 0x8b, 8}),
+                Arguments.argumentSet("malformed bzip2", new byte[] {'B', 'Z', 'h', '9'}),
+                Arguments.argumentSet("malformed Zstandard", new byte[] {0x28, (byte) 0xb5, 0x2f, (byte) 0xfd}),
+                Arguments.argumentSet("unsupported AR", "!<arch>\n".getBytes(StandardCharsets.US_ASCII)));
     }
 
     Path createTestArchive(ArchiveType type, List<String> entries) throws IOException {

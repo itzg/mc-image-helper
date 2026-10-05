@@ -2,7 +2,7 @@ package me.itzg.helpers.patch;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.params.provider.Arguments.arguments;
+import static org.junit.jupiter.params.provider.Arguments.argumentSet;
 
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
@@ -28,36 +28,36 @@ class PropertiesFileFormatTest {
 
     public static Stream<Arguments> awkwardEntries() {
         return Stream.of(
-            arguments("plain", "a", "b"),
-            arguments("empty value", "a", ""),
-            arguments("equals in value", "a", "x=y"),
-            arguments("colon in value", "a", "host:24454"),
-            arguments("hash in value", "a", "#not a comment"),
-            arguments("exclamation in value", "a", "!not a comment"),
-            arguments("backslash in value", "a", "C:\\path\\to"),
-            arguments("newline in value", "a", "line1\nline2"),
-            arguments("carriage return in value", "a", "line1\rline2"),
-            arguments("tab in value", "a", "col1\tcol2"),
-            arguments("leading space in value", "a", "   padded"),
-            arguments("trailing space in value", "a", "padded   "),
-            arguments("latin-1 in value", "a", "\u00A7cRed"),
-            arguments("multi-byte in value", "a", "\u4e2d\u6587"),
-            arguments("supplementary plane in value", "a", "\uD83D\uDE00 ok"),
-            arguments("control character in value", "a", "x\u0001y"),
-            arguments("equals in key", "a=b", "v"),
-            arguments("colon in key", "a:b", "v"),
-            arguments("space in key", "a b", "v"),
-            arguments("hash in key", "#a", "v"),
-            arguments("dot in key", "query.port", "25565"),
-            arguments("hyphen in key", "max-players", "20"),
-            arguments("backslash in key", "a\\b", "v"),
-            arguments("multi-byte in key", "\u4e2d\u6587", "v")
+            argumentSet("plain", "a", "b"),
+            argumentSet("empty value", "a", ""),
+            argumentSet("equals in value", "a", "x=y"),
+            argumentSet("colon in value", "a", "host:24454"),
+            argumentSet("hash in value", "a", "#not a comment"),
+            argumentSet("exclamation in value", "a", "!not a comment"),
+            argumentSet("backslash in value", "a", "C:\\path\\to"),
+            argumentSet("newline in value", "a", "line1\nline2"),
+            argumentSet("carriage return in value", "a", "line1\rline2"),
+            argumentSet("tab in value", "a", "col1\tcol2"),
+            argumentSet("leading space in value", "a", "   padded"),
+            argumentSet("trailing space in value", "a", "padded   "),
+            argumentSet("latin-1 in value", "a", "\u00A7cRed"),
+            argumentSet("multi-byte in value", "a", "\u4e2d\u6587"),
+            argumentSet("supplementary plane in value", "a", "\uD83D\uDE00 ok"),
+            argumentSet("control character in value", "a", "x\u0001y"),
+            argumentSet("equals in key", "a=b", "v"),
+            argumentSet("colon in key", "a:b", "v"),
+            argumentSet("space in key", "a b", "v"),
+            argumentSet("hash in key", "#a", "v"),
+            argumentSet("dot in key", "query.port", "25565"),
+            argumentSet("hyphen in key", "max-players", "20"),
+            argumentSet("backslash in key", "a\\b", "v"),
+            argumentSet("multi-byte in key", "\u4e2d\u6587", "v")
         );
     }
 
-    @ParameterizedTest(name = "{0}")
+    @ParameterizedTest
     @MethodSource("awkwardEntries")
-    void roundTrips(String label, String key, String value) throws IOException {
+    void roundTrips(String key, String value) throws IOException {
         final Map<String, Object> original = Collections.singletonMap(key, value);
 
         final String encoded = format.encode(original);
@@ -70,9 +70,9 @@ class PropertiesFileFormatTest {
             .isEqualTo(encoded);
     }
 
-    @ParameterizedTest(name = "{0}")
+    @ParameterizedTest
     @MethodSource("awkwardEntries")
-    void readsWhatPropertiesItselfWrites(String label, String key, String value) throws IOException {
+    void readsWhatPropertiesItselfWrites(String key, String value) throws IOException {
         final Properties properties = new Properties();
         properties.setProperty(key, value);
         final StringWriter written = new StringWriter();
@@ -94,20 +94,20 @@ class PropertiesFileFormatTest {
 
     public static Stream<Arguments> leadingComments() {
         return Stream.of(
-            arguments("one line, lf", "#date\na=b\n", "a=b\n"),
-            arguments("one line, crlf", "#date\r\na=b\r\n", "a=b\r\n"),
-            arguments("several lines, lf", "#one\n#two\na=b\n", "a=b\n"),
-            arguments("several lines, crlf", "#one\r\n#two\r\na=b\r\n", "a=b\r\n"),
-            arguments("written with an exclamation", "!date\r\na=b\r\n", "a=b\r\n"),
-            arguments("no entries follow", "#date\r\n", ""),
-            arguments("unterminated", "#date", ""),
-            arguments("an escaped hash never leads a line", "\\#a=b\r\n", "\\#a=b\r\n")
+            argumentSet("one line, lf", "#date\na=b\n", "a=b\n"),
+            argumentSet("one line, crlf", "#date\r\na=b\r\n", "a=b\r\n"),
+            argumentSet("several lines, lf", "#one\n#two\na=b\n", "a=b\n"),
+            argumentSet("several lines, crlf", "#one\r\n#two\r\na=b\r\n", "a=b\r\n"),
+            argumentSet("written with an exclamation", "!date\r\na=b\r\n", "a=b\r\n"),
+            argumentSet("no entries follow", "#date\r\n", ""),
+            argumentSet("unterminated", "#date", ""),
+            argumentSet("an escaped hash never leads a line", "\\#a=b\r\n", "\\#a=b\r\n")
         );
     }
 
-    @ParameterizedTest(name = "{0}")
+    @ParameterizedTest
     @MethodSource("leadingComments")
-    void stripsTheDateComment(String label, String written, String expected) {
+    void stripsTheDateComment(String written, String expected) {
         assertThat(PropertiesFileFormat.stripLeadingComments(written)).isEqualTo(expected);
     }
 
@@ -118,18 +118,18 @@ class PropertiesFileFormatTest {
         array.add(1);
 
         return Stream.of(
-            arguments("json object", object, "structured"),
-            arguments("json array", array, "structured"),
-            arguments("java list", Arrays.asList(1, 2), "structured"),
-            arguments("java map", Collections.singletonMap("k", "v"), "structured"),
-            arguments("json null", NullNode.getInstance(), "null"),
-            arguments("java null", null, "null")
+            argumentSet("json object", object, "structured"),
+            argumentSet("json array", array, "structured"),
+            argumentSet("java list", Arrays.asList(1, 2), "structured"),
+            argumentSet("java map", Collections.singletonMap("k", "v"), "structured"),
+            argumentSet("json null", NullNode.getInstance(), "null"),
+            argumentSet("java null", null, "null")
         );
     }
 
-    @ParameterizedTest(name = "{0}")
+    @ParameterizedTest
     @MethodSource("unsupportedValues")
-    void rejectsNonScalarValues(String label, Object value, String expectedKind) {
+    void rejectsNonScalarValues(Object value, String expectedKind) {
         final Map<String, Object> content = new LinkedHashMap<>();
         content.put("the-key", value);
 
