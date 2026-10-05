@@ -243,7 +243,9 @@ public class ArchiveCommandTest {
 
         assertThat(exceptionHandler.getExecutionException())
                 .isInstanceOf(InvalidParameterException.class)
-                .hasMessageContaining("File is not an archive/zip");
+                .hasMessageContaining("File is not an archive/zip")
+                .hasMessageContaining("Unrecognized archive signature")
+                .hasCauseInstanceOf(IOException.class);
         assertThat(sysErr).contains("InvalidParameterException");
     }
 
