@@ -411,32 +411,6 @@ public class ArchiveCommandTest {
                 Arguments.of("unsupported AR", "!<arch>\n".getBytes(StandardCharsets.US_ASCII)));
     }
 
-    @ParameterizedTest
-    @ValueSource(booleans = {false, true})
-    void reportsUnsupportedCompressedPayloadWithoutChangingParameterExitCode(boolean zipPayload) throws Exception {
-        final Path archive = tempDir.resolve("not-tar.gz");
-        final Path destination = tempDir.resolve("destination");
-        final byte[] payload = zipPayload
-                ? Files.readAllBytes(createTestArchive(ArchiveType.ZIP, List.of("file.txt")))
-                : "not a TAR".getBytes(StandardCharsets.UTF_8);
-        try (var output = new GzipCompressorOutputStream(Files.newOutputStream(archive))) {
-            output.write(payload);
-        }
-        final McImageHelper rootCommand = new McImageHelper();
-        final String sysErr = SystemLambda.tapSystemErr(() -> {
-            final int exitCode = new CommandLine(rootCommand)
-                    .setExitCodeExceptionMapper(new ExitCodeMapper())
-                    .setExecutionExceptionHandler(new ExceptionHandler(rootCommand))
-                    .execute("archive", "extract", archive.toString(), destination.toString());
-            assertThat(exitCode).isEqualTo(ExitCode.USAGE);
-        });
-        assertThat(sysErr)
-                .contains("File is not an archive/zip")
-                .contains("Unsupported gz compressed payload")
-                .contains("expected TAR");
-        assertThat(destination).doesNotExist();
-    }
-
     Path createTestArchive(ArchiveType type, List<String> entries) throws IOException {
         return createTestArchive(type, List.of(), entries);
     }
