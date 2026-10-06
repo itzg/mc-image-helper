@@ -186,7 +186,6 @@ public class CleanroomInstaller
                 throw new GenericException("Unable to identify Cleanroom Loader version from installer console output");
             }
 
-            // Cleanroom installer that doesn't report entry point in logs
             Path entryFile = outputDirectory.resolve("run.sh");
             if (!dryRun) {
                 if (Files.exists(entryFile)) {
