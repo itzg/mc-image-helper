@@ -1,6 +1,5 @@
 package me.itzg.helpers.cleanroom;
 
-import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import me.itzg.helpers.files.Manifests;
@@ -45,9 +44,6 @@ public class CleanroomInstallerResolverTest {
 
     @Test
     void testInstallUsingVersions_onlyLoaderVersion(WireMockRuntimeInfo wmRuntimeInfo) {
-        final WireMock wm = wmRuntimeInfo.getWireMock();
-//        wm.loadMappingsFrom("src/test/resources/cleanroom");
-
         final Path resultsFile = tempDir.resolve("results.env");
         final CleanroomInstaller installer = new CleanroomInstaller()
             .outputDirectory(tempDir)
