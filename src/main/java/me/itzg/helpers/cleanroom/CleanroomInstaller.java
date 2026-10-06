@@ -45,6 +45,7 @@ public class CleanroomInstaller
     private boolean forceReinstall;
     private String installerVersion;
     private String loaderVersion;
+    private boolean dryRun;
 
     private boolean lazyLoadPrevManifest;
     private CleanroomManifest prevManifest;
@@ -86,6 +87,11 @@ public class CleanroomInstaller
         return this;
     }
 
+    public CleanroomInstaller dryRun() {
+        this.dryRun = true;
+        return this;
+    }
+
     private CleanroomManifest prevManifest() {
         if (!lazyLoadPrevManifest) {
             prevManifest = Manifests.load(this.outputDirectory, CleanroomManifest.manifestId, CleanroomManifest.class);
@@ -123,11 +129,16 @@ public class CleanroomInstaller
      * @param installerPath path to installer
      * @return if success
      */
-    public boolean install(Path installerPath) throws IOException {
+    public boolean install(Path installerPath) {
         final CleanroomManifest prevManifest = this.prevManifest();
 
-        final String legacyLoaderVersion = IoStreams.readFileFromZip(installerPath,
-            "version.json", CleanroomInstaller::extractFromVersionJson);
+        final String legacyLoaderVersion;
+        try {
+            legacyLoaderVersion = IoStreams.readFileFromZip(installerPath,
+                "version.json", CleanroomInstaller::extractFromVersionJson);
+        } catch (IOException e) {
+            throw new GenericException("Error while reading version.json from installer", e);
+        }
         final boolean isLegacyInstaller = legacyLoaderVersion != null;
 
         // If not forced, check condition first
@@ -156,11 +167,13 @@ public class CleanroomInstaller
         else {
             // using new installer
             args.add("server");
-            if (!LATEST.equals(this.loaderVersion)) {
+            if (this.loaderVersion != null && !LATEST.equals(this.loaderVersion)) {
                 args.add("-v");
                 args.add(this.loaderVersion);
             }
-            if (forceReinstall) args.add("--force");
+            if (this.forceReinstall) args.add("--force");
+            if (this.dryRun) args.add("--dry-run");
+            args.add("--log-file"); args.add(installerPath.getFileName().toString() + ".log");
         }
 
         try {
@@ -171,7 +184,7 @@ public class CleanroomInstaller
 
             String loaderVersion = isLegacyInstaller ? legacyLoaderVersion : this.loaderVersion;
 
-            if (LATEST.equals(loaderVersion)) {
+            if (loaderVersion == null || LATEST.equals(loaderVersion)) {
                 final BufferedReader reader = new BufferedReader(
                     new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8));
 
@@ -183,6 +196,7 @@ public class CleanroomInstaller
                         if (exec != null) {
                             loaderVersion = exec;
                             log.debug("Observed Cleanroom loader version from \"Fetching\" line: {}", loaderVersion);
+                            reader.close();
                             break;
                         }
                     }
@@ -208,19 +222,21 @@ public class CleanroomInstaller
 
             // Cleanroom installer that doesn't report entry point in logs
             Path entryFile = outputDirectory.resolve("run.sh");
-            if (Files.exists(entryFile)) {
-                entryFile = entryFile.toAbsolutePath();
-            }
-            else {
-                entryFile = outputDirectory.resolve("cleanroom-" + loaderVersion + ".jar");
+            if (!dryRun) {
                 if (Files.exists(entryFile)) {
                     entryFile = entryFile.toAbsolutePath();
-                } else {
-                    throw new GenericException("Unable to locate Cleanroom start entry file");
                 }
+                else {
+                    entryFile = outputDirectory.resolve("cleanroom-" + loaderVersion + ".jar");
+                    if (Files.exists(entryFile)) {
+                        entryFile = entryFile.toAbsolutePath();
+                    }
+                    else {
+                        throw new GenericException("Unable to locate Cleanroom start entry file");
+                    }
+                }
+                log.debug("Discovered entry file: {}", entryFile);
             }
-            log.debug("Discovered entry file: {}", entryFile);
-
             if (Files.exists(installerLog)) {
                 log.debug("Deleting Cleanroom installer log at {}", installerLog);
                 Files.delete(installerLog);
@@ -277,16 +293,21 @@ public class CleanroomInstaller
             }
 
             final String result = metadata.getVersioning().getVersion().stream()
-                .filter(s -> s.matches("0\\.[0-9]*\\.[0-9]*") &&
-                    (LATEST.equals(this.installerVersion) || s.equals(this.installerVersion)))
+                .filter(s -> s.matches("0\\.[0-9]*\\.[0-9]*"))
+                .filter(s -> this.installerVersion == null || LATEST.equals(this.installerVersion) || s.equals(this.installerVersion))
                 // pick the highest version from a or b
                 .reduce((a, b) ->
                     new ComparableVersion(a).compareTo(new ComparableVersion(b)) > 0 ? a : b
                 )
                 .orElse(null);
 
+            if (result == null) {
+                throw new GenericException("Unable to resolve Cleanroom installer version");
+            }
+
             // try to find exist installer
             Path installerPath = outputDirectory.resolve("installer-" + result + ".jar");
+            this.installerVersion(result);
 
             if (!this.forceReinstall && Files.exists(installerPath)) {
                 log.warn("Installer {} already exist on server directory", this.installerVersion);
@@ -296,8 +317,6 @@ public class CleanroomInstaller
             }
 
             return install(installerPath);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
         }
     }
 
