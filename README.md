@@ -295,11 +295,12 @@ Extracts a field from an INI file
 ```
 Usage: mc-image-helper install-cleanroom [-h] [--force-reinstall] [--output-directory=DIR] [--results-file=FILE]
                                          [[--installer-version=<installerVersion>] |
-                                         [--loader-version=<loaderVersion>]] [[--cleanroom-maven=URL] |
+                                         [--loader-version=<loaderVersion>]] [[--cleanroom-maven-url=URL] |
                                          --from-local-file=FILE | --from-url=URL] [[--use-http2] [--wiretap]]
 Downloads and installs a requested version of Cleanroom
-      --cleanroom-maven=URL URL for Cleanroom installer JSON.
-                            Can also be set via env var CLEANROOM_MAVEN
+      --cleanroom-maven-url=URL
+                            URL for Cleanroom Maven repo.
+                            Can also be set via env var CLEANROOM_MAVEN_URL
                             Default is https://maven.cleanroommc.com/
       --force-reinstall
       --from-local-file=FILE

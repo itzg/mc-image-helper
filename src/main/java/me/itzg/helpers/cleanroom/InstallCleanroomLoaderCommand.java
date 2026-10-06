@@ -65,10 +65,10 @@ public class InstallCleanroomLoaderCommand implements Callable<Integer> {
     }
 
     static class Source {
-        @Option(names = "--cleanroom-maven", paramLabel = "URL",
-            defaultValue = "${CLEANROOM_MAVEN:-" + CleanroomManifest.DEFAULT_MAVEN_URL + "}",
-            description = "URL for Cleanroom installer JSON.%n"
-                + "Can also be set via env var CLEANROOM_MAVEN%n"
+        @Option(names = "--cleanroom-maven-url", paramLabel = "URL",
+            defaultValue = "${CLEANROOM_MAVEN_URL:-" + CleanroomManifest.DEFAULT_MAVEN_URL + "}",
+            description = "URL for Cleanroom Maven repo.%n"
+                + "Can also be set via env var CLEANROOM_MAVEN_URL%n"
                 + "Default is ${DEFAULT-VALUE}"
         )
         String mavenUrl;
