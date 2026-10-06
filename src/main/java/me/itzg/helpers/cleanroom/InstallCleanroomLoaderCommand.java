@@ -23,7 +23,7 @@ public class InstallCleanroomLoaderCommand implements Callable<Integer> {
     boolean help;
 
     public static final Pattern ALLOWED_VERSION = Pattern.compile(
-        String.join("|", CleanroomInstaller.LATEST, VERSION_REGEX),
+        String.join("|", CleanroomInstaller.LATEST, VERSION_REGEX, "(\\d+[\\.\\d+]+)-(\\w+)"),
         Pattern.CASE_INSENSITIVE
     );
 

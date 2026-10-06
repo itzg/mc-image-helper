@@ -50,7 +50,11 @@ public class CleanroomInstaller
     private boolean lazyLoadPrevManifest;
     private CleanroomManifest prevManifest;
 
-    public CleanroomInstaller() {}
+    public CleanroomInstaller() {
+        // default value
+        this.installerVersion = LATEST;
+        this.loaderVersion = LATEST;
+    }
 
     public CleanroomInstaller outputDirectory(Path outputDirectory) {
         this.outputDirectory = outputDirectory;
@@ -107,6 +111,7 @@ public class CleanroomInstaller
      */
     public boolean install(URI installerUrl) throws IOException {
         final Path installerPath;
+        log.info("Install Cleanroom using remote source: {}", installerUrl.toString());
         try (SharedFetch sharedFetch = Fetch.sharedFetch("cleanroom", this.sharedFetchOptions)) {
             installerPath = sharedFetch.fetch(installerUrl)
                 .toDirectory(this.outputDirectory)
@@ -116,10 +121,11 @@ public class CleanroomInstaller
                 .block();
         }
 
-        if (installerPath == null) {
+        if (installerPath == null || !Files.exists(installerPath)) {
             throw new GenericException("Failed to download Cleanroom installer");
         }
 
+        log.info("Succeed to download Cleanroom installer {}", installerPath);
         return install(installerPath);
     }
 
@@ -134,7 +140,7 @@ public class CleanroomInstaller
 
         final String legacyLoaderVersion;
         try {
-            legacyLoaderVersion = IoStreams.readFileFromZip(installerPath,
+            legacyLoaderVersion = IoStreams.readFileFromZip(installerPath.toAbsolutePath(),
                 "version.json", CleanroomInstaller::extractFromVersionJson);
         } catch (IOException e) {
             throw new GenericException("Error while reading version.json from installer", e);
@@ -148,7 +154,7 @@ public class CleanroomInstaller
                 || prevManifest.getLoaderVersion().equals(this.loaderVersion)) {                                           // new
                 // check if missing entry file
                 if (serverEntryExists(this.outputDirectory, prevManifest.getServerEntry())) {
-                    log.info("Cleanroom version {} is already installed", prevManifest.getLoaderVersion());
+                    log.info("Cleanroom loader version {} is already installed", prevManifest.getLoaderVersion());
                     return true;
                 }
                 else log.warn("Server entry for Cleanroom {} is missing. Re-installing.", prevManifest.getLoaderVersion());
@@ -177,6 +183,8 @@ public class CleanroomInstaller
         }
 
         try {
+            log.info("Running installer for Cleanroom {}. This might take a while...",
+                isLegacyInstaller ? legacyLoaderVersion : this.loaderVersion);
             final Process process = new ProcessBuilder(args)
                 .directory(this.outputDirectory.toFile())
                 .redirectError(Redirect.INHERIT)
@@ -184,7 +192,7 @@ public class CleanroomInstaller
 
             String loaderVersion = isLegacyInstaller ? legacyLoaderVersion : this.loaderVersion;
 
-            if (loaderVersion == null || LATEST.equals(loaderVersion)) {
+            if (LATEST.equals(loaderVersion)) {
                 final BufferedReader reader = new BufferedReader(
                     new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8));
 
@@ -216,7 +224,7 @@ public class CleanroomInstaller
                 throw new GenericException("Interrupted waiting for cleanroom installer", e);
             }
 
-            if (loaderVersion == null) {
+            if (LATEST.equals(loaderVersion)) {
                 throw new GenericException("Unable to identify Cleanroom Loader version from installer console output");
             }
 
@@ -310,10 +318,16 @@ public class CleanroomInstaller
             this.installerVersion(result);
 
             if (!this.forceReinstall && Files.exists(installerPath)) {
-                log.warn("Installer {} already exist on server directory", this.installerVersion);
+                log.warn("Installer {} already exist on server directory", result);
             } else {
+                log.info("Downloading installer {} for Cleanroom {}", result, this.loaderVersion);
                 installerPath = mavenRepoApi.download(this.outputDirectory, CleanroomManifest.mvnGroupId, CleanroomManifest.mvnArtifactId,
                     result, "jar", null).block();
+            }
+
+            // this should not happen, but idea don't like so...
+            if (installerPath == null) {
+                throw new GenericException("Failed to download Cleanroom installer");
             }
 
             return install(installerPath);
@@ -332,7 +346,7 @@ public class CleanroomInstaller
         final String id = ObjectMappers.defaultMapper().readValue(versionJsonIn, ObjectNode.class)
             .get("id").asText();
         Matcher m = LEGACY_INSTALLER_VERSION.matcher(id);
-        return m.matches() ? m.group(1) : null;
+        return m.find() ? m.group(1) + "-legacy" : null;
     }
 
     private void populateResultsFile(Path resultsFile, String serverEntry, String loaderVersion) throws IOException {
