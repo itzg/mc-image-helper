@@ -259,9 +259,8 @@ public class CleanroomInstaller
      * @return if success
      */
     public boolean install() {
-        final MavenRepoApi mavenRepoApi;
         try (SharedFetch sharedFetch = Fetch.sharedFetch("cleanroom", this.sharedFetchOptions)) {
-            mavenRepoApi = new MavenRepoApi(this.mavenUrl, sharedFetch);
+            final MavenRepoApi mavenRepoApi = new MavenRepoApi(this.mavenUrl, sharedFetch);
 
             final MavenMetadata metadata = mavenRepoApi.fetchMetadata(CleanroomManifest.mvnGroupId, CleanroomManifest.mvnArtifactId)
                 .block();
