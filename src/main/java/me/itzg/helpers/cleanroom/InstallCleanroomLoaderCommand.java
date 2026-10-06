@@ -105,13 +105,13 @@ public class InstallCleanroomLoaderCommand implements Callable<Integer> {
     @Override
     public Integer call() throws Exception {
         final CleanroomInstaller installer = new CleanroomInstaller()
-            .outputDirectory(outputDirectory)
-            .resultsFile(resultsFile)
-            .mavenUrl(source.mavenUrl)
-            .sharedFetchOptions(sharedFetchArgs.options())
-            .forceReinstall(forceReinstall)
-            .installerVersion(version.installerVersion)
-            .loaderVersion(version.loaderVersion);
+            .setOutputDirectory(outputDirectory)
+            .setResultsFile(resultsFile)
+            .setMavenUrl(source.mavenUrl)
+            .setSharedFetchOptions(sharedFetchArgs.options())
+            .setForceReinstall(forceReinstall)
+            .setInstallerVersion(version.installerVersion)
+            .setLoaderVersion(version.loaderVersion);
 
         if (source.local_file != null)
             return installer.install(source.local_file) ? ExitCode.OK : ExitCode.SOFTWARE;

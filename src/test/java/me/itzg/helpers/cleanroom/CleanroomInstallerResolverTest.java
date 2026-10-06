@@ -46,12 +46,12 @@ public class CleanroomInstallerResolverTest {
     void testInstallUsingVersions_onlyLoaderVersion(WireMockRuntimeInfo wmRuntimeInfo) {
         final Path resultsFile = tempDir.resolve("results.env");
         final CleanroomInstaller installer = new CleanroomInstaller()
-            .outputDirectory(tempDir)
-            .resultsFile(resultsFile)
-            .mavenUrl(wmRuntimeInfo.getHttpBaseUrl())
-            .sharedFetchOptions(buildSharedFetchOptions())
-            .loaderVersion("0.6.13-alpha")
-            .dryRun();
+            .setOutputDirectory(tempDir)
+            .setResultsFile(resultsFile)
+            .setMavenUrl(wmRuntimeInfo.getHttpBaseUrl())
+            .setSharedFetchOptions(buildSharedFetchOptions())
+            .setLoaderVersion("0.6.13-alpha")
+            .setDryRun(true);
 
         stubFor(get("/com/cleanroommc/installer/maven-metadata.xml")
             .willReturn(aResponse()

@@ -1,7 +1,9 @@
 package me.itzg.helpers.cleanroom;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import lombok.AccessLevel;
 import lombok.NonNull;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.files.IoStreams;
@@ -30,12 +32,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Slf4j
+@Setter
 public class CleanroomInstaller
 {
     public static final String LATEST = "latest";
 
     private static final Pattern RESULT_INFO = Pattern.compile("Fetching Cleanroom\\s+(?<version>.+)");
-
     private static final Pattern LEGACY_INSTALLER_VERSION = Pattern.compile("cleanroom-(.+)", Pattern.CASE_INSENSITIVE);
 
     private Path outputDirectory;
@@ -47,54 +49,10 @@ public class CleanroomInstaller
     private String loaderVersion;
     private boolean dryRun;
 
+    @Setter(AccessLevel.NONE)
     private boolean lazyLoadPrevManifest;
+    @Setter(AccessLevel.NONE)
     private CleanroomManifest prevManifest;
-
-    public CleanroomInstaller() {
-        // default value
-        this.installerVersion = LATEST;
-        this.loaderVersion = LATEST;
-    }
-
-    public CleanroomInstaller outputDirectory(Path outputDirectory) {
-        this.outputDirectory = outputDirectory;
-        return this;
-    }
-
-    public CleanroomInstaller resultsFile(Path resultsFile) {
-        this.resultsFile = resultsFile;
-        return this;
-    }
-
-    public CleanroomInstaller mavenUrl(String mavenUrl) {
-        this.mavenUrl = mavenUrl;
-        return this;
-    }
-
-    public CleanroomInstaller sharedFetchOptions(SharedFetch.Options sharedFetchOptions) {
-        this.sharedFetchOptions = sharedFetchOptions;
-        return this;
-    }
-
-    public CleanroomInstaller forceReinstall(boolean forceReinstall) {
-        this.forceReinstall = forceReinstall;
-        return this;
-    }
-
-    public CleanroomInstaller installerVersion(String installerVersion) {
-        this.installerVersion = installerVersion;
-        return this;
-    }
-
-    public CleanroomInstaller loaderVersion(String loaderVersion) {
-        this.loaderVersion = loaderVersion;
-        return this;
-    }
-
-    public CleanroomInstaller dryRun() {
-        this.dryRun = true;
-        return this;
-    }
 
     private CleanroomManifest prevManifest() {
         if (!lazyLoadPrevManifest) {
@@ -313,9 +271,9 @@ public class CleanroomInstaller
                 throw new GenericException("Unable to resolve Cleanroom installer version");
             }
 
+            this.setInstallerVersion(result);
             // try to find exist installer
             Path installerPath = outputDirectory.resolve("installer-" + result + ".jar");
-            this.installerVersion(result);
 
             if (!this.forceReinstall && Files.exists(installerPath)) {
                 log.warn("Installer {} already exist on server directory", result);
