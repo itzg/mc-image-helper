@@ -150,7 +150,7 @@ public class CleanroomInstaller
 
             String loaderVersion = isLegacyInstaller ? legacyLoaderVersion : this.loaderVersion;
 
-            if (LATEST.equals(loaderVersion)) {
+            if (loaderVersion == null || LATEST.equals(loaderVersion)) {
                 final BufferedReader reader = new BufferedReader(
                     new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8));
 
@@ -182,7 +182,7 @@ public class CleanroomInstaller
                 throw new GenericException("Interrupted waiting for cleanroom installer", e);
             }
 
-            if (LATEST.equals(loaderVersion)) {
+            if (loaderVersion == null || LATEST.equals(loaderVersion)) {
                 throw new GenericException("Unable to identify Cleanroom Loader version from installer console output");
             }
 
