@@ -83,7 +83,8 @@ public class ArchiveCommand {
         try {
             return ArchiveFactory.create(archive);
         } catch (IllegalArgumentException | IOException e) {
-            throw new InvalidParameterException("File is not an archive/zip: " + archive.toAbsolutePath());
+            throw new InvalidParameterException("File is not an archive/zip: " + archive.toAbsolutePath()
+                    + ": " + e.getMessage(), e);
         }
     }
 }
