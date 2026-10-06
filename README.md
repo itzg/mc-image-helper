@@ -14,8 +14,7 @@ This tool does the complicated bits for the [itzg/minecraft-server](https://gith
 
 ```
 Usage: mc-image-helper [-hsV] [--debug | --logging=<loggingLevel>] [COMMAND]
-      --debug     Enable debug output. Can also set environment variables
-                    DEBUG_HELPER or DEBUG
+      --debug     Enable debug output. Can also set environment variables DEBUG_HELPER or DEBUG
   -h, --help      Show this usage and exit
       --logging=<loggingLevel>
                   Set logging to specific level.
@@ -23,88 +22,57 @@ Usage: mc-image-helper [-hsV] [--debug | --logging=<loggingLevel>] [COMMAND]
   -s, --silent    Don't output logs even if there's an error
   -V, --version
 Commands:
-  archive                         Archive helpers, checking for path traversal
-                                    and extracting archives
-  asciify                         Converts UTF-8 on stdin to ASCII by escaping
-                                    Unicode characters
-  assert                          Provides assertion operators for verifying
-                                    container setup
-  compare-versions                Used for shell scripting, exits with success
-                                    (0) when comparison is satisfied or 1 when
-                                    not
-  curseforge-files                Download and manage individual mod/plugin
-                                    files from CurseForge
+  archive                         Archive helpers, checking for path traversal and extracting archives
+  asciify                         Converts UTF-8 on stdin to ASCII by escaping Unicode characters
+  assert                          Provides assertion operators for verifying container setup
+  compare-versions                Used for shell scripting, exits with success(0) when comparison is satisfied or 1
+                                    when not
+  curseforge-files                Download and manage individual mod/plugin files from CurseForge
   find                            Specialized replacement for GNU's find
   get                             Download a file
   github
   hash                            Outputs an MD5 hash of the standard input
-  has-feature                     Check if a subcommand is available and
-                                    optionally if it has specific options
+  has-feature                     Check if a subcommand is available and optionally if it has specific options
                                     (arguments)
   ini-path                        Extracts a field from an INI file
-  install-curseforge              Downloads, installs, and upgrades CurseForge
-                                    modpacks
-  install-fabric-loader           Provides a few ways to obtain a Fabric loader
-                                    with simple cleanup of previous loader
+  install-curseforge              Downloads, installs, and upgrades CurseForge modpacks
+  install-fabric-loader           Provides a few ways to obtain a Fabric loader with simple cleanup of previous loader
                                     instances
-  install-forge                   Downloads and installs a requested version of
-                                    Forge
-  install-cleanroom               Downloads and installs a requested version of
-                                    Cleanroom
-  install-modrinth-modpack        Supports installation of Modrinth modpacks
-                                    along with the associated mod loader
-  install-neoforge                Downloads and installs a requested version of
-                                    NeoForge
-  install-oci-pack                Pulls an OCI artifact and writes its layer
-                                    blobs to disk in apply order
+  install-forge                   Downloads and installs a requested version of Forge
+  install-modrinth-modpack        Supports installation of Modrinth modpacks along with the associated mod loader
+  install-neoforge                Downloads and installs a requested version of NeoForge
+  install-oci-pack                Pulls an OCI artifact and writes its layer blobs to disk in apply order
   install-paper                   Installs selected PaperMC
   install-purpur                  Downloads latest or selected version of Purpur
   install-quilt                   Installs Quilt mod loader
-  install-vanilla                 Downloads and installs a requested version of
-                                    vanilla Minecraft
-  interpolate                     Interpolates existing files in one or more
-                                    directories
-  java-release                    Outputs the Java release number, such as 8,
-                                    11, 17
+  install-vanilla                 Downloads and installs a requested version of vanilla Minecraft
+  interpolate                     Interpolates existing files in one or more directories
+  java-release                    Outputs the Java release number, such as 8, 11, 17
   manage-users
-  maven-download                  Downloads a maven artifact from a Maven
-                                    repository
+  maven-download                  Downloads a maven artifact from a Maven repository
   modrinth                        Automates downloading of modrinth resources
-  mcopy                           Multi-source file copy operation with with
-                                    managed cleanup. Supports auto-detected
-                                    sourcing from file list, directories, and
-                                    URLs
-  network-interfaces              Provides simple operations to list network
-                                    interface names and check existence
-  patch                           Patches one or more existing files using JSON
-                                    path based operations
+  mcopy                           Multi-source file copy operation with with managed cleanup. Supports auto-detected
+                                    sourcing from file list, directories, and URLs
+  network-interfaces              Provides simple operations to list network interface names and check existence
+  patch                           Patches one or more existing files using JSON path based operations
                                   Supports the file formats:
                                   - JSON
                                   - JSON5
                                   - Yaml
                                   - TOML, but processed output is not pretty
                                   - Properties, but comments are not retained
-  resolve-minecraft-version       Resolves and validate latest, snapshot, and
-                                    specific versions
-  set-properties                  Maps environment variables to a properties
-                                    file
-  show-all-subcommand-usage       Renders all of the subcommand usage as
-                                    markdown sections for README
-  sync                            Synchronizes the contents of one directory to
-                                    another.
-  sync-and-interpolate            Synchronizes the contents of one directory to
-                                    another with conditional variable
+  resolve-minecraft-version       Resolves and validate latest, snapshot, and specific versions
+  set-properties                  Maps environment variables to a properties file
+  show-all-subcommand-usage       Renders all of the subcommand usage as markdown sections for README
+  sync                            Synchronizes the contents of one directory to another.
+  sync-and-interpolate            Synchronizes the contents of one directory to another with conditional variable
                                     interpolation.
   test-logging-levels
-  toml-path                       Extracts a path from a TOML file using
-                                    json-path syntax
-  vanillatweaks                   Downloads Vanilla Tweaks resource packs, data
-                                    packs, or crafting tweaks given a share
+  toml-path                       Extracts a path from a TOML file using json-path syntax
+  vanillatweaks                   Downloads Vanilla Tweaks resource packs, data packs, or crafting tweaks given a share
                                     code or pack file
-  version-from-modrinth-projects  Finds a compatible Minecraft version across
-                                    given Modrinth projects
-  yaml-path                       Extracts a path from a YAML file using
-                                    json-path syntax
+  version-from-modrinth-projects  Finds a compatible Minecraft version across given Modrinth projects
+  yaml-path                       Extracts a path from a YAML file using json-path syntax
 ```
 
 <!-- END of documentation generated using `mc-image-helper --help` -->
@@ -148,10 +116,8 @@ Commands:
 ### compare-versions
 
 ```
-Usage: mc-image-helper compare-versions <leftVersion> <comparison>
-                                        <rightVersion>
-Used for shell scripting, exits with success(0) when comparison is satisfied or
-1 when not
+Usage: mc-image-helper compare-versions <leftVersion> <comparison> <rightVersion>
+Used for shell scripting, exits with success(0) when comparison is satisfied or 1 when not
       <leftVersion>
       <comparison>
       <rightVersion>
@@ -160,17 +126,11 @@ Used for shell scripting, exits with success(0) when comparison is satisfied or
 ### curseforge-files
 
 ```
-Usage: mc-image-helper curseforge-files [-h] [--disable-api-caching]
-                                        [--api-base-url=<apiBaseUrl>]
-                                        [--api-key=<apiKey>]
-                                        [--api-key-file=PATH]
-                                        [--default-category=<slugCategory>]
-                                        [--game-version=<gameVersion>]
-                                        [--mod-loader=<modLoaderType>] [-o=DIR]
-                                        [[--api-cache-ttl=OPERATION=DURATION]...
-                                         [--api-cache-default-ttl=DURATION]]
-                                        [[--use-http2] [--wiretap]] [REF[,
-                                        |<nl>REF...]...]
+Usage: mc-image-helper curseforge-files [-h] [--disable-api-caching] [--api-base-url=<apiBaseUrl>] [--api-key=<apiKey>]
+                                        [--api-key-file=PATH] [--default-category=<slugCategory>]
+                                        [--game-version=<gameVersion>] [--mod-loader=<modLoaderType>] [-o=DIR]
+                                        [[--api-cache-ttl=OPERATION=DURATION]... [--api-cache-default-ttl=DURATION]]
+                                        [[--use-http2] [--wiretap]] [REF[,|<nl>REF...]...]
 Download and manage individual mod/plugin files from CurseForge
       [REF[,|<nl>REF...]...]
                             Can be
@@ -179,43 +139,35 @@ Download and manage individual mod/plugin files from CurseForge
                             <project ID>|<slug>,
                             project page URL, file page URL,
                             '@'<filename with ref per line>
-                            If not specified, any previous mod/plugin files are
-                              removed.
+                            If not specified, any previous mod/plugin files are removed.
                             Embedded comments are allowed
       --api-base-url=<apiBaseUrl>
-                            Allows for overriding the CurseForge Eternal API
-                              used
+                            Allows for overriding the CurseForge Eternal API used
                             Can also be passed via CF_API_BASE_URL
       --api-cache-default-ttl=DURATION
-                            Set default/fallback TTL in ISO-8601 duration
-                              format.
+                            Set default/fallback TTL in ISO-8601 duration format.
                             Default: P2D
       --api-cache-ttl=OPERATION=DURATION
                             Set individual operation TTLs
-      --api-key=<apiKey>    An API key allocated from the Eternal developer
-                              console at https://console.curseforge.com/
+      --api-key=<apiKey>    An API key allocated from the Eternal developer console at https://console.curseforge.com/
                             Can also be passed via CF_API_KEY
-      --api-key-file=PATH   Read the API key from a UTF-8 file (instead of
-                              passing it directly).
+      --api-key-file=PATH   Read the API key from a UTF-8 file (instead of passing it directly).
                             Can also be passed via CF_API_KEY_FILE
       --default-category=<slugCategory>
-                            When providing slugs, a category is required to
-                              qualify those
+                            When providing slugs, a category is required to qualify those
       --disable-api-caching
       --game-version=<gameVersion>
                             The Minecraft version
                             Can also be passed via VERSION
   -h, --help
       --mod-loader=<modLoaderType>
-                            One of Any, Forge, Cauldron, LiteLoader, Fabric,
-                              Quilt, NeoForge
+                            One of Any, Forge, Cauldron, LiteLoader, Fabric, Quilt, NeoForge
   -o, --output-directory=DIR
 
       --use-http2           Whether to use HTTP/2.
                             Default: true
                             Env: FETCH_USE_HTTP2
-      --wiretap             Whether to enable Reactor Netty wiretap logging.
-                              Make sure to set logging level to trace.
+      --wiretap             Whether to enable Reactor Netty wiretap logging. Make sure to set logging level to trace.
                             Default: false
                             Env: FETCH_WIRETAP
 ```
@@ -223,30 +175,22 @@ Download and manage individual mod/plugin files from CurseForge
 ### find
 
 ```
-Usage: mc-image-helper find [-hq] [--delete] [--delete-empty-directories]
-                            [--fail-no-matches] [--only-shallowest]
-                            [--output-count-only] [--stop-on-first]
-                            [--format=<format>] [--max-depth=N] [--min-depth=N]
-                            [--exclude-name=glob[\s*,\s*glob...]]...
-                            [--name=glob[\s*,\s*glob...]]... [-t=<type>[\s*,
+Usage: mc-image-helper find [-hq] [--delete] [--delete-empty-directories] [--fail-no-matches] [--only-shallowest]
+                            [--output-count-only] [--stop-on-first] [--format=<format>] [--max-depth=N] [--min-depth=N]
+                            [--exclude-name=glob[\s*,\s*glob...]]... [--name=glob[\s*,\s*glob...]]... [-t=<type>[\s*,
                             \s*<type>...]]... startDir...
 Specialized replacement for GNU's find
       startDir...           One or more starting directories
-      --delete              Deletes the matched entries. When searching for
-                              directories, each directory and its contents will
-                              be recursively deleted.
+      --delete              Deletes the matched entries. When searching for directories, each directory and its
+                              contents will be recursively deleted.
       --delete-empty-directories
-                            Deletes a traversed directory if it becomes empty
-                              after matching files/directories within it were
-                              deleted
+                            Deletes a traversed directory if it becomes empty after matching files/directories within
+                              it were deleted
       --exclude-name=glob[\s*,\s*glob...]
-                            One or more glob patterns to exclude by looking at
-                              name part of the path. If a pattern matches a
-                              directory's name, then its entire subtree is
-                              excluded.
+                            One or more glob patterns to exclude by looking at name part of the path. If a pattern
+                              matches a directory's name, then its entire subtree is excluded.
       --fail-no-matches
-      --format=<format>     Applies a format when printing each matched entry.
-                              Supports the following directives
+      --format=<format>     Applies a format when printing each matched entry. Supports the following directives
                             %% a literal %
                             %h leading directory of the entry
                             %P path of the entry relative to the starting point
@@ -254,8 +198,7 @@ Specialized replacement for GNU's find
       --max-depth=N         Unlimited depth if negative
       --min-depth=N         Minimum match depth where 0 is a starting point
       --name=glob[\s*,\s*glob...]
-                            One or more glob patterns to match name part of the
-                              path
+                            One or more glob patterns to match name part of the path
       --only-shallowest
       --output-count-only
   -q, --quiet
@@ -267,25 +210,18 @@ Specialized replacement for GNU's find
 ### get
 
 ```
-Usage: mc-image-helper get [-hz] [--exists] [--log-progress-each]
-                           [--output-filename] [--skip-existing]
+Usage: mc-image-helper get [-hz] [--exists] [--log-progress-each] [--output-filename] [--skip-existing]
                            [--apikey=<apikeyHeader>] [--json-path=<jsonPath>]
-                           [--json-value-when-missing=<jsonValueWhenMissing>]
-                           [-o=FILE|DIR] [--prune-depth=<pruneDepth>]
-                           [--retry-count=<retryCount>]
-                           [--retry-delay=<retryDelay>]
-                           [--uris-file=<urisFile>]
-                           [--accept=<acceptContentTypes>[\s*,
-                           \s*<acceptContentTypes>...]]... [--prune-others=GLOB
-                           [\s*,\s*GLOB...]]... [URI[\s*,\s*URI...]...]
+                           [--json-value-when-missing=<jsonValueWhenMissing>] [-o=FILE|DIR]
+                           [--prune-depth=<pruneDepth>] [--retry-count=<retryCount>] [--retry-delay=<retryDelay>]
+                           [--uris-file=<urisFile>] [--accept=<acceptContentTypes>[\s*,\s*<acceptContentTypes>...]]...
+                           [--prune-others=GLOB[\s*,\s*GLOB...]]... [URI[\s*,\s*URI...]...]
 Download a file
       [URI[\s*,\s*URI...]...]
-                            The URI of the resource to retrieve. When the
-                              output is a directory, more than one URI can be
-                              requested.
+                            The URI of the resource to retrieve. When the output is a directory, more than one URI can
+                              be requested.
       --accept=<acceptContentTypes>[\s*,\s*<acceptContentTypes>...]
-                            Specifies the accepted content type(s) to use with
-                              the request
+                            Specifies the accepted content type(s) to use with the request
       --apikey=<apikeyHeader>
                             Sets the x-api-key header to use with the request
       --exists              Test if the given URIs are retrievable
@@ -293,24 +229,18 @@ Download a file
       --json-path=<jsonPath>
                             Extract and output a JsonPath from the response
       --json-value-when-missing=<jsonValueWhenMissing>
-                            Defines the value that is output when the requested
-                              JSON path does not exist. An empty value results
-                              in a non-zero exit code.
+                            Defines the value that is output when the requested JSON path does not exist. An empty
+                              value results in a non-zero exit code.
       --log-progress-each   Output a log as each URI is being retrieved
-  -o, --output=FILE|DIR     Specifies the name of a file or directory to write
-                              the downloaded content. If a directory is
-                              provided, the filename will be derived from the
-                              content disposition or the URI's path. If not
-                              provided, then content will be output to standard
-                              out.
+  -o, --output=FILE|DIR     Specifies the name of a file or directory to write the downloaded content. If a directory
+                              is provided, the filename will be derived from the content disposition or the URI's path.
+                              If not provided, then content will be output to standard out.
       --output-filename     Output the resulting filename
       --prune-depth=<pruneDepth>
-                            When using prune-others, this specifies how deep to
-                              search for files to prune
+                            When using prune-others, this specifies how deep to search for files to prune
       --prune-others=GLOB[\s*,\s*GLOB...]
-                            When set and using an output directory, files that
-                              match the given glob patterns will be pruned if
-                              not part of the download set. For example *.jar
+                            When set and using an output directory, files that match the given glob patterns will be
+                              pruned if not part of the download set. For example *.jar
       --retry-count=<retryCount>
 
       --retry-delay=<retryDelay>
@@ -324,28 +254,23 @@ Download a file
 ### github
 
 ```
-Usage: mc-image-helper github [--api-base-url=<apiBaseUrl>] [--token=<token>]
-                              [COMMAND]
+Usage: mc-image-helper github [--api-base-url=<apiBaseUrl>] [--token=<token>] [COMMAND]
       --api-base-url=<apiBaseUrl>
 
-      --token=<token>   An access token for GitHub to elevate rate limit vs
-                          anonymous access
+      --token=<token>   An access token for GitHub to elevate rate limit vs anonymous access
 Commands:
-  download-latest-asset  From the latest release, downloads the first matching
-                           asset, and outputs the downloaded filename
-  download-artifact      Download an artifact from a successful GitHub Actions
-                           workflow
+  download-latest-asset  From the latest release, downloads the first matching asset, and outputs the downloaded
+                           filename
+  download-artifact      Download an artifact from a successful GitHub Actions workflow
 ```
 
 ### has-feature
 
 ```
 Usage: mc-image-helper has-feature <subcommand> [<arguments>...]
-Check if a subcommand is available and optionally if it has specific options
-(arguments)
+Check if a subcommand is available and optionally if it has specific options (arguments)
       <subcommand>       The subcommand name to check for availability
-      [<arguments>...]   Optional option names to check within the subcommand
-                           (e.g., 'help' for --help or -h)
+      [<arguments>...]   Optional option names to check within the subcommand (e.g., 'help' for --help or -h)
 ```
 
 ### hash
@@ -360,8 +285,7 @@ Outputs an MD5 hash of the standard input
 ```
 Usage: mc-image-helper ini-path [--file=FILE] ref
 Extracts a field from an INI file
-      ref           section/option, section/option[index], /option, /option
-                      [index]
+      ref           section/option, section/option[index], /option, /option[index]
       --file=FILE   An INI file to query. If not set, reads stdin
 ```
 
@@ -410,143 +334,111 @@ Downloads and installs a requested version of Cleanroom
 ### install-curseforge
 
 ```
-Usage: mc-image-helper install-curseforge [-h] [--disable-api-caching]
-       [--force-reinstall-modloader] [--force-synchronize]
-       [--overrides-skip-existing] [--api-base-url=<apiBaseUrl>]
-       [--api-key=<apiKey>] [--api-key-file=PATH] [--downloads-repo=DIR]
-       [--file-download-retries=COUNT]
-       [--file-download-retry-min-delay=DURATION] [--file-id=<fileId>]
-       [--filename-matcher=STR]
-       [--max-concurrent-downloads=<maxConcurrentDownloads>]
-       [--missing-mods-filename=<missingModsFilename>]
-       [--mod-loader-version=VERSION] [--modpack-manifest=PATH]
-       [--modpack-page-url=URL] [--modpack-zip=PATH] [-o=DIR]
-       [--results-file=FILE] [--set-level-from=<levelFrom>] [--slug=<slug>]
-       [--ignore-missing-files=<ignoreMissingFiles>[,
-       |<nl><ignoreMissingFiles>...]]...
-       [--overrides-exclusions=<overridesExclusions>[NL or ,
-       <overridesExclusions>...]]... [[--exclude-include-file=FILE|URI]
-       [--exclude-all-mods] [[--excludes=PROJECT_ID|SLUG[,
-       |<nl>PROJECT_ID|SLUG...]]... [--force-includes=PROJECT_ID|SLUG[,
-       |<nl>PROJECT_ID|SLUG...]]...]] [[--use-http2] [--wiretap]]
-       [[--api-cache-ttl=OPERATION=DURATION]...
-       [--api-cache-default-ttl=DURATION]] [[--forge-promotions-url=URL]
-       [--forge-maven-repo-url=URL]] [COMMAND]
+Usage: mc-image-helper install-curseforge [-h] [--disable-api-caching] [--force-reinstall-modloader]
+                                          [--force-synchronize] [--overrides-skip-existing]
+                                          [--api-base-url=<apiBaseUrl>] [--api-key=<apiKey>] [--api-key-file=PATH]
+                                          [--downloads-repo=DIR] [--file-download-retries=COUNT]
+                                          [--file-download-retry-min-delay=DURATION] [--file-id=<fileId>]
+                                          [--filename-matcher=STR]
+                                          [--max-concurrent-downloads=<maxConcurrentDownloads>]
+                                          [--missing-mods-filename=<missingModsFilename>]
+                                          [--mod-loader-version=VERSION] [--modpack-manifest=PATH]
+                                          [--modpack-page-url=URL] [--modpack-zip=PATH] [-o=DIR] [--results-file=FILE]
+                                          [--set-level-from=<levelFrom>] [--slug=<slug>]
+                                          [--ignore-missing-files=<ignoreMissingFiles>[,
+                                          |<nl><ignoreMissingFiles>...]]...
+                                          [--overrides-exclusions=<overridesExclusions>[NL or ,
+                                          <overridesExclusions>...]]... [[--exclude-include-file=FILE|URI]
+                                          [--exclude-all-mods] [[--excludes=PROJECT_ID|SLUG[,
+                                          |<nl>PROJECT_ID|SLUG...]]... [--force-includes=PROJECT_ID|SLUG[,
+                                          |<nl>PROJECT_ID|SLUG...]]...]] [[--use-http2] [--wiretap]]
+                                          [[--api-cache-ttl=OPERATION=DURATION]... [--api-cache-default-ttl=DURATION]]
+                                          [[--forge-promotions-url=URL] [--forge-maven-repo-url=URL]] [COMMAND]
 Downloads, installs, and upgrades CurseForge modpacks
       --api-base-url=<apiBaseUrl>
-                             Allows for overriding the CurseForge Eternal API
-                               used
+                             Allows for overriding the CurseForge Eternal API used
       --api-cache-default-ttl=DURATION
-                             Set default/fallback TTL in ISO-8601 duration
-                               format.
+                             Set default/fallback TTL in ISO-8601 duration format.
                              Default: P2D
       --api-cache-ttl=OPERATION=DURATION
                              Set individual operation TTLs
-      --api-key=<apiKey>     An API key allocated from the Eternal developer
-                               console at https://console.curseforge.com/
+      --api-key=<apiKey>     An API key allocated from the Eternal developer console at https://console.curseforge.com/
                              Can also be passed via CF_API_KEY
-      --api-key-file=PATH    Read the API key from a UTF-8 file (instead of
-                               passing it directly).
+      --api-key-file=PATH    Read the API key from a UTF-8 file (instead of passing it directly).
                              Can also be passed via CF_API_KEY_FILE
       --disable-api-caching
-      --downloads-repo=DIR   A local directory that will supply pre-downloaded
-                               mod and modpack files that are marked disallowed
-                               for automated download. The subdirectories mods,
-                               modpacks, and worlds will also be consulted
-                               accordingly.
+      --downloads-repo=DIR   A local directory that will supply pre-downloaded mod and modpack files that are marked
+                               disallowed for automated download. The subdirectories mods, modpacks, and worlds will
+                               also be consulted accordingly.
       --exclude-all-mods     Exclude all mods regardless of manifest contents
       --exclude-include-file=FILE|URI
-                             A JSON file that contains global and per modpack
-                               exclude/include declarations. See README for
-                               schema.
+                             A JSON file that contains global and per modpack exclude/include declarations. See README
+                               for schema.
       --excludes, --exclude-mods=PROJECT_ID|SLUG[,|<nl>PROJECT_ID|SLUG...]
-                             For mods that need to be excluded from server
-                               deployments, such as those that don't label as
-                               client
+                             For mods that need to be excluded from server deployments, such as those that don't label
+                               as client
       --file-download-retries=COUNT
                              Default is 5
       --file-download-retry-min-delay=DURATION
                              Default is PT5S
       --file-id=<fileId>
-      --filename-matcher=STR Substring to select specific modpack filename, or
-                               a slash-surrounded string to be parsed regex, E.
-                               G. '/.*1\.5$/'
-      --force-includes, --force-include-mods=PROJECT_ID|SLUG[,
-        |<nl>PROJECT_ID|SLUG...]
-                             Some mods incorrectly declare client-only support,
-                               but still need to be included in a server deploy.
-                             This can also be used to selectively override
-                               exclusions.
+      --filename-matcher=STR Substring to select specific modpack filename, or a slash-surrounded string to be parsed
+                               regex, E.G. '/.*1\.5$/'
+      --force-includes, --force-include-mods=PROJECT_ID|SLUG[,|<nl>PROJECT_ID|SLUG...]
+                             Some mods incorrectly declare client-only support, but still need to be included in a
+                               server deploy.
+                             This can also be used to selectively override exclusions.
       --force-reinstall-modloader
 
       --force-synchronize
       --forge-maven-repo-url=URL
-                             URL for Forge Maven repository where installer is
-                               downloaded.
+                             URL for Forge Maven repository where installer is downloaded.
                              Can also be set via env var FORGE_MAVEN_REPO_URL
                              Default is https://maven.minecraftforge.net
       --forge-promotions-url=URL
                              URL for Forge promotions JSON.
                              Can also be set via env var FORGE_PROMOTIONS_URL
-                             Default is https://files.minecraftforge.
-                               net/net/minecraftforge/forge/promotions_slim.json
+                             Default is https://files.minecraftforge.net/net/minecraftforge/forge/promotions_slim.json
   -h, --help
       --ignore-missing-files=<ignoreMissingFiles>[,|<nl><ignoreMissingFiles>...]
-                             These files will be ignored when evaluating if the
-                               modpack is up to date
+                             These files will be ignored when evaluating if the modpack is up to date
       --max-concurrent-downloads=<maxConcurrentDownloads>
                              Default is 10
       --missing-mods-filename=<missingModsFilename>
 
       --mod-loader-version=VERSION
-                             Override the mod loader version specified in the
-                               modpack
+                             Override the mod loader version specified in the modpack
       --modpack-manifest=PATH
-                             Similar to --modpack-zip but provide the manifest.
-                               json from the modpack.
+                             Similar to --modpack-zip but provide the manifest.json from the modpack.
                              Can be a local file path or a URL to a manifest.
       --modpack-page-url=URL URL of a modpack page such as
-                             https://www.curseforge.
-                               com/minecraft/modpacks/all-the-mods-8or a file's
-                               page
-                             https://www.curseforge.
-                               com/minecraft/modpacks/all-the-mods-8/files/42483
-                               90
-      --modpack-zip=PATH     Path to a pre-downloaded modpack client zip file
-                               that can be used when modpack author disallows
-                               automation.
+                             https://www.curseforge.com/minecraft/modpacks/all-the-mods-8or a file's page
+                             https://www.curseforge.com/minecraft/modpacks/all-the-mods-8/files/4248390
+      --modpack-zip=PATH     Path to a pre-downloaded modpack client zip file that can be used when modpack author
+                               disallows automation.
                              Can also be passed via CF_MODPACK_ZIP
   -o, --output-directory=DIR
-      --overrides-exclusions=<overridesExclusions>[NL or ,
-        <overridesExclusions>...]
-                             Excludes files from the overrides that match these
-                               ant-style patterns
+      --overrides-exclusions=<overridesExclusions>[NL or ,<overridesExclusions>...]
+                             Excludes files from the overrides that match these ant-style patterns
                              *  : matches any non-slash characters
                              ** : matches any characters
                              ?  : matches one character
       --overrides-skip-existing
-                             When enabled, existing files will not be replaced
-                               by overrides content from the modpack
-      --results-file=FILE    A key=value file suitable for scripted environment
-                               variables. Currently includes
+                             When enabled, existing files will not be replaced by overrides content from the modpack
+      --results-file=FILE    A key=value file suitable for scripted environment variables. Currently includes
                                SERVER: the entry point jar or script
       --set-level-from=<levelFrom>
-                             When WORLD_FILE, a world file included the modpack
-                               will be unzipped into a folder under 'saves' and
-                               referenced as 'LEVEL' in the results file.
-                             When OVERRIDES and the overrides contains a world
-                               save directory (contains level.dat), then that
-                               directory will be referenced as 'LEVEL' in the
-                               results file.
-                             In either case, existing world data will be
-                               preserved and skipped if it already exists.
+                             When WORLD_FILE, a world file included the modpack will be unzipped into a folder under
+                               'saves' and referenced as 'LEVEL' in the results file.
+                             When OVERRIDES and the overrides contains a world save directory (contains level.dat),
+                               then that directory will be referenced as 'LEVEL' in the results file.
+                             In either case, existing world data will be preserved and skipped if it already exists.
                              Valid values: WORLD_FILE, OVERRIDES
       --slug=<slug>          The short-URL identifier
       --use-http2            Whether to use HTTP/2.
                              Default: true
                              Env: FETCH_USE_HTTP2
-      --wiretap              Whether to enable Reactor Netty wiretap logging.
-                               Make sure to set logging level to trace.
+      --wiretap              Whether to enable Reactor Netty wiretap logging. Make sure to set logging level to trace.
                              Default: false
                              Env: FETCH_WIRETAP
 Commands:
@@ -556,18 +448,14 @@ Commands:
 ### install-fabric-loader
 
 ```
-Usage: mc-image-helper install-fabric-loader [-h] [--force-reinstall]
-       [--fabric-meta-base-url=<fabricMetaBaseUrl>] [--output-directory=DIR]
-       [--results-file=FILE] [--from-local-file=FILE | --from-url=URL |
-       [[--installer-version=VERSION] [--loader-version=VERSION]
-       [--minecraft-version=VERSION]]] [[--use-http2] [--wiretap]]
-Provides a few ways to obtain a Fabric loader with simple cleanup of previous
-loader instances
+Usage: mc-image-helper install-fabric-loader [-h] [--force-reinstall] [--fabric-meta-base-url=<fabricMetaBaseUrl>]
+                                             [--output-directory=DIR] [--results-file=FILE] [--from-local-file=FILE |
+                                             --from-url=URL | [[--installer-version=VERSION] [--loader-version=VERSION]
+                                             [--minecraft-version=VERSION]]] [[--use-http2] [--wiretap]]
+Provides a few ways to obtain a Fabric loader with simple cleanup of previous loader instances
       --fabric-meta-base-url=<fabricMetaBaseUrl>
-                            Base URL for Fabric meta API. Default: https://meta.
-                              fabricmc.net
-      --force-reinstall     Force reinstall of the loader even if it already
-                              exists
+                            Base URL for Fabric meta API. Default: https://meta.fabricmc.net
+      --force-reinstall     Force reinstall of the loader even if it already exists
       --from-local-file=FILE
 
       --from-url=URL
@@ -580,14 +468,12 @@ loader instances
 
       --output-directory=DIR
 
-      --results-file=FILE   A key=value file suitable for scripted environment
-                              variables. Currently includes
+      --results-file=FILE   A key=value file suitable for scripted environment variables. Currently includes
                               SERVER: the entry point jar or script
       --use-http2           Whether to use HTTP/2.
                             Default: true
                             Env: FETCH_USE_HTTP2
-      --wiretap             Whether to enable Reactor Netty wiretap logging.
-                              Make sure to set logging level to trace.
+      --wiretap             Whether to enable Reactor Netty wiretap logging. Make sure to set logging level to trace.
                             Default: false
                             Env: FETCH_WIRETAP
 ```
@@ -595,50 +481,37 @@ loader instances
 ### install-forge
 
 ```
-Usage: mc-image-helper install-forge [-h] [--clean-libraries]
-                                     [--force-reinstall]
-                                     [--minecraft-version=VERSION]
-                                     [--output-directory=DIR]
-                                     [--results-file=FILE]
-                                     [--forge-installer=FILE |
-                                     [--forge-version=<version>]]
-                                     [[--use-http2] [--wiretap]]
-                                     [[--forge-promotions-url=URL]
-                                     [--forge-maven-repo-url=URL]]
+Usage: mc-image-helper install-forge [-h] [--clean-libraries] [--force-reinstall] [--minecraft-version=VERSION]
+                                     [--output-directory=DIR] [--results-file=FILE] [--forge-installer=FILE |
+                                     [--forge-version=<version>]] [[--use-http2] [--wiretap]]
+                                     [[--forge-promotions-url=URL] [--forge-maven-repo-url=URL]]
 Downloads and installs a requested version of Forge
-      --clean-libraries     Remove installed libraries not required by the
-                              Forge shim
+      --clean-libraries     Remove installed libraries not required by the Forge shim
       --force-reinstall
       --forge-installer=FILE
                             Use a local forge installer
       --forge-maven-repo-url=URL
-                            URL for Forge Maven repository where installer is
-                              downloaded.
+                            URL for Forge Maven repository where installer is downloaded.
                             Can also be set via env var FORGE_MAVEN_REPO_URL
                             Default is https://maven.minecraftforge.net
       --forge-promotions-url=URL
                             URL for Forge promotions JSON.
                             Can also be set via env var FORGE_PROMOTIONS_URL
-                            Default is https://files.minecraftforge.
-                              net/net/minecraftforge/forge/promotions_slim.json
+                            Default is https://files.minecraftforge.net/net/minecraftforge/forge/promotions_slim.json
       --forge-version=<version>
-                            A specific Forge version or to auto-resolve the
-                              version provide 'latest' or 'recommended'.
+                            A specific Forge version or to auto-resolve the version provide 'latest' or 'recommended'.
                               Default value is recommended
   -h, --help
       --minecraft-version=VERSION
-                            'latest', which is the default, or a specific
-                              version
+                            'latest', which is the default, or a specific version
       --output-directory=DIR
 
-      --results-file=FILE   A key=value file suitable for scripted environment
-                              variables. Currently includes
+      --results-file=FILE   A key=value file suitable for scripted environment variables. Currently includes
                               SERVER: the entry point jar or script
       --use-http2           Whether to use HTTP/2.
                             Default: true
                             Env: FETCH_USE_HTTP2
-      --wiretap             Whether to enable Reactor Netty wiretap logging.
-                              Make sure to set logging level to trace.
+      --wiretap             Whether to enable Reactor Netty wiretap logging. Make sure to set logging level to trace.
                             Default: false
                             Env: FETCH_WIRETAP
 ```
@@ -646,77 +519,65 @@ Downloads and installs a requested version of Forge
 ### install-modrinth-modpack
 
 ```
-Usage: mc-image-helper install-modrinth-modpack [--force-modloader-reinstall]
-       [--force-synchronize] [--api-base-url=<baseUrl>]
-       [--default-exclude-includes=FILE|URI] [--default-version-type=TYPE]
-       [--game-version=<gameVersion>] [--loader=<loader>]
-       [--max-concurrent-downloads=<maxConcurrentDownloads>]
-       [--output-directory=DIR] --project=<modpackProject>
-       [--results-file=FILE] [--version=<version>]
-       [--exclude-files=<excludeFiles>[,|<nl><excludeFiles>...]]...
-       [--force-include-files=<forceIncludeFiles>[,
-       |<nl><forceIncludeFiles>...]]...
-       [--ignore-missing-files=<ignoreMissingFiles>[,
-       |<nl><ignoreMissingFiles>...]]...
-       [--overrides-exclusions=<overridesExclusions>[NL or ,
-       <overridesExclusions>...]]... [[--use-http2] [--wiretap]]
-       [[--forge-promotions-url=URL] [--forge-maven-repo-url=URL]]
+Usage: mc-image-helper install-modrinth-modpack [--force-modloader-reinstall] [--force-synchronize]
+                                                [--api-base-url=<baseUrl>] [--default-exclude-includes=FILE|URI]
+                                                [--default-version-type=TYPE] [--game-version=<gameVersion>]
+                                                [--loader=<loader>]
+                                                [--max-concurrent-downloads=<maxConcurrentDownloads>]
+                                                [--output-directory=DIR] --project=<modpackProject>
+                                                [--results-file=FILE] [--version=<version>]
+                                                [--exclude-files=<excludeFiles>[,|<nl><excludeFiles>...]]...
+                                                [--force-include-files=<forceIncludeFiles>[,
+                                                |<nl><forceIncludeFiles>...]]...
+                                                [--ignore-missing-files=<ignoreMissingFiles>[,
+                                                |<nl><ignoreMissingFiles>...]]...
+                                                [--overrides-exclusions=<overridesExclusions>[NL or ,
+                                                <overridesExclusions>...]]... [[--use-http2] [--wiretap]]
+                                                [[--forge-promotions-url=URL] [--forge-maven-repo-url=URL]]
 Supports installation of Modrinth modpacks along with the associated mod loader
       --api-base-url=<baseUrl>
                             Default: https://api.modrinth.com
       --default-exclude-includes=FILE|URI
-                            A JSON file that contains global and per modpack
-                              exclude/include declarations. See README for
-                              schema.
+                            A JSON file that contains global and per modpack exclude/include declarations. See README
+                              for schema.
       --default-version-type=TYPE
-                            Valid values: release, beta, alpha (optional '+'
-                              suffix)
+                            Valid values: release, beta, alpha (optional '+' suffix)
                             Default: release
       --exclude-files=<excludeFiles>[,|<nl><excludeFiles>...]
-                            Files to exclude, such as improperly declared
-                              client mods. Plain values match any part of the
-                              file's name/path. Values surrounded by '/' are
-                              evaluated as Java regex patterns, E.G. '/(^|/)
-                              figura-/'
+                            Files to exclude, such as improperly declared client mods. Plain values match any part of
+                              the file's name/path. Values surrounded by '/' are evaluated as Java regex patterns, E.G.
+                              '/(^|/)figura-/'
                             Embedded comments are allowed.
       --force-include-files=<forceIncludeFiles>[,|<nl><forceIncludeFiles>...]
-                            Files to force include that were marked as
-                              non-server mods. Plain values match any part of
-                              the file's name/path. Values surrounded by '/'
-                              are evaluated as Java regex patterns, E.G. '/(^|/)
-                              figura-/'
+                            Files to force include that were marked as non-server mods. Plain values match any part of
+                              the file's name/path. Values surrounded by '/' are evaluated as Java regex patterns, E.G.
+                              '/(^|/)figura-/'
                             Embedded comments are allowed.
       --force-modloader-reinstall
 
       --force-synchronize
       --forge-maven-repo-url=URL
-                            URL for Forge Maven repository where installer is
-                              downloaded.
+                            URL for Forge Maven repository where installer is downloaded.
                             Can also be set via env var FORGE_MAVEN_REPO_URL
                             Default is https://maven.minecraftforge.net
       --forge-promotions-url=URL
                             URL for Forge promotions JSON.
                             Can also be set via env var FORGE_PROMOTIONS_URL
-                            Default is https://files.minecraftforge.
-                              net/net/minecraftforge/forge/promotions_slim.json
+                            Default is https://files.minecraftforge.net/net/minecraftforge/forge/promotions_slim.json
       --game-version=<gameVersion>
                             Applicable Minecraft version
                             Default: (any)
       --ignore-missing-files=<ignoreMissingFiles>[,|<nl><ignoreMissingFiles>...]
-                            These files will be ignored when evaluating if the
-                              modpack is up to date
+                            These files will be ignored when evaluating if the modpack is up to date
       --loader=<loader>     Valid values: fabric, forge, quilt, neoforge
                             Default: (any)
       --max-concurrent-downloads=<maxConcurrentDownloads>
-                            Can also set env var
-                              MODRINTH_MAX_CONCURRENT_DOWNLOADS
+                            Can also set env var MODRINTH_MAX_CONCURRENT_DOWNLOADS
                             Default is 10
       --output-directory=DIR
 
-      --overrides-exclusions=<overridesExclusions>[NL or ,
-        <overridesExclusions>...]
-                            Excludes files from the overrides that match these
-                              ant-style patterns
+      --overrides-exclusions=<overridesExclusions>[NL or ,<overridesExclusions>...]
+                            Excludes files from the overrides that match these ant-style patterns
                             *  : matches any non-slash characters
                             ** : matches any characters
                             ?  : matches one character
@@ -728,18 +589,15 @@ Supports installation of Modrinth modpacks along with the associated mod loader
                             - Project file URL
                             - Custom URL of a hosted modpack file
                             - Local path to a modpack file
-      --results-file=FILE   A key=value file suitable for scripted environment
-                              variables. Currently includes
+      --results-file=FILE   A key=value file suitable for scripted environment variables. Currently includes
                               SERVER: the entry point jar or script
       --use-http2           Whether to use HTTP/2.
                             Default: true
                             Env: FETCH_USE_HTTP2
       --version, --version-id=<version>
                             Version ID, name, or number from the file's metadata
-                            Default chooses newest file based on game version,
-                              loader, and/or default version type
-      --wiretap             Whether to enable Reactor Netty wiretap logging.
-                              Make sure to set logging level to trace.
+                            Default chooses newest file based on game version, loader, and/or default version type
+      --wiretap             Whether to enable Reactor Netty wiretap logging. Make sure to set logging level to trace.
                             Default: false
                             Env: FETCH_WIRETAP
 ```
@@ -747,34 +605,26 @@ Supports installation of Modrinth modpacks along with the associated mod loader
 ### install-neoforge
 
 ```
-Usage: mc-image-helper install-neoforge [-h] [--force-reinstall]
-                                        [--minecraft-version=VERSION]
-                                        [--output-directory=DIR]
-                                        [--results-file=FILE]
-                                        [--neoforge-installer=FILE |
-                                        [--neoforge-version=<version>]]
-                                        [[--use-http2] [--wiretap]]
+Usage: mc-image-helper install-neoforge [-h] [--force-reinstall] [--minecraft-version=VERSION] [--output-directory=DIR]
+                                        [--results-file=FILE] [--neoforge-installer=FILE |
+                                        [--neoforge-version=<version>]] [[--use-http2] [--wiretap]]
 Downloads and installs a requested version of NeoForge
       --force-reinstall
   -h, --help
       --minecraft-version=VERSION
-                            'latest', which is the default, or a specific
-                              version to narrow NeoForge version selection
+                            'latest', which is the default, or a specific version to narrow NeoForge version selection
       --neoforge-installer=FILE
                             Use a local neoforge installer
       --neoforge-version=<version>
-                            A specific NeoForge version, 'latest', or 'beta'.
-                              Default value is latest
+                            A specific NeoForge version, 'latest', or 'beta'. Default value is latest
       --output-directory=DIR
 
-      --results-file=FILE   A key=value file suitable for scripted environment
-                              variables. Currently includes
+      --results-file=FILE   A key=value file suitable for scripted environment variables. Currently includes
                               SERVER: the entry point jar or script
       --use-http2           Whether to use HTTP/2.
                             Default: true
                             Env: FETCH_USE_HTTP2
-      --wiretap             Whether to enable Reactor Netty wiretap logging.
-                              Make sure to set logging level to trace.
+      --wiretap             Whether to enable Reactor Netty wiretap logging. Make sure to set logging level to trace.
                             Default: false
                             Env: FETCH_WIRETAP
 ```
@@ -782,48 +632,33 @@ Downloads and installs a requested version of NeoForge
 ### install-oci-pack
 
 ```
-Usage: mc-image-helper install-oci-pack [-hV]
-                                        [--artifact-type=<expectedArtifactType>]
-                                         [--auth-file=FILE]
-                                        [--filename-strategy=<filenameStrategy>]
-                                         [--layer-list-file=FILE]
-                                        [--layer-media-type=<expectedLayerMediaT
-                                        ype>] --output-directory=DIR --ref=REF
+Usage: mc-image-helper install-oci-pack [-hV] [--artifact-type=<expectedArtifactType>] [--auth-file=FILE]
+                                        [--filename-strategy=<filenameStrategy>] [--layer-list-file=FILE]
+                                        [--layer-media-type=<expectedLayerMediaType>] --output-directory=DIR --ref=REF
 Pulls an OCI artifact and writes its layer blobs to disk in apply order
       --artifact-type=<expectedArtifactType>
-                         The artifact type to expect in the manifest. Matching
-                           is done against the manifest's artifactType or its
-                           config mediaType.
-                         When set to an empty string or */*, then artifact type
-                           checking will be skipped.
+                         The artifact type to expect in the manifest. Matching is done against the manifest's
+                           artifactType or its config mediaType.
+                         When set to an empty string or */*, then artifact type checking will be skipped.
                          Default: application/vnd.itzg.minecraft.modpack.v1+json
-      --auth-file=FILE   Registry login JSON (root auths map). When unset,
-                           reads the default login file under the user home
-                           directory if present.
+      --auth-file=FILE   Registry login JSON (root auths map). When unset, reads the default login file under the user
+                           home directory if present.
       --filename-strategy=<filenameStrategy>
-                         How to name layer files on disk. Valid values: title,
-                           digest.
+                         How to name layer files on disk. Valid values: title, digest.
                          Default: title
   -h, --help             Show this help message and exit.
       --layer-list-file=FILE
-                         Write each pulled layer's absolute path on its own
-                           line to this file, in manifest layer order. Suitable
-                           for `mapfile -t ... < FILE` in shell. When omitted,
-                           layer paths are also printed to stdout for
-                           interactive use.
+                         Write each pulled layer's absolute path on its own line to this file, in manifest layer order.
+                           Suitable for `mapfile -t ... < FILE` in shell. When omitted, layer paths are also printed to
+                           stdout for interactive use.
       --layer-media-type=<expectedLayerMediaType>
-                         Limit downloaded layers to those matching this media
-                           type.
-                         When set to an empty string or */*, then media type
-                           checking will be skipped.
-                         Default: application/vnd.itzg.minecraft.modpack.layer.
-                           v1.tar+gzip
+                         Limit downloaded layers to those matching this media type.
+                         When set to an empty string or */*, then media type checking will be skipped.
+                         Default: application/vnd.itzg.minecraft.modpack.layer.v1.tar+gzip
       --output-directory=DIR
-                         Directory where layer blobs are written. Acts as a
-                           content-addressed cache between invocations: layers
-                           whose digest already exists are not re-downloaded.
-      --ref=REF          OCI reference, e.g. ghcr.io/owner/pack:v1 or ghcr.
-                           io/owner/pack@sha256:...
+                         Directory where layer blobs are written. Acts as a content-addressed cache between
+                           invocations: layers whose digest already exists are not re-downloaded.
+      --ref=REF          OCI reference, e.g. ghcr.io/owner/pack:v1 or ghcr.io/owner/pack@sha256:...
                          The optional oci:// prefix is tolerated.
   -V, --version          Print version information and exit.
 ```
@@ -831,36 +666,28 @@ Pulls an OCI artifact and writes its layer blobs to disk in apply order
 ### install-paper
 
 ```
-Usage: mc-image-helper install-paper [-h] [--check-updates] [--clean-libraries]
-                                     [--base-url=<baseUrl>]
-                                     [-o=<outputDirectory>]
-                                     [--results-file=FILE] [--url=<downloadUrl>
-                                     | [[--project=<project>] [--build=<build>]
-                                     [--channel=<channel>]
-                                     [--version=<version>]]] [[--use-http2] |
-                                     [--wiretap]]
+Usage: mc-image-helper install-paper [-h] [--check-updates] [--clean-libraries] [--base-url=<baseUrl>]
+                                     [-o=<outputDirectory>] [--results-file=FILE] [--url=<downloadUrl> |
+                                     [[--project=<project>] [--build=<build>] [--channel=<channel>]
+                                     [--version=<version>]]] [[--use-http2] | [--wiretap]]
 Installs selected PaperMC
       --base-url=<baseUrl>
       --build=<build>
       --channel=<channel>    This is ignored for now
-      --check-updates        Check for updates and exit with status code 0 when
-                               available
-      --clean-libraries      Remove currently installed and not required
-                               libraries
+      --check-updates        Check for updates and exit with status code 0 when available
+      --clean-libraries      Remove currently installed and not required libraries
   -h, --help
   -o, --output-directory=<outputDirectory>
 
       --project=<project>
-      --results-file=FILE    A key=value file suitable for scripted environment
-                               variables. Currently includes
+      --results-file=FILE    A key=value file suitable for scripted environment variables. Currently includes
                                SERVER: the entry point jar or script
       --url=<downloadUrl>    Use a custom URL location
       --use-http2            Whether to use HTTP/2.
                              Default: true
                              Env: FETCH_USE_HTTP2
       --version=<version>    May be 'latest' or specific version
-      --wiretap              Whether to enable Reactor Netty wiretap logging.
-                               Make sure to set logging level to trace.
+      --wiretap              Whether to enable Reactor Netty wiretap logging. Make sure to set logging level to trace.
                              Default: false
                              Env: FETCH_WIRETAP
 ```
@@ -868,30 +695,23 @@ Installs selected PaperMC
 ### install-purpur
 
 ```
-Usage: mc-image-helper install-purpur [--clean-libraries]
-                                      [--base-url=<baseUrl>]
-                                      [-o=<outputDirectory>]
-                                      [--results-file=FILE] [[[--build=<build>]
-                                      [--version=<version>]] |
-                                      --url=<downloadUrl>] [[--use-http2] |
-                                      [--wiretap]]
+Usage: mc-image-helper install-purpur [--clean-libraries] [--base-url=<baseUrl>] [-o=<outputDirectory>]
+                                      [--results-file=FILE] [[[--build=<build>] [--version=<version>]] |
+                                      --url=<downloadUrl>] [[--use-http2] | [--wiretap]]
 Downloads latest or selected version of Purpur
       --base-url=<baseUrl>
       --build=<build>
-      --clean-libraries      Remove currently installed and not required
-                               libraries
+      --clean-libraries      Remove currently installed and not required libraries
   -o, --output-directory=<outputDirectory>
 
-      --results-file=FILE    A key=value file suitable for scripted environment
-                               variables. Currently includes
+      --results-file=FILE    A key=value file suitable for scripted environment variables. Currently includes
                                SERVER: the entry point jar or script
       --url=<downloadUrl>    Use a custom URL location
       --use-http2            Whether to use HTTP/2.
                              Default: true
                              Env: FETCH_USE_HTTP2
       --version=<version>    May be 'latest' or specific version
-      --wiretap              Whether to enable Reactor Netty wiretap logging.
-                               Make sure to set logging level to trace.
+      --wiretap              Whether to enable Reactor Netty wiretap logging. Make sure to set logging level to trace.
                              Default: false
                              Env: FETCH_WIRETAP
 ```
@@ -899,14 +719,9 @@ Downloads latest or selected version of Purpur
 ### install-quilt
 
 ```
-Usage: mc-image-helper install-quilt [-h] [--force-reinstall]
-                                     [--loader-version=VERSION]
-                                     [--minecraft-version=VERSION]
-                                     [--output-directory=DIR]
-                                     [--repo-url=<repoUrl>]
-                                     [--results-file=FILE] [--installer-url=URL
-                                     | --installer-version=VERSION]
-                                     [[--use-http2] [--wiretap]]
+Usage: mc-image-helper install-quilt [-h] [--force-reinstall] [--loader-version=VERSION] [--minecraft-version=VERSION]
+                                     [--output-directory=DIR] [--repo-url=<repoUrl>] [--results-file=FILE]
+                                     [--installer-url=URL | --installer-version=VERSION] [[--use-http2] [--wiretap]]
 Installs Quilt mod loader
       --force-reinstall
   -h, --help
@@ -918,16 +733,13 @@ Installs Quilt mod loader
       --minecraft-version=VERSION
                              'latest', 'snapshot', or specific version
       --output-directory=DIR
-      --repo-url=<repoUrl>   Default: https://maven.quiltmc.
-                               org/repository/release
-      --results-file=FILE    A key=value file suitable for scripted environment
-                               variables. Currently includes
+      --repo-url=<repoUrl>   Default: https://maven.quiltmc.org/repository/release
+      --results-file=FILE    A key=value file suitable for scripted environment variables. Currently includes
                                SERVER: the entry point jar or script
       --use-http2            Whether to use HTTP/2.
                              Default: true
                              Env: FETCH_USE_HTTP2
-      --wiretap              Whether to enable Reactor Netty wiretap logging.
-                               Make sure to set logging level to trace.
+      --wiretap              Whether to enable Reactor Netty wiretap logging. Make sure to set logging level to trace.
                              Default: false
                              Env: FETCH_WIRETAP
 ```
@@ -935,27 +747,21 @@ Installs Quilt mod loader
 ### install-vanilla
 
 ```
-Usage: mc-image-helper install-vanilla [-h] [--force-reinstall]
-                                       [--output-directory=DIR]
-                                       [--results-file=FILE]
-                                       [--version=VERSION] [[--use-http2]
-                                       [--wiretap]]
+Usage: mc-image-helper install-vanilla [-h] [--force-reinstall] [--output-directory=DIR] [--results-file=FILE]
+                                       [--version=VERSION] [[--use-http2] [--wiretap]]
 Downloads and installs a requested version of vanilla Minecraft
       --force-reinstall
   -h, --help
       --output-directory=DIR
 
-      --results-file=FILE   A key=value file suitable for scripted environment
-                              variables. Currently includes
+      --results-file=FILE   A key=value file suitable for scripted environment variables. Currently includes
                               SERVER: the entry point jar or script
                               VERSION: the resolved Minecraft version
       --use-http2           Whether to use HTTP/2.
                             Default: true
                             Env: FETCH_USE_HTTP2
-      --version=VERSION     the version of Minecraft to install; defaults to
-                              the latest release
-      --wiretap             Whether to enable Reactor Netty wiretap logging.
-                              Make sure to set logging level to trace.
+      --version=VERSION     the version of Minecraft to install; defaults to the latest release
+      --wiretap             Whether to enable Reactor Netty wiretap logging. Make sure to set logging level to trace.
                             Default: false
                             Env: FETCH_WIRETAP
 ```
@@ -963,27 +769,21 @@ Downloads and installs a requested version of vanilla Minecraft
 ### interpolate
 
 ```
-Usage: mc-image-helper interpolate [-h] ([--replace-env-prefix=<prefix>]
-                                   [--replace-env-excludes=FILENAME[,
-                                   FILENAME...]]...
-                                   [--replace-env-exclude-paths=PATH[,
-                                   PATH...]]... --replace-env-file-suffixes=PATH
-                                   [,PATH...] [--replace-env-file-suffixes=PATH
-                                   [,PATH...]]...) [DIRECTORY...]
+Usage: mc-image-helper interpolate [-h] ([--replace-env-prefix=<prefix>] [--replace-env-excludes=FILENAME[,
+                                   FILENAME...]]... [--replace-env-exclude-paths=PATH[,PATH...]]...
+                                   --replace-env-file-suffixes=PATH[,PATH...] [--replace-env-file-suffixes=PATH[,
+                                   PATH...]]...) [DIRECTORY...]
 Interpolates existing files in one or more directories
       [DIRECTORY...]
   -h, --help           Show this usage and exit
       --replace-env-exclude-paths=PATH[,PATH...]
                        Destination paths that will be excluded from processing
       --replace-env-excludes=FILENAME[,FILENAME...]
-                       Filenames (without path) that should be excluded from
-                         processing.
+                       Filenames (without path) that should be excluded from processing.
       --replace-env-file-suffixes=PATH[,PATH...]
-                       Filename suffixes (without dot) that should be
-                         processed. For example: txt,json,yaml
+                       Filename suffixes (without dot) that should be processed. For example: txt,json,yaml
       --replace-env-prefix=<prefix>
-                       Only placeholder variables with this prefix will be
-                         processed.
+                       Only placeholder variables with this prefix will be processed.
                          Default: CFG_
 ```
 
@@ -998,21 +798,15 @@ Outputs the Java release number, such as 8, 11, 17
 
 ```
 Usage: mc-image-helper manage-users [-fh] [--existing=<existingFileBehavior>]
-                                    [--mojang-api-base-url=<mojangApiBaseUrl>]
-                                    [--output-directory=<outputDirectory>]
-                                    [--playerdb-api-base-url=<playerdbApiBaseUrl
-                                    >] -t=<type>
-                                    [--user-api-provider=<userApiProvider>]
-                                    [--version=<version>] [[--use-http2]
+                                    [--mojang-api-base-url=<mojangApiBaseUrl>] [--output-directory=<outputDirectory>]
+                                    [--playerdb-api-base-url=<playerdbApiBaseUrl>] -t=<type>
+                                    [--user-api-provider=<userApiProvider>] [--version=<version>] [[--use-http2]
                                     [--wiretap]] [INPUT[,INPUT...]...]
-      [INPUT[,INPUT...]...] One or more Mojang usernames, UUID, or ID (UUID
-                              without dashes); however, when offline, only
-                              UUID/IDs can be provided.
-                            When input is a file, only one local file path or
-                              URL can be provided
+      [INPUT[,INPUT...]...] One or more Mojang usernames, UUID, or ID (UUID without dashes); however, when offline,
+                              only UUID/IDs can be provided.
+                            When input is a file, only one local file path or URL can be provided
       --existing=<existingFileBehavior>
-                            Select the behavior when the resulting file already
-                              exists
+                            Select the behavior when the resulting file already exists
                             Allowed: SYNCHRONIZE, MERGE, SKIP
   -f, --input-is-file
   -h, --help
@@ -1028,10 +822,8 @@ Usage: mc-image-helper manage-users [-fh] [--existing=<existingFileBehavior>]
                             Env: FETCH_USE_HTTP2
       --user-api-provider=<userApiProvider>
                             Allowed: mojang, playerdb
-      --version=<version>   Minecraft game version. If not provided, assumes
-                              JSON format
-      --wiretap             Whether to enable Reactor Netty wiretap logging.
-                              Make sure to set logging level to trace.
+      --version=<version>   Minecraft game version. If not provided, assumes JSON format
+      --wiretap             Whether to enable Reactor Netty wiretap logging. Make sure to set logging level to trace.
                             Default: false
                             Env: FETCH_WIRETAP
 ```
@@ -1039,13 +831,10 @@ Usage: mc-image-helper manage-users [-fh] [--existing=<existingFileBehavior>]
 ### maven-download
 
 ```
-Usage: mc-image-helper maven-download [-h] [--print-filename] [--skip-existing]
-                                      [--skip-up-to-date] -a=<artifact>
-                                      [--classifier=<classifier>] -g=<group>
-                                      [--output-directory=<outputDirectory>]
-                                      [--packaging=<packaging>]
-                                      [-r=<mavenRepo>] [-v=<version>]
-                                      [[--use-http2] [--wiretap]]
+Usage: mc-image-helper maven-download [-h] [--print-filename] [--skip-existing] [--skip-up-to-date] -a=<artifact>
+                                      [--classifier=<classifier>] -g=<group> [--output-directory=<outputDirectory>]
+                                      [--packaging=<packaging>] [-r=<mavenRepo>] [-v=<version>] [[--use-http2]
+                                      [--wiretap]]
 Downloads a maven artifact from a Maven repository
   -a, -m, --module, --artifact=<artifact>
 
@@ -1067,8 +856,7 @@ Downloads a maven artifact from a Maven repository
                             Env: FETCH_USE_HTTP2
   -v, --version=<version>   A specific version, 'release', or 'latest'
                             Default: release
-      --wiretap             Whether to enable Reactor Netty wiretap logging.
-                              Make sure to set logging level to trace.
+      --wiretap             Whether to enable Reactor Netty wiretap logging. Make sure to set logging level to trace.
                             Default: false
                             Env: FETCH_WIRETAP
 ```
@@ -1076,66 +864,52 @@ Downloads a maven artifact from a Maven repository
 ### mcopy
 
 ```
-Usage: mc-image-helper mcopy [-hz] [--file-is-listing]
-                             [--ignore-missing-sources] [--quiet-when-skipped]
-                             [--skip-existing] [--glob=GLOB]
-                             [--max-concurrent-sources=<maxConccurentSources>]
-                             [--scope=<manifestId>] --to=<dest> [[--use-http2]
-                             [--wiretap]] [SRC[,|<nl>SRC...]...]
-Multi-source file copy operation with with managed cleanup. Supports
-auto-detected sourcing from file list, directories, and URLs
-      [SRC[,|<nl>SRC...]...] Any mix of source file, directory, or URLs
-                               delimited by commas or newlines
-                             Per-file destinations can be assigned by
-                               destination<source
+Usage: mc-image-helper mcopy [-hz] [--file-is-listing] [--ignore-missing-sources] [--quiet-when-skipped]
+                             [--skip-existing] [--glob=GLOB] [--max-concurrent-sources=<maxConccurentSources>]
+                             [--scope=<manifestId>] --to=<dest> [[--use-http2] [--wiretap]] [SRC[,|<nl>SRC...]...]
+Multi-source file copy operation with with managed cleanup. Supports auto-detected sourcing from file list,
+directories, and URLs
+      [SRC[,|<nl>SRC...]...] Any mix of source file, directory, or URLs delimited by commas or newlines
+                             Per-file destinations can be assigned by destination<source
                              Embedded comments are allowed.
-      --file-is-listing      Source files or URLs are processed as a line
-                               delimited list of sources.
-                             For remote listing files, the contents must all be
-                               file URLs.
-      --glob=GLOB            When a source is a directory, this filename glob
-                               will be applied to select files.
+      --file-is-listing      Source files or URLs are processed as a line delimited list of sources.
+                             For remote listing files, the contents must all be file URLs.
+      --glob=GLOB            When a source is a directory, this filename glob will be applied to select files.
   -h, --help
       --ignore-missing-sources
-                             Don't log or fail exit code when any or all
-                               sources are missing
+                             Don't log or fail exit code when any or all sources are missing
       --max-concurrent-sources=<maxConccurentSources>
                              Maximum number of sources to process concurrently
       --quiet-when-skipped   Don't log when file exists or is up to date
       --scope, --manifest-id=<manifestId>
-                             If managed cleanup is required, this is the
-                               identifier used for qualifying manifest filename
-                               in destination
-      --skip-existing
+                             If managed cleanup is required, this is the identifier used for qualifying manifest
+                               filename in destination
+      --skip-existing        Skips a download when the destination file already exists.
+                             If enabled, then --skip-up-to-date is ignored.
       --to, --output-directory=<dest>
 
       --use-http2            Whether to use HTTP/2.
                              Default: true
                              Env: FETCH_USE_HTTP2
-      --wiretap              Whether to enable Reactor Netty wiretap logging.
-                               Make sure to set logging level to trace.
+      --wiretap              Whether to enable Reactor Netty wiretap logging. Make sure to set logging level to trace.
                              Default: false
                              Env: FETCH_WIRETAP
-  -z, --skip-up-to-date
+  -z, --skip-up-to-date      Skips a download when the destination file is already up to date
+                             The remote server is queried with If-Modified-Since request header
+                             and checks Last-Modified response header.
 ```
 
 ### modrinth
 
 ```
-Usage: mc-image-helper modrinth [--skip-existing] [--skip-up-to-date]
-                                [--allowed-version-type=<defaultVersionType>]
-                                [--api-base-url=<baseUrl>]
-                                [--download-dependencies=<downloadDependencies>]
-                                 --game-version=<gameVersion> --loader=<loader>
-                                [--output-directory=DIR]
-                                [--world-directory=<worldDirectory>]
-                                [--projects=[loader:]id|slug[?][:version][,|<nl>
-                                [loader:]id|slug[?][:version]...]]...
-                                [[--use-http2] [--wiretap]]
+Usage: mc-image-helper modrinth [--skip-existing] [--skip-up-to-date] [--allowed-version-type=<defaultVersionType>]
+                                [--api-base-url=<baseUrl>] [--download-dependencies=<downloadDependencies>]
+                                --game-version=<gameVersion> --loader=<loader> [--output-directory=DIR]
+                                [--world-directory=<worldDirectory>] [--projects=[loader:]id|slug[?][:version][,|<nl>
+                                [loader:]id|slug[?][:version]...]]... [[--use-http2] [--wiretap]]
 Automates downloading of modrinth resources
       --allowed-version-type=<defaultVersionType>
-                          Valid values: release, beta, alpha (optional '+'
-                            suffix)
+                          Valid values: release, beta, alpha (optional '+' suffix)
       --api-base-url=<baseUrl>
                           Default: https://api.modrinth.com
       --download-dependencies=<downloadDependencies>
@@ -1143,22 +917,16 @@ Automates downloading of modrinth resources
                           Valid values: NONE, REQUIRED, OPTIONAL
       --game-version=<gameVersion>
                           Applicable Minecraft version
-      --loader=<loader>   Valid values: fabric, quilt, forge, neoforge, bukkit,
-                            spigot, paper, folia, pufferfish, leaf, purpur,
-                            bungeecord, velocity, datapack
+      --loader=<loader>   Valid values: fabric, quilt, forge, neoforge, bukkit, spigot, paper, folia, pufferfish, leaf,
+                            purpur, bungeecord, velocity, datapack
       --output-directory=DIR
 
-      --projects=[loader:]id|slug[?][:version][,|<nl>[loader:]id|slug[?][:
-        version]...]
-                          Project ID or Slug. Can be <project ID>|<slug>,
-                            <loader>:<project ID>|<slug>, <loader>:<project
-                            ID>|<slug>:<version ID|version number|release
-                            type>, '@'<filename with ref per line (supports #
-                            comments)>
-                          Append '?' to mark a project as optional (skipped
-                            with a warning if unavailable).
-                          Examples: fabric-api, fabric:fabric-api, fabric:
-                            fabric-api:0.76.1+1.19.2, datapack:terralith,
+      --projects=[loader:]id|slug[?][:version][,|<nl>[loader:]id|slug[?][:version]...]
+                          Project ID or Slug. Can be <project ID>|<slug>, <loader>:<project ID>|<slug>, <loader>:
+                            <project ID>|<slug>:<version ID|version number|release type>, '@'<filename with ref per
+                            line (supports # comments)>
+                          Append '?' to mark a project as optional (skipped with a warning if unavailable).
+                          Examples: fabric-api, fabric:fabric-api, fabric:fabric-api:0.76.1+1.19.2, datapack:terralith,
                             pl3xmap?, @/path/to/modrinth-mods.txt
                           Valid release types: release, beta, alpha
                           Valid loaders: fabric, forge, paper, datapack, etc.
@@ -1168,21 +936,18 @@ Automates downloading of modrinth resources
       --use-http2         Whether to use HTTP/2.
                           Default: true
                           Env: FETCH_USE_HTTP2
-      --wiretap           Whether to enable Reactor Netty wiretap logging. Make
-                            sure to set logging level to trace.
+      --wiretap           Whether to enable Reactor Netty wiretap logging. Make sure to set logging level to trace.
                           Default: false
                           Env: FETCH_WIRETAP
       --world-directory=<worldDirectory>
-                          Used for datapacks, a path relative to the output
-                            directory or an absolute path
+                          Used for datapacks, a path relative to the output directory or an absolute path
                           Default: world
 ```
 
 ### network-interfaces
 
 ```
-Usage: mc-image-helper network-interfaces [--include-loopback]
-       [--check=<ifNameToCheck>]
+Usage: mc-image-helper network-interfaces [--include-loopback] [--check=<ifNameToCheck>]
 Provides simple operations to list network interface names and check existence
       --check=<ifNameToCheck>
 
@@ -1192,8 +957,7 @@ Provides simple operations to list network interface names and check existence
 ### patch
 
 ```
-Usage: mc-image-helper patch [-h] [--json-allow-comments]
-                             [--patch-env-prefix=<envPrefix>] FILE_OR_DIR
+Usage: mc-image-helper patch [-h] [--json-allow-comments] [--patch-env-prefix=<envPrefix>] FILE_OR_DIR
 Patches one or more existing files using JSON path based operations
 Supports the file formats:
 - JSON
@@ -1201,31 +965,26 @@ Supports the file formats:
 - Yaml
 - TOML, but processed output is not pretty
 - Properties, but comments are not retained
-      FILE_OR_DIR   Path to a PatchSet or PatchDefinition json file, or
-                      directory containing PatchDefinition json files
+      FILE_OR_DIR   Path to a PatchSet or PatchDefinition json file, or directory containing PatchDefinition json files
   -h, --help        Show this usage and exit
       --json-allow-comments
-                    Whether to allow comments in JSON files. Env:
-                      PATCH_JSON_ALLOW_COMMENTS
+                    Whether to allow comments in JSON files. Env: PATCH_JSON_ALLOW_COMMENTS
                       Default: true
       --patch-env-prefix=<envPrefix>
-                    Only placeholder variables with this prefix will be
-                      processed
+                    Only placeholder variables with this prefix will be processed
                       Default: CFG_
 ```
 
 ### resolve-minecraft-version
 
 ```
-Usage: mc-image-helper resolve-minecraft-version [[--use-http2] [--wiretap]]
-       <inputVersion>
+Usage: mc-image-helper resolve-minecraft-version [[--use-http2] [--wiretap]] <inputVersion>
 Resolves and validate latest, snapshot, and specific versions
       <inputVersion>
       --use-http2      Whether to use HTTP/2.
                        Default: true
                        Env: FETCH_USE_HTTP2
-      --wiretap        Whether to enable Reactor Netty wiretap logging. Make
-                         sure to set logging level to trace.
+      --wiretap        Whether to enable Reactor Netty wiretap logging. Make sure to set logging level to trace.
                        Default: false
                        Env: FETCH_WIRETAP
 ```
@@ -1233,15 +992,12 @@ Resolves and validate latest, snapshot, and specific versions
 ### set-properties
 
 ```
-Usage: mc-image-helper set-properties [--escape-unicode]
-                                      [--definitions=<propertyDefinitionsFile>]
-                                      [-p=<String=String>]... <propertiesFile>
-                                      [COMMAND]
+Usage: mc-image-helper set-properties [--escape-unicode] [--definitions=<propertyDefinitionsFile>]
+                                      [-p=<String=String>]... <propertiesFile> [COMMAND]
 Maps environment variables to a properties file
       <propertiesFile>
       --definitions=<propertyDefinitionsFile>
-                         JSON file of property names to PropertyDefinition
-                           mappings
+                         JSON file of property names to PropertyDefinition mappings
       --escape-unicode
   -p, --custom-property, --custom-properties=<String=String>
                          Key=value pairs of custom properties to set
@@ -1252,39 +1008,39 @@ Commands:
 ### show-all-subcommand-usage
 
 ```
-Usage: mc-image-helper show-all-subcommand-usage [COMMAND]
+Usage: mc-image-helper show-all-subcommand-usage [--usage-width=<usageWidth>] [COMMAND]
 Renders all of the subcommand usage as markdown sections for README
+      --usage-width=<usageWidth>
+         Width of the usage help output
+         Default is 120
 Commands:
-  check-readme   Checks that README command documentation is current; exits
-                   with 1 if out of date
+  check-readme   Checks that README command documentation is current; exits with 1 if out of date
   update-readme  Updates the generated command documentation in README
 ```
 
 ### sync
 
 ```
-Usage: mc-image-helper sync [-h] [--skip-newer-in-destination] <srcDest>[,
-                            |<nl><srcDest>...] <srcDest>[,|<nl><srcDest>...]...
+Usage: mc-image-helper sync [-h] [--skip-newer-in-destination] <srcDest>[,|<nl><srcDest>...] <srcDest>[,
+                            |<nl><srcDest>...]...
 Synchronizes the contents of one directory to another.
       <srcDest>[,|<nl><srcDest>...] <srcDest>[,|<nl><srcDest>...]...
                src... dest directories
   -h, --help   Show this usage and exit
       --skip-newer-in-destination
-               Skip any files that exist in the destination and have a newer
-                 modification time than the source.
+               Skip any files that exist in the destination and have a newer modification time than the source.
 ```
 
 ### sync-and-interpolate
 
 ```
-Usage: mc-image-helper sync-and-interpolate [-h] [--skip-newer-in-destination]
-       ([--replace-env-prefix=<prefix>] [--replace-env-excludes=FILENAME[,
-       FILENAME...]]... [--replace-env-exclude-paths=PATH[,PATH...]]...
-       --replace-env-file-suffixes=PATH[,PATH...]
-       [--replace-env-file-suffixes=PATH[,PATH...]]...) <srcDest>[,
-       |<nl><srcDest>...] <srcDest>[,|<nl><srcDest>...]...
-Synchronizes the contents of one directory to another with conditional variable
-interpolation.
+Usage: mc-image-helper sync-and-interpolate [-h] [--skip-newer-in-destination] ([--replace-env-prefix=<prefix>]
+                                            [--replace-env-excludes=FILENAME[,FILENAME...]]...
+                                            [--replace-env-exclude-paths=PATH[,PATH...]]...
+                                            --replace-env-file-suffixes=PATH[,PATH...] [--replace-env-file-suffixes=PATH
+                                            [,PATH...]]...) <srcDest>[,|<nl><srcDest>...] <srcDest>[,
+                                            |<nl><srcDest>...]...
+Synchronizes the contents of one directory to another with conditional variable interpolation.
       <srcDest>[,|<nl><srcDest>...] <srcDest>[,|<nl><srcDest>...]...
                src... dest directories
   -h, --help   Show this usage and exit
@@ -1293,14 +1049,12 @@ interpolation.
       --replace-env-excludes=FILENAME[,FILENAME...]
                Filenames (without path) that should be excluded from processing.
       --replace-env-file-suffixes=PATH[,PATH...]
-               Filename suffixes (without dot) that should be processed. For
-                 example: txt,json,yaml
+               Filename suffixes (without dot) that should be processed. For example: txt,json,yaml
       --replace-env-prefix=<prefix>
                Only placeholder variables with this prefix will be processed.
                  Default: CFG_
       --skip-newer-in-destination
-               Skip any files that exist in the destination and have a newer
-                 modification time than the source.
+               Skip any files that exist in the destination and have a newer modification time than the source.
 ```
 
 ### test-logging-levels
@@ -1321,15 +1075,10 @@ Extracts a path from a TOML file using json-path syntax
 ### vanillatweaks
 
 ```
-Usage: mc-image-helper vanillatweaks [--force-synchronize]
-                                     [--base-url=<baseUrl>]
-                                     [--output-directory=DIR]
-                                     [--world-subdir=<worldSubdir>]
-                                     [--pack-files=FILE[,|<nl>FILE...]]...
-                                     [--share-codes=CODE[,|<nl>CODE...]]...
-                                     [[--use-http2] [--wiretap]]
-Downloads Vanilla Tweaks resource packs, data packs, or crafting tweaks given a
-share code or pack file
+Usage: mc-image-helper vanillatweaks [--force-synchronize] [--base-url=<baseUrl>] [--output-directory=DIR]
+                                     [--world-subdir=<worldSubdir>] [--pack-files=FILE[,|<nl>FILE...]]...
+                                     [--share-codes=CODE[,|<nl>CODE...]]... [[--use-http2] [--wiretap]]
+Downloads Vanilla Tweaks resource packs, data packs, or crafting tweaks given a share code or pack file
       --base-url=<baseUrl>
       --force-synchronize
       --output-directory=DIR
@@ -1340,8 +1089,7 @@ share code or pack file
       --use-http2            Whether to use HTTP/2.
                              Default: true
                              Env: FETCH_USE_HTTP2
-      --wiretap              Whether to enable Reactor Netty wiretap logging.
-                               Make sure to set logging level to trace.
+      --wiretap              Whether to enable Reactor Netty wiretap logging. Make sure to set logging level to trace.
                              Default: false
                              Env: FETCH_WIRETAP
       --world-subdir=<worldSubdir>
@@ -1351,37 +1099,30 @@ share code or pack file
 ### version-from-modrinth-projects
 
 ```
-Usage: mc-image-helper version-from-modrinth-projects
-       [--allowed-version-type=<defaultVersionType>] [--api-base-url=<baseUrl>]
-       [--loader=<loader>] [--projects=[loader:]id|slug[?][:version][,|<nl>
-       [loader:]id|slug[?][:version]...]...]... [[--use-http2] [--wiretap]]
+Usage: mc-image-helper version-from-modrinth-projects [--allowed-version-type=<defaultVersionType>]
+                                                      [--api-base-url=<baseUrl>] [--loader=<loader>] [--projects=
+                                                      [loader:]id|slug[?][:version][,|<nl>[loader:]id|slug[?][:
+                                                      version]...]...]... [[--use-http2] [--wiretap]]
 Finds a compatible Minecraft version across given Modrinth projects
       --allowed-version-type=<defaultVersionType>
                           Valid values: release, beta, alpha
       --api-base-url=<baseUrl>
                           Default: https://api.modrinth.com
-      --loader=<loader>   Valid values: fabric, quilt, forge, neoforge, bukkit,
-                            spigot, paper, folia, pufferfish, leaf, purpur,
-                            bungeecord, velocity, datapack
-      --projects=[loader:]id|slug[?][:version][,|<nl>[loader:]id|slug[?][:
-        version]...]...
-                          Project ID or Slug. Can be <project ID>|<slug>,
-                            <loader>:<project ID>|<slug>, <loader>:<project
-                            ID>|<slug>:<version ID|version number|release
-                            type>, '@'<filename with ref per line (supports #
-                            comments)>
-                          Append '?' to mark a project as optional (excluded
-                            from version resolution).
-                          Examples: fabric-api, fabric:fabric-api, fabric:
-                            fabric-api:0.76.1+1.19.2, datapack:terralith,
+      --loader=<loader>   Valid values: fabric, quilt, forge, neoforge, bukkit, spigot, paper, folia, pufferfish, leaf,
+                            purpur, bungeecord, velocity, datapack
+      --projects=[loader:]id|slug[?][:version][,|<nl>[loader:]id|slug[?][:version]...]...
+                          Project ID or Slug. Can be <project ID>|<slug>, <loader>:<project ID>|<slug>, <loader>:
+                            <project ID>|<slug>:<version ID|version number|release type>, '@'<filename with ref per
+                            line (supports # comments)>
+                          Append '?' to mark a project as optional (excluded from version resolution).
+                          Examples: fabric-api, fabric:fabric-api, fabric:fabric-api:0.76.1+1.19.2, datapack:terralith,
                             pl3xmap?, @/path/to/modrinth-mods.txt
                           Valid release types: release, beta, alpha
                           Valid loaders: fabric, forge, paper, datapack, etc.
       --use-http2         Whether to use HTTP/2.
                           Default: true
                           Env: FETCH_USE_HTTP2
-      --wiretap           Whether to enable Reactor Netty wiretap logging. Make
-                            sure to set logging level to trace.
+      --wiretap           Whether to enable Reactor Netty wiretap logging. Make sure to set logging level to trace.
                           Default: false
                           Env: FETCH_WIRETAP
 ```
@@ -1391,8 +1132,7 @@ Finds a compatible Minecraft version across given Modrinth projects
 ```
 Usage: mc-image-helper yaml-path [--file=<yamlFile>] <yamlPath>
 Extracts a path from a YAML file using json-path syntax
-      <yamlPath>          A YAML/JSON path in to query. Leading root anchor, $,
-                            will be added if not present
+      <yamlPath>          A YAML/JSON path in to query. Leading root anchor, $, will be added if not present
       --file=<yamlFile>   A YAML file to query
 ```
 

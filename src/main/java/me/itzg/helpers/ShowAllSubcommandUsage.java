@@ -14,6 +14,7 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.Help.Ansi;
 import picocli.CommandLine.Model.CommandSpec;
+import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 import picocli.CommandLine.Spec;
 
@@ -25,9 +26,15 @@ public class ShowAllSubcommandUsage implements Callable<Integer> {
     static final String OVERVIEW_END = "<!-- END of documentation generated using `mc-image-helper --help` -->";
     static final String SUBCOMMANDS_START = "<!-- START of documentation generated using `mc-image-helper show-all-subcommand-usage` -->";
     static final String SUBCOMMANDS_END = "<!-- END of documentation generated using `mc-image-helper show-all-subcommand-usage` -->";
+    private static final int DEFAULT_USAGE_HELP_WIDTH = 120;
 
     @Spec
     CommandSpec spec;
+
+    @Option(names = "--usage-width", description = "Width of the usage help output"
+        + "%nDefault is ${DEFAULT-VALUE}"
+    )
+    int usageWidth = DEFAULT_USAGE_HELP_WIDTH;
 
     @Override
     public Integer call() {
@@ -73,7 +80,7 @@ public class ShowAllSubcommandUsage implements Callable<Integer> {
     private String renderUsage(CommandLine command) {
         // Keep generated documentation independent of terminal size and color support.
         command.setUsageHelpAutoWidth(false);
-        command.setUsageHelpWidth(80);
+        command.setUsageHelpWidth(usageWidth);
         return "```\n" + command.getUsageMessage(Ansi.OFF).replace("\r\n", "\n") + "```\n\n";
     }
 
