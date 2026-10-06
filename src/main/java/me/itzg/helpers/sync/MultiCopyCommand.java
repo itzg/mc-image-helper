@@ -42,6 +42,7 @@ import reactor.core.scheduler.Schedulers;
     + "Supports auto-detected sourcing from file list, directories, and URLs")
 @Slf4j
 public class MultiCopyCommand implements Callable<Integer> {
+
     @SuppressWarnings("unused")
     @Option(names = {"--help", "-h"}, usageHelp = true)
     boolean showHelp;
@@ -65,10 +66,17 @@ public class MultiCopyCommand implements Callable<Integer> {
     )
     boolean fileIsListingOption;
 
-    @Option(names = {"--skip-up-to-date", "-z"}, defaultValue = "true")
+    @Option(names = {"--skip-up-to-date", "-z"}, defaultValue = "true",
+        description = "Skips a download when the destination file is already up to date."
+            + "%nThe remote server is queried with If-Modified-Since request header"
+            + "%nand checks Last-Modified response header."
+    )
     boolean skipUpToDate;
 
-    @Option(names = "--skip-existing", defaultValue = "false")
+    @Option(names = "--skip-existing", defaultValue = "false",
+        description = "Skips a download when the destination file already exists."
+            + "%nIf enabled, then --skip-up-to-date is ignored."
+    )
     boolean skipExisting;
 
     @Option(names = "--quiet-when-skipped", description = "Don't log when file exists or is up to date")
@@ -89,6 +97,7 @@ public class MultiCopyCommand implements Callable<Integer> {
     public void setSources(List<String> sources) {
         this.sources = normalizeOptionList(sources);
     }
+
     List<String> sources = Collections.emptyList();
 
     private final static String destinationDelimiter = "<";
@@ -161,7 +170,8 @@ public class MultiCopyCommand implements Callable<Integer> {
         if (fileIsListing) {
             if (Uris.isUri(resolvedSource)) {
                 return processRemoteListingFile(resolvedSource, destination, sharedFetch);
-            } else {
+            }
+            else {
                 final Path path = Paths.get(resolvedSource);
                 if (Files.isDirectory(path)) {
                     throw new GenericException(String.format("Specified listing file '%s' is a directory", resolvedSource));
@@ -177,15 +187,18 @@ public class MultiCopyCommand implements Callable<Integer> {
             .flatMapMany(ignored -> {
                 if (Uris.isUri(resolvedSource)) {
                     return processRemoteSource(resolvedSource, destination);
-                } else {
+                }
+                else {
                     final Path path = Paths.get(resolvedSource);
                     if (!Files.exists(path)) {
-                        return Mono.error(new InvalidParameterException(String.format("Source file '%s' does not exist", resolvedSource)));
+                        return Mono.error(
+                            new InvalidParameterException(String.format("Source file '%s' does not exist", resolvedSource)));
                     }
 
                     if (Files.isDirectory(path)) {
                         return processDirectory(path, destination);
-                    } else {
+                    }
+                    else {
                         return processFile(path, destination);
                     }
                 }
@@ -242,16 +255,19 @@ public class MultiCopyCommand implements Callable<Integer> {
                         );
 
                         Files.copy(source, destFile, StandardCopyOption.REPLACE_EXISTING);
-                    } else {
+                    }
+                    else {
                         forSkipped().log("Skipping existing={} since it is newer than source={}", destFile, source);
                     }
-                } else {
+                }
+                else {
                     forSkipped().log("Skipping existing={} since it has same size as source={}", destFile, source);
                 }
             } catch (IOException e) {
                 throw new GenericException("Failed to evaluate/copy existing file", e);
             }
-        } else {
+        }
+        else {
             try {
                 log.info("Copying new file from {} to {}", source, destFile);
 
@@ -280,18 +296,19 @@ public class MultiCopyCommand implements Callable<Integer> {
                     //noinspection BlockingMethodInNonBlockingContext because IntelliJ is confused
                     try (DirectoryStream<Path> files = Files.newDirectoryStream(srcDir, fileGlob)) {
                         for (final Path file : files) {
-    if (Files.isDirectory(file)) {
-        Path subDest = destination.resolve(file.getFileName());
+                            if (Files.isDirectory(file)) {
+                                Path subDest = destination.resolve(file.getFileName());
 
-        Files.createDirectories(subDest);
+                                Files.createDirectories(subDest);
 
-        processDirectory(file, subDest)
-            .toIterable()
-            .forEach(results::add);
-    } else {
-        results.add(processFileImmediate(file, destination));
-    }
-}
+                                processDirectory(file, subDest)
+                                    .toIterable()
+                                    .forEach(results::add);
+                            }
+                            else {
+                                results.add(processFileImmediate(file, destination));
+                            }
+                        }
                     }
                     return Flux.fromIterable(results);
                 } catch (IOException e) {

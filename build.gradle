@@ -70,7 +70,7 @@ application {
 }
 
 tasks.register('updateReadme', JavaExec) {
-  group = 'verification'
+  group = 'documentation'
   description = 'Updates the generated README command documentation'
 
   dependsOn tasks.named('classes')
@@ -81,7 +81,7 @@ tasks.register('updateReadme', JavaExec) {
 }
 
 tasks.register('commitUpdatedReadme', Exec) {
-  group = 'verification'
+  group = 'documentation'
   description = 'Updates README documentation and commits it locally if changed'
   dependsOn tasks.named('updateReadme')
 
