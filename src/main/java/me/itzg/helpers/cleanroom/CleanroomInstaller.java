@@ -34,8 +34,7 @@ public class CleanroomInstaller
 {
     public static final String LATEST = "latest";
 
-    private static final Pattern RESULT_INFO = Pattern.compile(
-        "Fetching Cleanroom \\s+(?<version>.+)");
+    private static final Pattern RESULT_INFO = Pattern.compile("Fetching Cleanroom\\s+(?<version>.+)");
 
     private static final Pattern LEGACY_INSTALLER_VERSION = Pattern.compile("cleanroom-(.+)", Pattern.CASE_INSENSITIVE);
 
@@ -274,7 +273,7 @@ public class CleanroomInstaller
                 .block();
 
             if (metadata == null) {
-                throw new GenericException("Unable to resolve NeoForge metadata");
+                throw new GenericException("Unable to resolve Cleanroom metadata");
             }
 
             final String result = metadata.getVersioning().getVersion().stream()
@@ -323,8 +322,8 @@ public class CleanroomInstaller
         try (ResultsFileWriter results = new ResultsFileWriter(resultsFile)) {
             results.write("SERVER", serverEntry);
             results.write("FAMILY", "FORGE");
-            results.writeVersion(loaderVersion);
             results.writeType("CLEANROOM");
+            results.writeVersion(loaderVersion);
         }
     }
 
