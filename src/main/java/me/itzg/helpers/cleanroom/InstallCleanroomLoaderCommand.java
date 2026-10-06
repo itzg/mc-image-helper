@@ -33,7 +33,7 @@ public class InstallCleanroomLoaderCommand implements Callable<Integer> {
         CommandLine.Model.CommandSpec spec;
 
         String installerVersion;
-        String cleanroomVersion;
+        String loaderVersion;
 
         @Option(names = "--installer-version", required = true, defaultValue = CleanroomInstaller.LATEST,
             description = "A specific Cleanroom installer version or to auto-resolve the version provide 'latest'.%n"
@@ -49,18 +49,18 @@ public class InstallCleanroomLoaderCommand implements Callable<Integer> {
             this.installerVersion = installerVersion.toLowerCase();
         }
 
-        @Option(names = "--cleanroom-version", required = true, defaultValue = CleanroomInstaller.LATEST,
+        @Option(names = "--loader-version", required = true, defaultValue = CleanroomInstaller.LATEST,
             description = "A specific Cleanroom Loader version or to auto-resolve by installer.%n"
                 + "Ignored if only a valid local/remote legacy installer is provided."
                 + " Default value is ${DEFAULT-VALUE}"
         )
-        public void setCleanroomVersion(String cleanroomVersion) {
-            if (!ALLOWED_VERSION.matcher(cleanroomVersion).matches()) {
+        public void setLoaderVersion(String loaderVersion) {
+            if (!ALLOWED_VERSION.matcher(loaderVersion).matches()) {
                 throw new ParameterException(spec.commandLine(),
-                    "Invalid value for --cleanroom-version: " + cleanroomVersion
+                    "Invalid value for --cleanroom-version: " + loaderVersion
                 );
             }
-            this.cleanroomVersion = cleanroomVersion.toLowerCase();
+            this.loaderVersion = loaderVersion.toLowerCase();
         }
     }
 
@@ -111,7 +111,7 @@ public class InstallCleanroomLoaderCommand implements Callable<Integer> {
             .sharedFetchOptions(sharedFetchArgs.options())
             .forceReinstall(forceReinstall)
             .installerVersion(version.installerVersion)
-            .loaderVersion(version.cleanroomVersion);
+            .loaderVersion(version.loaderVersion);
 
         if (source.local_file != null)
             return installer.install(source.local_file) ? ExitCode.OK : ExitCode.SOFTWARE;
