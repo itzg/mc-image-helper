@@ -12,9 +12,10 @@ public class CleanroomManifest extends BaseManifest {
 
     public static final String DEFAULT_MAVEN_URL = "https://maven.cleanroommc.com/";
 
-    public static final String manifestId = "cleanroom";
-    public static final String mvnGroupId = "com.cleanroommc";
-    public static final String mvnArtifactId = "installer";
+    public static final String MAVEN_GROUP_ID = "com.cleanroommc";
+    public static final String MAVEN_ARTIFACT_ID = "installer";
+
+    public static final String MANIFEST_ID = "cleanroom";
 
     String installerVersion;
     String loaderVersion;

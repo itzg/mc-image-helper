@@ -56,7 +56,7 @@ public class CleanroomInstaller
 
     private CleanroomManifest prevManifest() {
         if (!lazyLoadPrevManifest) {
-            prevManifest = Manifests.load(this.outputDirectory, CleanroomManifest.manifestId, CleanroomManifest.class);
+            prevManifest = Manifests.load(this.outputDirectory, CleanroomManifest.MANIFEST_ID, CleanroomManifest.class);
             lazyLoadPrevManifest = true;
         }
         return prevManifest;
@@ -235,7 +235,7 @@ public class CleanroomInstaller
                 .serverEntry(relativeServerEntry)
                 .build();
 
-            Manifests.save(this.outputDirectory, CleanroomManifest.manifestId, newManifest);
+            Manifests.save(this.outputDirectory, CleanroomManifest.MANIFEST_ID, newManifest);
 
             if (resultsFile != null && (newManifest != null || prevManifest != null)) {
                 try {
@@ -262,7 +262,7 @@ public class CleanroomInstaller
         try (SharedFetch sharedFetch = Fetch.sharedFetch("cleanroom", this.sharedFetchOptions)) {
             final MavenRepoApi mavenRepoApi = new MavenRepoApi(this.mavenUrl, sharedFetch);
 
-            final MavenMetadata metadata = mavenRepoApi.fetchMetadata(CleanroomManifest.mvnGroupId, CleanroomManifest.mvnArtifactId)
+            final MavenMetadata metadata = mavenRepoApi.fetchMetadata(CleanroomManifest.MAVEN_GROUP_ID, CleanroomManifest.MAVEN_ARTIFACT_ID)
                 .block();
 
             if (metadata == null) {
@@ -291,7 +291,7 @@ public class CleanroomInstaller
             }
             else {
                 log.info("Downloading installer {} for Cleanroom {}", result, this.loaderVersion);
-                installerPath = mavenRepoApi.download(this.outputDirectory, CleanroomManifest.mvnGroupId, CleanroomManifest.mvnArtifactId,
+                installerPath = mavenRepoApi.download(this.outputDirectory, CleanroomManifest.MAVEN_GROUP_ID, CleanroomManifest.MAVEN_ARTIFACT_ID,
                     result, "jar", null).block();
             }
 
