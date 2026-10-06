@@ -90,7 +90,7 @@ public class CleanroomInstaller
 
 
     /**
-     * Installing using provided path. Usage for local or downloaded installer.
+     * Installing using provided path. Usage for local (or downloaded) installer.
      * @param installerPath path to installer
      * @return if success
      */
@@ -255,7 +255,7 @@ public class CleanroomInstaller
     }
 
     /**
-     * Install by download from Cleanroom Maven. Version required.
+     * Download installer from Cleanroom maven. Always fetch latest when not specify.
      * @return if success
      */
     public boolean install() {
