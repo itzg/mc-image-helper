@@ -69,6 +69,7 @@ public class CleanroomInstaller
      */
     public boolean install(URI installerUrl) throws IOException {
         final Path installerPath;
+
         log.info("Install Cleanroom using remote source: {}", installerUrl.toString());
         try (SharedFetch sharedFetch = Fetch.sharedFetch("cleanroom", this.sharedFetchOptions)) {
             installerPath = sharedFetch.fetch(installerUrl)
@@ -97,12 +98,14 @@ public class CleanroomInstaller
         final CleanroomManifest prevManifest = this.prevManifest();
 
         final String legacyLoaderVersion;
+
         try {
             legacyLoaderVersion = IoStreams.readFileFromZip(installerPath.toAbsolutePath(),
                 "version.json", CleanroomInstaller::extractFromVersionJson);
         } catch (IOException e) {
             throw new GenericException("Error while reading version.json from installer", e);
         }
+
         final boolean isLegacyInstaller = legacyLoaderVersion != null;
 
         // If not forced, check condition first
@@ -115,7 +118,9 @@ public class CleanroomInstaller
                     log.info("Cleanroom loader version {} is already installed", prevManifest.getLoaderVersion());
                     return true;
                 }
-                else log.warn("Server entry for Cleanroom {} is missing. Re-installing.", prevManifest.getLoaderVersion());
+                else {
+                    log.warn("Server entry for Cleanroom {} is missing. Re-installing.", prevManifest.getLoaderVersion());
+                }
             }
 
             log.info("Re-installing Cleanroom due to version change from {} to {}",
@@ -127,7 +132,9 @@ public class CleanroomInstaller
         args.add("-jar");
         args.add(installerPath.toAbsolutePath().toString());
 
-        if (isLegacyInstaller) args.add("--installServer"); //try to install using legacy way
+        if (isLegacyInstaller) {
+            args.add("--installServer"); // legacy installer
+        }
         else {
             // using new installer
             args.add("server");
@@ -135,9 +142,15 @@ public class CleanroomInstaller
                 args.add("-v");
                 args.add(this.loaderVersion);
             }
-            if (this.forceReinstall) args.add("--force");
-            if (this.dryRun) args.add("--dry-run");
-            args.add("--log-file"); args.add(installerPath.getFileName().toString() + ".log");
+            if (this.forceReinstall) {
+                args.add("--force");
+            }
+            if (this.dryRun) {
+                args.add("--dry-run");
+            }
+            //logging
+            args.add("--log-file");
+            args.add(installerPath.getFileName().toString() + ".log");
         }
 
         try {
@@ -163,7 +176,7 @@ public class CleanroomInstaller
                             loaderVersion = exec;
                             log.debug("Observed Cleanroom loader version from \"Fetching\" line: {}", loaderVersion);
                             reader.close();
-                            break;
+                            break; // we do not need to read anymore
                         }
                     }
                 }
@@ -276,7 +289,8 @@ public class CleanroomInstaller
 
             if (!this.forceReinstall && Files.exists(installerPath)) {
                 log.warn("Installer {} already exist on server directory", result);
-            } else {
+            }
+            else {
                 log.info("Downloading installer {} for Cleanroom {}", result, this.loaderVersion);
                 installerPath = mavenRepoApi.download(this.outputDirectory, CleanroomManifest.mvnGroupId, CleanroomManifest.mvnArtifactId,
                     result, "jar", null).block();

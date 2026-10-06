@@ -113,11 +113,13 @@ public class InstallCleanroomLoaderCommand implements Callable<Integer> {
             .setInstallerVersion(version.installerVersion)
             .setLoaderVersion(version.loaderVersion);
 
-        if (source.local_file != null)
+        if (source.local_file != null) {
             return installer.install(source.local_file) ? ExitCode.OK : ExitCode.SOFTWARE;
+        }
 
-        if (source.remote_file != null)
+        if (source.remote_file != null) {
             return installer.install(source.remote_file) ? ExitCode.OK : ExitCode.SOFTWARE;
+        }
 
         return installer.install() ? ExitCode.OK : ExitCode.SOFTWARE;
     }
