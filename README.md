@@ -39,6 +39,7 @@ Commands:
   install-fabric-loader           Provides a few ways to obtain a Fabric loader with simple cleanup of previous loader
                                     instances
   install-forge                   Downloads and installs a requested version of Forge
+  install-cleanroom               Downloads and installs a requested version of Cleanroom
   install-modrinth-modpack        Supports installation of Modrinth modpacks along with the associated mod loader
   install-neoforge                Downloads and installs a requested version of NeoForge
   install-oci-pack                Pulls an OCI artifact and writes its layer blobs to disk in apply order
@@ -292,20 +293,17 @@ Extracts a field from an INI file
 ### install-cleanroom
 
 ```
-Usage: mc-image-helper install-cleanroom [-h] [--force-reinstall]
-       [--output-directory=DIR] [--results-file=FILE]
-       [[--installer-version=<installerVersion>] |
-       [--cleanroom-version=<cleanroomVersion>]] [[--cleanroom-maven=URL] |
-       --from-local-file=FILE | --from-url=URL] [[--use-http2] [--wiretap]]
+Usage: mc-image-helper install-cleanroom [-h] [--force-reinstall] [--output-directory=DIR] [--results-file=FILE]
+                                         [[--installer-version=<installerVersion>] |
+                                         [--cleanroom-version=<cleanroomVersion>]] [[--cleanroom-maven=URL] |
+                                         --from-local-file=FILE | --from-url=URL] [[--use-http2] [--wiretap]]
 Downloads and installs a requested version of Cleanroom
       --cleanroom-maven=URL URL for Cleanroom installer JSON.
                             Can also be set via env var CLEANROOM_MAVEN
                             Default is https://maven.cleanroommc.com/
       --cleanroom-version=<cleanroomVersion>
-                            A specific Cleanroom Loader version or to
-                              auto-resolve by installer.
-                            Ignored if only a valid local/remote legacy
-                              installer is provided. Default value is latest
+                            A specific Cleanroom Loader version or to auto-resolve by installer.
+                            Ignored if only a valid local/remote legacy installer is provided. Default value is latest
       --force-reinstall
       --from-local-file=FILE
                             Use a local installer, first entry before remote.
@@ -313,20 +311,16 @@ Downloads and installs a requested version of Cleanroom
 
   -h, --help
       --installer-version=<installerVersion>
-                            A specific Cleanroom installer version or to
-                              auto-resolve the version provide 'latest'.
-                            Ignored if valid a local/remote (included legacy)
-                              is provided. Default value is latest
+                            A specific Cleanroom installer version or to auto-resolve the version provide 'latest'.
+                            Ignored if valid a local/remote (included legacy) is provided. Default value is latest
       --output-directory=DIR
 
-      --results-file=FILE   A key=value file suitable for scripted environment
-                              variables. Currently includes
+      --results-file=FILE   A key=value file suitable for scripted environment variables. Currently includes
                               SERVER: the entry point jar or script
       --use-http2           Whether to use HTTP/2.
                             Default: true
                             Env: FETCH_USE_HTTP2
-      --wiretap             Whether to enable Reactor Netty wiretap logging.
-                              Make sure to set logging level to trace.
+      --wiretap             Whether to enable Reactor Netty wiretap logging. Make sure to set logging level to trace.
                             Default: false
                             Env: FETCH_WIRETAP
 ```
@@ -894,7 +888,7 @@ directories, and URLs
       --wiretap              Whether to enable Reactor Netty wiretap logging. Make sure to set logging level to trace.
                              Default: false
                              Env: FETCH_WIRETAP
-  -z, --skip-up-to-date      Skips a download when the destination file is already up to date
+  -z, --skip-up-to-date      Skips a download when the destination file is already up to date.
                              The remote server is queried with If-Modified-Since request header
                              and checks Last-Modified response header.
 ```
