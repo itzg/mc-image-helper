@@ -107,9 +107,9 @@ public class CleanroomInstaller
 
         // If not forced, check condition first
         if (!this.forceReinstall && prevManifest != null) {
-            // installerVersion empty mean server is legacy
-            if (prevManifest.getInstallerVersion().isEmpty() && prevManifest.getLoaderVersion().equals(legacyLoaderVersion)// legacy
-                || prevManifest.getLoaderVersion().equals(this.loaderVersion)) {                                           // new
+            // installerVersion null mean server is legacy
+            if (prevManifest.getInstallerVersion() == null && prevManifest.getLoaderVersion().equals(legacyLoaderVersion)// legacy
+                || prevManifest.getLoaderVersion().equals(this.loaderVersion)) {                                         // new
                 // check if missing entry file
                 if (serverEntryExists(this.outputDirectory, prevManifest.getServerEntry())) {
                     log.info("Cleanroom loader version {} is already installed", prevManifest.getLoaderVersion());
@@ -217,7 +217,7 @@ public class CleanroomInstaller
 
             CleanroomManifest newManifest = CleanroomManifest.builder()
                 .timestamp(Instant.now())
-                .installerVersion(isLegacyInstaller ? "" : this.installerVersion)
+                .installerVersion(isLegacyInstaller ? null : this.installerVersion)
                 .loaderVersion(loaderVersion)
                 .serverEntry(relativeServerEntry)
                 .build();
