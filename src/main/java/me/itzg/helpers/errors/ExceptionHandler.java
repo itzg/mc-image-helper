@@ -5,6 +5,7 @@ import java.util.stream.Collectors;
 
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.McImageHelper;
+import me.itzg.helpers.get.GetCommand;
 import me.itzg.helpers.http.FailedRequestException;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
@@ -40,7 +41,13 @@ public class ExceptionHandler implements IExecutionExceptionHandler {
                 log.debug("Composite Exception details", e);
             }
             else if (e instanceof FailedRequestException) {
-                logExceptionWithoutStacktrace(e, commandLine);
+                if (commandLine.getCommand() instanceof GetCommand && FailedRequestException.isNotFound(e)) {
+                    log.error("'{}' failed: Resource not found (HTTP 404): {}",
+                        commandLine.getCommandName(),
+                        FailedRequestException.obfuscate(((FailedRequestException) e).getUri()));
+                } else {
+                    logExceptionWithoutStacktrace(e, commandLine);
+                }
                 log.debug("Failed request details", e);
             }
             else if (e instanceof RateLimitException) {
