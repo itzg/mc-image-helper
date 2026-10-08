@@ -4,7 +4,6 @@ import static io.netty.handler.codec.http.HttpResponseStatus.FORBIDDEN;
 import static io.netty.handler.codec.http.HttpResponseStatus.TOO_MANY_REQUESTS;
 
 import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpResponseStatus;
 import java.net.URI;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -24,6 +23,7 @@ import me.itzg.helpers.http.FailedRequestException;
 import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.http.UriBuilder;
 import me.itzg.helpers.http.Uris.QueryParameters;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -52,25 +52,8 @@ public class GithubClient {
             .withAuthorization("Bearer", token)
             .toObject(Release.class)
             .assemble()
-            .onErrorResume(throwable -> {
-                if (throwable instanceof FailedRequestException) {
-                    final FailedRequestException fre = (FailedRequestException) throwable;
-                    if (fre.getStatusCode() == HttpResponseStatus.NOT_FOUND.code()) {
-                        return Mono.empty();
-                    }
-
-                    if ((fre.getStatusCode() == FORBIDDEN.code() || fre.getStatusCode() == TOO_MANY_REQUESTS.code())) {
-                        final HttpHeaders headers = fre.getHeaders();
-                        final String resetTimeStr = headers.get("x-ratelimit-reset");
-                        if (resetTimeStr != null) {
-                            return Mono.error(new RateLimitException(Instant.ofEpochSecond(Long.parseLong(resetTimeStr)),
-                                "Rate-limit exceeded", fre
-                                ));
-                        }
-                    }
-                }
-                return Mono.error(throwable);
-            })
+            .onErrorResume(FailedRequestException::isNotFound, throwable -> Mono.empty())
+            .onErrorMap(FailedRequestException.class, this::mapRateLimitError)
             .flatMap(release -> {
                 if (log.isDebugEnabled()) {
                     log.debug("Assets in latest release '{}': {}",
@@ -116,6 +99,7 @@ public class GithubClient {
                 .withAuthorization("Bearer", token)
                 .toObject(WorkflowRunsResponse.class)
                 .assemble()
+                .onErrorMap(FailedRequestException.class, this::mapRateLimitError)
                 .mapNotNull(resp -> resp.getWorkflowRuns().stream().findFirst().orElse(null))
                 .flatMap(run -> resolveArtifactForRun(org, repo, run.getId(), namePattern));
     }
@@ -169,7 +153,8 @@ public class GithubClient {
         return sharedFetch.fetch(URI.create(artifact.getArchiveDownloadUrl()))
                 .withAuthorization("Bearer", token)
                 .toFile(outputFile)
-                .assemble();
+                .assemble()
+                .onErrorMap(FailedRequestException.class, this::mapRateLimitError);
     }
 
     /**
@@ -194,6 +179,7 @@ public class GithubClient {
                 .withAuthorization("Bearer", token)
                 .toObject(ArtifactsResponse.class)
                 .assemble()
+                .onErrorMap(FailedRequestException.class, this::mapRateLimitError)
                 .flatMapMany(response -> {
                     final Flux<Artifact> artifacts = Flux.fromIterable(response.getArtifacts());
                     if ((long) page * PAGE_SIZE < response.getTotalCount()) {
@@ -201,5 +187,28 @@ public class GithubClient {
                     }
                     return artifacts;
                 });
+    }
+
+    /**
+     * Standardise rate-limit exceptions.
+     *
+     * If rate limit headers present in thrown error, re-throw error as a RateLimitException
+     * containing reset time and the presence of a github token.
+     *
+     * @param e the failed request
+     * @return a rate-limit exception, or the original error if not rate-limited
+     */
+    private Throwable mapRateLimitError(FailedRequestException e) {
+        if (e.getStatusCode() == FORBIDDEN.code() || e.getStatusCode() == TOO_MANY_REQUESTS.code()) {
+            final HttpHeaders headers = e.getHeaders();
+            final String resetTimeStr = headers.get("x-ratelimit-reset");
+            if (resetTimeStr != null) {
+                return new RateLimitException(Instant.ofEpochSecond(Long.parseLong(resetTimeStr)),
+                    String.format("GitHub API rate limit exceeded (%s)",
+                        StringUtils.isNotBlank(token) ? "token provided" : "no token provided"),
+                    e);
+            }
+        }
+        return e;
     }
 }
