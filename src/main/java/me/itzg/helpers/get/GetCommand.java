@@ -251,12 +251,7 @@ public class GetCommand implements Callable<Integer> {
                     if (statusCode == HttpStatus.SC_OK) {
                         return true;
                     } else {
-                        if (statusCode == HttpStatus.SC_NOT_FOUND) {
-                            log.warn("Resource not found (HTTP 404): {}",
-                                FailedRequestException.obfuscate(uri));
-                        } else {
-                            log.warn("{} cannot be retrieved: status={}", uri, statusCode);
-                        }
+                        log.warn("{} cannot be retrieved: status={}", uri, statusCode);
                         return false;
                     }
                 } catch (IOException e) {
