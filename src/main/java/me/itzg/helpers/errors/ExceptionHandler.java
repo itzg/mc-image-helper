@@ -40,7 +40,7 @@ public class ExceptionHandler implements IExecutionExceptionHandler {
                 log.debug("Composite Exception details", e);
             }
             else if (e instanceof FailedRequestException) {
-                logExceptionWithoutStacktrace(e, commandLine);
+                log.error("'{}' command failed. Version is {}: {}", commandLine.getCommandName(), McImageHelper.getVersion(), e.getMessage());
                 log.debug("Failed request details", e);
             }
             else if (e instanceof RateLimitException) {
