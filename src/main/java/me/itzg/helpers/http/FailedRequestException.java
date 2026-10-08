@@ -6,6 +6,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import lombok.Getter;
 import lombok.ToString;
+import org.apache.hc.client5.http.HttpResponseException;
 
 @Getter @ToString
 public class FailedRequestException extends RuntimeException {
@@ -26,6 +27,21 @@ public class FailedRequestException extends RuntimeException {
         this.statusCode = status.code();
         this.body = body;
         this.headers = headers;
+    }
+
+    /**
+     * Apache HTTP client flavor; response body and headers are unavailable.
+     */
+    public FailedRequestException(URI uri, HttpResponseException cause) {
+        super(
+            String.format("HTTP request of %s failed with %d: %s",
+                obfuscate(uri), cause.getStatusCode(), cause.getReasonPhrase()),
+            cause
+        );
+        this.uri = uri;
+        this.statusCode = cause.getStatusCode();
+        this.body = null;
+        this.headers = null;
     }
 
     public static String obfuscate(URI uri) {

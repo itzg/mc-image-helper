@@ -32,6 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.McImageHelper;
 import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.http.DeriveFilenameHandler;
+import me.itzg.helpers.http.FailedRequestException;
 import me.itzg.helpers.http.LatchingUrisInterceptor;
 import me.itzg.helpers.http.LenientUriConverter;
 import me.itzg.helpers.http.NotModifiedHandler;
@@ -360,7 +361,7 @@ public class GetCommand implements Callable<Integer> {
                 log.warn("Endpoint at {} does not allow HEAD request, so deriving from URI's path", uri);
                 return Paths.get(uri.getPath()).getFileName().toString();
             }
-            throw new RequestFailedException(uri, e);
+            throw new FailedRequestException(uri, e);
         }
     }
 
@@ -438,7 +439,7 @@ public class GetCommand implements Callable<Integer> {
             log.debug("Executing {} with headers={}", request, request.getHeaders());
             file = client.execute(request, handler);
         } catch (HttpResponseException e) {
-            throw new RequestFailedException(uri, e);
+            throw new FailedRequestException(uri, e);
         }
 
         return file;
