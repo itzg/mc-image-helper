@@ -97,10 +97,13 @@ public class IniPathCommand implements Callable<Integer> {
                 "Section not found: " + sectionKey + " in INI: " + iniFile.toPath()))
             : ini;
         final String[] values = data.getAllOr(fieldKey)
-            .filter(v -> v.length > 0)
             .orElseThrow(() -> new InvalidParameterException(
                 "Field not found: " + fieldKey + " in section: "
                     + (sectionKey != null ? sectionKey : "global") + " in INI: " + iniFile.toPath()));
+        if (values.length == 0) {
+            throw new InvalidParameterException(
+                "Field has no values for query: " + query + " in INI: " + iniFile.toPath());
+        }
 
         // Unindexed lookups return the last value, matching ini4j.
         final int valueIndex = index != null ? index : values.length - 1;
