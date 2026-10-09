@@ -8,7 +8,7 @@ import me.itzg.helpers.modrinth.model.VersionType;
 class VersionEvaluator {
     static Version pickVersion(Project project, List<Version> versions, VersionTypePref versionTypePref) {
         if (versionTypePref.isPrefersBest()) {
-            for (int i = 0; i < versionTypePref.getVersionType().ordinal(); i++) {
+            for (int i = 0; i <= versionTypePref.getVersionType().ordinal(); i++) {
                 final VersionType versionTypeCandidate = VersionType.values()[i];
                 for (final Version version : versions) {
                     if (versionTypeCandidate.equals(version.getVersionType())) {
