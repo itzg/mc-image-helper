@@ -34,7 +34,7 @@ class IniPathCommandTest {
         final String out = tapSystemOutNormalized(() -> {
             final int exitCode = new CommandLine(new IniPathCommand())
                 .execute(
-                    "--file", Paths.get("src/test/resources/unsup.ini").toString(),
+                    Paths.get("src/test/resources/unsup.ini").toString(),
                     query
                 );
 
@@ -50,7 +50,7 @@ class IniPathCommandTest {
         final String err = tapSystemErrNormalized(() -> {
             final int exitCode = new CommandLine(new IniPathCommand())
                 .execute(
-                    "--file", Paths.get("src/test/resources/unsup.ini").toString(),
+                    Paths.get("src/test/resources/unsup.ini").toString(),
                     query
                 );
 
@@ -66,7 +66,7 @@ class IniPathCommandTest {
         final String err = tapSystemErrNormalized(() -> {
             final int exitCode = new CommandLine(new IniPathCommand())
                 .execute(
-                    "--file", Paths.get("src/test/resources/unsup.ini").toString(),
+                    Paths.get("src/test/resources/unsup.ini").toString(),
                     query
                 );
 
@@ -109,7 +109,7 @@ class IniPathCommandTest {
 
         final String out = tapSystemOutNormalized(() -> {
             final int exitCode = new CommandLine(new IniPathCommand())
-                .execute("--file", file.toString(), query);
+                .execute(file.toString(), query);
 
             assertThat(exitCode).isEqualTo(ExitCode.OK);
         });
