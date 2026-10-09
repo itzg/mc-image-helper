@@ -36,6 +36,26 @@ class VersionEvaluatorTest {
                 VersionTypePref.parse("alpha+"),
                 List.of(version("1", alpha), version("2", release), version("3", beta)),
                 version("2", release)
+            ),
+            argumentSet("allow alpha, prefer best, beta fallback",
+                VersionTypePref.parse("alpha+"),
+                List.of(version("1", alpha), version("2", beta)),
+                version("2", beta)
+            ),
+            argumentSet("allow alpha, prefer best, alpha fallback",
+                VersionTypePref.parse("alpha+"),
+                List.of(version("1", alpha)),
+                version("1", alpha)
+            ),
+            argumentSet("allow beta, prefer best, beta fallback",
+                VersionTypePref.parse("beta+"),
+                List.of(version("1", beta)),
+                version("1", beta)
+            ),
+            argumentSet("allow release, prefer best, release",
+                VersionTypePref.parse("release+"),
+                List.of(version("1", release)),
+                version("1", release)
             )
         );
     }
