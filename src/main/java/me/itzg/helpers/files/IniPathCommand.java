@@ -29,10 +29,10 @@ public class IniPathCommand implements Callable<Integer> {
     private final static Pattern expressions = Pattern.compile(
             "(?<section>.+?)?/(?<key>[^\\[]+?)(\\[(?<index>\\d+)])?");
 
-    @Parameters(paramLabel = "FILE", description = "An INI file to query")
+    @Parameters(index = "0", paramLabel = "FILE", description = "An INI file to query")
     File iniFile;
 
-    @Parameters(arity = "1", paramLabel = "REF", description = EXPRESSION_SYNTAX_DESC)
+    @Parameters(index = "1", arity = "1", paramLabel = "REF", description = EXPRESSION_SYNTAX_DESC)
     String query;
 
     private void parseKeys(String query) {
