@@ -283,10 +283,10 @@ Outputs an MD5 hash of the standard input
 ### ini-path
 
 ```
-Usage: mc-image-helper ini-path [--file=FILE] ref
+Usage: mc-image-helper ini-path FILE REF
 Extracts a field from an INI file
-      ref           section/option, section/option[index], /option, /option[index]
-      --file=FILE   An INI file to query. If not set, reads stdin
+      FILE   An INI file to query
+      REF    section/option, section/option[index], /option, /option[index]
 ```
 
 ### install-curseforge
@@ -852,7 +852,7 @@ directories, and URLs
       --wiretap              Whether to enable Reactor Netty wiretap logging. Make sure to set logging level to trace.
                              Default: false
                              Env: FETCH_WIRETAP
-  -z, --skip-up-to-date      Skips a download when the destination file is already up to date
+  -z, --skip-up-to-date      Skips a download when the destination file is already up to date.
                              The remote server is queried with If-Modified-Since request header
                              and checks Last-Modified response header.
 ```

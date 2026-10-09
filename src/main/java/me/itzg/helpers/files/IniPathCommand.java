@@ -16,7 +16,6 @@ import java.util.regex.Pattern;
 import me.itzg.helpers.errors.InvalidParameterException;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.ExitCode;
-import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
 @Command(name = "ini-path", description = "Extracts a field from an INI file")
@@ -30,10 +29,10 @@ public class IniPathCommand implements Callable<Integer> {
     private final static Pattern expressions = Pattern.compile(
             "(?<section>.+?)?/(?<key>[^\\[]+?)(\\[(?<index>\\d+)])?");
 
-    @Option(names = "--file", paramLabel = "FILE", description = "An INI file to query. If not set, reads stdin")
+    @Parameters(paramLabel = "FILE", description = "An INI file to query")
     File iniFile;
 
-    @Parameters(arity = "1", paramLabel = "ref", description = EXPRESSION_SYNTAX_DESC)
+    @Parameters(arity = "1", paramLabel = "REF", description = EXPRESSION_SYNTAX_DESC)
     String query;
 
     private void parseKeys(String query) {
