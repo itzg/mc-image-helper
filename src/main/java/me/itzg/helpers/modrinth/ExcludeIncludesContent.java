@@ -20,7 +20,7 @@ public class ExcludeIncludesContent {
     private Set<String> globalForceIncludes;
 
     @JsonPropertyDescription("Specific exclude/includes by modpack slug")
-    private Map<String, me.itzg.helpers.curseforge.ExcludeIncludesContent.ExcludeIncludes> modpacks;
+    private Map<String, ExcludeIncludes> modpacks;
 
     @Data
     public static class ExcludeIncludes {
