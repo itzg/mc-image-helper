@@ -141,8 +141,8 @@ dependencies {
   implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-xml'
   implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-toml'
   implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
-  // http://www.ini4j.org/
-  implementation 'org.ini4j:ini4j:0.5.4'
+  // https://mvnrepository.com/artifact/com.sshtools/jini-lib
+  implementation 'com.sshtools:jini-lib:0.6.14'
   // https://github.com/mbknor/mbknor-jackson-jsonSchema
   implementation 'com.kjetland:mbknor-jackson-jsonschema_2.13:1.0.39'
   implementation 'com.jayway.jsonpath:json-path:2.10.0'
