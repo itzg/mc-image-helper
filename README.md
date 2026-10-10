@@ -1241,6 +1241,8 @@ One of the following identifiers or can be prefixed with `list of ` to indicate 
 
 ## Exclude/Include File Schema
 
+For CurseForge packs, `modpacks.<slug>.overridesExclusions` accepts ant-style paths relative to the overrides directory. These patterns are combined with `--overrides-exclusions`; `*` matches non-slash characters, `**` matches across directories, and `?` matches one character. Project `excludes` and `forceIncludes` continue to accept slugs or IDs and do not filter bundled override files. Use `--force-synchronize` to reapply changed patterns to an existing installation.
+
 ```json
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
@@ -1288,6 +1290,13 @@ One of the following identifiers or can be prefixed with `list of ` to indicate 
             "type": "string"
           },
           "description": "Mods by slug|id to force include for this modpack"
+        },
+        "overridesExclusions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "CurseForge override paths to exclude for this modpack, using ant-style patterns"
         }
       }
     }

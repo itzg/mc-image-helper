@@ -2,6 +2,7 @@ package me.itzg.helpers.curseforge;
 
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import com.kjetland.jackson.jsonSchema.annotations.JsonSchemaTitle;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import lombok.Data;
@@ -24,5 +25,7 @@ public class ExcludeIncludesContent {
         private Set<String> excludes;
         @JsonPropertyDescription("Mods by slug|id to force include for this modpack")
         private Set<String> forceIncludes;
+        @JsonPropertyDescription("CurseForge override paths to exclude for this modpack, using ant-style patterns")
+        private List<String> overridesExclusions;
     }
 }
