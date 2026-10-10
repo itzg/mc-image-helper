@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import me.itzg.helpers.curseforge.ExcludeIncludesContent.ExcludeIncludes;
+import me.itzg.helpers.modrinth.ExcludeIncludesContent.ExcludeIncludes;
 import me.itzg.helpers.files.MultiMatcher;
 import me.itzg.helpers.modrinth.model.Env;
 import me.itzg.helpers.modrinth.model.EnvType;

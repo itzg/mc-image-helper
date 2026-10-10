@@ -165,7 +165,7 @@ public class CurseForgeInstaller {
                 new OverridesFromZipApplier(
                     outputDir, modpackZip, overridesSkipExisting,
                     modpackManifest.getOverrides(),
-                    levelFrom, overridesExclusions
+                    levelFrom, resolveOverridesExclusions(context.slug)
                 )
             );
         });
@@ -416,7 +416,7 @@ public class CurseForgeInstaller {
                 new OverridesFromZipApplier(
                     outputDir, modpackZip, overridesSkipExisting,
                     modpackManifest.getOverrides(),
-                    levelFrom, overridesExclusions
+                    levelFrom, resolveOverridesExclusions(context.slug)
                 )
             );
         } finally {
@@ -658,6 +658,16 @@ public class CurseForgeInstaller {
         else {
             return null;
         }
+    }
+
+    List<String> resolveOverridesExclusions(String slug) {
+        final ExcludeIncludes specific = excludeIncludes != null && excludeIncludes.getModpacks() != null
+            ? excludeIncludes.getModpacks().get(slug) : null;
+
+        return Stream.concat(
+            safeStreamFrom(overridesExclusions),
+            safeStreamFrom(specific != null ? specific.getOverridesExclusions() : null)
+        ).distinct().collect(Collectors.toList());
     }
 
     private ExcludeIncludeIds resolveExcludeIncludes(InstallContext context) {

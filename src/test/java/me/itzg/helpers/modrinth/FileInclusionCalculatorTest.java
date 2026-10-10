@@ -5,7 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import me.itzg.helpers.curseforge.ExcludeIncludesContent.ExcludeIncludes;
+import me.itzg.helpers.modrinth.ExcludeIncludesContent.ExcludeIncludes;
 import me.itzg.helpers.modrinth.model.Env;
 import me.itzg.helpers.modrinth.model.EnvType;
 import me.itzg.helpers.modrinth.model.ModpackIndex.ModpackFile;
