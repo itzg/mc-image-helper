@@ -54,9 +54,9 @@ public class CleanroomInstaller
     @Setter(AccessLevel.NONE)
     private CleanroomManifest prevManifest;
 
-    private CleanroomManifest prevManifest() {
+    private CleanroomManifest getPrevManifest() {
         if (!lazyLoadPrevManifest) {
-            prevManifest = Manifests.load(this.outputDirectory, CleanroomManifest.MANIFEST_ID, CleanroomManifest.class);
+            prevManifest = Manifests.load(outputDirectory, CleanroomManifest.MANIFEST_ID, CleanroomManifest.class);
             lazyLoadPrevManifest = true;
         }
         return prevManifest;
@@ -71,9 +71,9 @@ public class CleanroomInstaller
         final Path installerPath;
 
         log.info("Install Cleanroom using remote source: {}", installerUrl.toString());
-        try (SharedFetch sharedFetch = Fetch.sharedFetch("cleanroom", this.sharedFetchOptions)) {
+        try (SharedFetch sharedFetch = Fetch.sharedFetch("cleanroom", sharedFetchOptions)) {
             installerPath = sharedFetch.fetch(installerUrl)
-                .toDirectory(this.outputDirectory)
+                .toDirectory(outputDirectory)
                 .skipUpToDate(true)
                 .handleStatus(Fetch.loggingDownloadStatusHandler(log))
                 .assemble()
@@ -95,7 +95,7 @@ public class CleanroomInstaller
      * @return if success
      */
     public boolean install(Path installerPath) {
-        final CleanroomManifest prevManifest = this.prevManifest();
+        final CleanroomManifest prevManifest = getPrevManifest();
 
         final String legacyLoaderVersion;
 
@@ -109,12 +109,12 @@ public class CleanroomInstaller
         final boolean isLegacyInstaller = legacyLoaderVersion != null;
 
         // If not forced, check condition first
-        if (!this.forceReinstall && prevManifest != null) {
+        if (!forceReinstall && prevManifest != null) {
             // installerVersion null mean server is legacy
             if (prevManifest.getInstallerVersion() == null && prevManifest.getLoaderVersion().equals(legacyLoaderVersion)// legacy
-                || prevManifest.getLoaderVersion().equals(this.loaderVersion)) {                                         // new
+                || prevManifest.getLoaderVersion().equals(loaderVersion)) {                                         // new
                 // check if missing entry file
-                if (serverEntryExists(this.outputDirectory, prevManifest.getServerEntry())) {
+                if (serverEntryExists(outputDirectory, prevManifest.getServerEntry())) {
                     log.info("Cleanroom loader version {} is already installed", prevManifest.getLoaderVersion());
                     return true;
                 }
@@ -124,7 +124,7 @@ public class CleanroomInstaller
             }
 
             log.info("Re-installing Cleanroom due to version change from {} to {}",
-                prevManifest.getLoaderVersion(), isLegacyInstaller ? legacyLoaderVersion : this.loaderVersion);
+                prevManifest.getLoaderVersion(), isLegacyInstaller ? legacyLoaderVersion : loaderVersion);
         }
 
         List<String> args = new ArrayList<>();
@@ -138,14 +138,14 @@ public class CleanroomInstaller
         else {
             // using new installer
             args.add("server");
-            if (this.loaderVersion != null && !LATEST.equals(this.loaderVersion)) {
+            if (loaderVersion != null && !LATEST.equals(loaderVersion)) {
                 args.add("-v");
-                args.add(this.loaderVersion);
+                args.add(loaderVersion);
             }
-            if (this.forceReinstall) {
+            if (forceReinstall) {
                 args.add("--force");
             }
-            if (this.dryRun) {
+            if (dryRun) {
                 args.add("--dry-run");
             }
             //logging
@@ -155,9 +155,9 @@ public class CleanroomInstaller
 
         try {
             log.info("Running installer for Cleanroom {}. This might take a while...",
-                isLegacyInstaller ? legacyLoaderVersion : this.loaderVersion);
+                isLegacyInstaller ? legacyLoaderVersion : loaderVersion);
             final Process process = new ProcessBuilder(args)
-                .directory(this.outputDirectory.toFile())
+                .directory(outputDirectory.toFile())
                 .redirectError(Redirect.INHERIT)
                 .start();
 
@@ -221,8 +221,8 @@ public class CleanroomInstaller
             }
 
             final String relativeServerEntry;
-            if (this.outputDirectory.isAbsolute() == entryFile.isAbsolute()) {
-                relativeServerEntry = Manifests.relativize(this.outputDirectory, entryFile);
+            if (outputDirectory.isAbsolute() == entryFile.isAbsolute()) {
+                relativeServerEntry = Manifests.relativize(outputDirectory, entryFile);
             }
             else {
                 relativeServerEntry = entryFile.toString();
@@ -230,12 +230,12 @@ public class CleanroomInstaller
 
             CleanroomManifest newManifest = CleanroomManifest.builder()
                 .timestamp(Instant.now())
-                .installerVersion(isLegacyInstaller ? null : this.installerVersion)
+                .installerVersion(isLegacyInstaller ? null : installerVersion)
                 .loaderVersion(loaderVersion)
                 .serverEntry(relativeServerEntry)
                 .build();
 
-            Manifests.save(this.outputDirectory, CleanroomManifest.MANIFEST_ID, newManifest);
+            Manifests.save(outputDirectory, CleanroomManifest.MANIFEST_ID, newManifest);
 
             if (resultsFile != null && (newManifest != null || prevManifest != null)) {
                 try {
@@ -259,8 +259,8 @@ public class CleanroomInstaller
      * @return if success
      */
     public boolean install() {
-        try (SharedFetch sharedFetch = Fetch.sharedFetch("cleanroom", this.sharedFetchOptions)) {
-            final MavenRepoApi mavenRepoApi = new MavenRepoApi(this.mavenUrl, sharedFetch);
+        try (SharedFetch sharedFetch = Fetch.sharedFetch("cleanroom", sharedFetchOptions)) {
+            final MavenRepoApi mavenRepoApi = new MavenRepoApi(mavenUrl, sharedFetch);
 
             final MavenMetadata metadata = mavenRepoApi.fetchMetadata(CleanroomManifest.MAVEN_GROUP_ID, CleanroomManifest.MAVEN_ARTIFACT_ID)
                 .block();
@@ -271,7 +271,7 @@ public class CleanroomInstaller
 
             final String result = metadata.getVersioning().getVersion().stream()
                 .filter(s -> s.matches("0\\.[0-9]*\\.[0-9]*"))
-                .filter(s -> this.installerVersion == null || LATEST.equals(this.installerVersion) || s.equals(this.installerVersion))
+                .filter(s -> installerVersion == null || LATEST.equals(installerVersion) || s.equals(installerVersion))
                 // pick the highest version from a or b
                 .reduce((a, b) ->
                     new ComparableVersion(a).compareTo(new ComparableVersion(b)) > 0 ? a : b
@@ -282,16 +282,16 @@ public class CleanroomInstaller
                 throw new GenericException("Unable to resolve Cleanroom installer version");
             }
 
-            this.setInstallerVersion(result);
+            setInstallerVersion(result);
             // try to find exist installer
             Path installerPath = outputDirectory.resolve("installer-" + result + ".jar");
 
-            if (!this.forceReinstall && Files.exists(installerPath)) {
+            if (!forceReinstall && Files.exists(installerPath)) {
                 log.warn("Installer {} already exist on server directory", result);
             }
             else {
-                log.info("Downloading installer {} for Cleanroom {}", result, this.loaderVersion);
-                installerPath = mavenRepoApi.download(this.outputDirectory, CleanroomManifest.MAVEN_GROUP_ID, CleanroomManifest.MAVEN_ARTIFACT_ID,
+                log.info("Downloading installer {} for Cleanroom {}", result, loaderVersion);
+                installerPath = mavenRepoApi.download(outputDirectory, CleanroomManifest.MAVEN_GROUP_ID, CleanroomManifest.MAVEN_ARTIFACT_ID,
                     result, "jar", null).block();
             }
 

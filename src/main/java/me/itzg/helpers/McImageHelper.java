@@ -13,7 +13,7 @@ import java.util.jar.Manifest;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.assertcmd.AssertCommand;
-import me.itzg.helpers.cleanroom.InstallCleanroomLoaderCommand;
+import me.itzg.helpers.cleanroom.InstallCleanroomCommand;
 import me.itzg.helpers.curseforge.CurseForgeFilesCommand;
 import me.itzg.helpers.curseforge.InstallCurseForgeCommand;
 import me.itzg.helpers.errors.ExceptionHandler;
@@ -79,7 +79,7 @@ import picocli.CommandLine.Option;
         InstallCurseForgeCommand.class,
         InstallFabricLoaderCommand.class,
         InstallForgeCommand.class,
-        InstallCleanroomLoaderCommand.class,
+        InstallCleanroomCommand.class,
         InstallModrinthModpackCommand.class,
         InstallNeoForgeCommand.class,
         InstallOciPackCommand.class,

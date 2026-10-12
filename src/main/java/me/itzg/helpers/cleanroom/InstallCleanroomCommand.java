@@ -16,7 +16,7 @@ import java.util.regex.Pattern;
 import static me.itzg.helpers.McImageHelper.VERSION_REGEX;
 
 @Command(name = "install-cleanroom", description = "Downloads and installs a requested version of Cleanroom")
-public class InstallCleanroomLoaderCommand implements Callable<Integer> {
+public class InstallCleanroomCommand implements Callable<Integer> {
 
     @SuppressWarnings("unused")
     @Option(names = {"--help", "-h"}, usageHelp = true)
@@ -75,18 +75,18 @@ public class InstallCleanroomLoaderCommand implements Callable<Integer> {
 
         @Option(names = "--from-local-file", description = "Use a local installer, first entry before remote.",
             paramLabel = "FILE")
-        Path local_file;
+        Path localFile;
 
         @Option(names = "--from-url", description = "Use a remote installer.%n",
             paramLabel = "URL")
-        URI remote_file;
+        URI remoteFile;
     }
 
     @ArgGroup
-    InstallCleanroomLoaderCommand.Version version = new InstallCleanroomLoaderCommand.Version();
+    InstallCleanroomCommand.Version version = new InstallCleanroomCommand.Version();
 
     @ArgGroup
-    InstallCleanroomLoaderCommand.Source source = new InstallCleanroomLoaderCommand.Source();
+    InstallCleanroomCommand.Source source = new InstallCleanroomCommand.Source();
 
     @Option(names = "--output-directory", defaultValue = ".", paramLabel = "DIR")
     Path outputDirectory;
@@ -113,12 +113,12 @@ public class InstallCleanroomLoaderCommand implements Callable<Integer> {
             .setInstallerVersion(version.installerVersion)
             .setLoaderVersion(version.loaderVersion);
 
-        if (source.local_file != null) {
-            return installer.install(source.local_file) ? ExitCode.OK : ExitCode.SOFTWARE;
+        if (source.localFile != null) {
+            return installer.install(source.localFile) ? ExitCode.OK : ExitCode.SOFTWARE;
         }
 
-        if (source.remote_file != null) {
-            return installer.install(source.remote_file) ? ExitCode.OK : ExitCode.SOFTWARE;
+        if (source.remoteFile != null) {
+            return installer.install(source.remoteFile) ? ExitCode.OK : ExitCode.SOFTWARE;
         }
 
         return installer.install() ? ExitCode.OK : ExitCode.SOFTWARE;
