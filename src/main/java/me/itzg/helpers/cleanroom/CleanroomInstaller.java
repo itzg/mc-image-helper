@@ -156,6 +156,7 @@ public class CleanroomInstaller
         try {
             log.info("Running installer for Cleanroom {}. This might take a while...",
                 isLegacyInstaller ? legacyLoaderVersion : loaderVersion);
+            log.debug("Running Cleanroom installer with args: {}", String.join(" ", args));
             final Process process = new ProcessBuilder(args)
                 .directory(outputDirectory.toFile())
                 .redirectError(Redirect.INHERIT)
