@@ -139,7 +139,7 @@ public class CleanroomInstaller
             // using new installer
             args.add("server");
             if (loaderVersion != null && !LATEST.equals(loaderVersion)) {
-                args.add("-v");
+                args.add("--version");
                 args.add(loaderVersion);
             }
             if (forceReinstall) {
