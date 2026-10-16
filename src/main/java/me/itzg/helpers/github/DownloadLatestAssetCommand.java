@@ -16,7 +16,7 @@ import picocli.CommandLine.Parameters;
 import picocli.CommandLine.ParentCommand;
 
 @Command(name = "download-latest-asset",
-    description = "From the latest release, downloads the first matching asset, and outputs the downloaded filename"
+    description = "From the latest or a given release, downloads the first matching asset, and outputs the downloaded filename"
 )
 @Slf4j
 public class DownloadLatestAssetCommand implements Callable<Integer> {
@@ -26,6 +26,10 @@ public class DownloadLatestAssetCommand implements Callable<Integer> {
 
     @Option(names = "--name-pattern")
     Pattern namePattern;
+
+    @Option(names = "--release-tag", defaultValue = "latest",
+        description = "The release tag to download from, or 'latest' for the latest release")
+    String releaseTag;
 
     @Option(names = "--output-directory", defaultValue = ".")
     Path outputDirectory;
@@ -52,11 +56,12 @@ public class DownloadLatestAssetCommand implements Callable<Integer> {
         try (SharedFetch sharedFetch = Fetch.sharedFetch("github download-latest-asset", sharedFetchArgs.options())) {
 
             final GithubClient client = new GithubClient(sharedFetch, parent.getApiBaseUrl(), parent.getToken());
-            final Path result = client.downloadLatestAsset(organization, repo, namePattern, outputDirectory)
+            final Path result = client.downloadLatestAsset(organization, repo, releaseTag, namePattern, outputDirectory)
                 .block();
 
             if (result == null) {
-                log.error("Unable to locate latest, matching asset from {}/{}", organization, repo);
+                log.error("Unable to locate {} release, matching asset from {}/{}",
+                    releaseTag, organization, repo);
                 return CommandLine.ExitCode.USAGE;
             }
             else {

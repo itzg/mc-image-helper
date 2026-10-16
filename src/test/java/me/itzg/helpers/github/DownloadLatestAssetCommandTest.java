@@ -77,6 +77,69 @@ class DownloadLatestAssetCommandTest {
     }
 
     @Test
+    void usingReleaseTag(@TempDir Path tempDir, WireMockRuntimeInfo wmInfo) {
+        final String releaseTag = "1.2.3+mc1.21";
+        final String filename = randomStringUtils.nextAlphabetic(10) + ".jar";
+        final String fileContent = randomStringUtils.nextAlphabetic(20);
+
+        stubFor(get("/repos/org/repo/releases/tags/" + releaseTag)
+            .willReturn(ok()
+                .withHeader("Content-Type", "application/json")
+                .withBodyFile("github/release-with-sources-jar.json")
+                .withTransformers("response-template")
+                .withTransformerParameter("filename", filename)
+            )
+        );
+        stubFor(head(urlPathEqualTo("/download/" + filename))
+            .willReturn(
+                ok()
+                    .withHeader("Content-Disposition", String.format("attachment; filename=\"%s\"", filename))
+            )
+        );
+        stubFor(get("/download/" + filename)
+            .willReturn(
+                ok()
+                    .withHeader("Content-Disposition", String.format("attachment; filename=\"%s\"", filename))
+                    .withBody(fileContent)
+            )
+        );
+
+        final int exitCode = new CommandLine(new GithubCommands())
+            .execute(
+                "--api-base-url", wmInfo.getHttpBaseUrl(),
+                "download-latest-asset",
+                "--release-tag", releaseTag,
+                "--name-pattern", "app-.+?(?<!-sources)\\.jar",
+                "--output-directory", tempDir.toString(),
+                "org/repo"
+            );
+
+        assertThat(exitCode).isEqualTo(0);
+
+        assertThat(tempDir.resolve(filename))
+            .exists()
+            .content().isEqualTo(fileContent);
+    }
+
+    @Test
+    void releaseTagNotFound(@TempDir Path tempDir, WireMockRuntimeInfo wmInfo) {
+        stubFor(get("/repos/org/repo/releases/tags/missing")
+            .willReturn(WireMock.notFound())
+        );
+
+        final int exitCode = new CommandLine(new GithubCommands())
+            .execute(
+                "--api-base-url", wmInfo.getHttpBaseUrl(),
+                "download-latest-asset",
+                "--release-tag", "missing",
+                "--output-directory", tempDir.toString(),
+                "org/repo"
+            );
+
+        assertThat(exitCode).isEqualTo(ExitCode.USAGE);
+    }
+
+    @Test
     void notFound(@TempDir Path tempDir, WireMockRuntimeInfo wmInfo) {
         stubFor(get(anyUrl())
             .willReturn(WireMock.notFound())
