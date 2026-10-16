@@ -133,7 +133,7 @@ dependencies {
   implementation(platform('ch.qos.logback:logback-parent:1.5.25'))
   // reactor-bom lags netty just a bit, so make sure it's the one preferred since we use reactor directly
   implementation enforcedPlatform('io.projectreactor:reactor-bom:2025.0.7')
-  implementation platform('io.netty:netty-bom:4.2.18.Final')
+  implementation platform('io.netty:netty-bom:4.2.19.Final')
 
   implementation 'ch.qos.logback:logback-core'
   implementation 'ch.qos.logback:logback-classic'
@@ -148,7 +148,7 @@ dependencies {
   // https://github.com/mbknor/mbknor-jackson-jsonSchema
   implementation 'com.kjetland:mbknor-jackson-jsonschema_2.13:1.0.39'
   implementation 'com.jayway.jsonpath:json-path:2.10.0'
-  implementation 'org.apache.httpcomponents.client5:httpclient5:5.6.4'
+  implementation 'org.apache.httpcomponents.client5:httpclient5:5.6.5'
   implementation ('io.projectreactor.netty:reactor-netty-http') {
     // http3/quic is not functional on Alpine due to absence of glibc/ld-linux
     // Error loading shared library ld-linux-x86-64.so.2:
