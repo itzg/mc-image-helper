@@ -15,11 +15,11 @@ import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 import picocli.CommandLine.ParentCommand;
 
-@Command(name = "download-latest-asset",
+@Command(name = "download-asset", aliases = "download-latest-asset",
     description = "From the latest or a given release, downloads the first matching asset, and outputs the downloaded filename"
 )
 @Slf4j
-public class DownloadLatestAssetCommand implements Callable<Integer> {
+public class DownloadAssetCommand implements Callable<Integer> {
 
     String organization;
     String repo;
@@ -53,7 +53,7 @@ public class DownloadLatestAssetCommand implements Callable<Integer> {
     @Override
     public Integer call() throws Exception {
 
-        try (SharedFetch sharedFetch = Fetch.sharedFetch("github download-latest-asset", sharedFetchArgs.options())) {
+        try (SharedFetch sharedFetch = Fetch.sharedFetch("github download-asset", sharedFetchArgs.options())) {
 
             final GithubClient client = new GithubClient(sharedFetch, parent.getApiBaseUrl(), parent.getToken());
             final Path result = client.downloadLatestAsset(organization, repo, releaseTag, namePattern, outputDirectory)

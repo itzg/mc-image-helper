@@ -20,7 +20,7 @@ import org.junit.jupiter.api.io.TempDir;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
 
-class DownloadLatestAssetCommandTest {
+class DownloadAssetCommandTest {
 
     @RegisterExtension
     static WireMockExtension wm = WireMockExtension.newInstance()
@@ -107,7 +107,7 @@ class DownloadLatestAssetCommandTest {
         final int exitCode = new CommandLine(new GithubCommands())
             .execute(
                 "--api-base-url", wmInfo.getHttpBaseUrl(),
-                "download-latest-asset",
+                "download-asset",
                 "--release-tag", releaseTag,
                 "--name-pattern", "app-.+?(?<!-sources)\\.jar",
                 "--output-directory", tempDir.toString(),
@@ -130,7 +130,7 @@ class DownloadLatestAssetCommandTest {
         final int exitCode = new CommandLine(new GithubCommands())
             .execute(
                 "--api-base-url", wmInfo.getHttpBaseUrl(),
-                "download-latest-asset",
+                "download-asset",
                 "--release-tag", "missing",
                 "--output-directory", tempDir.toString(),
                 "org/repo"
@@ -145,7 +145,7 @@ class DownloadLatestAssetCommandTest {
             .willReturn(WireMock.notFound())
         );
 
-        final int exitCode = new CommandLine(new DownloadLatestAssetCommand())
+        final int exitCode = new CommandLine(new DownloadAssetCommand())
             .execute(
                 "--api-base-url", wmInfo.getHttpBaseUrl(),
                 "--output-directory", tempDir.toString(),
