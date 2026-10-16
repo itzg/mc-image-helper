@@ -29,8 +29,8 @@ public class DownloadAssetCommand implements Callable<Integer> {
     @Option(names = "--name-pattern")
     Pattern namePattern;
 
-    @Option(names = "--release-tag", defaultValue = "latest",
-        description = "The release tag to download from, or 'latest' for the latest release")
+    @Option(names = "--release-tag",
+        description = "The release tag to download from, otherwise the latest release")
     String releaseTag;
 
     @Option(names = "--output-directory", defaultValue = ".")
@@ -58,12 +58,12 @@ public class DownloadAssetCommand implements Callable<Integer> {
         try (SharedFetch sharedFetch = Fetch.sharedFetch("github download-asset", sharedFetchArgs.options())) {
 
             final GithubClient client = new GithubClient(sharedFetch, parent.getApiBaseUrl(), parent.getToken());
-            final Path result = client.downloadLatestAsset(organization, repo, releaseTag, namePattern, outputDirectory)
+            final Path result = client.downloadAsset(organization, repo, releaseTag, namePattern, outputDirectory)
                 .block();
 
             if (result == null) {
                 log.error("Unable to locate {} release, matching asset from {}/{}",
-                    releaseTag, organization, repo);
+                    releaseTag != null ? releaseTag : "latest", organization, repo);
                 return CommandLine.ExitCode.USAGE;
             }
             else {

@@ -47,11 +47,11 @@ public class GithubClient {
     /**
      * Downloads the first asset of a release matching the name pattern.
      *
-     * @param releaseTag the release tag to download from, or {@code null} or {@code latest} to use the latest release
+     * @param releaseTag the release tag to download from, or {@code null} to use the latest release
      */
-    public Mono<Path> downloadLatestAsset(String org, String repo, @Nullable String releaseTag,
+    public Mono<Path> downloadAsset(String org, String repo, @Nullable String releaseTag,
             @Nullable Pattern namePattern, Path outputDirectory) {
-        final URI releaseUri = (releaseTag == null || releaseTag.equalsIgnoreCase("latest"))
+        final URI releaseUri = releaseTag == null
             ? uriBuilder.resolve("/repos/{org}/{repo}/releases/latest", org, repo)
             : uriBuilder.resolve("/repos/{org}/{repo}/releases/tags/{tag}", org, repo, releaseTag);
 
