@@ -67,6 +67,8 @@ test {
 
 application {
   mainClass = 'me.itzg.helpers.McImageHelper'
+  // Netty loads native libraries via System.loadLibrary, which Java 24+ warns about unless native access is enabled
+  applicationDefaultJvmArgs = ['--enable-native-access=ALL-UNNAMED']
 }
 
 tasks.register('updateReadme', JavaExec) {
