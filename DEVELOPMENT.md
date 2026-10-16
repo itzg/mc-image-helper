@@ -1,3 +1,15 @@
+## Java compatibility
+
+The `main` branch targets Java 17. This allows the project to use somewhat modern Java language features while covering the range of Java 17, 25, and newer used by image variants of `itzg/minecraft-server`.
+
+At the same time, `itzg/minecraft-server` still needs support for Java 8 through Java 11. A separate `java8` branch is maintained for major bug fixes and features that can be readily backported using Java 8 language constructs. 
+
+For changes that cannot be easily backported, use the `has-feature` subcommand to check whether a subcommand—and, when relevant, one of its options—is available. Callers can then gracefully skip or adapt the action and inform the user.
+
+Fixes and features to be backported should be initiated by using git to cherry-pick the desired commits from `main` into `java8`. Create a feature/fix branch from `java8` and target the PR at the `java8` branch.
+
+Changes merged into `java8` are released by incrementing the patch version of `1.51.x-java8`, such as [1.51.4-java8](https://github.com/itzg/mc-image-helper/releases?q=java8&expanded=true#release-1.51.4-java8)
+
 ## Ad hoc testing
 
 Beyond the unit tests, ad hoc "integration testing" can be done by running via Gradle passing the intended command-line via `--args`, such as:
