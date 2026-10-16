@@ -15,6 +15,8 @@ import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 import picocli.CommandLine.ParentCommand;
 
+// download-latest-asset is retained as an alias since that was the
+// command name before selecting a specific release was supported
 @Command(name = "download-asset", aliases = "download-latest-asset",
     description = "From the latest or a given release, downloads the first matching asset, and outputs the downloaded filename"
 )
