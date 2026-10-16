@@ -260,9 +260,9 @@ Usage: mc-image-helper github [--api-base-url=<apiBaseUrl>] [--token=<token>] [C
 
       --token=<token>   An access token for GitHub to elevate rate limit vs anonymous access
 Commands:
-  download-latest-asset  From the latest release, downloads the first matching asset, and outputs the downloaded
-                           filename
-  download-artifact      Download an artifact from a successful GitHub Actions workflow
+  download-asset, download-latest-asset  From the latest or a given release, downloads the first matching asset, and
+                                           outputs the downloaded filename
+  download-artifact                      Download an artifact from a successful GitHub Actions workflow
 ```
 
 ### has-feature
