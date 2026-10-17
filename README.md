@@ -293,8 +293,8 @@ Download a file
 ```
 Usage: mc-image-helper github [COMMAND]
 Commands:
-  download-latest-asset  From the latest release, downloads the first matching
-                           asset, and outputs the downloaded filename
+  download-asset, download-latest-asset  From the latest or a given release, downloads the first matching asset, and
+                                           outputs the downloaded filename
 ```
 
 ### hash

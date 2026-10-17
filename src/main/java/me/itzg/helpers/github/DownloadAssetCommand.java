@@ -15,17 +15,23 @@ import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 import picocli.CommandLine.ParentCommand;
 
-@Command(name = "download-latest-asset",
-    description = "From the latest release, downloads the first matching asset, and outputs the downloaded filename"
+// download-latest-asset is retained as an alias since that was the
+// command name before selecting a specific release was supported
+@Command(name = "download-asset", aliases = "download-latest-asset",
+    description = "From the latest or a given release, downloads the first matching asset, and outputs the downloaded filename"
 )
 @Slf4j
-public class DownloadLatestAssetCommand implements Callable<Integer> {
+public class DownloadAssetCommand implements Callable<Integer> {
 
     String organization;
     String repo;
 
     @Option(names = "--name-pattern")
     Pattern namePattern;
+
+    @Option(names = "--release-tag",
+        description = "The release tag to download from, otherwise the latest release")
+    String releaseTag;
 
     @Option(names = "--output-directory", defaultValue = ".")
     Path outputDirectory;
@@ -49,14 +55,15 @@ public class DownloadLatestAssetCommand implements Callable<Integer> {
     @Override
     public Integer call() throws Exception {
 
-        try (SharedFetch sharedFetch = Fetch.sharedFetch("github download-latest-asset", sharedFetchArgs.options())) {
+        try (SharedFetch sharedFetch = Fetch.sharedFetch("github download-asset", sharedFetchArgs.options())) {
 
             final GithubClient client = new GithubClient(sharedFetch, parent.getApiBaseUrl(), parent.getToken());
-            final Path result = client.downloadLatestAsset(organization, repo, namePattern, outputDirectory)
+            final Path result = client.downloadAsset(organization, repo, releaseTag, namePattern, outputDirectory)
                 .block();
 
             if (result == null) {
-                log.error("Unable to locate latest, matching asset from {}/{}", organization, repo);
+                log.error("Unable to locate {} release, matching asset from {}/{}",
+                    releaseTag != null ? releaseTag : "latest", organization, repo);
                 return CommandLine.ExitCode.USAGE;
             }
             else {
