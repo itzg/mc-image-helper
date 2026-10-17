@@ -36,10 +36,18 @@ public class GithubClient {
         this.token = token;
     }
 
-    public Mono<Path> downloadLatestAsset(String org, String repo, @Nullable Pattern namePattern, Path outputDirectory) {
-        return sharedFetch.fetch(
-                uriBuilder.resolve("/repos/{org}/{repo}/releases/latest", org, repo)
-            )
+    /**
+     * Downloads the first asset of a release matching the name pattern.
+     *
+     * @param releaseTag the release tag to download from, or {@code null} to use the latest release
+     */
+    public Mono<Path> downloadAsset(String org, String repo, @Nullable String releaseTag,
+            @Nullable Pattern namePattern, Path outputDirectory) {
+        final URI releaseUri = releaseTag == null
+            ? uriBuilder.resolve("/repos/{org}/{repo}/releases/latest", org, repo)
+            : uriBuilder.resolve("/repos/{org}/{repo}/releases/tags/{tag}", org, repo, releaseTag);
+
+        return sharedFetch.fetch(releaseUri)
             .acceptContentTypes(Collections.singletonList("application/vnd.github+json"))
             .withAuthorization("Bearer", token)
             .toObject(Release.class)
@@ -65,7 +73,7 @@ public class GithubClient {
             })
             .flatMap(release -> {
                 if (log.isDebugEnabled()) {
-                    log.debug("Assets in latest release '{}': {}",
+                    log.debug("Assets in release '{}': {}",
                         release.getName(),
                         release.getAssets().stream()
                             .map(Asset::getName)
