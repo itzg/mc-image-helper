@@ -327,7 +327,7 @@ public class CleanroomInstaller
             results.write("SERVER", serverEntry);
             results.write("FAMILY", "FORGE");
             results.writeType("CLEANROOM");
-            results.writeVersion(loaderVersion);
+            results.writeVersion("1.12.2");
         }
     }
 
