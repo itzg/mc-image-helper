@@ -1,7 +1,7 @@
 name: Release on merge
 
 on:
-  pull_request:
+  pull_request_target:
     types: [closed]
 
 jobs:
@@ -10,12 +10,9 @@ jobs:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v7
-
       - name: Run Release on Merge Action
         id: release-on-merge
-        uses: itzg/release-on-merge-action@v1.1.1
+        uses: itzg/release-on-merge-action@v1.1.2
         with:
           # Be sure to allocate and assign a Personal Access Token with write access to the repository.
           # Required when the creation of the release will need to trigger another Github workflow.
