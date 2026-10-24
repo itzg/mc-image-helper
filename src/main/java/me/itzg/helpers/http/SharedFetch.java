@@ -40,6 +40,9 @@ public class SharedFetch implements AutoCloseable {
     private final Map<String, String> headers = new HashMap<>();
     final LatchingUrisInterceptor latchingUrisInterceptor = new LatchingUrisInterceptor();
 
+    // github.com responses can carry a ~9KB content-security-policy header
+    private static final int MAX_HEADER_SIZE = 64 * 1024;
+
     private final HttpClient reactiveClient;
 
     private final URI filesViaUrl;
@@ -101,6 +104,7 @@ public class SharedFetch implements AutoCloseable {
             // https://projectreactor.io/docs/netty/release/reference/http-client.html#HTTP2
             return c
                 .protocol(HttpProtocol.H2, HttpProtocol.HTTP11)
+                .httpResponseDecoder(spec -> spec.maxHeaderSize(MAX_HEADER_SIZE))
                 .doOnChannelInit(ensureHttpSettingsFlush())
                 // ignored for HTTP/1.1
                 .http2Settings(settings ->
@@ -108,6 +112,7 @@ public class SharedFetch implements AutoCloseable {
                     settings
                         .initialWindowSize(options.getHttp2InitialWindowSize())
                         .maxFrameSize(options.getHttp2MaxFrameSize())
+                        .maxHeaderListSize(MAX_HEADER_SIZE)
                 )
                 .secure(spec -> applySslContext(options, spec));
 
@@ -116,6 +121,7 @@ public class SharedFetch implements AutoCloseable {
             log.debug("Using HTTP/1.1");
             return c
                 .protocol(HttpProtocol.HTTP11)
+                .httpResponseDecoder(spec -> spec.maxHeaderSize(MAX_HEADER_SIZE))
                 .secure(spec -> applySslContext(options, spec));
         }
     }
