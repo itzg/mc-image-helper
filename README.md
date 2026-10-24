@@ -95,6 +95,25 @@ Commands:
   extract               Extracts an archive, checking for path traversal
 ```
 
+### archive check-path-traversal
+
+```
+Usage: mc-image-helper archive check-path-traversal ARCHIVE
+Checks if an archive contains path traversal attack
+      ARCHIVE   Path to archive
+```
+
+### archive extract
+
+```
+Usage: mc-image-helper archive extract [--overwrite] ARCHIVE DESTINATION [FILE...]
+Extracts an archive, checking for path traversal
+      ARCHIVE       Path to archive
+      DESTINATION   Output destination
+      [FILE...]     Exact archive file paths to extract; extracts everything when omitted
+      --overwrite   Overwrite existing files
+```
+
 ### asciify
 
 ```
@@ -112,6 +131,41 @@ Commands:
   fileNotExists
   jsonPathEquals
   propertyEquals
+```
+
+### assert fileExists
+
+```
+Usage: mc-image-helper assert fileExists [<paths>...]
+      [<paths>...]
+```
+
+### assert fileNotExists
+
+```
+Usage: mc-image-helper assert fileNotExists [<paths>...]
+      [<paths>...]
+```
+
+### assert jsonPathEquals
+
+```
+Usage: mc-image-helper assert jsonPathEquals --expect=<expectedValue> --file=<file> --path=<jsonPath>
+      --expect=<expectedValue>
+
+      --file=<file>
+      --path=<jsonPath>
+```
+
+### assert propertyEquals
+
+```
+Usage: mc-image-helper assert propertyEquals --expect=<expectedValue> --file=<file> --property=<property>
+      --expect=<expectedValue>
+
+      --file=<file>   Property file
+      --property=<property>
+
 ```
 
 ### compare-versions
@@ -263,6 +317,75 @@ Commands:
   download-asset, download-latest-asset  From the latest or a given release, downloads the first matching asset, and
                                            outputs the downloaded filename
   download-artifact                      Download an artifact from a successful GitHub Actions workflow
+```
+
+### github download-artifact
+
+```
+Usage: mc-image-helper github download-artifact [-h] [--no-download] [--output-filename] [--overwrite] [--unzip]
+                                                --artifact-pattern=<artifactPattern> [-o=<outputDirectory>]
+                                                (--workflow=ID|FILE | --run-id=ID) [[--use-http2] [--wiretap]] org/repo
+Download an artifact from a successful GitHub Actions workflow
+      org/repo
+      --artifact-pattern=<artifactPattern>
+                           Regular expression that must match exactly one artifact
+  -h, --help
+      --no-download        Doesn't download artifact
+  -o, --output-directory=<outputDirectory>
+                           Output directory of downloaded artifact
+      --output-filename    Prints artifact name
+      --overwrite          Overwrite existing files when extracing zip
+      --run-id=ID          Query this specific workflow run to download an artifact
+      --unzip              Extract the downloaded artifact
+      --use-http2          Whether to use HTTP/2.
+                           Default: true
+                           Env: FETCH_USE_HTTP2
+      --wiretap            Whether to enable Reactor Netty wiretap logging. Make sure to set logging level to trace.
+                           Default: false
+                           Env: FETCH_WIRETAP
+      --workflow=ID|FILE   Query this workflow for the latest successful run to download an artifact
+```
+
+### github download-asset
+
+```
+Usage: mc-image-helper github download-asset [--name-pattern=<namePattern>] [--output-directory=<outputDirectory>]
+                                             [--release-tag=<releaseTag>] [[--use-http2] [--wiretap]] org/repo
+From the latest or a given release, downloads the first matching asset, and outputs the downloaded filename
+      org/repo
+      --name-pattern=<namePattern>
+
+      --output-directory=<outputDirectory>
+
+      --release-tag=<releaseTag>
+                    The release tag to download from, otherwise the latest release
+      --use-http2   Whether to use HTTP/2.
+                    Default: true
+                    Env: FETCH_USE_HTTP2
+      --wiretap     Whether to enable Reactor Netty wiretap logging. Make sure to set logging level to trace.
+                    Default: false
+                    Env: FETCH_WIRETAP
+```
+
+### github download-latest-asset
+
+```
+Usage: mc-image-helper github download-asset [--name-pattern=<namePattern>] [--output-directory=<outputDirectory>]
+                                             [--release-tag=<releaseTag>] [[--use-http2] [--wiretap]] org/repo
+From the latest or a given release, downloads the first matching asset, and outputs the downloaded filename
+      org/repo
+      --name-pattern=<namePattern>
+
+      --output-directory=<outputDirectory>
+
+      --release-tag=<releaseTag>
+                    The release tag to download from, otherwise the latest release
+      --use-http2   Whether to use HTTP/2.
+                    Default: true
+                    Env: FETCH_USE_HTTP2
+      --wiretap     Whether to enable Reactor Netty wiretap logging. Make sure to set logging level to trace.
+                    Default: false
+                    Env: FETCH_WIRETAP
 ```
 
 ### has-feature
@@ -438,6 +561,13 @@ Downloads, installs, and upgrades CurseForge modpacks
                              Env: FETCH_WIRETAP
 Commands:
   schemas  Output relevant JSON schemas
+```
+
+### install-curseforge schemas
+
+```
+Usage: mc-image-helper install-curseforge schemas
+Output relevant JSON schemas
 ```
 
 ### install-fabric-loader
@@ -1000,6 +1130,13 @@ Commands:
   schema  Output JSON schema for property definitions
 ```
 
+### set-properties schema
+
+```
+Usage: mc-image-helper set-properties schema
+Output JSON schema for property definitions
+```
+
 ### show-all-subcommand-usage
 
 ```
@@ -1011,6 +1148,26 @@ Renders all of the subcommand usage as markdown sections for README
 Commands:
   check-readme   Checks that README command documentation is current; exits with 1 if out of date
   update-readme  Updates the generated command documentation in README
+```
+
+### show-all-subcommand-usage check-readme
+
+```
+Usage: mc-image-helper show-all-subcommand-usage check-readme [-hV] [README]
+Checks that README command documentation is current; exits with 1 if out of date
+      [README]    Path to README file to check
+  -h, --help      Show this help message and exit.
+  -V, --version   Print version information and exit.
+```
+
+### show-all-subcommand-usage update-readme
+
+```
+Usage: mc-image-helper show-all-subcommand-usage update-readme [-hV] [README]
+Updates the generated command documentation in README
+      [README]    Path to README file to update
+  -h, --help      Show this help message and exit.
+  -V, --version   Print version information and exit.
 ```
 
 ### sync
