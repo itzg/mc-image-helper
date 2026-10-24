@@ -41,6 +41,9 @@ import org.apache.hc.client5.http.HttpResponseException;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.classic.methods.HttpHead;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.io.ManagedHttpClientConnectionFactory;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
+import org.apache.hc.core5.http.config.Http1Config;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.HttpHeaders;
@@ -56,6 +59,10 @@ import picocli.CommandLine.Spec;
 @CommandLine.Command(name = "get", description = "Download a file")
 @Slf4j
 public class GetCommand implements Callable<Integer> {
+
+    // github.com responses can carry a ~9KB content-security-policy header
+    private static final int MAX_HEADER_LINE_LENGTH = 64 * 1024;
+    private static final int MAX_HEADER_COUNT = 500;
 
     @Spec
     CommandLine.Model.CommandSpec spec;
@@ -162,7 +169,18 @@ public class GetCommand implements Callable<Integer> {
 
         final LatchingUrisInterceptor interceptor = new LatchingUrisInterceptor();
 
+        final ManagedHttpClientConnectionFactory connectionFactory = ManagedHttpClientConnectionFactory.builder()
+            .http1Config(Http1Config.custom()
+                .setMaxLineLength(MAX_HEADER_LINE_LENGTH)
+                .setMaxHeaderCount(MAX_HEADER_COUNT)
+                .build())
+            .build();
+
         try (CloseableHttpClient client = HttpClients.custom()
+            .setConnectionManager(PoolingHttpClientConnectionManagerBuilder.create()
+                .useSystemProperties()
+                .setConnectionFactory(connectionFactory)
+                .build())
             .addExecInterceptorFirst("latchRequestUris", interceptor)
             .useSystemProperties()
             .setUserAgent("mc-image-helper/"+ McImageHelper.getVersion()+" (cmd=get)")
