@@ -6,6 +6,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.anyRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.anyUrl;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.reset;
 import static com.github.tomakehurst.wiremock.client.WireMock.resetAllRequests;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
@@ -40,11 +41,16 @@ class InstallForgeCommandTest {
     );
     private static final String INSTALLER_PATH = "/forge-1.20.2-48.1.0-installer-trimmed.jar";
 
+    private static final String ORIGINAL_VERSION_ID = "\"id\": \"1.20.2-forge-48.1.0\"";
+    private static final String ORIGINAL_INHERITS_FROM = "\"inheritsFrom\": \"1.20.2\"";
+
     private static byte[] installerBody;
+    private static byte[] alternateInstallerBody;
 
     @BeforeAll
     static void buildExecutableInstaller() throws IOException {
-        installerBody = executableInstaller();
+        installerBody = executableInstaller("1.20.2", "48.1.0");
+        alternateInstallerBody = executableInstaller("1.19.4", "45.2.0");
     }
 
     @Test
@@ -107,13 +113,15 @@ class InstallForgeCommandTest {
     }
 
     @Test
-    void forceReinstallDownloadsAgain(WireMockRuntimeInfo wm, @TempDir Path tempDir) {
+    void forceReinstallDownloadsAgain(WireMockRuntimeInfo wm, @TempDir Path tempDir) throws IOException {
         stubInstaller(INSTALLER_PATH, "application/java-archive");
         final String url = installerUrl(wm, INSTALLER_PATH);
 
         assertThat(run(tempDir, "--forge-installer-url", url))
             .isEqualTo(ExitCode.OK);
         resetAllRequests();
+
+        assertThat(Files.readString(tempDir.resolve("installer-runs.txt"))).isEqualTo("ran\n");
 
         assertThat(run(tempDir, "--force-reinstall", "--forge-installer-url", url))
             .isEqualTo(ExitCode.OK);
@@ -122,6 +130,65 @@ class InstallForgeCommandTest {
         verify(1, anyRequestedFor(anyUrl()));
         assertThat(Manifests.load(tempDir, "forge", ForgeManifest.class).getInstallerUrl())
             .isEqualTo(url);
+        assertThat(Files.readString(tempDir.resolve("installer-runs.txt"))).isEqualTo("ran\nran\n");
+    }
+
+    @Test
+    void existingFileWithInstallerBasenameSurvives(WireMockRuntimeInfo wm, @TempDir Path tempDir) throws IOException {
+        final String path = "/server.jar";
+        stubInstaller(path, "application/java-archive");
+        final Path existing = tempDir.resolve("server.jar");
+        Files.writeString(existing, "keep-this-server");
+
+        assertThat(run(tempDir, "--forge-installer-url", installerUrl(wm, path)))
+            .isEqualTo(ExitCode.OK);
+
+        assertThat(Files.readString(existing)).isEqualTo("keep-this-server");
+        assertThat(tempDir.resolve("forge-1.20.2-48.1.0.jar")).exists();
+    }
+
+    @Test
+    void missingServerEntryRefreshesVersionFromSameUrl(WireMockRuntimeInfo wm, @TempDir Path tempDir) throws IOException {
+        stubInstaller(INSTALLER_PATH, "application/java-archive");
+        final String url = installerUrl(wm, INSTALLER_PATH);
+
+        assertThat(run(tempDir, "--forge-installer-url", url))
+            .isEqualTo(ExitCode.OK);
+
+        final ForgeManifest installed = Manifests.load(tempDir, "forge", ForgeManifest.class);
+        assertThat(installed.getMinecraftVersion()).isEqualTo("1.20.2");
+        assertThat(installed.getForgeVersion()).isEqualTo("48.1.0");
+        Files.delete(tempDir.resolve(installed.getServerEntry()));
+
+        reset();
+        stubInstaller(INSTALLER_PATH, "application/java-archive", alternateInstallerBody);
+
+        assertThat(run(tempDir, "--forge-installer-url", url))
+            .isEqualTo(ExitCode.OK);
+
+        verify(1, getRequestedFor(urlEqualTo(INSTALLER_PATH)));
+        final ForgeManifest refreshed = Manifests.load(tempDir, "forge", ForgeManifest.class);
+        assertThat(refreshed.getInstallerUrl()).isEqualTo(url);
+        assertThat(refreshed.getMinecraftVersion()).isEqualTo("1.19.4");
+        assertThat(refreshed.getForgeVersion()).isEqualTo("45.2.0");
+        assertThat(tempDir.resolve(refreshed.getServerEntry())).exists();
+    }
+
+    @Test
+    void createsMissingOutputDirectory(WireMockRuntimeInfo wm, @TempDir Path tempDir) {
+        stubInstaller(INSTALLER_PATH, "application/java-archive");
+        final Path outputDir = tempDir.resolve("server");
+        assertThat(outputDir).doesNotExist();
+
+        assertThat(run(outputDir, "--forge-installer-url", installerUrl(wm, INSTALLER_PATH)))
+            .isEqualTo(ExitCode.OK);
+
+        assertThat(outputDir).isDirectory();
+        final ForgeManifest manifest = Manifests.load(outputDir, "forge", ForgeManifest.class);
+        assertThat(manifest).isNotNull();
+        assertThat(manifest.getMinecraftVersion()).isEqualTo("1.20.2");
+        assertThat(manifest.getForgeVersion()).isEqualTo("48.1.0");
+        assertThat(outputDir.resolve(manifest.getServerEntry())).exists();
     }
 
     @Test
@@ -200,20 +267,24 @@ class InstallForgeCommandTest {
     }
 
     private static void stubInstaller(String path, String contentType) {
+        stubInstaller(path, contentType, installerBody);
+    }
+
+    private static void stubInstaller(String path, String contentType, byte[] body) {
         stubFor(get(urlEqualTo(path))
             .willReturn(aResponse()
                 .withStatus(200)
                 .withHeader("Content-Type", contentType)
-                .withBody(installerBody)
+                .withBody(body)
             )
         );
     }
 
     /**
-     * The trimmed fixture has no Main-Class. Copy it and add one so the installer process can exit successfully
-     * while version.json stays the original entry.
+     * The trimmed fixture has no Main-Class. Copy it and add one so the installer process can exit successfully.
+     * version.json is rewritten when a test needs a different Minecraft or Forge version.
      */
-    private static byte[] executableInstaller() throws IOException {
+    private static byte[] executableInstaller(String minecraftVersion, String forgeVersion) throws IOException {
         final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         try (ZipOutputStream zip = new ZipOutputStream(buffer)) {
             zip.putNextEntry(new ZipEntry("META-INF/MANIFEST.MF"));
@@ -226,8 +297,13 @@ class InstallForgeCommandTest {
             try (ZipInputStream source = new ZipInputStream(Files.newInputStream(TRIMMED_INSTALLER))) {
                 ZipEntry entry;
                 while ((entry = source.getNextEntry()) != null) {
+                    final byte[] contents = source.readAllBytes();
                     zip.putNextEntry(new ZipEntry(entry.getName()));
-                    source.transferTo(zip);
+                    if ("version.json".equals(entry.getName())) {
+                        zip.write(rewriteVersionJson(contents, minecraftVersion, forgeVersion));
+                    } else {
+                        zip.write(contents);
+                    }
                     zip.closeEntry();
                 }
             }
@@ -242,5 +318,12 @@ class InstallForgeCommandTest {
             zip.closeEntry();
         }
         return buffer.toByteArray();
+    }
+
+    private static byte[] rewriteVersionJson(byte[] contents, String minecraftVersion, String forgeVersion) {
+        final String json = new String(contents, StandardCharsets.UTF_8)
+            .replace(ORIGINAL_VERSION_ID, "\"id\": \"" + minecraftVersion + "-forge-" + forgeVersion + "\"")
+            .replace(ORIGINAL_INHERITS_FROM, "\"inheritsFrom\": \"" + minecraftVersion + "\"");
+        return json.getBytes(StandardCharsets.UTF_8);
     }
 }

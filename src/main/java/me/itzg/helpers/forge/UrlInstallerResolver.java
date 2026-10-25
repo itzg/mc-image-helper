@@ -66,7 +66,7 @@ public class UrlInstallerResolver implements InstallerResolver {
     public void cleanup(Path forgeInstallerJar) {
         fetchedJar = null;
         try {
-            Files.delete(forgeInstallerJar);
+            Files.deleteIfExists(forgeInstallerJar);
         } catch (IOException e) {
             log.warn("Failed to delete installer jar {}", forgeInstallerJar);
         }
@@ -86,13 +86,22 @@ public class UrlInstallerResolver implements InstallerResolver {
         return prevManifest != null
             && installerUri.toString().equals(prevManifest.getInstallerUrl())
             && prevManifest.getMinecraftVersion() != null
-            && prevManifest.getForgeVersion() != null;
+            && prevManifest.getForgeVersion() != null
+            && serverEntryExists(prevManifest.getServerEntry());
+    }
+
+    private boolean serverEntryExists(String serverEntry) {
+        if (serverEntry == null || serverEntry.isBlank()) {
+            return false;
+        }
+        return (serverEntry.startsWith("/") && Files.exists(Path.of(serverEntry)))
+            || Files.exists(outputDir.resolve(serverEntry));
     }
 
     private Path fetchInstaller(Path outputDir) {
         log.info("Downloading Forge installer from {}", installerUri);
 
-        final Path installerJar = outputDir.resolve(installerFileName(installerUri));
+        final Path installerJar = newInstallerFile(outputDir);
         try {
             final Path result = sharedFetch.fetch(installerUri)
                 .toFile(installerJar)
@@ -106,6 +115,7 @@ public class UrlInstallerResolver implements InstallerResolver {
             fetchedJar = result;
             return result;
         } catch (RuntimeException e) {
+            cleanup(installerJar);
             if (isNotFound(e)) {
                 throw new GenericException(
                     "Failed to download Forge installer from " + installerUri + ": not found",
@@ -113,6 +123,15 @@ public class UrlInstallerResolver implements InstallerResolver {
                 );
             }
             throw e;
+        }
+    }
+
+    private static Path newInstallerFile(Path outputDir) {
+        try {
+            Files.createDirectories(outputDir);
+            return Files.createTempFile("forge-installer-", ".jar");
+        } catch (IOException e) {
+            throw new GenericException("Failed to prepare forge installer download", e);
         }
     }
 
@@ -125,18 +144,5 @@ public class UrlInstallerResolver implements InstallerResolver {
             current = current.getCause();
         }
         return false;
-    }
-
-    private static String installerFileName(URI installerUri) {
-        final String path = installerUri.getPath();
-        String name = null;
-        if (path != null && !path.isEmpty()) {
-            final int slash = path.lastIndexOf('/');
-            name = slash >= 0 ? path.substring(slash + 1) : path;
-        }
-        if (name == null || name.isBlank() || ".".equals(name) || "..".equals(name)) {
-            return "forge-installer.jar";
-        }
-        return name;
     }
 }
