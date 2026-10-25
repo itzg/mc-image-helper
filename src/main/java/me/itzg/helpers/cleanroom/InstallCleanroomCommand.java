@@ -1,5 +1,11 @@
 package me.itzg.helpers.cleanroom;
 
+import static me.itzg.helpers.McImageHelper.VERSION_REGEX;
+
+import java.net.URI;
+import java.nio.file.Path;
+import java.util.concurrent.Callable;
+import java.util.regex.Pattern;
 import me.itzg.helpers.http.SharedFetchArgs;
 import picocli.CommandLine;
 import picocli.CommandLine.ArgGroup;
@@ -8,12 +14,6 @@ import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.ParameterException;
 import picocli.CommandLine.Spec;
-import java.net.URI;
-import java.nio.file.Path;
-import java.util.concurrent.Callable;
-import java.util.regex.Pattern;
-
-import static me.itzg.helpers.McImageHelper.VERSION_REGEX;
 
 @Command(name = "install-cleanroom", description = "Downloads and installs a requested version of Cleanroom")
 public class InstallCleanroomCommand implements Callable<Integer> {
@@ -57,7 +57,7 @@ public class InstallCleanroomCommand implements Callable<Integer> {
         public void setLoaderVersion(String loaderVersion) {
             if (!ALLOWED_VERSION.matcher(loaderVersion).matches()) {
                 throw new ParameterException(spec.commandLine(),
-                    "Invalid value for --cleanroom-version: " + loaderVersion
+                    "Invalid value for --loader-version: " + loaderVersion
                 );
             }
             this.loaderVersion = loaderVersion.toLowerCase();
