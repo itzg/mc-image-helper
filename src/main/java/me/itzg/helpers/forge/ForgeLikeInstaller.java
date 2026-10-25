@@ -86,16 +86,22 @@ public class ForgeLikeInstaller {
             }
             else if (
                 Objects.equals(prevManifest.getMinecraftVersion(), resolved.minecraft) &&
-                Objects.equals(prevManifest.getForgeVersion(), resolved.forge)
+                Objects.equals(prevManifest.getForgeVersion(), resolved.forge) &&
+                installerUrlMatches(prevManifest)
             ) {
                 log.info("{} version {} for minecraft version {} is already installed",
                     variant, resolved.forge, resolved.minecraft
                 );
                 needsInstall = false;
             } else {
-                log.info("Re-installing Forge due to version change from MC {}/Forge {} to MC {}/Forge {}",
-                    prevManifest.getMinecraftVersion(), prevManifest.getForgeVersion(),
-                    resolved.minecraft, resolved.forge);
+                if (installerResolver.getInstallerUrl() != null && !installerUrlMatches(prevManifest)) {
+                    log.info("Re-installing {} because the installer URL changed", variant);
+                }
+                else {
+                    log.info("Re-installing Forge due to version change from MC {}/Forge {} to MC {}/Forge {}",
+                        prevManifest.getMinecraftVersion(), prevManifest.getForgeVersion(),
+                        resolved.minecraft, resolved.forge);
+                }
                 needsInstall = true;
             }
         }
@@ -149,6 +155,14 @@ public class ForgeLikeInstaller {
 
             new LibraryCleaner(shimJar, LibraryListPaths.FORGE).cleanLibraries();
         }
+    }
+
+    private boolean installerUrlMatches(ForgeManifest prevManifest) {
+        final String installerUrl = installerResolver.getInstallerUrl();
+        if (installerUrl == null) {
+            return true;
+        }
+        return installerUrl.equals(prevManifest.getInstallerUrl());
     }
 
     private boolean serverEntryExists(@NonNull Path outputDir, String serverEntry) {
@@ -273,6 +287,7 @@ public class ForgeLikeInstaller {
                 .timestamp(Instant.now())
                 .minecraftVersion(minecraftVersion)
                 .forgeVersion(forgeVersion)
+                .installerUrl(installerResolver.getInstallerUrl())
                 .serverEntry(
                     relativeServerEntry
                 )
