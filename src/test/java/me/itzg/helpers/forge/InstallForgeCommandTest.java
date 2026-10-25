@@ -22,6 +22,8 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
@@ -175,6 +177,40 @@ class InstallForgeCommandTest {
     }
 
     @Test
+    void interruptedDownloadRemovesStagingFileAndKeepsManifest(WireMockRuntimeInfo wm, @TempDir Path tempDir)
+        throws IOException {
+        stubInstaller(INSTALLER_PATH, "application/java-archive");
+        final String url = installerUrl(wm, INSTALLER_PATH);
+
+        assertThat(run(tempDir, "--forge-installer-url", url))
+            .isEqualTo(ExitCode.OK);
+        final String manifest = Files.readString(tempDir.resolve(".forge-manifest.json"));
+
+        reset();
+        stubFor(get(urlEqualTo(INSTALLER_PATH))
+            .willReturn(aResponse()
+                .withStatus(200)
+                .withHeader("Content-Type", "application/java-archive")
+                .withHeader("Content-Length", "1000000")
+                .withHeader("Connection", "close")
+                .withBody(new byte[] {1, 2, 3, 4})
+            )
+        );
+
+        final List<Path> stagingBefore = installerStagingFiles();
+
+        assertThat(run(tempDir, "--force-reinstall", "--forge-installer-url", url))
+            .isEqualTo(ExitCode.SOFTWARE);
+        assertThat(run(tempDir, "--force-reinstall", "--forge-installer-url", url))
+            .isEqualTo(ExitCode.SOFTWARE);
+
+        verify(2, getRequestedFor(urlEqualTo(INSTALLER_PATH)));
+        assertThat(Files.readString(tempDir.resolve(".forge-manifest.json"))).isEqualTo(manifest);
+        assertThat(installerStagingFiles()).containsExactlyInAnyOrderElementsOf(stagingBefore);
+        assertThat(tempDir.resolve("forge-1.20.2-48.1.0.jar")).exists();
+    }
+
+    @Test
     void createsMissingOutputDirectory(WireMockRuntimeInfo wm, @TempDir Path tempDir) {
         stubInstaller(INSTALLER_PATH, "application/java-archive");
         final Path outputDir = tempDir.resolve("server");
@@ -260,6 +296,18 @@ class InstallForgeCommandTest {
         command[1] = tempDir.toString();
         System.arraycopy(args, 0, command, 2, args.length);
         return new CommandLine(new InstallForgeCommand()).execute(command);
+    }
+
+    private static List<Path> installerStagingFiles() throws IOException {
+        final Path tempDir = Path.of(System.getProperty("java.io.tmpdir"));
+        try (Stream<Path> listing = Files.list(tempDir)) {
+            return listing
+                .filter(path -> {
+                    final String name = path.getFileName().toString();
+                    return name.startsWith("forge-installer-") && name.endsWith(".jar.download");
+                })
+                .toList();
+        }
     }
 
     private static String installerUrl(WireMockRuntimeInfo wm, String path) {

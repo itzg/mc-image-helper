@@ -65,10 +65,15 @@ public class UrlInstallerResolver implements InstallerResolver {
     @Override
     public void cleanup(Path forgeInstallerJar) {
         fetchedJar = null;
+        deleteIfExists(forgeInstallerJar);
+        deleteIfExists(forgeInstallerJar.resolveSibling(forgeInstallerJar.getFileName() + ".download"));
+    }
+
+    private static void deleteIfExists(Path path) {
         try {
-            Files.deleteIfExists(forgeInstallerJar);
+            Files.deleteIfExists(path);
         } catch (IOException e) {
-            log.warn("Failed to delete installer jar {}", forgeInstallerJar);
+            log.warn("Failed to delete {}", path);
         }
     }
 
