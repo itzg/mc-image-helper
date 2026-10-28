@@ -3,6 +3,7 @@ package me.itzg.helpers.forge;
 import static com.github.stefanbirkner.systemlambda.SystemLambda.tapSystemErr;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.anyRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.findAll;
 import static com.github.tomakehurst.wiremock.client.WireMock.anyUrl;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
@@ -15,6 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
+import com.github.tomakehurst.wiremock.verification.LoggedRequest;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -64,7 +66,9 @@ class InstallForgeCommandTest {
             .isEqualTo(ExitCode.OK);
 
         verify(1, getRequestedFor(urlEqualTo(INSTALLER_PATH)));
-        verify(1, anyRequestedFor(anyUrl()));
+        assertThat(findAll(anyRequestedFor(anyUrl())))
+            .extracting(LoggedRequest::getUrl)
+            .containsExactly(INSTALLER_PATH);
 
         final ForgeManifest manifest = Manifests.load(tempDir, "forge", ForgeManifest.class);
         assertThat(manifest).isNotNull();
@@ -145,7 +149,7 @@ class InstallForgeCommandTest {
         assertThat(run(tempDir, "--forge-installer-url", installerUrl(wm, path)))
             .isEqualTo(ExitCode.OK);
 
-        assertThat(Files.readString(existing)).isEqualTo("keep-this-server");
+        assertThat(existing).hasContent("keep-this-server");
         assertThat(tempDir.resolve("forge-1.20.2-48.1.0.jar")).exists();
     }
 
@@ -270,7 +274,7 @@ class InstallForgeCommandTest {
         Manifests.save(tempDir, "forge", manifest);
 
         final Path manifestFile = tempDir.resolve(".forge-manifest.json");
-        assertThat(Files.readString(manifestFile)).doesNotContain("installerUrl");
+        assertThat(manifestFile).content().doesNotContain("installerUrl");
 
         Files.writeString(manifestFile, """
             {

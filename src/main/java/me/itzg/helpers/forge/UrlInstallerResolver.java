@@ -38,6 +38,7 @@ public class UrlInstallerResolver implements InstallerResolver {
             return new VersionPair(prevManifest.getMinecraftVersion(), prevManifest.getForgeVersion());
         }
 
+        // The resulting download is identified and used in download(), so fetchInstaller is not called twice.
         final Path installerJar = fetchInstaller(outputDir);
         try {
             final VersionPair versions = InstallerVersionExtractor.extract(installerJar);
@@ -145,6 +146,9 @@ public class UrlInstallerResolver implements InstallerResolver {
         while (current != null) {
             if (FailedRequestException.isNotFound(current)) {
                 return true;
+            }
+            if (current == current.getCause()) {
+                break;
             }
             current = current.getCause();
         }

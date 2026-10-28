@@ -159,10 +159,7 @@ public class ForgeLikeInstaller {
 
     private boolean installerUrlMatches(ForgeManifest prevManifest) {
         final String installerUrl = installerResolver.getInstallerUrl();
-        if (installerUrl == null) {
-            return true;
-        }
-        return installerUrl.equals(prevManifest.getInstallerUrl());
+        return Objects.equals(installerUrl, prevManifest.getInstallerUrl());
     }
 
     private boolean serverEntryExists(@NonNull Path outputDir, String serverEntry) {
