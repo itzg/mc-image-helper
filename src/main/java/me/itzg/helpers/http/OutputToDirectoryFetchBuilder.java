@@ -17,6 +17,7 @@ import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.files.ReactiveFileUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.VisibleForTesting;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import reactor.netty.ByteBufFlux;
@@ -100,7 +101,10 @@ public class OutputToDirectoryFetchBuilder extends FetchBuilderBase<OutputToDire
     }
 
     private Mono<Path> assembleFileDownloadNameViaGet(HttpClient client) {
+        // GET the original URL with Accept and credentials. followRedirect still drops
+        // Authorization, Cookie, and Proxy-Authorization on a cross-authority hop.
         return client
+            .headers(this::applyHeaders)
             .followRedirect(true)
             .doOnRequest(debugLogRequest(log, "file get fetch"))
             .doOnResponse(debugLogResponse(log, "file get fetch"))
@@ -252,7 +256,8 @@ public class OutputToDirectoryFetchBuilder extends FetchBuilderBase<OutputToDire
      * {@code followRedirect} removes Authorization, Cookie, and Proxy-Authorization when the next hop
      * has a different authority. This GET targets the resolved URL directly, so apply that same rule.
      */
-    private void applyHeadersForResolvedResource(HttpHeaders headers, String resourceUrl) {
+    @VisibleForTesting
+    void applyHeadersForResolvedResource(HttpHeaders headers, String resourceUrl) {
         applyHeaders(headers);
         if (resolvedResourceDiffersInAuthority(resourceUrl)) {
             headers.remove(HttpHeaderNames.AUTHORIZATION);
