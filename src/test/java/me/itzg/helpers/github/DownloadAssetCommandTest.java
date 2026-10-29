@@ -4,13 +4,16 @@ import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
+import com.github.tomakehurst.wiremock.verification.LoggedRequest;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import me.itzg.helpers.LatchingExecutionExceptionHandler;
 import me.itzg.helpers.errors.RateLimitException;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -233,6 +236,74 @@ class DownloadAssetCommandTest {
                     // since the header is seconds-granularity
                     .truncatedTo(ChronoUnit.SECONDS)
             );
+    }
+
+    @Test
+    void downloadsViaApiAssetUrlWithoutForwardingAuthorization(@TempDir Path tempDir, WireMockRuntimeInfo wmInfo) {
+        final String filename = randomStringUtils.nextAlphabetic(10) + ".jar";
+        final String fileContent = randomStringUtils.nextAlphabetic(20);
+        final String token = "test-token";
+        final String assetPath = "/repos/org/repo/releases/assets/42";
+        final String storagePath = "/objects/" + filename;
+        final String browserDownloadPath = "/download/should-not-be-used";
+
+        final WireMockServer storage = new WireMockServer(wireMockConfig().dynamicPort());
+        storage.start();
+        try {
+            stubFor(get("/repos/org/repo/releases/latest")
+                .willReturn(ok()
+                    .withHeader("Content-Type", "application/json")
+                    .withBodyFile("github/release-asset-api-redirect.json")
+                    .withTransformers("response-template")
+                    .withTransformerParameter("filename", filename)
+                )
+            );
+            stubFor(any(urlPathEqualTo(assetPath))
+                .willReturn(temporaryRedirect(storage.baseUrl() + storagePath))
+            );
+            stubFor(any(urlPathEqualTo(browserDownloadPath))
+                .willReturn(serverError())
+            );
+
+            storage.stubFor(any(urlPathEqualTo(storagePath))
+                .willReturn(ok()
+                    .withHeader("Content-Disposition", String.format("attachment; filename=\"%s\"", filename))
+                    .withBody(fileContent)
+                )
+            );
+
+            final int exitCode = new CommandLine(new GithubCommands())
+                .execute(
+                    "--api-base-url", wmInfo.getHttpBaseUrl(),
+                    "--token", token,
+                    "download-asset",
+                    "--output-directory", tempDir.toString(),
+                    "org/repo"
+                );
+
+            assertThat(exitCode).isEqualTo(0);
+            assertThat(tempDir.resolve(filename))
+                .exists()
+                .content().isEqualTo(fileContent);
+
+            final List<LoggedRequest> apiRequests = findAll(anyRequestedFor(urlPathEqualTo(assetPath)));
+            assertThat(apiRequests).isNotEmpty();
+            assertThat(apiRequests).allSatisfy(request -> {
+                assertThat(request.getHeader("Accept")).contains("application/octet-stream");
+                assertThat(request.getHeader("Authorization")).isEqualTo("Bearer " + token);
+            });
+
+            final List<LoggedRequest> storageRequests = storage.findAll(anyRequestedFor(urlPathEqualTo(storagePath)));
+            assertThat(storageRequests).isNotEmpty();
+            assertThat(storageRequests).allSatisfy(request ->
+                assertThat(request.getHeader("Authorization")).isNull()
+            );
+
+            assertThat(findAll(anyRequestedFor(urlPathEqualTo(browserDownloadPath)))).isEmpty();
+        }
+        finally {
+            storage.stop();
+        }
     }
 
 }

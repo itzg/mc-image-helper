@@ -1,0 +1,10 @@
+{
+  "name": "app v1.3.0",
+  "assets": [
+    {
+      "name": "{{parameters.filename}}",
+      "url": "{{request.baseUrl}}/repos/org/repo/releases/assets/42",
+      "browser_download_url": "{{request.baseUrl}}/download/should-not-be-used"
+    }
+  ]
+}

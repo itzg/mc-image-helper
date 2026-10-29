@@ -3,10 +3,12 @@
   "assets": [
     {
       "name": "app-1.3.0-sources.jar",
+      "url": "{{request.baseUrl}}/invalid.jar",
       "browser_download_url": "{{request.baseUrl}}/invalid.jar"
     },
     {
       "name": "app-1.3.0.jar",
+      "url": "{{request.baseUrl}}/download/{{parameters.filename}}",
       "browser_download_url": "{{request.baseUrl}}/download/{{parameters.filename}}"
     }
   ]
