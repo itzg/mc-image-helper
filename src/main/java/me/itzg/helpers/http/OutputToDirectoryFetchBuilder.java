@@ -5,8 +5,10 @@ import static io.netty.handler.codec.http.HttpHeaderNames.LAST_MODIFIED;
 import static java.util.Objects.requireNonNull;
 
 import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -15,6 +17,7 @@ import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.files.ReactiveFileUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.VisibleForTesting;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import reactor.netty.ByteBufFlux;
@@ -98,7 +101,10 @@ public class OutputToDirectoryFetchBuilder extends FetchBuilderBase<OutputToDire
     }
 
     private Mono<Path> assembleFileDownloadNameViaGet(HttpClient client) {
+        // GET the original URL with Accept and credentials. followRedirect still drops
+        // Authorization, Cookie, and Proxy-Authorization on a cross-authority hop.
         return client
+            .headers(this::applyHeaders)
             .followRedirect(true)
             .doOnRequest(debugLogRequest(log, "file get fetch"))
             .doOnResponse(debugLogResponse(log, "file get fetch"))
@@ -205,7 +211,7 @@ public class OutputToDirectoryFetchBuilder extends FetchBuilderBase<OutputToDire
         return alreadyUpToDateMono
             .filter(alreadyUpToDate -> !alreadyUpToDate)
             .flatMap(notUsed -> client
-                .headers(this::applyHeaders)
+                .headers(headers -> applyHeadersForResolvedResource(headers, resourceUrl))
                 .headersWhen(headers ->
                     skipUpToDate ?
                         fileLastModifiedMono
@@ -244,6 +250,60 @@ public class OutputToDirectoryFetchBuilder extends FetchBuilderBase<OutputToDire
                 .checkpoint("Fetching file into directory")
             )
             .defaultIfEmpty(outputFile);
+    }
+
+    /**
+     * {@code followRedirect} removes Authorization, Cookie, and Proxy-Authorization when the next hop
+     * has a different authority. This GET targets the resolved URL directly, so apply that same rule.
+     */
+    @VisibleForTesting
+    void applyHeadersForResolvedResource(HttpHeaders headers, String resourceUrl) {
+        applyHeaders(headers);
+        if (resolvedResourceDiffersInAuthority(resourceUrl)) {
+            headers.remove(HttpHeaderNames.AUTHORIZATION);
+            headers.remove(HttpHeaderNames.COOKIE);
+            headers.remove(HttpHeaderNames.PROXY_AUTHORIZATION);
+        }
+    }
+
+    private boolean resolvedResourceDiffersInAuthority(String resourceUrl) {
+        if (resourceUrl == null) {
+            return false;
+        }
+        final URI resolved;
+        try {
+            resolved = URI.create(resourceUrl);
+        }
+        catch (IllegalArgumentException ex) {
+            return false;
+        }
+        if (resolved.getHost() == null) {
+            return false;
+        }
+        final URI original = uri();
+        if (original.getHost() == null) {
+            return true;
+        }
+        return !original.getHost().equalsIgnoreCase(resolved.getHost())
+            || !schemeOf(original).equalsIgnoreCase(schemeOf(resolved))
+            || portOf(original) != portOf(resolved);
+    }
+
+    private static String schemeOf(URI uri) {
+        return uri.getScheme() == null ? "" : uri.getScheme();
+    }
+
+    private static int portOf(URI uri) {
+        if (uri.getPort() != -1) {
+            return uri.getPort();
+        }
+        if ("https".equalsIgnoreCase(uri.getScheme())) {
+            return 443;
+        }
+        if ("http".equalsIgnoreCase(uri.getScheme())) {
+            return 80;
+        }
+        return -1;
     }
 
     private Mono<Path> copyBodyInputStreamToFile(ByteBufFlux byteBufFlux, Path outputFile) {

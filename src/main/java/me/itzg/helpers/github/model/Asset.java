@@ -8,5 +8,6 @@ import lombok.Data;
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class Asset {
     String name;
+    String url;
     String browserDownloadUrl;
 }

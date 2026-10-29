@@ -1,17 +1,24 @@
 package me.itzg.helpers.http;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static me.itzg.helpers.http.Fetch.fetch;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
+import com.github.tomakehurst.wiremock.verification.LoggedRequest;
+import io.netty.handler.codec.http.DefaultHttpHeaders;
+import io.netty.handler.codec.http.HttpHeaders;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
+import java.util.List;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
@@ -289,5 +296,147 @@ class OutputToDirectoryFetchBuilderTest {
             .isEqualTo(expectedFile)
             .exists()
             .hasContent("content of actual.txt");
+    }
+
+    @Test
+    void headForbiddenFallsBackToGetWithHeaders(WireMockRuntimeInfo wm, @TempDir Path tempDir) {
+        final String body = RandomStringUtils.randomAlphabetic(20);
+        final String token = "test-token";
+        final String apiPath = "/repos/org/repo/releases/assets/42";
+        final String storagePath = "/objects/file.jar";
+
+        final WireMockServer storage = new WireMockServer(wireMockConfig().dynamicPort());
+        storage.start();
+        try {
+            stubFor(head(urlPathEqualTo(apiPath))
+                .willReturn(aResponse()
+                    .withStatus(302)
+                    .withHeader("Location", storage.baseUrl() + storagePath)
+                )
+            );
+            stubFor(get(urlPathEqualTo(apiPath))
+                .willReturn(aResponse()
+                    .withStatus(302)
+                    .withHeader("Location", storage.baseUrl() + storagePath)
+                )
+            );
+            storage.stubFor(head(urlPathEqualTo(storagePath))
+                .willReturn(forbidden())
+            );
+            storage.stubFor(get(urlPathEqualTo(storagePath))
+                .willReturn(ok()
+                    .withHeader("Content-Disposition", "attachment; filename=\"file.jar\"")
+                    .withBody(body)
+                )
+            );
+
+            final Path result = fetch(URI.create(wm.getHttpBaseUrl() + apiPath))
+                .acceptContentTypes(Collections.singletonList("application/octet-stream"))
+                .header("Authorization", "Bearer " + token)
+                .toDirectory(tempDir)
+                .assemble()
+                .block();
+
+            assertThat(result)
+                .isEqualTo(tempDir.resolve("file.jar"))
+                .content().isEqualTo(body);
+
+            final List<LoggedRequest> apiGets = findAll(getRequestedFor(urlPathEqualTo(apiPath)));
+            assertThat(apiGets).isNotEmpty();
+            assertThat(apiGets).allSatisfy(request -> {
+                assertThat(request.getHeader("Accept")).contains("application/octet-stream");
+                assertThat(request.getHeader("Authorization")).isEqualTo("Bearer " + token);
+            });
+
+            final List<LoggedRequest> storageRequests = storage.findAll(anyRequestedFor(urlPathEqualTo(storagePath)));
+            assertThat(storageRequests).isNotEmpty();
+            assertThat(storageRequests).allSatisfy(request ->
+                assertThat(request.getHeader("Authorization")).isNull()
+            );
+        }
+        finally {
+            storage.stop();
+        }
+    }
+
+    @Test
+    void stripsCredentialsWhenResolvedHostDiffers(@TempDir Path tempDir) {
+        final HttpHeaders headers = resolvedHeaders(tempDir,
+            "https://api.github.com/repos/org/repo/releases/assets/1",
+            "https://objects.githubusercontent.com/file.jar"
+        );
+
+        assertSensitiveHeadersAbsent(headers);
+        assertOrdinaryHeadersPreserved(headers);
+    }
+
+    @Test
+    void preservesCredentialsForSameOriginResolvedResource(@TempDir Path tempDir) {
+        final HttpHeaders headers = resolvedHeaders(tempDir,
+            "http://localhost:8080/projects/worldedit/files/latest",
+            "http://localhost:8080/files/4586/220/worldedit-bukkit-7.2.15.jar"
+        );
+
+        assertSensitiveHeadersPresent(headers);
+        assertOrdinaryHeadersPreserved(headers);
+    }
+
+    @Test
+    void stripsCredentialsWhenSchemeChanges(@TempDir Path tempDir) {
+        final HttpHeaders headers = resolvedHeaders(tempDir,
+            "https://api.github.com:8443/repos/org/repo/releases/assets/1",
+            "http://api.github.com:8443/file.jar"
+        );
+
+        assertSensitiveHeadersAbsent(headers);
+        assertOrdinaryHeadersPreserved(headers);
+    }
+
+    @Test
+    void preservesCredentialsWhenExplicit443MatchesImplicitHttpsPort(@TempDir Path tempDir) {
+        final HttpHeaders explicitPort = resolvedHeaders(tempDir,
+            "https://api.github.com/repos/org/repo/releases/assets/1",
+            "https://api.github.com:443/file.jar"
+        );
+        final HttpHeaders implicitPort = resolvedHeaders(tempDir,
+            "https://api.github.com:443/repos/org/repo/releases/assets/1",
+            "https://api.github.com/file.jar"
+        );
+
+        assertSensitiveHeadersPresent(explicitPort);
+        assertOrdinaryHeadersPreserved(explicitPort);
+        assertSensitiveHeadersPresent(implicitPort);
+        assertOrdinaryHeadersPreserved(implicitPort);
+    }
+
+    private static HttpHeaders resolvedHeaders(Path tempDir, String originalUrl, String resourceUrl) {
+        final OutputToDirectoryFetchBuilder builder = fetch(URI.create(originalUrl))
+            .acceptContentTypes(Collections.singletonList("application/octet-stream"))
+            .header("Authorization", "Bearer token")
+            .header("Cookie", "session=abc")
+            .header("Proxy-Authorization", "Basic proxy")
+            .header("X-Trace", "keep-me")
+            .toDirectory(tempDir);
+
+        final HttpHeaders headers = new DefaultHttpHeaders();
+        builder.applyHeadersForResolvedResource(headers, resourceUrl);
+        return headers;
+    }
+
+    private static void assertSensitiveHeadersAbsent(HttpHeaders headers) {
+        assertThat(headers.get("Authorization")).isNull();
+        assertThat(headers.get("Cookie")).isNull();
+        assertThat(headers.get("Proxy-Authorization")).isNull();
+    }
+
+    private static void assertSensitiveHeadersPresent(HttpHeaders headers) {
+        assertThat(headers.get("Authorization")).isEqualTo("Bearer token");
+        assertThat(headers.get("Cookie")).isEqualTo("session=abc");
+        assertThat(headers.get("Proxy-Authorization")).isEqualTo("Basic proxy");
+    }
+
+    private static void assertOrdinaryHeadersPreserved(HttpHeaders headers) {
+        assertThat(headers.get("Accept")).isEqualTo("application/octet-stream");
+        assertThat(headers.get("X-Trace")).isEqualTo("keep-me");
     }
 }

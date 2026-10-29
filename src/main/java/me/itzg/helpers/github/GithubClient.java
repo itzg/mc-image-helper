@@ -78,7 +78,9 @@ public class GithubClient {
                             .findFirst()
                     )
                     .flatMap(asset ->
-                        sharedFetch.fetch(URI.create(asset.getBrowserDownloadUrl()))
+                        sharedFetch.fetch(URI.create(asset.getUrl()))
+                            .acceptContentTypes(Collections.singletonList("application/octet-stream"))
+                            .withAuthorization("Bearer", token)
                             .toDirectory(outputDirectory)
                             .skipExisting(true)
                             .assemble()
