@@ -11,4 +11,11 @@ public interface InstallerResolver {
     void cleanup(Path forgeInstallerJar);
 
     String getDescription();
+
+    /**
+     * @return installer URL when this resolver downloads one, otherwise null
+     */
+    default String getInstallerUrl() {
+        return null;
+    }
 }

@@ -608,13 +608,15 @@ Provides a few ways to obtain a Fabric loader with simple cleanup of previous lo
 ```
 Usage: mc-image-helper install-forge [-h] [--clean-libraries] [--force-reinstall] [--minecraft-version=VERSION]
                                      [--output-directory=DIR] [--results-file=FILE] [--forge-installer=FILE |
-                                     [--forge-version=<version>]] [[--use-http2] [--wiretap]]
-                                     [[--forge-promotions-url=URL] [--forge-maven-repo-url=URL]]
+                                     --forge-installer-url=URL | [--forge-version=<version>]] [[--use-http2]
+                                     [--wiretap]] [[--forge-promotions-url=URL] [--forge-maven-repo-url=URL]]
 Downloads and installs a requested version of Forge
       --clean-libraries     Remove installed libraries not required by the Forge shim
       --force-reinstall
       --forge-installer=FILE
                             Use a local forge installer
+      --forge-installer-url=URL
+                            Use a forge installer downloaded from a URL
       --forge-maven-repo-url=URL
                             URL for Forge Maven repository where installer is downloaded.
                             Can also be set via env var FORGE_MAVEN_REPO_URL

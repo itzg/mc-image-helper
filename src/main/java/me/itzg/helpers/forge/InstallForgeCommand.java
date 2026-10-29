@@ -2,6 +2,7 @@ package me.itzg.helpers.forge;
 
 import static me.itzg.helpers.McImageHelper.VERSION_REGEX;
 
+import java.net.URI;
 import java.nio.file.Path;
 import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
@@ -71,6 +72,11 @@ public class InstallForgeCommand implements Callable<Integer> {
 
         @Option(names = "--forge-installer", description = "Use a local forge installer", paramLabel = "FILE")
         Path installer;
+
+        @Option(names = "--forge-installer-url", paramLabel = "URL",
+            description = "Use a forge installer downloaded from a URL"
+        )
+        URI installerUrl;
     }
 
     @ArgGroup
@@ -100,17 +106,24 @@ public class InstallForgeCommand implements Callable<Integer> {
     public Integer call() throws Exception {
         try (SharedFetch sharedFetch = Fetch.sharedFetch("install-forge", sharedFetchArgs.options())) {
 
-            final ForgeLikeInstaller installer = new ForgeLikeInstaller(
-                versionOrInstaller.installer != null ?
-                    new ProvidedInstallerResolver(versionOrInstaller.installer)
-                    : new ForgeInstallerResolver(
-                        sharedFetch, minecraftVersion, versionOrInstaller.version,
-                        forgeUrlArgs.getPromotionsUrl(), forgeUrlArgs.getMavenRepoUrl()
-                        )
+            final InstallerResolver installerResolver;
+            if (versionOrInstaller.installerUrl != null) {
+                installerResolver = new UrlInstallerResolver(
+                    sharedFetch, versionOrInstaller.installerUrl, outputDirectory, forceReinstall
+                );
+            }
+            else if (versionOrInstaller.installer != null) {
+                installerResolver = new ProvidedInstallerResolver(versionOrInstaller.installer);
+            }
+            else {
+                installerResolver = new ForgeInstallerResolver(
+                    sharedFetch, minecraftVersion, versionOrInstaller.version,
+                    forgeUrlArgs.getPromotionsUrl(), forgeUrlArgs.getMavenRepoUrl()
+                );
+            }
 
-            );
-
-            installer.install(outputDirectory, resultsFile, forceReinstall, "Forge", cleanLibraries);
+            new ForgeLikeInstaller(installerResolver)
+                .install(outputDirectory, resultsFile, forceReinstall, "Forge", cleanLibraries);
         }
 
         return ExitCode.OK;
