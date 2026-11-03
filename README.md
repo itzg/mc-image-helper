@@ -50,6 +50,7 @@ Commands:
   interpolate                     Interpolates existing files in one or more directories
   java-release                    Outputs the Java release number, such as 8, 11, 17
   manage-users
+  manifest-files                  Prints the file entries stored in a manifest, one per line
   maven-download                  Downloads a maven artifact from a Maven repository
   modrinth                        Automates downloading of modrinth resources
   mcopy                           Multi-source file copy operation with with managed cleanup. Supports auto-detected
@@ -953,6 +954,19 @@ Usage: mc-image-helper manage-users [-fh] [--existing=<existingFileBehavior>]
       --wiretap             Whether to enable Reactor Netty wiretap logging. Make sure to set logging level to trace.
                             Default: false
                             Env: FETCH_WIRETAP
+```
+
+### manifest-files
+
+```
+Usage: mc-image-helper manifest-files [-h] [--[no-]sort] [--scope=SCOPE] MANIFEST
+Prints the file entries stored in a manifest, one per line
+      MANIFEST        Manifest file to read. With --scope, the directory that contains the manifest
+  -h, --help
+      --scope=SCOPE   MANIFEST is the directory that holds the scoped manifest
+                      Reads .<SCOPE>-manifest.json (same path mcopy writes)
+      --[no-]sort     Sort entries before printing
+                      Default: true. Use --no-sort to keep manifest order
 ```
 
 ### maven-download
