@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
@@ -282,6 +283,9 @@ public class ModrinthCommand implements Callable<Integer> {
 
                 if (depVersion != null) {
                     log.debug("Resolved version={} for dep={}", depVersion.getVersionNumber(), dep);
+                    log.info("Including {} dependency '{}' of {}",
+                        dep.getDependencyType(), depVersion.getName(), describeDependent(project, version)
+                    );
                     return Stream.concat(
                         Stream.of(depVersion),
                             expandDependencies(modrinthApiClient, loader, gameVersion, project, depVersion)
@@ -292,6 +296,17 @@ public class ModrinthCommand implements Callable<Integer> {
                     return Stream.empty();
                 }
             });
+    }
+
+    /**
+     * @param project the explicitly requested project
+     * @param version the version declaring the dependency, which may itself be a dependency of the project
+     */
+    private static String describeDependent(Project project, Version version) {
+        if (Objects.equals(version.getProjectId(), project.getId())) {
+            return String.format("project '%s'", project.getTitle());
+        }
+        return String.format("'%s' (via project '%s')", version.getName(), project.getTitle());
     }
 
     /**
