@@ -20,6 +20,7 @@ import me.itzg.helpers.errors.ExceptionHandler;
 import me.itzg.helpers.errors.ExitCodeMapper;
 import me.itzg.helpers.fabric.InstallFabricLoaderCommand;
 import me.itzg.helpers.files.IniPathCommand;
+import me.itzg.helpers.files.ManifestFilesCommand;
 import me.itzg.helpers.files.TomlPathCommand;
 import me.itzg.helpers.files.YamlPathCommand;
 import me.itzg.helpers.files.archive.ArchiveCommand;
@@ -90,6 +91,7 @@ import picocli.CommandLine.Option;
         InterpolateCommand.class,
         JavaReleaseCommand.class,
         ManageUsersCommand.class,
+        ManifestFilesCommand.class,
         MavenDownloadCommand.class,
         ModrinthCommand.class,
         MultiCopyCommand.class,
