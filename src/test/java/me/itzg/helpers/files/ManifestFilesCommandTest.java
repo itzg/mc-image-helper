@@ -64,13 +64,19 @@ class ManifestFilesCommandTest {
         assertThat(fromScope).isEqualTo(sorted);
 
         // Rewrite through the same manifest model mcopy uses, in an order that is not sorted,
-        // so default output must actually sort and --no-sort must keep manifest order.
+        // so the flagless default must sort and --no-sort must keep manifest order.
         final List<String> manifestOrder = new ArrayList<>(loaded.getFiles());
         manifestOrder.sort(Comparator.reverseOrder());
+        assertThat(manifestOrder).containsExactly("zeta-agent.jar", "mid-agent.jar", "alpha-agent.jar");
         Manifests.save(dest, SCOPE, MultiCopyManifest.builder()
             .timestamp(loaded.getTimestamp())
             .files(manifestOrder)
             .build());
+
+        final String defaultSorted = tapSystemOutNormalized(() ->
+            assertThat(execute(manifest.toString())).isEqualTo(ExitCode.OK)
+        );
+        assertThat(defaultSorted).isEqualTo(sorted);
 
         final String sortedAgain = tapSystemOutNormalized(() ->
             assertThat(execute("--sort", manifest.toString())).isEqualTo(ExitCode.OK)
