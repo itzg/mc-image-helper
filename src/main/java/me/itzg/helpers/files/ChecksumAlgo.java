@@ -6,7 +6,8 @@ import lombok.Getter;
 public enum ChecksumAlgo {
     MD5("md5", "MD5"),
     SHA1("sha1", "SHA-1"),
-    SHA256("sha256", "SHA-256"),;
+    SHA256("sha256", "SHA-256"),
+    SHA512("sha512", "SHA-512"),;
 
     private final String prefix;
 

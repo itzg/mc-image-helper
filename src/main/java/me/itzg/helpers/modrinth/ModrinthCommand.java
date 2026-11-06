@@ -26,6 +26,9 @@ import java.util.zip.ZipInputStream;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidParameterException;
+import me.itzg.helpers.files.ChecksumAlgo;
+import me.itzg.helpers.files.Checksums;
+import me.itzg.helpers.files.FileHashInvalidException;
 import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.http.Fetch;
 import me.itzg.helpers.http.SharedFetch;
@@ -407,16 +410,58 @@ public class ModrinthCommand implements Callable<Integer> {
         }
 
         try {
-            return sharedFetch.fetch(URI.create(versionFile.getUrl()))
-                .userAgentCommand("modrinth")
-                .toFile(outPath)
-                .skipExisting(skipExisting)
-                .skipUpToDate(skipUpToDate)
-                .handleStatus(Fetch.loggingDownloadStatusHandler(log))
-                .execute();
+            final Path file = fetchFile(sharedFetch, versionFile, outPath);
+            if (hashMatches(versionFile, file)) {
+                return file;
+            }
+
+            log.warn("Checksum of {} does not match, downloading again", file);
+            Files.delete(file);
+            final Path retried = fetchFile(sharedFetch, versionFile, outPath);
+            if (hashMatches(versionFile, retried)) {
+                return retried;
+            }
+
+            Files.delete(retried);
+            throw new FileHashInvalidException(
+                String.format("Incorrect checksum of %s downloaded from %s", versionFile.getFilename(), versionFile.getUrl())
+            );
         } catch (IOException e) {
             throw new RuntimeException("Downloading file", e);
         }
+    }
+
+    private Path fetchFile(SharedFetch sharedFetch, VersionFile versionFile, Path outPath) throws IOException {
+        return sharedFetch.fetch(URI.create(versionFile.getUrl()))
+            .userAgentCommand("modrinth")
+            .toFile(outPath)
+            .skipExisting(skipExisting)
+            .skipUpToDate(skipUpToDate)
+            .handleStatus(Fetch.loggingDownloadStatusHandler(log))
+            .execute();
+    }
+
+    /**
+     * Verifies the file against the strongest hash declared for the version file.
+     * @return true if the file matches or there are no supported hashes to verify against
+     */
+    private static boolean hashMatches(VersionFile versionFile, Path file) throws IOException {
+        final Map<String, String> hashes = versionFile.getHashes();
+        if (hashes == null) {
+            log.debug("No hashes declared for {}", versionFile.getFilename());
+            return true;
+        }
+
+        for (final ChecksumAlgo algo : new ChecksumAlgo[]{ChecksumAlgo.SHA512, ChecksumAlgo.SHA1}) {
+            final String expected = hashes.get(algo.getPrefix());
+            if (expected != null) {
+                log.debug("Verifying {} of {}", algo, file);
+                return Checksums.valid(file, algo, expected);
+            }
+        }
+
+        log.debug("No supported hashes declared for {}: {}", versionFile.getFilename(), hashes.keySet());
+        return true;
     }
 
     private List<Version> getVersionsForProject(ModrinthApiClient modrinthApiClient, String project, Loader loader, String gameVersion) {

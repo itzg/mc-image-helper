@@ -16,8 +16,8 @@
     "files": [
       {
         "hashes": {
-          "sha512": "e2954043f33415b3d2cc56cb1c05dadd0ffe13eb865aa9e9c5063b66021dc110a891d80a3b31773c8c8a5ba34db51af077c71d2867d97570b304ee8525a769dd",
-          "sha1": "1f4ea036c5cdc7931a663deb85abc279d00c81c5"
+          "sha512": "1a9f5bba2c2a0d85434a44bea0f5fe2fec507420cb985b4f6cc5ef3d86eecd4dbf349d17feb2a1ffc85eb6ddcf5b47ee4d2946ff2054bf104583020043d9033f",
+          "sha1": "6192bb4228bdf6a037a3a0772a49737f37f03e1d"
         },
         "url": "{{request.baseUrl}}/cdn/data/P7dR8mSH/versions/fO05PwUR/fabric-api-0.76.1%2B1.19.2.jar",
         "filename": "fabric-api-0.76.1+1.19.2.jar",
