@@ -50,6 +50,7 @@ import picocli.CommandLine.Option;
 public class ModrinthCommand implements Callable<Integer> {
 
     public static final String DATAPACKS_SUBDIR = "datapacks";
+    private static final int MAX_DOWNLOAD_ATTEMPTS = 2;
 
     @Option(
         names = "--projects",
@@ -410,25 +411,24 @@ public class ModrinthCommand implements Callable<Integer> {
         }
 
         try {
-            final Path file = fetchFile(sharedFetch, versionFile, outPath);
-            if (hashMatches(versionFile, file)) {
-                return file;
-            }
+            for (int attempt = 1; attempt <= MAX_DOWNLOAD_ATTEMPTS; attempt++) {
+                final Path file = fetchFile(sharedFetch, versionFile, outPath);
+                if (hashMatches(versionFile, file)) {
+                    return file;
+                }
 
-            log.warn("Checksum of {} does not match, downloading again", file);
-            Files.delete(file);
-            final Path retried = fetchFile(sharedFetch, versionFile, outPath);
-            if (hashMatches(versionFile, retried)) {
-                return retried;
+                Files.delete(file);
+                if (attempt < MAX_DOWNLOAD_ATTEMPTS) {
+                    log.warn("Checksum of {} does not match, downloading again", file);
+                }
             }
-
-            Files.delete(retried);
-            throw new FileHashInvalidException(
-                String.format("Incorrect checksum of %s downloaded from %s", versionFile.getFilename(), versionFile.getUrl())
-            );
         } catch (IOException e) {
             throw new RuntimeException("Downloading file", e);
         }
+
+        throw new FileHashInvalidException(
+            String.format("Incorrect checksum of %s downloaded from %s", versionFile.getFilename(), versionFile.getUrl())
+        );
     }
 
     private Path fetchFile(SharedFetch sharedFetch, VersionFile versionFile, Path outPath) throws IOException {
