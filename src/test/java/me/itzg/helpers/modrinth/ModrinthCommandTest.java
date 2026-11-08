@@ -12,6 +12,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
+import com.github.tomakehurst.wiremock.stubbing.Scenario;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -23,6 +25,7 @@ import me.itzg.helpers.json.ObjectMappers;
 import me.itzg.helpers.modrinth.ModrinthCommand.DownloadDependencies;
 import me.itzg.helpers.modrinth.model.Project;
 import me.itzg.helpers.modrinth.model.ProjectType;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.assertj.core.api.AbstractPathAssert;
 import org.jetbrains.annotations.NotNull;
@@ -646,6 +649,87 @@ class ModrinthCommandTest {
         assertThat(exitCode).isEqualTo(ExitCode.OK);
         final Path modsDir = tempDir.resolve("mods");
         assertThat(modsDir.resolve("c2me-fabric-mc1.21.11-0.3.6.0.0.jar")).exists();
+    }
+
+    @Test
+    void redownloadsWhenChecksumMismatches(@TempDir Path tempDir) {
+        stubChecksumProject("good content");
+        stubFor(get("/cdn/checksum-mod.jar").inScenario("checksum")
+            .whenScenarioStateIs(Scenario.STARTED)
+            .willReturn(aResponse().withBody("corrupted content"))
+            .willSetStateTo("corrupted")
+        );
+        stubFor(get("/cdn/checksum-mod.jar").inScenario("checksum")
+            .whenScenarioStateIs("corrupted")
+            .willReturn(aResponse().withBody("good content"))
+        );
+
+        final int exitCode = executeChecksumProject(tempDir);
+
+        assertThat(exitCode).isEqualTo(ExitCode.OK);
+        assertThat(tempDir.resolve("mods/checksum-mod.jar")).hasContent("good content");
+        verify(2, getRequestedFor(urlPathEqualTo("/cdn/checksum-mod.jar")));
+    }
+
+    @Test
+    void failsWhenChecksumKeepsMismatching(@TempDir Path tempDir) {
+        stubChecksumProject("good content");
+        stubFor(get("/cdn/checksum-mod.jar")
+            .willReturn(aResponse().withBody("corrupted content"))
+        );
+
+        final int exitCode = executeChecksumProject(tempDir);
+
+        assertThat(exitCode).isNotEqualTo(ExitCode.OK);
+        assertThat(tempDir.resolve("mods/checksum-mod.jar")).doesNotExist();
+        verify(2, getRequestedFor(urlPathEqualTo("/cdn/checksum-mod.jar")));
+    }
+
+    @Test
+    void replacesExistingFileWithMismatchedChecksum(@TempDir Path tempDir) throws Exception {
+        final Path existing = Files.createDirectories(tempDir.resolve("mods"))
+            .resolve("checksum-mod.jar");
+        Files.write(existing, "corrupted content".getBytes(StandardCharsets.UTF_8));
+
+        stubChecksumProject("good content");
+        stubFor(get("/cdn/checksum-mod.jar")
+            .willReturn(aResponse().withBody("good content"))
+        );
+
+        final int exitCode = executeChecksumProject(tempDir, "--skip-existing");
+
+        assertThat(exitCode).isEqualTo(ExitCode.OK);
+        assertThat(existing).hasContent("good content");
+        verify(1, getRequestedFor(urlPathEqualTo("/cdn/checksum-mod.jar")));
+    }
+
+    private void stubChecksumProject(String expectedContent) {
+        stubProjectBulkRequestMulti("checksum-mod", "ChKsUm01");
+        stubProjectVersionsRequest("ChKsUm01", "fabric", "1.21.1", versions -> {
+            addProjectVersion(versions, "ChKsUmV1", "ChKsUm01", "release", new String[]{"fabric"},
+                files -> {
+                    final ObjectNode file = files.addObject()
+                        .put("url", wm.getRuntimeInfo().getHttpBaseUrl() + "/cdn/checksum-mod.jar")
+                        .put("filename", "checksum-mod.jar");
+                    file.putObject("hashes")
+                        .put("sha1", DigestUtils.sha1Hex(expectedContent))
+                        .put("sha512", DigestUtils.sha512Hex(expectedContent));
+                }, deps -> {});
+        });
+    }
+
+    private int executeChecksumProject(Path tempDir, String... extraArgs) {
+        final ArrayList<String> args = new ArrayList<>(Arrays.asList(
+            "--api-base-url", wm.getRuntimeInfo().getHttpBaseUrl(),
+            "--output-directory", tempDir.toString(),
+            "--game-version", "1.21.1",
+            "--loader", "fabric",
+            "--projects", "checksum-mod"
+        ));
+        args.addAll(Arrays.asList(extraArgs));
+
+        return new CommandLine(new ModrinthCommand())
+            .execute(args.toArray(new String[0]));
     }
 
     @NotNull

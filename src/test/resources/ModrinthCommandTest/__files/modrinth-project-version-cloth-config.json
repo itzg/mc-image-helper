@@ -16,8 +16,8 @@
     "files": [
       {
         "hashes": {
-          "sha1": "475ab5dec26fa5d25b1d899b8261b054fbc283d6",
-          "sha512": "b490a5df321d2f3907a47d18e9549751bb97bc9de6d04aa265cd9000321b516627bc57b1ef30ae4d854d558b2936c5d3413d34d784849e0c3ffa083605ca8d3d"
+          "sha1": "0c929132e12e9ded6e918486202fc01652a5cda6",
+          "sha512": "fd6ff9d27b03b48ef4088ed71719f230808404500dcf68855124e36a800eb7518bcc5ac55dd759156ba4dcd5a038a690c8dd06cdcc7797534954cb9cd1a8e035"
         },
         "url": "{{request.baseUrl}}/cdn/data/9s6osm5g/versions/o9dFD9SO/cloth-config-8.3.103-fabric.jar",
         "filename": "cloth-config-8.3.103-fabric.jar",
