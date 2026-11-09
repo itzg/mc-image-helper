@@ -185,6 +185,7 @@ public class McImageHelper {
 
         System.exit(
             new CommandLine(rootCommand)
+                .setHelpFactory(SortedArgGroupsHelp::new)
                 .setExitCodeExceptionMapper(new ExitCodeMapper())
                 .setExecutionExceptionHandler(new ExceptionHandler(rootCommand))
                 .setCaseInsensitiveEnumValuesAllowed(true)

@@ -185,7 +185,7 @@ Used for shell scripting, exits with success(0) when comparison is satisfied or 
 Usage: mc-image-helper curseforge-files [-h] [--disable-api-caching] [--api-base-url=<apiBaseUrl>] [--api-key=<apiKey>]
                                         [--api-key-file=PATH] [--default-category=<slugCategory>]
                                         [--game-version=<gameVersion>] [--mod-loader=<modLoaderType>] [-o=DIR]
-                                        [[--api-cache-ttl=OPERATION=DURATION]... [--api-cache-default-ttl=DURATION]]
+                                        [[--api-cache-default-ttl=DURATION] [--api-cache-ttl=OPERATION=DURATION]...]
                                         [[--use-http2] [--wiretap]] [REF[,|<nl>REF...]...]
 Download and manage individual mod/plugin files from CurseForge
       [REF[,|<nl>REF...]...]
@@ -325,7 +325,7 @@ Commands:
 ```
 Usage: mc-image-helper github download-artifact [-h] [--no-download] [--output-filename] [--overwrite] [--unzip]
                                                 --artifact-pattern=<artifactPattern> [-o=<outputDirectory>]
-                                                (--workflow=ID|FILE | --run-id=ID) [[--use-http2] [--wiretap]] org/repo
+                                                (--run-id=ID | --workflow=ID|FILE) [[--use-http2] [--wiretap]] org/repo
 Download an artifact from a successful GitHub Actions workflow
       org/repo
       --artifact-pattern=<artifactPattern>
@@ -467,12 +467,12 @@ Usage: mc-image-helper install-curseforge [-h] [--disable-api-caching] [--force-
                                           [--ignore-missing-files=<ignoreMissingFiles>[,
                                           |<nl><ignoreMissingFiles>...]]...
                                           [--overrides-exclusions=<overridesExclusions>[NL or ,
-                                          <overridesExclusions>...]]... [[--exclude-include-file=FILE|URI]
-                                          [--exclude-all-mods] [[--excludes=PROJECT_ID|SLUG[,
+                                          <overridesExclusions>...]]... [[--exclude-all-mods]
+                                          [--exclude-include-file=FILE|URI] [[--excludes=PROJECT_ID|SLUG[,
                                           |<nl>PROJECT_ID|SLUG...]]... [--force-includes=PROJECT_ID|SLUG[,
                                           |<nl>PROJECT_ID|SLUG...]]...]] [[--use-http2] [--wiretap]]
-                                          [[--api-cache-ttl=OPERATION=DURATION]... [--api-cache-default-ttl=DURATION]]
-                                          [[--forge-promotions-url=URL] [--forge-maven-repo-url=URL]] [COMMAND]
+                                          [[--api-cache-default-ttl=DURATION] [--api-cache-ttl=OPERATION=DURATION]...]
+                                          [[--forge-maven-repo-url=URL] [--forge-promotions-url=URL]] [COMMAND]
 Downloads, installs, and upgrades CurseForge modpacks
       --api-base-url=<apiBaseUrl>
                              Allows for overriding the CurseForge Eternal API used
@@ -610,7 +610,7 @@ Provides a few ways to obtain a Fabric loader with simple cleanup of previous lo
 Usage: mc-image-helper install-forge [-h] [--clean-libraries] [--force-reinstall] [--minecraft-version=VERSION]
                                      [--output-directory=DIR] [--results-file=FILE] [--forge-installer=FILE |
                                      --forge-installer-url=URL | [--forge-version=<version>]] [[--use-http2]
-                                     [--wiretap]] [[--forge-promotions-url=URL] [--forge-maven-repo-url=URL]]
+                                     [--wiretap]] [[--forge-maven-repo-url=URL] [--forge-promotions-url=URL]]
 Downloads and installs a requested version of Forge
       --clean-libraries     Remove installed libraries not required by the Forge shim
       --force-reinstall
@@ -661,7 +661,7 @@ Usage: mc-image-helper install-modrinth-modpack [--force-modloader-reinstall] [-
                                                 |<nl><ignoreMissingFiles>...]]...
                                                 [--overrides-exclusions=<overridesExclusions>[NL or ,
                                                 <overridesExclusions>...]]... [[--use-http2] [--wiretap]]
-                                                [[--forge-promotions-url=URL] [--forge-maven-repo-url=URL]]
+                                                [[--forge-maven-repo-url=URL] [--forge-promotions-url=URL]]
 Supports installation of Modrinth modpacks along with the associated mod loader
       --api-base-url=<baseUrl>
                             Default: https://api.modrinth.com
@@ -796,7 +796,7 @@ Pulls an OCI artifact and writes its layer blobs to disk in apply order
 ```
 Usage: mc-image-helper install-paper [-h] [--check-updates] [--clean-libraries] [--base-url=<baseUrl>]
                                      [-o=<outputDirectory>] [--results-file=FILE] [--url=<downloadUrl> |
-                                     [[--project=<project>] [--build=<build>] [--channel=<channel>]
+                                     [[--build=<build>] [--channel=<channel>] [--project=<project>]
                                      [--version=<version>]]] [[--use-http2] | [--wiretap]]
 Installs selected PaperMC
       --base-url=<baseUrl>
@@ -897,8 +897,8 @@ Downloads and installs a requested version of vanilla Minecraft
 ### interpolate
 
 ```
-Usage: mc-image-helper interpolate [-h] ([--replace-env-prefix=<prefix>] [--replace-env-excludes=FILENAME[,
-                                   FILENAME...]]... [--replace-env-exclude-paths=PATH[,PATH...]]...
+Usage: mc-image-helper interpolate [-h] ([--replace-env-prefix=<prefix>] [--replace-env-exclude-paths=PATH[,
+                                   PATH...]]... [--replace-env-excludes=FILENAME[,FILENAME...]]...
                                    --replace-env-file-suffixes=PATH[,PATH...] [--replace-env-file-suffixes=PATH[,
                                    PATH...]]...) [DIRECTORY...]
 Interpolates existing files in one or more directories
@@ -1203,8 +1203,8 @@ Synchronizes the contents of one directory to another.
 
 ```
 Usage: mc-image-helper sync-and-interpolate [-h] [--skip-newer-in-destination] ([--replace-env-prefix=<prefix>]
-                                            [--replace-env-excludes=FILENAME[,FILENAME...]]...
                                             [--replace-env-exclude-paths=PATH[,PATH...]]...
+                                            [--replace-env-excludes=FILENAME[,FILENAME...]]...
                                             --replace-env-file-suffixes=PATH[,PATH...] [--replace-env-file-suffixes=PATH
                                             [,PATH...]]...) <srcDest>[,|<nl><srcDest>...] <srcDest>[,
                                             |<nl><srcDest>...]...
