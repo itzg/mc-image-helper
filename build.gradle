@@ -110,6 +110,10 @@ tasks.register('checkReadme', JavaExec) {
   args 'show-all-subcommand-usage', 'check-readme', file('README.md').absolutePath
 }
 
+tasks.named('check') {
+  dependsOn checkReadme
+}
+
 project.tasks.distTar {
   compression = Compression.GZIP
 }
