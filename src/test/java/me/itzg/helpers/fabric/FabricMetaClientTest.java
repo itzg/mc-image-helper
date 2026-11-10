@@ -77,6 +77,38 @@ class FabricMetaClientTest {
         verify(2, getRequestedFor(urlEqualTo(LAUNCHER_PATH)));
     }
 
+    @Test
+    void deletesHtmlLauncherAndStopsAfterOneRetry(WireMockRuntimeInfo wm) {
+        stubLauncherHead();
+        stubFor(get(urlEqualTo(LAUNCHER_PATH))
+            .willReturn(launcherResponse().withBody("<html><body>Not found</body></html>"))
+        );
+
+        assertThatThrownBy(() -> download(wm))
+            .cause()
+            .isInstanceOf(InvalidJarException.class)
+            .hasMessageContaining("not a valid jar");
+
+        assertThat(tempDir.resolve(LAUNCHER_FILENAME)).doesNotExist();
+        verify(2, getRequestedFor(urlEqualTo(LAUNCHER_PATH)));
+    }
+
+    @Test
+    void deletesEmptyLauncherAndStopsAfterOneRetry(WireMockRuntimeInfo wm) {
+        stubLauncherHead();
+        stubFor(get(urlEqualTo(LAUNCHER_PATH))
+            .willReturn(launcherResponse().withBody(""))
+        );
+
+        assertThatThrownBy(() -> download(wm))
+            .cause()
+            .isInstanceOf(InvalidJarException.class)
+            .hasMessageContaining("not a valid jar");
+
+        assertThat(tempDir.resolve(LAUNCHER_FILENAME)).doesNotExist();
+        verify(2, getRequestedFor(urlEqualTo(LAUNCHER_PATH)));
+    }
+
     private Path download(WireMockRuntimeInfo wm) {
         try (SharedFetch sharedFetch = Fetch.sharedFetch("fabric", Options.builder().build())) {
             final FabricMetaClient client = new FabricMetaClient(sharedFetch, wm.getHttpBaseUrl());
