@@ -16,7 +16,6 @@ jobs:
         githubPublishApplication
       scoop-bucket-repo: itzg/scoop-bucket
       homebrew-tap-repo: itzg/homebrew-tap
-      java-version: '8'
     secrets:
       GITHUB_PUBLISH_TOKEN: ${{ secrets.PUSH_ACCESS_GITHUB_TOKEN }}
       cf-api-key: ${{ secrets.CF_API_KEY }}
