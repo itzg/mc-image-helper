@@ -5,9 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.core.read.ListAppender;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -20,7 +18,6 @@ import java.nio.file.Paths;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -29,6 +26,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import me.itzg.helpers.TestLoggingAppender;
 import me.itzg.helpers.env.MappedEnvVarProvider;
 import me.itzg.helpers.env.SimplePlaceholders;
 import me.itzg.helpers.json.ObjectMappers;
@@ -36,7 +34,6 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.slf4j.LoggerFactory;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -328,7 +325,7 @@ class SetPropertiesCommandTest {
         final String secret = ":xDmW!T5Y%Jjam;$L9adz-tf%4BuhN,z#64pGx+;3R6^W$#PgGv!Nm-*)A}3^*/js*&)#";
         final String fragment = "Jjam;$L9adz-tf";
 
-        final List<ILoggingEvent> events = captureSimplePlaceholderEvents(() -> {
+        final List<ILoggingEvent> events = TestLoggingAppender.captureLogs(SimplePlaceholders.class, () -> {
             final int exitCode = new CommandLine(new SetPropertiesCommand()
                 .setEnvironmentVariablesProvider(MappedEnvVarProvider.of(
                     "RCON_PASSWORD", secret
@@ -354,7 +351,7 @@ class SetPropertiesCommandTest {
     void redactsUnknownPlaceholderTypeForPasswordProperties() throws Exception {
         final String secret = "prefix%SecretFragment:anything%suffix";
 
-        final List<ILoggingEvent> events = captureSimplePlaceholderEvents(() -> {
+        final List<ILoggingEvent> events = TestLoggingAppender.captureLogs(SimplePlaceholders.class, () -> {
             final int exitCode = new CommandLine(new SetPropertiesCommand()
                 .setEnvironmentVariablesProvider(MappedEnvVarProvider.of(
                     "RCON_PASSWORD", secret
@@ -382,7 +379,7 @@ class SetPropertiesCommandTest {
         final String secret = "prefix%Jjam;$L9adz-tf%suffix";
         final String fragment = "Jjam;$L9adz-tf";
 
-        final List<ILoggingEvent> events = captureSimplePlaceholderEvents(() -> {
+        final List<ILoggingEvent> events = TestLoggingAppender.captureLogs(SimplePlaceholders.class, () -> {
             final int exitCode = new CommandLine(new SetPropertiesCommand())
                 .execute(
                     "--custom-property", "rcon.password=" + secret,
@@ -403,7 +400,7 @@ class SetPropertiesCommandTest {
         final String secret = "%date:Jjam;$L9adz%";
         final String fragment = "Jjam;$L9adz";
 
-        final List<ILoggingEvent> events = captureSimplePlaceholderEvents(() -> {
+        final List<ILoggingEvent> events = TestLoggingAppender.captureLogs(SimplePlaceholders.class, () -> {
             final int exitCode = new CommandLine(new SetPropertiesCommand()
                 .setEnvironmentVariablesProvider(MappedEnvVarProvider.of(
                     "RCON_PASSWORD", secret
@@ -434,7 +431,7 @@ class SetPropertiesCommandTest {
 
     @Test
     void logsUnresolvedPlaceholderTextForNonSecretProperties() throws Exception {
-        final List<ILoggingEvent> events = captureSimplePlaceholderEvents(() -> {
+        final List<ILoggingEvent> events = TestLoggingAppender.captureLogs(SimplePlaceholders.class, () -> {
             final int exitCode = new CommandLine(new SetPropertiesCommand()
                 .setEnvironmentVariablesProvider(MappedEnvVarProvider.of(
                     "MOTD", "Hello %MODPACK_NAME%"
@@ -456,7 +453,7 @@ class SetPropertiesCommandTest {
 
     @Test
     void logsInvalidDateFormatForNonSecretProperties() throws Exception {
-        final List<ILoggingEvent> events = captureSimplePlaceholderEvents(() -> {
+        final List<ILoggingEvent> events = TestLoggingAppender.captureLogs(SimplePlaceholders.class, () -> {
             final int exitCode = new CommandLine(new SetPropertiesCommand()
                 .setEnvironmentVariablesProvider(MappedEnvVarProvider.of(
                     "MOTD", "%date:notAformat%"
@@ -545,25 +542,6 @@ class SetPropertiesCommandTest {
         }
 
         return definitionsFile;
-    }
-
-    private List<ILoggingEvent> captureSimplePlaceholderEvents(Runnable action) {
-        final Logger logger = (Logger) LoggerFactory.getLogger(SimplePlaceholders.class);
-        final ListAppender<ILoggingEvent> appender = new ListAppender<>();
-        appender.start();
-        final Level previousLevel = logger.getLevel();
-        logger.setLevel(Level.DEBUG);
-        logger.addAppender(appender);
-        try {
-            action.run();
-        }
-        finally {
-            logger.detachAppender(appender);
-            logger.setLevel(previousLevel);
-            appender.stop();
-        }
-
-        return new ArrayList<>(appender.list);
     }
 
     private static String formattedLogText(List<ILoggingEvent> events) {
