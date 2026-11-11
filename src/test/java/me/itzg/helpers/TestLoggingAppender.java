@@ -1,5 +1,7 @@
 package me.itzg.helpers;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
@@ -20,7 +22,7 @@ public class TestLoggingAppender extends AppenderBase<ILoggingEvent> {
     final Level previousLevel = logger.getLevel();
     logger.setLevel(Level.DEBUG);
     logger.addAppender(appender);
-    final List<ILoggingEvent> capturedEvents = new ArrayList<>();
+    final List<ILoggingEvent> capturedEvents;
     try {
       action.run();
     }
@@ -28,7 +30,7 @@ public class TestLoggingAppender extends AppenderBase<ILoggingEvent> {
       logger.detachAppender(appender);
       logger.setLevel(previousLevel);
       appender.stop();
-      capturedEvents.addAll(events);
+      capturedEvents = new ArrayList<>(events);
       reset();
     }
 
@@ -46,5 +48,29 @@ public class TestLoggingAppender extends AppenderBase<ILoggingEvent> {
 
   public static synchronized void reset() {
     events.clear();
+  }
+
+  public static void assertEventsOmit(List<? extends ILoggingEvent> events, String fragment) {
+    assertThat(events).allSatisfy(event -> {
+      assertThat(event.getMessage()).doesNotContain(fragment);
+      assertThat(event.getFormattedMessage()).doesNotContain(fragment);
+      final Object[] args = event.getArgumentArray();
+      if (args != null) {
+        for (final Object arg : args) {
+          if (arg instanceof Throwable) {
+            final String throwableMessage = ((Throwable) arg).getMessage();
+            if (throwableMessage != null) {
+              assertThat(throwableMessage).doesNotContain(fragment);
+            }
+          }
+          else if (arg != null) {
+            assertThat(String.valueOf(arg)).doesNotContain(fragment);
+          }
+        }
+      }
+      if (event.getThrowableProxy() != null && event.getThrowableProxy().getMessage() != null) {
+        assertThat(event.getThrowableProxy().getMessage()).doesNotContain(fragment);
+      }
+    });
   }
 }

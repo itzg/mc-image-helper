@@ -44,6 +44,7 @@ import picocli.CommandLine.ExitCode;
 
 class SetPropertiesCommandTest {
 
+    public static final RandomStringUtils randomStringUtils = RandomStringUtils.insecure();
     @TempDir
     Path tempDir;
 
@@ -64,7 +65,7 @@ class SetPropertiesCommandTest {
 
     @Test
     void simpleNeedsChange() throws Exception {
-        final String name = RandomStringUtils.randomAlphabetic(10);
+        final String name = randomStringUtils.nextAlphabetic(10);
 
         final int exitCode = new CommandLine(new SetPropertiesCommand()
             .setEnvironmentVariablesProvider(MappedEnvVarProvider.of(
@@ -340,7 +341,7 @@ class SetPropertiesCommandTest {
         });
 
         assertThat(loadProperties()).containsEntry("rcon.password", secret);
-        assertEventsOmit(events, fragment);
+        TestLoggingAppender.assertEventsOmit(events, fragment);
         assertThat(formattedLogText(events))
             .contains("Unable to resolve placeholder in property rcon.password")
             .contains("Building placeholder replacement for property rcon.password")
@@ -366,8 +367,8 @@ class SetPropertiesCommandTest {
         });
 
         assertThat(loadProperties()).containsEntry("rcon.password", secret);
-        assertEventsOmit(events, "SecretFragment");
-        assertEventsOmit(events, "anything");
+        TestLoggingAppender.assertEventsOmit(events, "SecretFragment");
+        TestLoggingAppender.assertEventsOmit(events, "anything");
         assertThat(events).anySatisfy(event ->
             assertThat(event.getFormattedMessage())
                 .isEqualTo("Building placeholder replacement for property rcon.password")
@@ -390,7 +391,7 @@ class SetPropertiesCommandTest {
         });
 
         assertThat(loadProperties()).containsEntry("rcon.password", secret);
-        assertEventsOmit(events, fragment);
+        TestLoggingAppender.assertEventsOmit(events, fragment);
         assertThat(formattedLogText(events))
             .contains("Unable to resolve placeholder in property rcon.password");
     }
@@ -415,7 +416,7 @@ class SetPropertiesCommandTest {
         });
 
         assertThat(loadProperties()).containsEntry("rcon.password", secret);
-        assertEventsOmit(events, fragment);
+        TestLoggingAppender.assertEventsOmit(events, fragment);
         assertThat(formattedLogText(events))
             .contains("Building placeholder replacement for property rcon.password")
             .doesNotContain("type=");
@@ -548,30 +549,6 @@ class SetPropertiesCommandTest {
         return events.stream()
             .map(ILoggingEvent::getFormattedMessage)
             .collect(Collectors.joining("\n"));
-    }
-
-    private static void assertEventsOmit(List<ILoggingEvent> events, String fragment) {
-        assertThat(events).allSatisfy(event -> {
-            assertThat(event.getMessage()).doesNotContain(fragment);
-            assertThat(event.getFormattedMessage()).doesNotContain(fragment);
-            final Object[] args = event.getArgumentArray();
-            if (args != null) {
-                for (final Object arg : args) {
-                    if (arg instanceof Throwable) {
-                        final String throwableMessage = ((Throwable) arg).getMessage();
-                        if (throwableMessage != null) {
-                            assertThat(throwableMessage).doesNotContain(fragment);
-                        }
-                    }
-                    else if (arg != null) {
-                        assertThat(String.valueOf(arg)).doesNotContain(fragment);
-                    }
-                }
-            }
-            if (event.getThrowableProxy() != null && event.getThrowableProxy().getMessage() != null) {
-                assertThat(event.getThrowableProxy().getMessage()).doesNotContain(fragment);
-            }
-        });
     }
 
     private void assertPropertiesEqualExcept(Properties properties, String... propertiesToIgnore) {
