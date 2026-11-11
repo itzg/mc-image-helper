@@ -45,9 +45,12 @@ jar {
 }
 
 java {
-  toolchain {
-    languageVersion = JavaLanguageVersion.of(8)
-  }
+  sourceCompatibility = JavaVersion.VERSION_1_8
+  targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+tasks.withType(JavaCompile).configureEach {
+  options.release = 8
 }
 
 // Just to be totally sure...
