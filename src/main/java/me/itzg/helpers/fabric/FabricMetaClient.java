@@ -17,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidContentException;
 import me.itzg.helpers.files.IoStreams;
+import me.itzg.helpers.files.ReactiveFileUtils;
 import me.itzg.helpers.http.FileDownloadStatusHandler;
 import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.http.UriBuilder;
@@ -48,6 +49,11 @@ public class FabricMetaClient {
     private int downloadRetryMaxAttempts = 10;
     @Setter
     private Duration downloadRetryMinBackoff = Duration.ofMillis(500);
+
+    /**
+     * A response that is not a readable jar is deleted and downloaded once more.
+     */
+    private static final long INVALID_JAR_DOWNLOAD_RETRIES = 1;
 
     public FabricMetaClient(SharedFetch sharedFetch, String fabricMetaBaseUrl) {
         this.sharedFetch = sharedFetch;
@@ -142,18 +148,17 @@ public class FabricMetaClient {
         FileDownloadStatusHandler statusHandler,
         boolean skipValidation
     ) {
-        return sharedFetch.fetch(
-                uriBuilder.resolve(
-                    "/v2/versions/loader/{game_version}/{loader_version}/{installer_version}/server/jar",
-                    minecraftVersion, loaderVersion, installerVersion
-                )
+        // defer so each retry rebuilds the download after the corrupt file is removed
+        return Mono.defer(() ->
+                fetchLauncher(outputDir, minecraftVersion, loaderVersion, installerVersion, statusHandler)
+                    .flatMap(path -> skipValidation
+                        ? Mono.just(path)
+                        : confirmValidJar(path)
+                    )
             )
-            .toDirectory(outputDir)
-            .handleStatus(statusHandler)
-            .assemble()
-            .retryWhen(Retry.backoff(downloadRetryMaxAttempts, downloadRetryMinBackoff).filter(IOException.class::isInstance))
-            .flatMap(path -> skipValidation ?
-                Mono.just(path)
+            .retryWhen(invalidJarRetry())
+            .flatMap(path -> skipValidation
+                ? Mono.just(path)
                 : validateLauncherJar(path).subscribeOn(Schedulers.boundedElastic())
             )
             .doOnError(InvalidContentException.class, e ->
@@ -163,12 +168,54 @@ public class FabricMetaClient {
             .checkpoint("downloadLauncher");
     }
 
+    private Mono<Path> fetchLauncher(
+        Path outputDir, String minecraftVersion, String loaderVersion, String installerVersion,
+        FileDownloadStatusHandler statusHandler
+    ) {
+        return sharedFetch.fetch(
+                uriBuilder.resolve(
+                    "/v2/versions/loader/{game_version}/{loader_version}/{installer_version}/server/jar",
+                    minecraftVersion, loaderVersion, installerVersion
+                )
+            )
+            .toDirectory(outputDir)
+            .handleStatus(statusHandler)
+            .assemble()
+            .retryWhen(Retry.backoff(downloadRetryMaxAttempts, downloadRetryMinBackoff).filter(IOException.class::isInstance));
+    }
+
+    /**
+     * Rejects a payload that is not a jar, then deletes it so the retry does not keep the bad file.
+     * {@link InvalidJarException} is not an {@link InvalidContentException}, so this stays a single
+     * retry instead of joining the install.properties retry loop.
+     */
+    private Mono<Path> confirmValidJar(Path path) {
+        return ReactiveFileUtils.validJar(path)
+            .switchIfEmpty(Mono.defer(() ->
+                ReactiveFileUtils.removeFailedDownload(
+                    new InvalidJarException("Downloaded Fabric launcher is not a valid jar: " + path),
+                    path
+                )
+            ));
+    }
+
+    private Retry invalidJarRetry() {
+        return Retry.backoff(INVALID_JAR_DOWNLOAD_RETRIES, downloadRetryMinBackoff)
+            .filter(InvalidJarException.class::isInstance)
+            .doBeforeRetry(retrySignal ->
+                log.warn("Downloaded Fabric launcher is not a valid jar, retrying download once: {}",
+                    retrySignal.failure().getMessage()
+                )
+            );
+    }
+
     private Mono<Path> validateLauncherJar(Path path) {
         return Mono.create(sink -> {
             log.debug("Validating Fabric launcher file {}", path);
 
             if (!path.toFile().isFile()) {
                 sink.error(new InvalidContentException("Downloaded launcher jar is not a file"));
+                return;
             }
             try {
                 final Properties installProperties = IoStreams.readFileFromZip(path, "install.properties", in -> {
@@ -180,14 +227,17 @@ public class FabricMetaClient {
                 if (installProperties == null) {
                     debugDownloadedContent(path);
                     sink.error(new InvalidContentException("Does not contain an install.properties"));
+                    return;
                 }
-                else if (!installProperties.containsKey("game-version")) {
+                if (!installProperties.containsKey("game-version")) {
                     debugDownloadedContent(path);
                     sink.error(new InvalidContentException("Does not contain a valid install.properties"));
+                    return;
                 }
             } catch (IOException e) {
                 debugDownloadedContent(path);
                 sink.error(new InvalidContentException("Could not be read as a jar/zip", e));
+                return;
             }
 
             sink.success(path);
@@ -218,5 +268,15 @@ public class FabricMetaClient {
                 .map(VersionEntry::getVersion)
                 .findFirst()
         );
+    }
+
+    /**
+     * Raised when the downloaded launcher bytes are not a jar. Kept separate from
+     * {@link InvalidContentException} so the caller can retry this case exactly once.
+     */
+    static final class InvalidJarException extends IOException {
+        private InvalidJarException(String message) {
+            super(message);
+        }
     }
 }

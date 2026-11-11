@@ -2,6 +2,7 @@ package me.itzg.helpers.files;
 
 import io.netty.buffer.ByteBuf;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -9,6 +10,7 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.time.Instant;
 import java.util.function.Function;
+import java.util.jar.JarFile;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
@@ -116,6 +118,60 @@ public class ReactiveFileUtils {
                 Files.move(from, to, StandardCopyOption.REPLACE_EXISTING);
                 return to;
             })
+            .subscribeOn(Schedulers.boundedElastic());
+    }
+
+    /**
+     * A regular file with {@link #hasZipMagic(Path) ZIP magic} that opens as a {@link JarFile}.
+     * Magic alone accepts a truncated download; opening the jar reads the central directory.
+     *
+     * @return {@code true} when {@code path} is a readable jar
+     */
+    public static boolean isValidJar(Path path) {
+        try {
+            if (!Files.isRegularFile(path) || !hasZipMagic(path)) {
+                return false;
+            }
+            try (JarFile jarFile = new JarFile(path.toFile(), false)) {
+                log.debug("Opened jar {} with {} entries", path, jarFile.size());
+                return true;
+            }
+        } catch (IOException e) {
+            log.debug("Unable to open {} as a jar", path, e);
+            return false;
+        }
+    }
+
+    /**
+     * ZIP local-file, empty-archive, or spanned-archive magic.
+     *
+     * @return {@code false} when the file is shorter than four bytes or the header is not ZIP magic
+     * @throws IOException when the file cannot be read
+     */
+    public static boolean hasZipMagic(Path path) throws IOException {
+        try (InputStream in = Files.newInputStream(path)) {
+            final byte[] header = new byte[4];
+            final int read = in.read(header);
+            if (read < 4) {
+                return false;
+            }
+            return header[0] == 0x50 && header[1] == 0x4b
+                && (
+                    (header[2] == 0x03 && header[3] == 0x04)
+                    || (header[2] == 0x05 && header[3] == 0x06)
+                    || (header[2] == 0x07 && header[3] == 0x08)
+                );
+        }
+    }
+
+    /**
+     * @return {@code path} when {@link #isValidJar(Path)} accepts it, otherwise empty.
+     * Returned Mono is already subscribed on the bounded elastic scheduler.
+     */
+    public static Mono<Path> validJar(Path path) {
+        return Mono.fromCallable(() -> isValidJar(path))
+            .filter(Boolean::booleanValue)
+            .map(valid -> path)
             .subscribeOn(Schedulers.boundedElastic());
     }
 }
