@@ -1,23 +1,26 @@
 package me.itzg.helpers.env;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import java.time.Clock;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import me.itzg.helpers.TestLoggingAppender;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class SimplePlaceholdersTest {
 
     @ParameterizedTest
-    @MethodSource("literalReplacementValues")
+    @ValueSource(strings = {
+        "cost-$name",
+        "$5",
+        "a\\path",
+        "trail\\",
+        "mixed $1 and \\ and ${group}"
+    })
     void resolvedReplacementIsLiteral(String replacement) {
         final SimplePlaceholders placeholders = new SimplePlaceholders(
             MappedEnvVarProvider.of("VALUE", replacement),
@@ -26,16 +29,6 @@ class SimplePlaceholdersTest {
 
         assertThat(placeholders.processPlaceholders("x%VALUE%y"))
             .isEqualTo("x" + replacement + "y");
-    }
-
-    static Stream<Arguments> literalReplacementValues() {
-        return Stream.of(
-            arguments("cost-$name"),
-            arguments("$5"),
-            arguments("a\\path"),
-            arguments("trail\\"),
-            arguments("mixed $1 and \\ and ${group}")
-        );
     }
 
     @Test
