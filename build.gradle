@@ -4,7 +4,7 @@ plugins {
   id 'java'
   id 'application'
   id 'idea'
-  id "io.freefair.lombok" version '9.8.2'
+  id "io.freefair.lombok" version '9.8.3'
   // https://github.com/qoomon/gradle-git-versioning-plugin
   id 'me.qoomon.git-versioning' version '7.0.0'
   // https://github.com/itzg/github-releaser-gradle-plugin
@@ -133,7 +133,7 @@ dependencies {
   implementation(platform('ch.qos.logback:logback-parent:1.5.25'))
   // reactor-bom lags netty just a bit, so make sure it's the one preferred since we use reactor directly
   implementation enforcedPlatform('io.projectreactor:reactor-bom:2025.0.8')
-  implementation platform('io.netty:netty-bom:4.2.19.Final')
+  implementation platform('io.netty:netty-bom:4.2.20.Final')
 
   implementation 'ch.qos.logback:logback-core'
   implementation 'ch.qos.logback:logback-classic'
