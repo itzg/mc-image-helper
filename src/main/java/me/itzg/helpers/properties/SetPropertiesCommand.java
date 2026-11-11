@@ -157,7 +157,8 @@ public class SetPropertiesCommand implements Callable<Integer> {
                 if (envValue != null) {
                     final String targetValue = mapAndValidateValue(definition,
                         simplePlaceholders.processPlaceholders(
-                            unescapeUnicode(envValue)
+                            unescapeUnicode(envValue),
+                            needsValueRedacted(name) ? name : null
                         )
                     );
 
@@ -178,7 +179,8 @@ public class SetPropertiesCommand implements Callable<Integer> {
                 final String name = entry.getKey();
                 final String targetValue =
                     simplePlaceholders.processPlaceholders(
-                        unescapeUnicode(entry.getValue())
+                        unescapeUnicode(entry.getValue()),
+                        needsValueRedacted(name) ? name : null
                     );
                 final String propValue = properties.getProperty(name);
                 if (!Objects.equals(targetValue, propValue)) {

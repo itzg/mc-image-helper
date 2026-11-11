@@ -4,6 +4,8 @@ import static com.github.stefanbirkner.systemlambda.SystemLambda.tapSystemErr;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.spi.ILoggingEvent;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -19,10 +21,14 @@ import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import me.itzg.helpers.TestLoggingAppender;
 import me.itzg.helpers.env.MappedEnvVarProvider;
+import me.itzg.helpers.env.SimplePlaceholders;
 import me.itzg.helpers.json.ObjectMappers;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -38,6 +44,7 @@ import picocli.CommandLine.ExitCode;
 
 class SetPropertiesCommandTest {
 
+    public static final RandomStringUtils randomStringUtils = RandomStringUtils.insecure();
     @TempDir
     Path tempDir;
 
@@ -58,7 +65,7 @@ class SetPropertiesCommandTest {
 
     @Test
     void simpleNeedsChange() throws Exception {
-        final String name = RandomStringUtils.randomAlphabetic(10);
+        final String name = randomStringUtils.nextAlphabetic(10);
 
         final int exitCode = new CommandLine(new SetPropertiesCommand()
             .setEnvironmentVariablesProvider(MappedEnvVarProvider.of(
@@ -314,6 +321,185 @@ class SetPropertiesCommandTest {
         assertPropertiesEqualExcept(properties, "rcon.password");
     }
 
+    @Test
+    void redactsPlaceholderLogsForPasswordProperties() throws Exception {
+        final String secret = ":xDmW!T5Y%Jjam;$L9adz-tf%4BuhN,z#64pGx+;3R6^W$#PgGv!Nm-*)A}3^*/js*&)#";
+        final String fragment = "Jjam;$L9adz-tf";
+
+        final List<ILoggingEvent> events = TestLoggingAppender.captureLogs(SimplePlaceholders.class, () -> {
+            final int exitCode = new CommandLine(new SetPropertiesCommand()
+                .setEnvironmentVariablesProvider(MappedEnvVarProvider.of(
+                    "RCON_PASSWORD", secret
+                ))
+            )
+                .execute(
+                    "--definitions", definitionsFile.toString(),
+                    propertiesFile.toString()
+                );
+
+            assertThat(exitCode).isEqualTo(ExitCode.OK);
+        });
+
+        assertThat(loadProperties()).containsEntry("rcon.password", secret);
+        TestLoggingAppender.assertEventsOmit(events, fragment);
+        assertThat(formattedLogText(events))
+            .contains("Unable to resolve placeholder in property rcon.password")
+            .contains("Building placeholder replacement for property rcon.password")
+            .doesNotContain("type=");
+    }
+
+    @Test
+    void redactsUnknownPlaceholderTypeForPasswordProperties() throws Exception {
+        final String secret = "prefix%SecretFragment:anything%suffix";
+
+        final List<ILoggingEvent> events = TestLoggingAppender.captureLogs(SimplePlaceholders.class, () -> {
+            final int exitCode = new CommandLine(new SetPropertiesCommand()
+                .setEnvironmentVariablesProvider(MappedEnvVarProvider.of(
+                    "RCON_PASSWORD", secret
+                ))
+            )
+                .execute(
+                    "--definitions", definitionsFile.toString(),
+                    propertiesFile.toString()
+                );
+
+            assertThat(exitCode).isEqualTo(ExitCode.OK);
+        });
+
+        assertThat(loadProperties()).containsEntry("rcon.password", secret);
+        TestLoggingAppender.assertEventsOmit(events, "SecretFragment");
+        TestLoggingAppender.assertEventsOmit(events, "anything");
+        assertThat(events).anySatisfy(event ->
+            assertThat(event.getFormattedMessage())
+                .isEqualTo("Building placeholder replacement for property rcon.password")
+        );
+    }
+
+    @Test
+    void redactsPlaceholderLogsForCustomPasswordProperties() throws Exception {
+        final String secret = "prefix%Jjam;$L9adz-tf%suffix";
+        final String fragment = "Jjam;$L9adz-tf";
+
+        final List<ILoggingEvent> events = TestLoggingAppender.captureLogs(SimplePlaceholders.class, () -> {
+            final int exitCode = new CommandLine(new SetPropertiesCommand())
+                .execute(
+                    "--custom-property", "rcon.password=" + secret,
+                    propertiesFile.toString()
+                );
+
+            assertThat(exitCode).isEqualTo(ExitCode.OK);
+        });
+
+        assertThat(loadProperties()).containsEntry("rcon.password", secret);
+        TestLoggingAppender.assertEventsOmit(events, fragment);
+        assertThat(formattedLogText(events))
+            .contains("Unable to resolve placeholder in property rcon.password");
+    }
+
+    @Test
+    void redactsInvalidDatePlaceholderLogsForPasswordProperties() throws Exception {
+        final String secret = "%date:Jjam;$L9adz%";
+        final String fragment = "Jjam;$L9adz";
+
+        final List<ILoggingEvent> events = TestLoggingAppender.captureLogs(SimplePlaceholders.class, () -> {
+            final int exitCode = new CommandLine(new SetPropertiesCommand()
+                .setEnvironmentVariablesProvider(MappedEnvVarProvider.of(
+                    "RCON_PASSWORD", secret
+                ))
+            )
+                .execute(
+                    "--definitions", definitionsFile.toString(),
+                    propertiesFile.toString()
+                );
+
+            assertThat(exitCode).isEqualTo(ExitCode.OK);
+        });
+
+        assertThat(loadProperties()).containsEntry("rcon.password", secret);
+        TestLoggingAppender.assertEventsOmit(events, fragment);
+        assertThat(formattedLogText(events))
+            .contains("Building placeholder replacement for property rcon.password")
+            .doesNotContain("type=");
+
+        final List<ILoggingEvent> errors = events.stream()
+            .filter(event -> event.getLevel() == Level.ERROR)
+            .collect(Collectors.toList());
+        assertThat(errors).hasSize(1);
+        assertThat(errors.get(0).getFormattedMessage())
+            .isEqualTo("Invalid date/time format in property rcon.password");
+        assertThat(errors.get(0).getThrowableProxy()).isNull();
+    }
+
+    @Test
+    void logsUnresolvedPlaceholderTextForNonSecretProperties() throws Exception {
+        final List<ILoggingEvent> events = TestLoggingAppender.captureLogs(SimplePlaceholders.class, () -> {
+            final int exitCode = new CommandLine(new SetPropertiesCommand()
+                .setEnvironmentVariablesProvider(MappedEnvVarProvider.of(
+                    "MOTD", "Hello %MODPACK_NAME%"
+                ))
+            )
+                .execute(
+                    "--definitions", definitionsFile.toString(),
+                    propertiesFile.toString()
+                );
+
+            assertThat(exitCode).isEqualTo(ExitCode.OK);
+        });
+
+        assertThat(loadProperties()).containsEntry("motd", "Hello %MODPACK_NAME%");
+        assertThat(formattedLogText(events))
+            .contains("Unable to resolve environment variable MODPACK_NAME")
+            .contains("Building placeholder replacement from type=env with var='MODPACK_NAME'");
+    }
+
+    @Test
+    void logsInvalidDateFormatForNonSecretProperties() throws Exception {
+        final List<ILoggingEvent> events = TestLoggingAppender.captureLogs(SimplePlaceholders.class, () -> {
+            final int exitCode = new CommandLine(new SetPropertiesCommand()
+                .setEnvironmentVariablesProvider(MappedEnvVarProvider.of(
+                    "MOTD", "%date:notAformat%"
+                ))
+            )
+                .execute(
+                    "--definitions", definitionsFile.toString(),
+                    propertiesFile.toString()
+                );
+
+            assertThat(exitCode).isEqualTo(ExitCode.OK);
+        });
+
+        assertThat(loadProperties()).containsEntry("motd", "%date:notAformat%");
+        assertThat(formattedLogText(events))
+            .contains("Invalid date/time format in notAformat");
+        final List<ILoggingEvent> errors = events.stream()
+            .filter(event -> event.getLevel() == Level.ERROR)
+            .collect(Collectors.toList());
+        assertThat(errors).hasSize(1);
+        assertThat(errors.get(0).getThrowableProxy()).isNotNull();
+    }
+
+    @Test
+    void resolvedPlaceholderWithDollarAndBackslashIsLiteral() throws Exception {
+        final String err = tapSystemErr(() -> {
+            final int exitCode = new CommandLine(new SetPropertiesCommand()
+                .setEnvironmentVariablesProvider(MappedEnvVarProvider.of(
+                    "PRICE", "cost-$name",
+                    "DIR", "a\\path",
+                    "MOTD", "%PRICE%/%DIR%"
+                ))
+            )
+                .execute(
+                    "--definitions", definitionsFile.toString(),
+                    propertiesFile.toString()
+                );
+
+            assertThat(exitCode).isEqualTo(ExitCode.OK);
+        });
+
+        assertThat(err).doesNotContain("Illegal group reference");
+        assertThat(loadProperties()).containsEntry("motd", "cost-$name/a\\path");
+    }
+
     @ParameterizedTest
     @MethodSource("translatesLiteralNewlinesArgs")
     void translatesLiteralNewlines(String input, String expected, @TempDir Path tempDir) throws IOException {
@@ -357,6 +543,12 @@ class SetPropertiesCommandTest {
         }
 
         return definitionsFile;
+    }
+
+    private static String formattedLogText(List<ILoggingEvent> events) {
+        return events.stream()
+            .map(ILoggingEvent::getFormattedMessage)
+            .collect(Collectors.joining("\n"));
     }
 
     private void assertPropertiesEqualExcept(Properties properties, String... propertiesToIgnore) {
