@@ -52,6 +52,13 @@ public class OutputToDirectoryHandler implements OutputResponseHandler {
     final Path tempDownloadFile = filePath.resolveSibling(filename + ".download");
     try (OutputStream out = Files.newOutputStream(tempDownloadFile)) {
       response.getEntity().writeTo(out);
+    } catch (IOException e) {
+      try {
+        Files.deleteIfExists(tempDownloadFile);
+      } catch (IOException suppressed) {
+        e.addSuppressed(suppressed);
+      }
+      throw e;
     }
     Files.move(tempDownloadFile, filePath, StandardCopyOption.REPLACE_EXISTING);
 

@@ -388,6 +388,7 @@ class OutputToDirTest {
         assertThat(status).isNotEqualTo(0);
         // --skip-existing would keep a short file under the real name on every later run
         assertThat(tempDir.resolve("server.jar")).doesNotExist();
+        assertThat(tempDir.resolve("server.jar.download")).doesNotExist();
     }
 
     @Test

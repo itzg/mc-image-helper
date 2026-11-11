@@ -454,6 +454,7 @@ class OutputToDirectoryFetchBuilderTest {
         // A short file under the real name would be kept by skipExisting, and by skipUpToDate
         // since its mtime is newer than the remote Last-Modified, so it must never appear.
         assertThat(tempDir.resolve("server.jar")).doesNotExist();
+        assertThat(tempDir.resolve("server.jar.download")).doesNotExist();
     }
 
     @Test

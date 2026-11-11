@@ -319,7 +319,8 @@ public class OutputToDirectoryFetchBuilder extends FetchBuilderBase<OutputToDire
                     downloadedHandler.call(uri(), outputFile, fileSize);
                     return outputFile;
                 })
-            );
+            )
+            .onErrorResume(throwable -> ReactiveFileUtils.removeFailedDownload(throwable, tempDownloadFile));
     }
 
     private String extractFilename(HttpClientResponse resp) {
