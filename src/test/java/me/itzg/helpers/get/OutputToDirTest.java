@@ -2,6 +2,7 @@ package me.itzg.helpers.get;
 
 import static java.lang.System.lineSeparator;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 
 import java.io.BufferedWriter;
@@ -9,6 +10,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.MalformedURLException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
@@ -21,6 +23,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.junit.jupiter.MockServerExtension;
+import org.mockserver.model.HttpError;
 import org.mockserver.model.HttpStatusCode;
 import org.mockserver.model.MediaType;
 import picocli.CommandLine;
@@ -354,6 +357,56 @@ class OutputToDirTest {
 
     assertThat(status).isEqualTo(1);
     assertThat(tempDir).isEmptyDirectory();
+  }
+
+  @Test
+  void interruptedDownloadLeavesNoFileUnderTheRealName(@TempDir Path tempDir) throws MalformedURLException {
+    expectInterruptedDownload("/server.jar");
+
+    final int status =
+        new CommandLine(new GetCommand())
+            .execute(
+                "-o", tempDir.toString(),
+                mock.buildMockedUrl("/server.jar").toString()
+            );
+
+    assertThat(status).isNotEqualTo(0);
+    // --skip-existing would keep a short file under the real name on every later run
+    assertThat(tempDir.resolve("server.jar")).doesNotExist();
+    assertThat(tempDir.resolve("server.jar.download")).doesNotExist();
+  }
+
+  @Test
+  void interruptedDownloadKeepsThePreviousFile(@TempDir Path tempDir) throws IOException {
+    final Path previous = Files.write(tempDir.resolve("server.jar"),
+        "previous complete content".getBytes(StandardCharsets.UTF_8)
+    );
+    expectInterruptedDownload("/server.jar");
+
+    final int status =
+        new CommandLine(new GetCommand())
+            .execute(
+                "-o", tempDir.toString(),
+                mock.buildMockedUrl("/server.jar").toString()
+            );
+
+    assertThat(status).isNotEqualTo(0);
+    assertThat(previous).hasContent("previous complete content");
+  }
+
+  /**
+   * Sends the headers and the start of a 1000 byte body, then drops the connection.
+   */
+  private void expectInterruptedDownload(String path) {
+    client.when(request().withMethod("GET").withPath(path))
+        .error(HttpError.error()
+            .withResponseBytes(("HTTP/1.1 200 OK\r\n"
+                + "Content-Type: application/java-archive\r\n"
+                + "Content-Length: 1000\r\n"
+                + "\r\n"
+                + "partial").getBytes(StandardCharsets.US_ASCII))
+            .withDropConnection(true)
+        );
   }
 
 }

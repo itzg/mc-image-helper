@@ -246,12 +246,18 @@ public class OutputToDirectoryFetchBuilder extends FetchBuilderBase<OutputToDire
     private Mono<Path> copyBodyInputStreamToFile(ByteBufFlux byteBufFlux, Path outputFile) {
         log.trace("Copying response body to file={}", outputFile);
 
-        return ReactiveFileUtils.writeByteBufFluxToFile(byteBufFlux, outputFile)
-            .map(fileSize -> {
-                statusHandler.call(FileDownloadStatus.DOWNLOADED, uri(), outputFile);
-                downloadedHandler.call(uri(), outputFile, fileSize);
-                return outputFile;
-            });
+        // Like SpecificFileFetchBuilder: write beside the target and move it into place, so an interrupted
+        // download never leaves a short file under the real name for skipExisting or skipUpToDate to keep.
+        final Path tempDownloadFile = outputFile.resolveSibling(outputFile.getFileName() + ".download");
+        return ReactiveFileUtils.writeByteBufFluxToFile(byteBufFlux, tempDownloadFile)
+            .flatMap(fileSize -> ReactiveFileUtils.moveTo(outputFile).apply(tempDownloadFile)
+                .map(movedFile -> {
+                    statusHandler.call(FileDownloadStatus.DOWNLOADED, uri(), outputFile);
+                    downloadedHandler.call(uri(), outputFile, fileSize);
+                    return outputFile;
+                })
+            )
+            .onErrorResume(throwable -> ReactiveFileUtils.removeFailedDownload(throwable, tempDownloadFile));
     }
 
     private String extractFilename(HttpClientResponse resp) {
