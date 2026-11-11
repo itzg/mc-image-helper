@@ -67,7 +67,7 @@ public class SimplePlaceholders {
             log.debug("Building placeholder replacement from type={} with var='{}'", type, var);
         }
         else {
-            log.debug("Building placeholder replacement from type={} for property {}", type, redactForProperty);
+            log.debug("Building placeholder replacement for property {}", redactForProperty);
         }
         switch (type) {
             case "env":

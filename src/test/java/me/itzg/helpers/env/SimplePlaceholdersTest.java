@@ -53,17 +53,6 @@ class SimplePlaceholdersTest {
     }
 
     @Test
-    void unresolvedPlaceholderInsideSecretIsLeftInPlace() {
-        final String secret = ":xDmW!T5Y%Jjam;$L9adz-tf%4BuhN,z#64pGx+;3R6^W$#PgGv!Nm-*)A}3^*/js*&)#";
-        final SimplePlaceholders placeholders = new SimplePlaceholders(
-            MappedEnvVarProvider.of(),
-            Clock.systemUTC()
-        );
-
-        assertThat(placeholders.processPlaceholders(secret)).isEqualTo(secret);
-    }
-
-    @Test
     void unresolvedPlaceholderLogsVariableName() {
         final String fragment = "Jjam;$L9adz-tf";
         final SimplePlaceholders placeholders = new SimplePlaceholders(
