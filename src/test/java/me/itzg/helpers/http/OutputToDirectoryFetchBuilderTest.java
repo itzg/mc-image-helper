@@ -4,9 +4,11 @@ import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static me.itzg.helpers.http.Fetch.fetch;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
+import com.github.tomakehurst.wiremock.http.Fault;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.github.tomakehurst.wiremock.verification.LoggedRequest;
@@ -438,5 +440,46 @@ class OutputToDirectoryFetchBuilderTest {
     private static void assertOrdinaryHeadersPreserved(HttpHeaders headers) {
         assertThat(headers.get("Accept")).isEqualTo("application/octet-stream");
         assertThat(headers.get("X-Trace")).isEqualTo("keep-me");
+    }
+
+    @Test
+    void interruptedDownloadLeavesNoFileUnderTheRealName(WireMockRuntimeInfo wm, @TempDir Path tempDir) {
+        stubInterruptedDownload("server.jar");
+
+        assertThatThrownBy(() -> fetch(URI.create(wm.getHttpBaseUrl() + "/file"))
+            .toDirectory(tempDir)
+            .execute()
+        );
+
+        // A short file under the real name would be kept by skipExisting, and by skipUpToDate
+        // since its mtime is newer than the remote Last-Modified, so it must never appear.
+        assertThat(tempDir.resolve("server.jar")).doesNotExist();
+        assertThat(tempDir.resolve("server.jar.download")).doesNotExist();
+    }
+
+    @Test
+    void interruptedDownloadKeepsThePreviousFile(WireMockRuntimeInfo wm, @TempDir Path tempDir) throws IOException {
+        final Path previous = Files.write(tempDir.resolve("server.jar"),
+            "previous complete content".getBytes(StandardCharsets.UTF_8)
+        );
+        stubInterruptedDownload("server.jar");
+
+        assertThatThrownBy(() -> fetch(URI.create(wm.getHttpBaseUrl() + "/file"))
+            .toDirectory(tempDir)
+            .execute()
+        );
+
+        assertThat(previous).hasContent("previous complete content");
+    }
+
+    private static void stubInterruptedDownload(String filename) {
+        stubFor(
+            head(urlPathEqualTo("/file"))
+                .willReturn(ok().withHeader("content-disposition", "attachment; filename=\"" + filename + "\""))
+        );
+        stubFor(
+            get("/file")
+                .willReturn(aResponse().withFault(Fault.MALFORMED_RESPONSE_CHUNK))
+        );
     }
 }

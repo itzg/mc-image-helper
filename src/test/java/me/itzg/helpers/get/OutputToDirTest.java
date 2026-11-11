@@ -4,12 +4,14 @@ import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static java.lang.System.lineSeparator;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.github.tomakehurst.wiremock.http.Fault;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
@@ -368,6 +370,45 @@ class OutputToDirTest {
 
         assertThat(status).isEqualTo(1);
         assertThat(tempDir).isEmptyDirectory();
+    }
+
+    @Test
+    void interruptedDownloadLeavesNoFileUnderTheRealName(@TempDir Path tempDir, WireMockRuntimeInfo wm) {
+        stubFor(get(urlPathEqualTo("/server.jar"))
+            .willReturn(aResponse().withFault(Fault.MALFORMED_RESPONSE_CHUNK))
+        );
+
+        final int status =
+            new CommandLine(new GetCommand())
+                .execute(
+                    "-o", tempDir.toString(),
+                    wm.getHttpBaseUrl() + "/server.jar"
+                );
+
+        assertThat(status).isNotEqualTo(0);
+        // --skip-existing would keep a short file under the real name on every later run
+        assertThat(tempDir.resolve("server.jar")).doesNotExist();
+        assertThat(tempDir.resolve("server.jar.download")).doesNotExist();
+    }
+
+    @Test
+    void interruptedDownloadKeepsThePreviousFile(@TempDir Path tempDir, WireMockRuntimeInfo wm) throws IOException {
+        final Path previous = Files.write(tempDir.resolve("server.jar"),
+            "previous complete content".getBytes(StandardCharsets.UTF_8)
+        );
+        stubFor(get(urlPathEqualTo("/server.jar"))
+            .willReturn(aResponse().withFault(Fault.MALFORMED_RESPONSE_CHUNK))
+        );
+
+        final int status =
+            new CommandLine(new GetCommand())
+                .execute(
+                    "-o", tempDir.toString(),
+                    wm.getHttpBaseUrl() + "/server.jar"
+                );
+
+        assertThat(status).isNotEqualTo(0);
+        assertThat(previous).hasContent("previous complete content");
     }
 
 }
