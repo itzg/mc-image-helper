@@ -12,7 +12,6 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Properties;
 import java.util.function.Predicate;
-import java.util.jar.JarFile;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
@@ -191,16 +190,13 @@ public class FabricMetaClient {
      * retry instead of joining the install.properties retry loop.
      */
     private Mono<Path> confirmValidJar(Path path) {
-        return Mono.fromCallable(() -> {
-                if (!isValidJar(path)) {
-                    throw new InvalidJarException("Downloaded Fabric launcher is not a valid jar: " + path);
-                }
-                return path;
-            })
-            .subscribeOn(Schedulers.boundedElastic())
-            .onErrorResume(InvalidJarException.class, error ->
-                ReactiveFileUtils.removeFailedDownload(error, path)
-            );
+        return ReactiveFileUtils.validJar(path)
+            .switchIfEmpty(Mono.defer(() ->
+                ReactiveFileUtils.removeFailedDownload(
+                    new InvalidJarException("Downloaded Fabric launcher is not a valid jar: " + path),
+                    path
+                )
+            ));
     }
 
     private Retry invalidJarRetry() {
@@ -211,41 +207,6 @@ public class FabricMetaClient {
                     retrySignal.failure().getMessage()
                 )
             );
-    }
-
-    /**
-     * ZIP local-file, empty-archive, or spanned-archive magic, then a real {@link JarFile} open.
-     * Magic alone accepts a truncated download; opening the jar reads the central directory.
-     */
-    private static boolean isValidJar(Path path) {
-        try {
-            if (!Files.isRegularFile(path) || !hasZipMagic(path)) {
-                return false;
-            }
-            try (JarFile jarFile = new JarFile(path.toFile(), false)) {
-                log.debug("Opened Fabric launcher jar {} with {} entries", path, jarFile.size());
-                return true;
-            }
-        } catch (IOException e) {
-            log.debug("Unable to open downloaded launcher as a jar: {}", path, e);
-            return false;
-        }
-    }
-
-    private static boolean hasZipMagic(Path path) throws IOException {
-        try (InputStream in = Files.newInputStream(path)) {
-            final byte[] header = new byte[4];
-            final int read = in.read(header);
-            if (read < 4) {
-                return false;
-            }
-            return header[0] == 0x50 && header[1] == 0x4b
-                && (
-                    (header[2] == 0x03 && header[3] == 0x04)
-                    || (header[2] == 0x05 && header[3] == 0x06)
-                    || (header[2] == 0x07 && header[3] == 0x08)
-                );
-        }
     }
 
     private Mono<Path> validateLauncherJar(Path path) {
