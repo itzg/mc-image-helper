@@ -9,23 +9,26 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
+import io.netty.channel.ConnectTimeoutException;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
-import java.nio.charset.StandardCharsets;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.PosixFilePermission;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Stream;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 import me.itzg.helpers.files.Manifests;
+import me.itzg.helpers.paper.PaperDownloadsClient.VersionBuildFile;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
+import reactor.core.publisher.Mono;
 
 @WireMockTest
 class InstallPaperCommandTest {
@@ -64,30 +67,33 @@ class InstallPaperCommandTest {
     }
 
     @Test
-    void fallsBackUsingVersionFromJarWhenManifestOmitsIt(@TempDir Path tempDir) throws Exception {
-        final Path jar = tempDir.resolve(JAR_NAME);
-        writeVersionedJar(jar, VERSION);
-        final byte[] jarBefore = Files.readAllBytes(jar);
-        Manifests.save(tempDir, PaperManifest.ID, PaperManifest.builder()
-            .files(Collections.singletonList(JAR_NAME))
-            .build()
-        );
+    void fallsBackWhenConnectTimesOut(@TempDir Path tempDir) throws Exception {
+        final Path jar = installExisting(tempDir);
         final byte[] manifestBefore = manifestBytes(tempDir);
         final Path resultsFile = tempDir.resolve("results.env");
 
         final String err = tapSystemErr(() ->
-            assertThat(execute(tempDir, closedBaseUrl(), resultsFile, "--version=" + VERSION))
+            assertThat(execute(connectTimeout(), tempDir, "http://192.0.2.1", resultsFile, "--version=" + VERSION))
                 .isEqualTo(ExitCode.OK)
         );
 
-        assertThat(err).contains("keeping existing");
-        assertThat(Files.readAllBytes(jar)).isEqualTo(jarBefore);
-        assertThat(manifestBytes(tempDir)).isEqualTo(manifestBefore);
-        assertThat(resultsFile).content().contains(
-            "SERVER=\"" + jar + "\"",
-            "VERSION=\"" + VERSION + "\"",
-            "TYPE=\"PAPER\""
+        assertKeptExisting(tempDir, jar, resultsFile, manifestBefore, err);
+        assertThat(err).contains("ConnectTimeoutException");
+    }
+
+    @Test
+    void connectTimeoutWithoutExistingInstallStillFails(@TempDir Path tempDir) throws Exception {
+        final Path resultsFile = tempDir.resolve("results.env");
+
+        final String err = tapSystemErr(() ->
+            assertThat(execute(connectTimeout(), tempDir, "http://192.0.2.1", resultsFile, "--version=" + VERSION))
+                .isNotEqualTo(ExitCode.OK)
         );
+
+        assertThat(err).contains("ConnectTimeoutException");
+        assertThat(err).doesNotContain("keeping existing");
+        assertThat(resultsFile).doesNotExist();
+        assertThat(Manifests.buildManifestPath(tempDir, PaperManifest.ID)).doesNotExist();
     }
 
     @Test
@@ -183,6 +189,98 @@ class InstallPaperCommandTest {
         assertThat(resultsFile).doesNotExist();
     }
 
+    @Test
+    void doesNotFallBackWhenInstalledProjectIsMissing(@TempDir Path tempDir) throws Exception {
+        final Path jar = tempDir.resolve(JAR_NAME);
+        Files.writeString(jar, JAR_CONTENT);
+        Manifests.save(tempDir, PaperManifest.ID, PaperManifest.builder()
+            .minecraftVersion(VERSION)
+            .build(BUILD)
+            .files(Collections.singletonList(JAR_NAME))
+            .build()
+        );
+        final Path resultsFile = tempDir.resolve("results.env");
+
+        final String err = tapSystemErr(() ->
+            assertThat(execute(tempDir, closedBaseUrl(), resultsFile, "--version=" + VERSION))
+                .isNotEqualTo(ExitCode.OK)
+        );
+
+        assertThat(err).doesNotContain("keeping existing");
+        assertThat(jar).hasContent(JAR_CONTENT);
+        assertThat(resultsFile).doesNotExist();
+    }
+
+    @Test
+    void doesNotFallBackOverCustomUrlManifest(@TempDir Path tempDir) throws Exception {
+        final Path jar = tempDir.resolve(JAR_NAME);
+        Files.writeString(jar, JAR_CONTENT);
+        Manifests.save(tempDir, PaperManifest.ID, PaperManifest.builder()
+            .project("paper")
+            .minecraftVersion(VERSION)
+            .build(BUILD)
+            .customDownloadUrl(URI.create("https://example.invalid/folia.jar"))
+            .files(Collections.singletonList(JAR_NAME))
+            .build()
+        );
+        final Path resultsFile = tempDir.resolve("results.env");
+
+        final String err = tapSystemErr(() ->
+            assertThat(execute(tempDir, closedBaseUrl(), resultsFile, "--version=" + VERSION))
+                .isNotEqualTo(ExitCode.OK)
+        );
+
+        assertThat(err).doesNotContain("keeping existing");
+        assertThat(jar).hasContent(JAR_CONTENT);
+        assertThat(resultsFile).doesNotExist();
+    }
+
+    @Test
+    void localWriteFailureDoesNotFallBack(WireMockRuntimeInfo wm, @TempDir Path tempDir) throws Exception {
+        final Path jar = installExisting(tempDir);
+        final String downloadName = "paper-1.21.6-99.jar";
+        stubFor(get(urlPathEqualTo("/v3/projects/paper/versions/1.21.6/builds/latest"))
+            .willReturn(aResponse()
+                .withHeader("Content-Type", "application/json")
+                .withBody("""
+                    {
+                      "id": 99,
+                      "channel": "STABLE",
+                      "downloads": {
+                        "server:default": {
+                          "name": "%s",
+                          "url": "%s/%s"
+                        }
+                      }
+                    }
+                    """.formatted(downloadName, wm.getHttpBaseUrl(), downloadName))
+            )
+        );
+        stubFor(get(urlPathEqualTo("/" + downloadName))
+            .willReturn(aResponse().withBody("new-jar"))
+        );
+        final Path resultsFile = tempDir.resolve("results.env");
+        final Set<PosixFilePermission> original = Files.getPosixFilePermissions(tempDir);
+        Files.setPosixFilePermissions(tempDir, Set.of(
+            PosixFilePermission.OWNER_READ,
+            PosixFilePermission.OWNER_EXECUTE
+        ));
+        try {
+            final String err = tapSystemErr(() ->
+                assertThat(execute(tempDir, wm.getHttpBaseUrl(), resultsFile, "--version=" + VERSION))
+                    .isNotEqualTo(ExitCode.OK)
+            );
+
+            assertThat(err).doesNotContain("keeping existing");
+            assertThat(err).contains("AccessDeniedException");
+            assertThat(jar).hasContent(JAR_CONTENT);
+            assertThat(resultsFile).doesNotExist();
+            assertThat(tempDir.resolve(downloadName)).doesNotExist();
+        } finally {
+            Files.setPosixFilePermissions(tempDir, original);
+        }
+    }
+
     private static void assertKeptExisting(Path tempDir, Path jar, Path resultsFile, byte[] manifestBefore, String err)
         throws IOException {
         assertThat(err).contains("keeping existing");
@@ -220,12 +318,18 @@ class InstallPaperCommandTest {
         return Files.readAllBytes(Manifests.buildManifestPath(outputDirectory, PaperManifest.ID));
     }
 
-    private static void writeVersionedJar(Path jar, String versionId) throws IOException {
-        try (ZipOutputStream zip = new ZipOutputStream(Files.newOutputStream(jar))) {
-            zip.putNextEntry(new ZipEntry("version.json"));
-            zip.write(("{\"id\":\"" + versionId + "\"}").getBytes(StandardCharsets.UTF_8));
-            zip.closeEntry();
-        }
+    private static InstallPaperCommand connectTimeout() {
+        return new InstallPaperCommand() {
+            @Override
+            Mono<VersionBuildFile> assembleDownload(
+                PaperDownloadsClient client, String project, String version,
+                Integer build, RequestedChannel channel
+            ) {
+                return Mono.error(new ConnectTimeoutException(
+                    "connection timed out after 30000 ms: fill.papermc.io/104.18.19.103:443"
+                ));
+            }
+        };
     }
 
     private static String closedBaseUrl() throws IOException {
@@ -237,6 +341,12 @@ class InstallPaperCommandTest {
     }
 
     private static int execute(Path outputDirectory, String baseUrl, Path resultsFile, String... extraArgs) {
+        return execute(new InstallPaperCommand(), outputDirectory, baseUrl, resultsFile, extraArgs);
+    }
+
+    private static int execute(
+        InstallPaperCommand command, Path outputDirectory, String baseUrl, Path resultsFile, String... extraArgs
+    ) {
         final List<String> args = new ArrayList<>();
         args.add("--output-directory");
         args.add(outputDirectory.toString());
@@ -249,7 +359,7 @@ class InstallPaperCommandTest {
         }
         Collections.addAll(args, extraArgs);
         // Production enables this so the channel default "default" matches RequestedChannel.DEFAULT.
-        return new CommandLine(new InstallPaperCommand())
+        return new CommandLine(command)
             .setCaseInsensitiveEnumValuesAllowed(true)
             .execute(args.toArray(new String[0]));
     }

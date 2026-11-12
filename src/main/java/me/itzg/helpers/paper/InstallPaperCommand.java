@@ -3,7 +3,9 @@ package me.itzg.helpers.paper;
 import com.fasterxml.jackson.databind.exc.InvalidTypeIdException;
 import io.netty.channel.ChannelException;
 import java.io.IOException;
+import java.net.ConnectException;
 import java.net.URI;
+import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
@@ -21,11 +23,8 @@ import me.itzg.helpers.files.IoStreams;
 import me.itzg.helpers.files.ManifestException;
 import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.files.ResultsFileWriter;
-import me.itzg.helpers.http.FailedRequestException;
 import me.itzg.helpers.http.Fetch;
 import me.itzg.helpers.http.FileDownloadStatusHandler;
-import me.itzg.helpers.http.HttpClientException;
-import me.itzg.helpers.http.ResponseParsingException;
 import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.http.SharedFetchArgs;
 import me.itzg.helpers.json.ObjectMappers;
@@ -148,8 +147,6 @@ public class InstallPaperCommand implements Callable<Integer> {
                     )
                         .block();
                 } catch (RuntimeException e) {
-                    // HTTP 4xx/5xx and unknown versions still fail. A connect timeout or similar
-                    // transport error can keep the previous install when it is the one requested.
                     final Integer existing = fallbackToExistingInstall(e, oldManifest);
                     if (existing != null) {
                         return existing;
@@ -183,25 +180,18 @@ public class InstallPaperCommand implements Callable<Integer> {
     }
 
     /**
-     * @return {@link ExitCode#OK} when the previous install was kept, or null to rethrow the original error
+     * @return {@link ExitCode#OK} when the previous install was kept, or null to rethrow {@code error}
      */
     private Integer fallbackToExistingInstall(RuntimeException error, PaperManifest oldManifest) throws IOException {
-        if (!isUnreachablePaperApi(error)) {
-            return null;
-        }
-
         final Path serverJar = existingServerJar(oldManifest);
-        if (serverJar == null || !requestedCoordinatesMatch(oldManifest, serverJar)) {
+        if (!isPaperApiUnreachable(error) || serverJar == null || !sameRequestedInstall(oldManifest)) {
             return null;
         }
 
-        final String version = installedVersion(oldManifest, serverJar);
-        final String project = oldManifest.getProject() != null
-            ? oldManifest.getProject()
-            : inputs.coordinates.project;
+        final String version = oldManifest.getMinecraftVersion();
         log.warn("Paper API could not be reached ({}); keeping existing install of {} version={} build={} at {}",
             ExceptionDetailer.buildCausalMessages(error),
-            project != null ? project : "paper",
+            oldManifest.getProject(),
             version,
             oldManifest.getBuild(),
             serverJar
@@ -213,38 +203,24 @@ public class InstallPaperCommand implements Callable<Integer> {
                 if (version != null) {
                     results.writeVersion(version);
                 }
-                results.writeType(resultType(oldManifest));
+                results.writeType(oldManifest.getProject().toUpperCase());
             }
         }
 
         return ExitCode.OK;
     }
 
-    private String resultType(PaperManifest manifest) {
-        final String project = manifest.getProject() != null
-            ? manifest.getProject()
-            : inputs.coordinates.project;
-        return project != null ? project.toUpperCase() : "PAPER";
-    }
-
     /**
-     * Connection timeouts and other transport failures. Matches the IOException and Netty
-     * {@link ChannelException} cases Fabric and CurseForge retry, and excludes HTTP status errors
-     * ({@link FailedRequestException}) and unknown versions ({@link InvalidParameterException}).
+     * Connect failures only. {@link io.netty.channel.ConnectTimeoutException} is a {@link ConnectException}.
+     * Filesystem errors from the download, such as {@link java.nio.file.AccessDeniedException}, are not.
      */
-    private static boolean isUnreachablePaperApi(Throwable error) {
-        boolean sawTransportFailure = false;
+    private static boolean isPaperApiUnreachable(Throwable error) {
         Throwable current = error;
         while (current != null) {
-            if (current instanceof FailedRequestException
-                || current instanceof InvalidParameterException
-                || current instanceof GenericException
-                || current instanceof ResponseParsingException
-                || current instanceof HttpClientException) {
-                return false;
-            }
-            if (current instanceof IOException || current instanceof ChannelException) {
-                sawTransportFailure = true;
+            if (current instanceof ConnectException
+                || current instanceof UnknownHostException
+                || current instanceof ChannelException) {
+                return true;
             }
             final Throwable cause = current.getCause();
             if (cause == current) {
@@ -252,7 +228,7 @@ public class InstallPaperCommand implements Callable<Integer> {
             }
             current = cause;
         }
-        return sawTransportFailure;
+        return false;
     }
 
     private Path existingServerJar(PaperManifest manifest) {
@@ -271,40 +247,27 @@ public class InstallPaperCommand implements Callable<Integer> {
         return null;
     }
 
-    private boolean requestedCoordinatesMatch(PaperManifest oldManifest, Path serverJar) {
+    private boolean sameRequestedInstall(PaperManifest oldManifest) {
+        if (oldManifest.getCustomDownloadUrl() != null) {
+            return false;
+        }
         final String installedProject = oldManifest.getProject();
         final String requestedProject = inputs.coordinates.project;
-        if (installedProject != null && requestedProject != null
-            && !installedProject.equalsIgnoreCase(requestedProject)) {
+        if (installedProject == null || requestedProject == null
+            || !installedProject.equalsIgnoreCase(requestedProject)) {
             return false;
         }
 
         final String requestedVersion = inputs.coordinates.version;
         if (isSpecificVersion(requestedVersion)) {
-            final String installedVersion = installedVersion(oldManifest, serverJar);
+            final String installedVersion = oldManifest.getMinecraftVersion();
             if (installedVersion == null || !installedVersion.equalsIgnoreCase(requestedVersion)) {
                 return false;
             }
         }
 
         final Integer requestedBuild = inputs.coordinates.build;
-        if (requestedBuild != null && requestedBuild != oldManifest.getBuild()) {
-            return false;
-        }
-        return true;
-    }
-
-    private String installedVersion(PaperManifest manifest, Path serverJar) {
-        final String recorded = manifest.getMinecraftVersion();
-        if (recorded != null && !recorded.isBlank()) {
-            return recorded;
-        }
-        try {
-            return extractVersionFromJar(serverJar);
-        } catch (IOException e) {
-            log.debug("Unable to read version metadata from existing server jar {}", serverJar, e);
-            return null;
-        }
+        return requestedBuild == null || requestedBuild == oldManifest.getBuild();
     }
 
     private Integer checkForUpdates(PaperDownloadsClient client, PaperManifest oldManifest,
@@ -402,7 +365,7 @@ public class InstallPaperCommand implements Callable<Integer> {
             );
     }
 
-    private Mono<VersionBuildFile> assembleDownload(PaperDownloadsClient client, String project, String version,
+    Mono<VersionBuildFile> assembleDownload(PaperDownloadsClient client, String project, String version,
         Integer build,
         RequestedChannel channel
     ) {
