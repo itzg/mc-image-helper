@@ -1,16 +1,22 @@
 package me.itzg.helpers.paper;
 
 import com.fasterxml.jackson.databind.exc.InvalidTypeIdException;
+import io.netty.channel.ChannelException;
 import java.io.IOException;
+import java.net.ConnectException;
 import java.net.URI;
+import java.net.UnknownHostException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
+import me.itzg.helpers.errors.ExceptionDetailer;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.files.IoStreams;
@@ -134,11 +140,19 @@ public class InstallPaperCommand implements Callable<Integer> {
                     );
                 }
 
-                result = downloadUsingCoordinates(client, inputs.coordinates.project,
-                    inputs.coordinates.version, inputs.coordinates.build,
-                    inputs.coordinates.channel
-                )
-                    .block();
+                try {
+                    result = downloadUsingCoordinates(client, inputs.coordinates.project,
+                        inputs.coordinates.version, inputs.coordinates.build,
+                        inputs.coordinates.channel
+                    )
+                        .block();
+                } catch (RuntimeException e) {
+                    final Integer existing = fallbackToExistingInstall(e, oldManifest);
+                    if (existing != null) {
+                        return existing;
+                    }
+                    throw e;
+                }
             }
         }
 
@@ -163,6 +177,97 @@ public class InstallPaperCommand implements Callable<Integer> {
         Manifests.save(outputDirectory, PaperManifest.ID, result.newManifest);
 
         return ExitCode.OK;
+    }
+
+    /**
+     * @return {@link ExitCode#OK} when the previous install was kept, or null to rethrow {@code error}
+     */
+    private Integer fallbackToExistingInstall(RuntimeException error, PaperManifest oldManifest) throws IOException {
+        final Path serverJar = existingServerJar(oldManifest);
+        if (!isPaperApiUnreachable(error) || serverJar == null || !sameRequestedInstall(oldManifest)) {
+            return null;
+        }
+
+        final String version = oldManifest.getMinecraftVersion();
+        log.warn("Paper API could not be reached ({}); keeping existing install of {} version={} build={} at {}",
+            ExceptionDetailer.buildCausalMessages(error),
+            oldManifest.getProject(),
+            version,
+            oldManifest.getBuild(),
+            serverJar
+        );
+
+        if (resultsFile != null) {
+            try (ResultsFileWriter results = new ResultsFileWriter(resultsFile)) {
+                results.writeServer(serverJar);
+                if (version != null) {
+                    results.writeVersion(version);
+                }
+                results.writeType(oldManifest.getProject().toUpperCase());
+            }
+        }
+
+        return ExitCode.OK;
+    }
+
+    /**
+     * Connect failures only. {@link io.netty.channel.ConnectTimeoutException} is a {@link ConnectException}.
+     * Filesystem errors from the download, such as {@link java.nio.file.AccessDeniedException}, are not.
+     */
+    private static boolean isPaperApiUnreachable(Throwable error) {
+        Throwable current = error;
+        while (current != null) {
+            if (current instanceof ConnectException
+                || current instanceof UnknownHostException
+                || current instanceof ChannelException) {
+                return true;
+            }
+            final Throwable cause = current.getCause();
+            if (cause == current) {
+                break;
+            }
+            current = cause;
+        }
+        return false;
+    }
+
+    private Path existingServerJar(PaperManifest manifest) {
+        if (manifest == null || manifest.getFiles() == null) {
+            return null;
+        }
+        for (final String relative : manifest.getFiles()) {
+            if (relative == null || !relative.toLowerCase(Locale.ROOT).endsWith(".jar")) {
+                continue;
+            }
+            final Path candidate = outputDirectory.resolve(relative);
+            if (Files.isRegularFile(candidate)) {
+                return candidate;
+            }
+        }
+        return null;
+    }
+
+    private boolean sameRequestedInstall(PaperManifest oldManifest) {
+        if (oldManifest.getCustomDownloadUrl() != null) {
+            return false;
+        }
+        final String installedProject = oldManifest.getProject();
+        final String requestedProject = inputs.coordinates.project;
+        if (installedProject == null || requestedProject == null
+            || !installedProject.equalsIgnoreCase(requestedProject)) {
+            return false;
+        }
+
+        final String requestedVersion = inputs.coordinates.version;
+        if (isSpecificVersion(requestedVersion)) {
+            final String installedVersion = oldManifest.getMinecraftVersion();
+            if (installedVersion == null || !installedVersion.equalsIgnoreCase(requestedVersion)) {
+                return false;
+            }
+        }
+
+        final Integer requestedBuild = inputs.coordinates.build;
+        return requestedBuild == null || requestedBuild == oldManifest.getBuild();
     }
 
     private Integer checkForUpdates(PaperDownloadsClient client, PaperManifest oldManifest,
@@ -260,7 +365,7 @@ public class InstallPaperCommand implements Callable<Integer> {
             );
     }
 
-    private Mono<VersionBuildFile> assembleDownload(PaperDownloadsClient client, String project, String version,
+    Mono<VersionBuildFile> assembleDownload(PaperDownloadsClient client, String project, String version,
         Integer build,
         RequestedChannel channel
     ) {
