@@ -31,6 +31,7 @@ Commands:
   find                            Specialized replacement for GNU's find
   get                             Download a file
   github
+  hangar                          Automates downloading of plugins from Hangar
   hash                            Outputs an MD5 hash of the standard input
   has-feature                     Check if a subcommand is available and optionally if it has specific options
                                     (arguments)
@@ -387,6 +388,40 @@ From the latest or a given release, downloads the first matching asset, and outp
       --wiretap     Whether to enable Reactor Netty wiretap logging. Make sure to set logging level to trace.
                     Default: false
                     Env: FETCH_WIRETAP
+```
+
+### hangar
+
+```
+Usage: mc-image-helper hangar [--skip-existing] [--skip-up-to-date] [--api-base-url=<baseUrl>] [--channel=<channel>]
+                              --game-version=<gameVersion> [--output-directory=DIR] [--platform=<platform>]
+                              [--projects=slug|id[?][:version][,|<nl>slug|id[?][:version]...]]... [[--use-http2]
+                              [--wiretap]]
+Automates downloading of plugins from Hangar
+      --api-base-url=<baseUrl>
+                            Default: https://hangar.papermc.io
+      --channel=<channel>   The channel to select the latest version from when a project does not declare a version
+                            Default is Release
+      --game-version=<gameVersion>
+                            Applicable Minecraft version
+      --output-directory=DIR
+                            Plugins are downloaded into the plugins subdirectory of this directory
+      --platform=<platform> Default is PAPER
+                            Valid values: PAPER, WATERFALL, VELOCITY
+      --projects=slug|id[?][:version][,|<nl>slug|id[?][:version]...]
+                            Project slug or ID. Can be <slug|ID>, <slug|ID>:<version name>, '@'<filename with ref per
+                              line (supports # comments)>
+                            Append '?' to mark a project as optional (skipped with a warning if unavailable).
+                            Examples: ViaVersion, ViaVersion:5.12.2, Maintenance?, @/path/to/hangar-plugins.txt
+                            Embedded comments are allowed.
+      --skip-existing
+      --skip-up-to-date
+      --use-http2           Whether to use HTTP/2.
+                            Default: true
+                            Env: FETCH_USE_HTTP2
+      --wiretap             Whether to enable Reactor Netty wiretap logging. Make sure to set logging level to trace.
+                            Default: false
+                            Env: FETCH_WIRETAP
 ```
 
 ### has-feature

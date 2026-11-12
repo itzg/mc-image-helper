@@ -29,6 +29,7 @@ import me.itzg.helpers.forge.InstallForgeCommand;
 import me.itzg.helpers.forge.InstallNeoForgeCommand;
 import me.itzg.helpers.get.GetCommand;
 import me.itzg.helpers.github.GithubCommands;
+import me.itzg.helpers.hangar.HangarCommand;
 import me.itzg.helpers.modrinth.InstallModrinthModpackCommand;
 import me.itzg.helpers.modrinth.ModrinthCommand;
 import me.itzg.helpers.modrinth.VersionFromModrinthProjectsCommand;
@@ -74,6 +75,7 @@ import picocli.CommandLine.Option;
         FindCommand.class,
         GetCommand.class,
         GithubCommands.class,
+        HangarCommand.class,
         HashCommand.class,
         HasFeatureCommand.class,
         IniPathCommand.class,
