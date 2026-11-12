@@ -16,11 +16,9 @@ import java.net.ServerSocket;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.attribute.PosixFilePermission;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Stream;
 import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.paper.PaperDownloadsClient.VersionBuildFile;
@@ -238,7 +236,10 @@ class InstallPaperCommandTest {
     @Test
     void localWriteFailureDoesNotFallBack(WireMockRuntimeInfo wm, @TempDir Path tempDir) throws Exception {
         final Path jar = installExisting(tempDir);
-        final String downloadName = "paper-1.21.6-99.jar";
+        // A regular file where the download's parent directory should be. Opening the
+        // .download temp file then fails with an IOException for every user and filesystem.
+        final String downloadName = "blocked/paper-1.21.6-99.jar";
+        Files.writeString(tempDir.resolve("blocked"), "not-a-directory");
         stubFor(get(urlPathEqualTo("/v3/projects/paper/versions/1.21.6/builds/latest"))
             .willReturn(aResponse()
                 .withHeader("Content-Type", "application/json")
@@ -249,36 +250,28 @@ class InstallPaperCommandTest {
                       "downloads": {
                         "server:default": {
                           "name": "%s",
-                          "url": "%s/%s"
+                          "url": "%s/paper-1.21.6-99.jar"
                         }
                       }
                     }
-                    """.formatted(downloadName, wm.getHttpBaseUrl(), downloadName))
+                    """.formatted(downloadName, wm.getHttpBaseUrl()))
             )
         );
-        stubFor(get(urlPathEqualTo("/" + downloadName))
+        stubFor(get(urlPathEqualTo("/paper-1.21.6-99.jar"))
             .willReturn(aResponse().withBody("new-jar"))
         );
         final Path resultsFile = tempDir.resolve("results.env");
-        final Set<PosixFilePermission> original = Files.getPosixFilePermissions(tempDir);
-        Files.setPosixFilePermissions(tempDir, Set.of(
-            PosixFilePermission.OWNER_READ,
-            PosixFilePermission.OWNER_EXECUTE
-        ));
-        try {
-            final String err = tapSystemErr(() ->
-                assertThat(execute(tempDir, wm.getHttpBaseUrl(), resultsFile, "--version=" + VERSION))
-                    .isNotEqualTo(ExitCode.OK)
-            );
 
-            assertThat(err).doesNotContain("keeping existing");
-            assertThat(err).contains("AccessDeniedException");
-            assertThat(jar).hasContent(JAR_CONTENT);
-            assertThat(resultsFile).doesNotExist();
-            assertThat(tempDir.resolve(downloadName)).doesNotExist();
-        } finally {
-            Files.setPosixFilePermissions(tempDir, original);
-        }
+        final String err = tapSystemErr(() ->
+            assertThat(execute(tempDir, wm.getHttpBaseUrl(), resultsFile, "--version=" + VERSION))
+                .isNotEqualTo(ExitCode.OK)
+        );
+
+        assertThat(err).doesNotContain("keeping existing");
+        assertThat(err).contains("blocked");
+        assertThat(jar).hasContent(JAR_CONTENT);
+        assertThat(resultsFile).doesNotExist();
+        assertThat(tempDir.resolve("blocked")).isRegularFile().hasContent("not-a-directory");
     }
 
     private static void assertKeptExisting(Path tempDir, Path jar, Path resultsFile, byte[] manifestBefore, String err)
