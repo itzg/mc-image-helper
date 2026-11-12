@@ -1,24 +1,31 @@
 package me.itzg.helpers.paper;
 
 import com.fasterxml.jackson.databind.exc.InvalidTypeIdException;
+import io.netty.channel.ChannelException;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
+import me.itzg.helpers.errors.ExceptionDetailer;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.files.IoStreams;
 import me.itzg.helpers.files.ManifestException;
 import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.files.ResultsFileWriter;
+import me.itzg.helpers.http.FailedRequestException;
 import me.itzg.helpers.http.Fetch;
 import me.itzg.helpers.http.FileDownloadStatusHandler;
+import me.itzg.helpers.http.HttpClientException;
+import me.itzg.helpers.http.ResponseParsingException;
 import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.http.SharedFetchArgs;
 import me.itzg.helpers.json.ObjectMappers;
@@ -134,11 +141,21 @@ public class InstallPaperCommand implements Callable<Integer> {
                     );
                 }
 
-                result = downloadUsingCoordinates(client, inputs.coordinates.project,
-                    inputs.coordinates.version, inputs.coordinates.build,
-                    inputs.coordinates.channel
-                )
-                    .block();
+                try {
+                    result = downloadUsingCoordinates(client, inputs.coordinates.project,
+                        inputs.coordinates.version, inputs.coordinates.build,
+                        inputs.coordinates.channel
+                    )
+                        .block();
+                } catch (RuntimeException e) {
+                    // HTTP 4xx/5xx and unknown versions still fail. A connect timeout or similar
+                    // transport error can keep the previous install when it is the one requested.
+                    final Integer existing = fallbackToExistingInstall(e, oldManifest);
+                    if (existing != null) {
+                        return existing;
+                    }
+                    throw e;
+                }
             }
         }
 
@@ -163,6 +180,131 @@ public class InstallPaperCommand implements Callable<Integer> {
         Manifests.save(outputDirectory, PaperManifest.ID, result.newManifest);
 
         return ExitCode.OK;
+    }
+
+    /**
+     * @return {@link ExitCode#OK} when the previous install was kept, or null to rethrow the original error
+     */
+    private Integer fallbackToExistingInstall(RuntimeException error, PaperManifest oldManifest) throws IOException {
+        if (!isUnreachablePaperApi(error)) {
+            return null;
+        }
+
+        final Path serverJar = existingServerJar(oldManifest);
+        if (serverJar == null || !requestedCoordinatesMatch(oldManifest, serverJar)) {
+            return null;
+        }
+
+        final String version = installedVersion(oldManifest, serverJar);
+        final String project = oldManifest.getProject() != null
+            ? oldManifest.getProject()
+            : inputs.coordinates.project;
+        log.warn("Paper API could not be reached ({}); keeping existing install of {} version={} build={} at {}",
+            ExceptionDetailer.buildCausalMessages(error),
+            project != null ? project : "paper",
+            version,
+            oldManifest.getBuild(),
+            serverJar
+        );
+
+        if (resultsFile != null) {
+            try (ResultsFileWriter results = new ResultsFileWriter(resultsFile)) {
+                results.writeServer(serverJar);
+                if (version != null) {
+                    results.writeVersion(version);
+                }
+                results.writeType(resultType(oldManifest));
+            }
+        }
+
+        return ExitCode.OK;
+    }
+
+    private String resultType(PaperManifest manifest) {
+        final String project = manifest.getProject() != null
+            ? manifest.getProject()
+            : inputs.coordinates.project;
+        return project != null ? project.toUpperCase() : "PAPER";
+    }
+
+    /**
+     * Connection timeouts and other transport failures. Matches the IOException and Netty
+     * {@link ChannelException} cases Fabric and CurseForge retry, and excludes HTTP status errors
+     * ({@link FailedRequestException}) and unknown versions ({@link InvalidParameterException}).
+     */
+    private static boolean isUnreachablePaperApi(Throwable error) {
+        boolean sawTransportFailure = false;
+        Throwable current = error;
+        while (current != null) {
+            if (current instanceof FailedRequestException
+                || current instanceof InvalidParameterException
+                || current instanceof GenericException
+                || current instanceof ResponseParsingException
+                || current instanceof HttpClientException) {
+                return false;
+            }
+            if (current instanceof IOException || current instanceof ChannelException) {
+                sawTransportFailure = true;
+            }
+            final Throwable cause = current.getCause();
+            if (cause == current) {
+                break;
+            }
+            current = cause;
+        }
+        return sawTransportFailure;
+    }
+
+    private Path existingServerJar(PaperManifest manifest) {
+        if (manifest == null || manifest.getFiles() == null) {
+            return null;
+        }
+        for (final String relative : manifest.getFiles()) {
+            if (relative == null || !relative.toLowerCase(Locale.ROOT).endsWith(".jar")) {
+                continue;
+            }
+            final Path candidate = outputDirectory.resolve(relative);
+            if (Files.isRegularFile(candidate)) {
+                return candidate;
+            }
+        }
+        return null;
+    }
+
+    private boolean requestedCoordinatesMatch(PaperManifest oldManifest, Path serverJar) {
+        final String installedProject = oldManifest.getProject();
+        final String requestedProject = inputs.coordinates.project;
+        if (installedProject != null && requestedProject != null
+            && !installedProject.equalsIgnoreCase(requestedProject)) {
+            return false;
+        }
+
+        final String requestedVersion = inputs.coordinates.version;
+        if (isSpecificVersion(requestedVersion)) {
+            final String installedVersion = installedVersion(oldManifest, serverJar);
+            if (installedVersion == null || !installedVersion.equalsIgnoreCase(requestedVersion)) {
+                return false;
+            }
+        }
+
+        final Integer requestedBuild = inputs.coordinates.build;
+        if (requestedBuild != null && requestedBuild != oldManifest.getBuild()) {
+            return false;
+        }
+        return true;
+    }
+
+    private String installedVersion(PaperManifest manifest, Path serverJar) {
+        final String recorded = manifest.getMinecraftVersion();
+        if (recorded != null && !recorded.isBlank()) {
+            return recorded;
+        }
+        try {
+            return extractVersionFromJar(serverJar);
+        } catch (IOException e) {
+            log.debug("Unable to read version metadata from existing server jar {}", serverJar, e);
+            return null;
+        }
     }
 
     private Integer checkForUpdates(PaperDownloadsClient client, PaperManifest oldManifest,
