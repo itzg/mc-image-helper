@@ -1,5 +1,6 @@
 package me.itzg.helpers.errors;
 
+import java.net.UnknownHostException;
 import java.time.Instant;
 import java.util.stream.Collectors;
 
@@ -26,6 +27,7 @@ public class ExceptionHandler implements IExecutionExceptionHandler {
     public int handleExecutionException(Exception e, CommandLine commandLine, ParseResult parseResult) {
 
         if (!mcImageHelper.isSilent()) {
+            final UnknownHostException unknownHost = findCause(e, UnknownHostException.class);
             if (e instanceof InvalidParameterException) {
                 if (((InvalidParameterException) e).isShowCauses()) {
                     logExceptionWithoutStacktrace(e, commandLine);
@@ -51,6 +53,14 @@ public class ExceptionHandler implements IExecutionExceptionHandler {
                     log.warn("Rate limit response recommends waiting until {}", delayUntil);
                 }
             }
+            else if (unknownHost != null) {
+                log.error("'{}' command failed. Version is {}: {}: {}. Check network connectivity and DNS.",
+                    commandLine.getCommandName(), McImageHelper.getVersion(),
+                    unknownHost.getClass().getSimpleName(),
+                    unknownHost.getMessage() != null ? unknownHost.getMessage().trim() : "unknown host"
+                );
+                log.debug("Unknown host details", e);
+            }
             else {
                 logUnexpectedException(e, commandLine);
             }
@@ -58,6 +68,18 @@ public class ExceptionHandler implements IExecutionExceptionHandler {
 
         final IExitCodeExceptionMapper mapper = commandLine.getExitCodeExceptionMapper();
         return mapper != null ? mapper.getExitCode(e) : ExitCode.SOFTWARE;
+    }
+
+    /**
+     * @return the first throwable in the causal chain of the given one that is of the given type, or null
+     */
+    static <T extends Throwable> T findCause(Throwable throwable, Class<T> type) {
+        for (Throwable current = throwable; current != null; current = current.getCause()) {
+            if (type.isInstance(current)) {
+                return type.cast(current);
+            }
+        }
+        return null;
     }
 
     private static void logUnexpectedException(Exception e, CommandLine commandLine) {
