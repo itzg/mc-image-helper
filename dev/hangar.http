@@ -1,0 +1,10 @@
+# Hangar API docs at https://hangar.papermc.io/api-docs
+
+### Latest release of a project for a platform and game version
+GET https://hangar.papermc.io/api/v1/projects/ViaVersion/versions?channel=Release&platform=PAPER&platformVersion=1.21.4&limit=1
+
+### Specific version by name
+GET https://hangar.papermc.io/api/v1/projects/Maintenance/versions/5.1.1
+
+### Project whose download is an external URL
+GET https://hangar.papermc.io/api/v1/projects/Floodgate/versions?platform=PAPER&limit=1
