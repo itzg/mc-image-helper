@@ -1,8 +1,8 @@
 package me.itzg.helpers.errors;
 
+import java.net.UnknownHostException;
 import java.time.Instant;
 import java.util.stream.Collectors;
-
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.McImageHelper;
 import me.itzg.helpers.http.FailedRequestException;
@@ -26,9 +26,10 @@ public class ExceptionHandler implements IExecutionExceptionHandler {
     public int handleExecutionException(Exception e, CommandLine commandLine, ParseResult parseResult) {
 
         if (!mcImageHelper.isSilent()) {
+            final UnknownHostException unknownHost = ExceptionDetailer.findCause(e, UnknownHostException.class);
             if (e instanceof InvalidParameterException) {
                 if (((InvalidParameterException) e).isShowCauses()) {
-                    logExceptionWithoutStacktrace(e, commandLine);
+                    logErrorWithMessage(commandLine, ExceptionDetailer.buildCausalMessages(e));
                 }
                 else {
                     log.error("Invalid parameter provided for '{}' command: {}", commandLine.getCommandName(), e.getMessage());
@@ -40,16 +41,25 @@ public class ExceptionHandler implements IExecutionExceptionHandler {
                 log.debug("Composite Exception details", e);
             }
             else if (e instanceof FailedRequestException) {
-                log.error("'{}' command failed. Version is {}: {}", commandLine.getCommandName(), McImageHelper.getVersion(), e.getMessage());
+                logErrorWithMessage(commandLine, e.getMessage());
                 log.debug("Failed request details", e);
             }
-            else if (e instanceof RateLimitException) {
+            else if (e instanceof final RateLimitException rle) {
                 logUnexpectedException(e, commandLine);
-                final RateLimitException rle = (RateLimitException) e;
                 final Instant delayUntil = rle.getDelayUntil();
                 if (delayUntil != null) {
                     log.warn("Rate limit response recommends waiting until {}", delayUntil);
                 }
+            }
+            else if (unknownHost != null) {
+                logErrorWithMessage(commandLine,
+                    String.format(
+                        "%s: %s. Check network connectivity and DNS.",
+                        unknownHost.getClass().getSimpleName(),
+                        unknownHost.getMessage() != null ? unknownHost.getMessage().trim() : "unknown host"
+                    )
+                );
+                log.debug("Unknown host details", e);
             }
             else {
                 logUnexpectedException(e, commandLine);
@@ -68,11 +78,11 @@ public class ExceptionHandler implements IExecutionExceptionHandler {
         );
     }
 
-    private static void logExceptionWithoutStacktrace(Exception e, CommandLine commandLine) {
+    private static void logErrorWithMessage(CommandLine commandLine, String message) {
         log.error("'{}' command failed. Version is {}: {}",
             commandLine.getCommandName(),
             McImageHelper.getVersion(),
-            ExceptionDetailer.buildCausalMessages(e)
+            message
         );
     }
 
@@ -83,6 +93,6 @@ public class ExceptionHandler implements IExecutionExceptionHandler {
             .map(ExceptionDetailer::buildCausalMessages)
             .collect(Collectors.joining("; "));
 
-        log.error("'{}' command failed. Version is {}: {}", commandLine.getCommandName(), McImageHelper.getVersion(), failures);
+        logErrorWithMessage(commandLine, failures);
     }
 }

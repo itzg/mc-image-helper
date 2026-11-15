@@ -1,41 +1,21 @@
 package me.itzg.helpers.errors;
 
-import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.stream.Collectors;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 
 public class ExceptionDetailer {
 
-    private static class CauseIterator implements Iterator<Throwable> {
-        private Throwable current;
-
-        CauseIterator(Throwable initial) {
-            this.current = initial;
-        }
-
-        @Override
-        public boolean hasNext() {
-            return current != null;
-        }
-
-        public Throwable next() {
-            if (current == null) {
-                return null;
-            }
-            Throwable result = current;
-            current = current.getCause();
-            return result;
-        }
+    public static <T extends Throwable> T findCause(Throwable throwable, Class<T> type) {
+        return ExceptionUtils.getThrowableList(throwable).stream()
+            .filter(type::isInstance)
+            .map(type::cast)
+            .findFirst()
+            .orElse(null);
     }
 
     public static String buildCausalMessages(Throwable throwable) {
-        final CauseIterator causeIterator = new CauseIterator(throwable);
-        final ArrayList<String> parts = new ArrayList<>();
-        while (causeIterator.hasNext()) {
-            final Throwable cause = causeIterator.next();
-            if (cause != null) {
-                parts.add(cause.getClass().getSimpleName() + ": " + cause.getMessage());
-            }
-        }
-        return String.join("; ", parts);
+        return ExceptionUtils.getThrowableList(throwable).stream()
+            .map(cause -> cause.getClass().getSimpleName() + ": " + cause.getMessage())
+            .collect(Collectors.joining("; "));
     }
 }

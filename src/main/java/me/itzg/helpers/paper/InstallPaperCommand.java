@@ -215,20 +215,9 @@ public class InstallPaperCommand implements Callable<Integer> {
      * Filesystem errors from the download, such as {@link java.nio.file.AccessDeniedException}, are not.
      */
     private static boolean isPaperApiUnreachable(Throwable error) {
-        Throwable current = error;
-        while (current != null) {
-            if (current instanceof ConnectException
-                || current instanceof UnknownHostException
-                || current instanceof ChannelException) {
-                return true;
-            }
-            final Throwable cause = current.getCause();
-            if (cause == current) {
-                break;
-            }
-            current = cause;
-        }
-        return false;
+        return ExceptionDetailer.findCause(error, ConnectException.class) != null
+            || ExceptionDetailer.findCause(error, UnknownHostException.class) != null
+            || ExceptionDetailer.findCause(error, ChannelException.class) != null;
     }
 
     private Path existingServerJar(PaperManifest manifest) {
@@ -253,8 +242,7 @@ public class InstallPaperCommand implements Callable<Integer> {
         }
         final String installedProject = oldManifest.getProject();
         final String requestedProject = inputs.coordinates.project;
-        if (installedProject == null || requestedProject == null
-            || !installedProject.equalsIgnoreCase(requestedProject)) {
+        if (installedProject == null || !installedProject.equalsIgnoreCase(requestedProject)) {
             return false;
         }
 
