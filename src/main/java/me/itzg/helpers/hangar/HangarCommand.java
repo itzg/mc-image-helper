@@ -57,7 +57,10 @@ public class HangarCommand implements Callable<Integer> {
     }
     private List<String> projects = Collections.emptyList();
 
-    @Option(names = "--game-version", description = "Applicable Minecraft version", required = true)
+    @Option(names = "--game-version",
+        description = "Applicable Minecraft version"
+            + "%nIf not specified, versions are not filtered by platform version, such as for proxy platforms"
+    )
     String gameVersion;
 
     @Option(names = "--platform", defaultValue = "PAPER",
