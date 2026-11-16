@@ -107,6 +107,60 @@ class SetPropertiesCommandTest {
     }
 
     @Test
+    void appliesFallbacksOnlyForAbsentPropertiesWithoutEnvironmentValues() throws Exception {
+        final Path tempDefnFile = createDefinitionsFile(Map.of(
+            "server-ip", PropertyDefinition.builder().env("SERVER_IP").fallback("").build(),
+            "existing", PropertyDefinition.builder().env("EXISTING").fallback("fallback").build(),
+            "existing-empty", PropertyDefinition.builder().env("EXISTING_EMPTY").fallback("fallback").build(),
+            "overridden", PropertyDefinition.builder().env("OVERRIDDEN").fallback("fallback")
+                .mappings(Map.of("from-env", "mapped")).build(),
+            "empty-env", PropertyDefinition.builder().env("EMPTY_ENV").fallback("fallback").build(),
+            "fallback-only", PropertyDefinition.builder().fallback("literal %UNKNOWN% \\n").build(),
+            "no-fallback", PropertyDefinition.builder().env("NO_FALLBACK").build(),
+            "removed", PropertyDefinition.builder().remove(true).fallback("fallback").build(),
+            "custom", PropertyDefinition.builder().fallback("fallback").build()
+        ), tempDir);
+        Files.writeString(propertiesFile, "existing=original\nexisting-empty=\noverridden=original\nremoved=original\n");
+
+        final int exitCode = new CommandLine(new SetPropertiesCommand()
+            .setEnvironmentVariablesProvider(MappedEnvVarProvider.of(
+                "OVERRIDDEN", "from-env",
+                "EMPTY_ENV", ""
+            )))
+            .execute("--definitions", tempDefnFile.toString(),
+                "--custom-property", "custom=custom-value", propertiesFile.toString());
+
+        assertThat(exitCode).isEqualTo(ExitCode.OK);
+        assertThat(loadProperties())
+            .containsEntry("server-ip", "")
+            .containsEntry("existing", "original")
+            .containsEntry("existing-empty", "")
+            .containsEntry("overridden", "mapped")
+            .containsEntry("empty-env", "")
+            .containsEntry("fallback-only", "literal %UNKNOWN% \\n")
+            .containsEntry("custom", "custom-value")
+            .doesNotContainKeys("no-fallback", "removed");
+    }
+
+    @Test
+    void fallbackCreatesMissingFileAndDoesNotRewriteItOnSubsequentRuns() throws IOException {
+        final Path tempDefnFile = createDefinitionsFile(Map.of(
+            "server-ip", PropertyDefinition.builder().fallback("").build()
+        ), tempDir);
+        final Path outputProperties = tempDir.resolve("missing.properties");
+        final CommandLine command = new CommandLine(new SetPropertiesCommand());
+
+        assertThat(command.execute("--definitions", tempDefnFile.toString(), outputProperties.toString()))
+            .isEqualTo(ExitCode.OK);
+        assertThat(outputProperties).content().contains("server-ip=");
+        final String initialContent = Files.readString(outputProperties);
+
+        assertThat(command.execute("--definitions", tempDefnFile.toString(), outputProperties.toString()))
+            .isEqualTo(ExitCode.OK);
+        assertThat(Files.readString(outputProperties)).isEqualTo(initialContent);
+    }
+
+    @Test
     void disallowedValue() throws Exception {
         final String err = tapSystemErr(() -> {
             final int exitCode = new CommandLine(new SetPropertiesCommand()

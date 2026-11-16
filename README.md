@@ -1551,6 +1551,28 @@ For CurseForge packs, `modpacks.<slug>.overridesExclusions` accepts ant-style pa
 
 ## set-properties schema
 
+Each property definition can specify a string `fallback` to add when the property is absent
+and its mapped environment variable is unset. An empty string is a valid fallback, for example
+`"server-ip": {"env": "SERVER_IP", "fallback": ""}`. Fallbacks are literal property values;
+environment-variable mappings, validation, and placeholder expansion do not apply to them.
+Existing properties (including empty values) are preserved, and custom properties take precedence.
+
+The optional `mappings` object translates environment variable values before checking `allowed`.
+Keys are matched exactly, and values without a matching key are passed through unchanged. For example:
+
+```json
+{
+  "gamemode": {
+    "env": "GAMEMODE",
+    "mappings": {"0": "survival", "1": "creative"},
+    "allowed": ["survival", "creative"]
+  }
+}
+```
+
+Here, `GAMEMODE=1` sets `gamemode=creative`; `GAMEMODE=survival` is also accepted.
+Mappings apply only to the environment variable value, not to an existing property or `fallback`.
+
 ```json
 {
   "$schema" : "http://json-schema.org/draft-04/schema#",
@@ -1559,6 +1581,9 @@ For CurseForge packs, `modpacks.<slug>.overridesExclusions` accepts ant-style pa
   "additionalProperties" : false,
   "properties" : {
     "env" : {
+      "type" : "string"
+    },
+    "fallback" : {
       "type" : "string"
     },
     "allowed" : {
