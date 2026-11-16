@@ -40,7 +40,7 @@ public class SetPropertiesCommand implements Callable<Integer> {
 
     private static final Pattern BOOLEAN_PATTERN = Pattern.compile("true|false", Pattern.CASE_INSENSITIVE);
 
-    private static final TypeReference<Map<String, PropertyDefinition>> PROPERTY_DEFINITIONS_TYPE = new TypeReference<Map<String, PropertyDefinition>>() {
+    private static final TypeReference<Map<String, PropertyDefinition>> PROPERTY_DEFINITIONS_TYPE = new TypeReference<>() {
     };
 
     private static final Pattern UNICODE_ESCAPE = Pattern.compile("\\\\u([0-9a-fA-F]{4})");
@@ -153,7 +153,8 @@ public class SetPropertiesCommand implements Callable<Integer> {
                 }
             }
             else {
-                final String envValue = environmentVariablesProvider.get(definition.getEnv());
+                final String envValue = definition.getEnv() != null
+                    ? environmentVariablesProvider.get(definition.getEnv()) : null;
                 if (envValue != null) {
                     final String targetValue = mapAndValidateValue(definition,
                         simplePlaceholders.processPlaceholders(
@@ -169,6 +170,12 @@ public class SetPropertiesCommand implements Callable<Integer> {
                         properties.setProperty(name, targetValue);
                         ++modifiedViaDefinitions;
                     }
+                }
+                else if (!properties.containsKey(name) && definition.getFallback() != null) {
+                    final String fallback = definition.getFallback();
+                    log.debug("Setting property {} to fallback value '{}'", name, needsValueRedacted(name) ? "***" : fallback);
+                    properties.setProperty(name, fallback);
+                    ++modifiedViaDefinitions;
                 }
             }
         }
@@ -239,7 +246,7 @@ public class SetPropertiesCommand implements Callable<Integer> {
     private static String unescapeUnicode(String value) {
         final Matcher m = UNICODE_ESCAPE.matcher(value);
         if (m.find()) {
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             do {
                 final int charValue = Integer.parseUnsignedInt(m.group(1), 16);
                 m.appendReplacement(sb, ""+(char)charValue);
