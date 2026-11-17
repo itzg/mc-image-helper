@@ -394,7 +394,7 @@ From the latest or a given release, downloads the first matching asset, and outp
 
 ```
 Usage: mc-image-helper hangar [--skip-existing] [--skip-up-to-date] [--api-base-url=<baseUrl>] [--channel=<channel>]
-                              --game-version=<gameVersion> [--output-directory=DIR] [--platform=<platform>]
+                              [--game-version=<gameVersion>] [--output-directory=DIR] [--platform=<platform>]
                               [--projects=slug|id[?][:version][,|<nl>slug|id[?][:version]...]]... [[--use-http2]
                               [--wiretap]]
 Automates downloading of plugins from Hangar
@@ -404,6 +404,7 @@ Automates downloading of plugins from Hangar
                             Default is Release
       --game-version=<gameVersion>
                             Applicable Minecraft version
+                            If not specified, versions are not filtered by platform version, such as for proxy platforms
       --output-directory=DIR
                             Plugins are downloaded into the plugins subdirectory of this directory
       --platform=<platform> Default is PAPER

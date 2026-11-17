@@ -72,6 +72,25 @@ class HangarCommandTest {
     }
 
     @Test
+    void selectsLatestVersionWithoutGameVersion(@TempDir Path tempDir) {
+        stubLatestVersion("Maintenance", "VELOCITY", null, "Release",
+            version("5.1.1", "VELOCITY", hostedDownload("Maintenance-Velocity-5.1.1.jar", "velocity build"))
+        );
+        stubFile("Maintenance-Velocity-5.1.1.jar", "velocity build");
+
+        final int exitCode = new CommandLine(new HangarCommand())
+            .execute(
+                "--api-base-url", wm.getRuntimeInfo().getHttpBaseUrl(),
+                "--output-directory", tempDir.toString(),
+                "--platform", "VELOCITY",
+                "--projects", "Maintenance"
+            );
+
+        assertThat(exitCode).isEqualTo(ExitCode.OK);
+        assertThat(tempDir.resolve("plugins/Maintenance-Velocity-5.1.1.jar")).hasContent("velocity build");
+    }
+
+    @Test
     void downloadsRequestedVersion(@TempDir Path tempDir) {
         stubFor(get(urlPathEqualTo("/api/v1/projects/ViaVersion/versions/5.12.2"))
             .willReturn(okJson(
@@ -240,7 +259,7 @@ class HangarCommandTest {
         stubFor(get(urlPathEqualTo("/api/v1/projects/" + project + "/versions"))
             .withQueryParam("channel", equalTo(channel))
             .withQueryParam("platform", equalTo(platform))
-            .withQueryParam("platformVersion", equalTo(gameVersion))
+            .withQueryParam("platformVersion", gameVersion != null ? equalTo(gameVersion) : absent())
             .withQueryParam("limit", equalTo("1"))
             .willReturn(okJson(paginated.toString()))
         );
