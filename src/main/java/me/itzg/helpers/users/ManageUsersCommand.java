@@ -284,12 +284,35 @@ public class ManageUsersCommand implements Callable<Integer> {
                 userApi = new MojangUserApi(sharedFetch, mojangApiBaseUrl);
                 break;
             case playerdb:
-                userApi = new PlayerdbUserApi(sharedFetch, playerdbApiBaseUrl);
-                break;
+                return resolveWithFallback(
+                    new PlayerdbUserApi(sharedFetch, playerdbApiBaseUrl), "PlayerDB",
+                    new MojangUserApi(sharedFetch, mojangApiBaseUrl), "Mojang",
+                    user.getName()
+                );
             default:
                 throw new GenericException("User API provider was not specified");
         }
         return userApi.resolveUser(user.getName());
+    }
+
+    /**
+     * Uses the fallback API when the primary one fails for a reason other than the user not existing,
+     * such as the service being down.
+     */
+    private static JavaUser resolveWithFallback(UserApi primary, String primaryName,
+        UserApi fallback, String fallbackName, String input
+    ) {
+        try {
+            return primary.resolveUser(input);
+        } catch (InvalidParameterException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            log.warn("Failed to resolve user '{}' from {}, trying {} instead: {}",
+                input, primaryName, fallbackName, e.getMessage()
+            );
+            log.debug("Details", e);
+            return fallback.resolveUser(input);
+        }
     }
 
     private List<? extends JavaUser> loadExistingJavaJson(Path userFile) throws IOException {

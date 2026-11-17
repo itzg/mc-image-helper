@@ -911,6 +911,93 @@ class ManageUsersCommandTest {
     }
 
     @Nested
+    class playerdbFallback {
+        @Test
+        void usesMojangWhenPlayerdbFails(WireMockRuntimeInfo wmInfo) {
+            stubMojangUser("user1", USER1_ID);
+            stubFor(get("/api/player/minecraft/user1")
+                .willReturn(serverError())
+            );
+
+            final int exitCode = new CommandLine(
+                new ManageUsersCommand()
+            )
+                .execute(
+                    "--mojang-api-base-url", wmInfo.getHttpBaseUrl(),
+                    "--playerdb-api-base-url", wmInfo.getHttpBaseUrl(),
+                    "--user-api-provider", "playerdb",
+                    "--type", "JAVA_WHITELIST",
+                    "--output-directory", tempDir.toString(),
+                    "user1"
+                );
+
+            assertThat(exitCode).isEqualTo(0);
+
+            assertJson(tempDir.resolve("whitelist.json"))
+                .isArrayContainingExactlyInAnyOrder(
+                    conditions()
+                        .satisfies(conditions()
+                            .at("/name").hasValue("user1")
+                            .at("/uuid").hasValue(USER1_UUID)
+                        )
+                );
+            verify(getRequestedFor(urlEqualTo("/users/profiles/minecraft/user1")));
+        }
+
+        @Test
+        void usesMojangWhenPlayerdbUnreachable(WireMockRuntimeInfo wmInfo) {
+            stubMojangUser("user1", USER1_ID);
+
+            final int exitCode = new CommandLine(
+                new ManageUsersCommand()
+            )
+                .execute(
+                    "--mojang-api-base-url", wmInfo.getHttpBaseUrl(),
+                    // nothing listens on port 1
+                    "--playerdb-api-base-url", "http://127.0.0.1:1",
+                    "--user-api-provider", "playerdb",
+                    "--type", "JAVA_WHITELIST",
+                    "--output-directory", tempDir.toString(),
+                    "user1"
+                );
+
+            assertThat(exitCode).isEqualTo(0);
+
+            assertJson(tempDir.resolve("whitelist.json"))
+                .isArrayContainingExactlyInAnyOrder(
+                    conditions()
+                        .satisfies(conditions()
+                            .at("/name").hasValue("user1")
+                            .at("/uuid").hasValue(USER1_UUID)
+                        )
+                );
+        }
+
+        @Test
+        void doesNotUseMojangWhenPlayerdbHasNoSuchUser(WireMockRuntimeInfo wmInfo) {
+            stubMojangUser("nobody", USER1_ID);
+            stubFor(get("/api/player/minecraft/nobody")
+                .willReturn(badRequest())
+            );
+
+            final int exitCode = new CommandLine(
+                new ManageUsersCommand()
+            )
+                .execute(
+                    "--mojang-api-base-url", wmInfo.getHttpBaseUrl(),
+                    "--playerdb-api-base-url", wmInfo.getHttpBaseUrl(),
+                    "--user-api-provider", "playerdb",
+                    "--type", "JAVA_WHITELIST",
+                    "--output-directory", tempDir.toString(),
+                    "nobody"
+                );
+
+            assertThat(exitCode).isNotEqualTo(0);
+            verify(0, getRequestedFor(urlEqualTo("/users/profiles/minecraft/nobody")));
+        }
+    }
+
+    @Nested
     class file {
 
         @ParameterizedTest
