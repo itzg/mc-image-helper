@@ -89,5 +89,51 @@ class SpecificFileFetchBuilderTest {
             .hasContent("original content");
     }
 
+    @Test
+    void whenRequestSkipNotExists_butDisabled(WireMockRuntimeInfo wm, @TempDir Path tempDir) throws IOException {
+        final Path requestedOutputFile = tempDir.resolve("mod.jar");
+        final Path disabledFile = tempDir.resolve("mod.jar.disabled");
+
+        Files.write(disabledFile, Collections.singletonList("original content"));
+
+        stubFor(
+            get("/mod.jar")
+                .willReturn(
+                    ok("new content")
+                )
+        );
+
+        final Path result = fetch(URI.create(wm.getHttpBaseUrl() + "/mod.jar"))
+            .toFile(requestedOutputFile)
+            .skipExisting(true)
+            .execute();
+
+        assertThat(result).isEqualTo(disabledFile);
+        assertThat(disabledFile).hasContent("original content");
+        assertThat(requestedOutputFile).doesNotExist();
+        verify(0, getRequestedFor(urlEqualTo("/mod.jar")));
+    }
+
+    @Test
+    void disabledFileIgnoredWithoutSkipExisting(WireMockRuntimeInfo wm, @TempDir Path tempDir) throws IOException {
+        final Path requestedOutputFile = tempDir.resolve("mod.jar");
+        final Path disabledFile = tempDir.resolve("mod.jar.disabled");
+
+        Files.write(disabledFile, Collections.singletonList("original content"));
+
+        stubFor(
+            get("/mod.jar")
+                .willReturn(
+                    ok("new content")
+                )
+        );
+
+        final Path result = fetch(URI.create(wm.getHttpBaseUrl() + "/mod.jar"))
+            .toFile(requestedOutputFile)
+            .execute();
+
+        assertThat(result).isEqualTo(requestedOutputFile);
+        assertThat(requestedOutputFile).hasContent("new content");
+    }
 
 }

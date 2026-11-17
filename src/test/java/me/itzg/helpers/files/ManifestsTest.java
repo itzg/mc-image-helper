@@ -68,4 +68,43 @@ public class ManifestsTest {
         boolean result = Manifests.allFilesPresent(tempDir, manifest, Collections.singletonList("remove.jar"));
         assertThat(result).isTrue();
     }
+
+    @Test
+    void allFilesPresent_countsDisabledFiles() throws IOException {
+        Files.createDirectories(tempDir.resolve("mods"));
+        Files.createFile(tempDir.resolve("mods/enabled.jar"));
+        Files.createFile(tempDir.resolve("mods/disabled.jar.disabled"));
+
+        EmptyManifest manifest = EmptyManifest.builder()
+            .files(Arrays.asList("mods/enabled.jar", "mods/disabled.jar"))
+            .build();
+
+        assertThat(Manifests.allFilesPresent(tempDir, manifest)).isTrue();
+        assertThat(Manifests.missingFiles(tempDir, manifest)).isEmpty();
+    }
+
+    @Test
+    void allFilesPresent_countsReEnabledFiles() throws IOException {
+        Files.createDirectories(tempDir.resolve("mods"));
+        Files.createFile(tempDir.resolve("mods/was-disabled.jar"));
+
+        EmptyManifest manifest = EmptyManifest.builder()
+            .files(Collections.singletonList("mods/was-disabled.jar.disabled"))
+            .build();
+
+        assertThat(Manifests.allFilesPresent(tempDir, manifest)).isTrue();
+    }
+
+    @Test
+    void missingFiles_stillReportsMissing() throws IOException {
+        Files.createDirectories(tempDir.resolve("mods"));
+        Files.createFile(tempDir.resolve("mods/present.jar"));
+
+        EmptyManifest manifest = EmptyManifest.builder()
+            .files(Arrays.asList("mods/present.jar", "mods/missing.jar"))
+            .build();
+
+        assertThat(Manifests.allFilesPresent(tempDir, manifest)).isFalse();
+        assertThat(Manifests.missingFiles(tempDir, manifest)).containsExactly("mods/missing.jar");
+    }
 }

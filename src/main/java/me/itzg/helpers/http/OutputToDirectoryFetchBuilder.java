@@ -15,6 +15,7 @@ import java.time.Instant;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
+import me.itzg.helpers.files.DisabledFiles;
 import me.itzg.helpers.files.ReactiveFileUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.VisibleForTesting;
@@ -90,10 +91,11 @@ public class OutputToDirectoryFetchBuilder extends FetchBuilderBase<OutputToDire
                     final Path outputFile = outputDirectory.resolve(extractFilename(resp));
                     final Instant lastModified = respLastModified(resp);
 
-                    return assembleFileDownload(client, outputFile,
-                        lastModified,
-                        resp.resourceUrl()
-                    );
+                    return skipDisabled(outputFile)
+                        .switchIfEmpty(Mono.defer(() -> assembleFileDownload(client, outputFile,
+                            lastModified,
+                            resp.resourceUrl()
+                        )));
                 })
                 .subscribeOn(Schedulers.boundedElastic())
                 .checkpoint("Fetch HEAD of requested file")
@@ -118,10 +120,12 @@ public class OutputToDirectoryFetchBuilder extends FetchBuilderBase<OutputToDire
                 final Path outputFile = outputDirectory.resolve(extractFilename(resp));
                 statusHandler.call(FileDownloadStatus.DOWNLOADING, uri(), outputFile);
 
-                return skipExisting(resp, outputFile)
-                    .flatMap(skip -> skip ? Mono.just(outputFile)
-                        : copyBodyInputStreamToFile(byteBufFlux, outputFile)
-                    );
+                return skipDisabled(outputFile)
+                    .switchIfEmpty(Mono.defer(() -> skipExisting(resp, outputFile)
+                        .flatMap(skip -> skip ? Mono.just(outputFile)
+                            : copyBodyInputStreamToFile(byteBufFlux, outputFile)
+                        )
+                    ));
             })
             .last();
     }
@@ -130,6 +134,23 @@ public class OutputToDirectoryFetchBuilder extends FetchBuilderBase<OutputToDire
         final Long lastModified = resp.responseHeaders().getTimeMillis(LAST_MODIFIED);
 
         return lastModified != null ? Instant.ofEpochMilli(lastModified) : null;
+    }
+
+    /**
+     * @return the disabled variant of the output file, if skipping existing files and it exists, or empty mono if not
+     */
+    private Mono<Path> skipDisabled(@NotNull Path outputFile) {
+        if (!skipExisting) {
+            return Mono.empty();
+        }
+        final Path disabledFile = DisabledFiles.disabledVariant(outputFile);
+        return ReactiveFileUtils.fileExists(disabledFile)
+            .filter(exists -> exists)
+            .map(exists -> {
+                log.debug("Skipping file={} since it has been disabled as {}", outputFile, disabledFile);
+                statusHandler.call(FileDownloadStatus.SKIP_FILE_EXISTS, uri(), disabledFile);
+                return disabledFile;
+            });
     }
 
     /**

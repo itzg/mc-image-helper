@@ -113,7 +113,7 @@ public class Manifests {
 
     public static List<String> missingFiles(Path basePath, BaseManifest manifest) {
         return manifest.getFiles().stream()
-            .filter(p -> !Files.exists(basePath.resolve(p)))
+            .filter(p -> !DisabledFiles.existsEnabledOrDisabled(basePath.resolve(p)))
             .collect(Collectors.toList());
     }
 
@@ -122,12 +122,13 @@ public class Manifests {
     }
 
     /**
+     * A file that has been disabled by renaming it with a {@value DisabledFiles#SUFFIX} suffix is considered present.
      * @param ignoreMissingFiles relative paths of files to ignore if they're missing
      */
     public static boolean allFilesPresent(Path basePath, BaseManifest manifest, @Nullable List<String> ignoreMissingFiles) {
         if (ignoreMissingFiles == null || ignoreMissingFiles.isEmpty()) {
             return manifest.getFiles().stream()
-                .allMatch(p -> Files.exists(basePath.resolve(p)));
+                .allMatch(p -> DisabledFiles.existsEnabledOrDisabled(basePath.resolve(p)));
         }
 
         if (ignoreMissingFiles.stream().anyMatch(s -> s.equals("*"))) {
@@ -143,7 +144,7 @@ public class Manifests {
             .allMatch(p -> {
                 Path file = Paths.get(p);
                 boolean ignored = matchers.stream().anyMatch(m -> m.matches(file));
-                return ignored || Files.exists(basePath.resolve(p));
+                return ignored || DisabledFiles.existsEnabledOrDisabled(basePath.resolve(p));
             });
     }
 

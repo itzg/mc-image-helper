@@ -15,6 +15,7 @@ import lombok.Setter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
+import me.itzg.helpers.files.DisabledFiles;
 import me.itzg.helpers.files.ReactiveFileUtils;
 import reactor.core.publisher.Mono;
 
@@ -60,6 +61,14 @@ public class SpecificFileFetchBuilder extends FetchBuilderBase<SpecificFileFetch
             log.debug("Skipping file={} that already exists due to request", file);
             statusHandler.call(FileDownloadStatus.SKIP_FILE_EXISTS, uri, file);
             return Mono.just(file);
+        }
+        if (skipExisting) {
+            final Path disabledFile = DisabledFiles.disabledVariant(file);
+            if (Files.exists(disabledFile)) {
+                log.debug("Skipping file={} since it has been disabled as {}", file, disabledFile);
+                statusHandler.call(FileDownloadStatus.SKIP_FILE_EXISTS, uri, disabledFile);
+                return Mono.just(disabledFile);
+            }
         }
 
         final boolean useIfModifiedSince = skipUpToDate && Files.exists(file);
