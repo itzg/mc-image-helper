@@ -1048,6 +1048,14 @@ Multi-source file copy operation with with managed cleanup. Supports auto-detect
 directories, and URLs
       [SRC[,|<nl>SRC...]...] Any mix of source file, directory, or URLs delimited by commas or newlines
                              Per-file destinations can be assigned by destination<source
+                             Archives (ZIP, TAR, TAR.GZ, TAR.BZ2, TAR.ZST) are extracted by destination<<archive
+                             or, for directories within the archive, destination<<archive{path;path}
+                             Existing files are replaced as for other sources, following --skip-existing and
+                               --skip-up-to-date.
+                             --glob doesn't apply to archive entries.
+                             Remote archives are kept in .tmp/mcopy-archives within --to and re-fetched with
+                               If-Modified-Since.
+                             Destinations must not contain '..'.
                              Embedded comments are allowed.
       --file-is-listing      Source files or URLs are processed as a line delimited list of sources.
                              For remote listing files, the contents must all be file URLs.
