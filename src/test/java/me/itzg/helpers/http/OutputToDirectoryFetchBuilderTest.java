@@ -58,6 +58,65 @@ class OutputToDirectoryFetchBuilderTest {
     }
 
     @Test
+    void skipExistingWhenDisabled(WireMockRuntimeInfo wm, @TempDir Path tempDir) throws IOException {
+        stubFor(
+            head(WireMock.urlPathEqualTo("/file"))
+                .willReturn(
+                    ok()
+                        .withHeader("content-disposition", "attachment; filename=\"mod.jar\"")
+                )
+        );
+        stubFor(
+            get("/file")
+                .willReturn(
+                    ok("new content")
+                )
+        );
+
+        final Path disabledFile = tempDir.resolve("mod.jar.disabled");
+        Files.write(disabledFile, Collections.singletonList("original content"));
+
+        final Path result = fetch(URI.create(wm.getHttpBaseUrl() + "/file"))
+            .toDirectory(tempDir)
+            .skipExisting(true)
+            .execute();
+
+        assertThat(result).isEqualTo(disabledFile);
+        assertThat(disabledFile).hasContent("original content");
+        assertThat(tempDir.resolve("mod.jar")).doesNotExist();
+        verify(0, getRequestedFor(urlEqualTo("/file")));
+    }
+
+    @Test
+    void skipExistingWhenDisabled_headForbidden(WireMockRuntimeInfo wm, @TempDir Path tempDir) throws IOException {
+        stubFor(
+            head(WireMock.urlPathEqualTo("/file"))
+                .willReturn(
+                    forbidden()
+                )
+        );
+        stubFor(
+            get("/file")
+                .willReturn(
+                    ok("new content")
+                        .withHeader("content-disposition", "attachment; filename=\"mod.jar\"")
+                )
+        );
+
+        final Path disabledFile = tempDir.resolve("mod.jar.disabled");
+        Files.write(disabledFile, Collections.singletonList("original content"));
+
+        final Path result = fetch(URI.create(wm.getHttpBaseUrl() + "/file"))
+            .toDirectory(tempDir)
+            .skipExisting(true)
+            .execute();
+
+        assertThat(result).isEqualTo(disabledFile);
+        assertThat(disabledFile).hasContent("original content");
+        assertThat(tempDir.resolve("mod.jar")).doesNotExist();
+    }
+
+    @Test
     void bukkitDoesNotSupportHead(WireMockRuntimeInfo wm, @TempDir Path tempDir) {
         final String body = RandomStringUtils.randomAlphabetic(10);
 
