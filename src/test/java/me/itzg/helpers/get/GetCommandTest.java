@@ -47,6 +47,24 @@ class GetCommandTest {
 
         assertThat(status).isEqualTo(0);
         assertThat(output.toString()).isEqualTo("Response content");
+        verify(getRequestedFor(urlEqualTo("/outputsDownload.txt"))
+            .withHeader("User-Agent", matching(
+                "mc-image-helper/[!#$%&'*+.^_`|~0-9A-Za-z-]+ \\(https://github\\.com/itzg/mc-image-helper; cmd=get\\)")));
+    }
+
+    @Test
+    void downloadsToFileWithDefaultUserAgent(WireMockRuntimeInfo wmInfo, @TempDir Path tempDir) {
+        stubFor(get("/default-agent.jar").willReturn(ok("jar contents")));
+
+        final Path file = tempDir.resolve("server.jar");
+        final int status = new CommandLine(new GetCommand())
+            .execute("-o", file.toString(), wmInfo.getHttpBaseUrl() + "/default-agent.jar");
+
+        assertThat(status).isZero();
+        assertThat(file).hasContent("jar contents");
+        verify(getRequestedFor(urlEqualTo("/default-agent.jar"))
+            .withHeader("User-Agent", matching(
+                "mc-image-helper/[!#$%&'*+.^_`|~0-9A-Za-z-]+ \\(https://github\\.com/itzg/mc-image-helper; cmd=unspecified\\)")));
     }
 
     @Test

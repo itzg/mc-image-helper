@@ -16,6 +16,8 @@ plugins {
 group = 'io.github.itzg'
 description = 'This tool does the complicated bits for itzg/minecraft-server'
 
+def projectUrl = findProperty('projectUrl') ?: 'https://github.com/itzg/mc-image-helper'
+
 version = '0.0.1-SNAPSHOT'
 gitVersioning.apply {
   refs {
@@ -41,7 +43,8 @@ jar {
   manifest {
     attributes(
         "Implementation-Title": 'mc-image-helper',
-        "Implementation-Version": project.version
+        "Implementation-Version": project.version,
+        "Project-URL": projectUrl
     )
   }
 }
@@ -207,7 +210,7 @@ compileTestJava {
 
 githubReleaser {
   project {
-    homepage = 'https://github.com/itzg/mc-image-helper'
+    homepage = projectUrl
     license = 'MIT'
   }
 }

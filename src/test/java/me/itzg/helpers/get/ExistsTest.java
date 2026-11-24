@@ -27,6 +27,9 @@ class ExistsTest {
                 );
 
         assertThat(status).isEqualTo(0);
+        verify(headRequestedFor(urlPathEqualTo("/exists"))
+            .withHeader("User-Agent", matching(
+                "mc-image-helper/[!#$%&'*+.^_`|~0-9A-Za-z-]+ \\(https://github\\.com/itzg/mc-image-helper; cmd=get\\)")));
     }
 
     @Test

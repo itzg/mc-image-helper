@@ -42,14 +42,14 @@ import org.apache.hc.client5.http.HttpResponseException;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.classic.methods.HttpHead;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.client5.http.impl.io.ManagedHttpClientConnectionFactory;
 import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
-import org.apache.hc.core5.http.config.Http1Config;
-import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.HttpHeaders;
 import org.apache.hc.core5.http.HttpResponse;
 import org.apache.hc.core5.http.HttpStatus;
+import org.apache.hc.core5.http.config.Http1Config;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.Option;
@@ -187,7 +187,7 @@ public class GetCommand implements Callable<Integer> {
                 .build())
             .addExecInterceptorFirst("latchRequestUris", interceptor)
             .useSystemProperties()
-            .setUserAgent(userAgent != null ? userAgent : "mc-image-helper/"+ McImageHelper.getVersion()+" (cmd=get)")
+            .setUserAgent(userAgent != null ? userAgent : McImageHelper.userAgent("get"))
             .setRetryStrategy(
                 new ExtendedRequestRetryStrategy(retryCount, retryDelay)
             )

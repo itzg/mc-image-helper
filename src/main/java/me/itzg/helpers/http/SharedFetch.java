@@ -48,12 +48,7 @@ public class SharedFetch implements AutoCloseable {
     private final URI filesViaUrl;
 
     public SharedFetch(String forCommand, Options options) {
-        final String userAgent = String.format("%s/%s/%s (cmd=%s)",
-            "itzg",
-            "mc-image-helper",
-            McImageHelper.getVersion(),
-            forCommand != null ? forCommand : "unspecified"
-        );
+        final String userAgent = McImageHelper.userAgent(forCommand);
 
         final String fetchSessionId = UUID.randomUUID().toString();
 
