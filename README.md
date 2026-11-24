@@ -271,8 +271,9 @@ Usage: mc-image-helper get [-hz] [--exists] [--log-progress-each] [--output-file
                            [--apikey=<apikeyHeader>] [--json-path=<jsonPath>]
                            [--json-value-when-missing=<jsonValueWhenMissing>] [-o=FILE|DIR]
                            [--prune-depth=<pruneDepth>] [--retry-count=<retryCount>] [--retry-delay=<retryDelay>]
-                           [--uris-file=<urisFile>] [--accept=<acceptContentTypes>[\s*,\s*<acceptContentTypes>...]]...
-                           [--prune-others=GLOB[\s*,\s*GLOB...]]... [URI[\s*,\s*URI...]...]
+                           [--uris-file=<urisFile>] [--user-agent=<userAgent>] [--accept=<acceptContentTypes>[\s*,
+                           \s*<acceptContentTypes>...]]... [--prune-others=GLOB[\s*,\s*GLOB...]]... [URI[\s*,
+                           \s*URI...]...]
 Download a file
       [URI[\s*,\s*URI...]...]
                             The URI of the resource to retrieve. When the output is a directory, more than one URI can
@@ -305,6 +306,8 @@ Download a file
       --skip-existing       Do not retrieve if the output file already exists
       --uris-file=<urisFile>
                             A file that contains a URL per line
+      --user-agent=<userAgent>
+                            Sets the User-Agent header to use with the request
   -z, --skip-up-to-date     Skips re-downloading a file that is up to date
 ```
 

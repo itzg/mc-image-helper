@@ -12,9 +12,11 @@ import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Path;
 import me.itzg.helpers.TestLoggingAppender;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
 
@@ -45,6 +47,35 @@ class GetCommandTest {
 
         assertThat(status).isEqualTo(0);
         assertThat(output.toString()).isEqualTo("Response content");
+    }
+
+    @Test
+    void readsJsonWithRequestedUserAgent(WireMockRuntimeInfo wmInfo) {
+        final String userAgent = "example-client (https://example.org)";
+        stubFor(get("/build").withHeader("User-Agent", equalTo(userAgent))
+            .willReturn(aResponse().withHeader("Content-Type", "application/json")
+                .withBody("{\"name\":\"server.jar\"}")));
+
+        final StringWriter output = new StringWriter();
+        final int status = new CommandLine(new GetCommand()).setOut(new PrintWriter(output))
+            .execute("--user-agent", userAgent, "--json-path", "$.name", wmInfo.getHttpBaseUrl() + "/build");
+
+        assertThat(status).isZero();
+        assertThat(output.toString().strip()).isEqualTo("server.jar");
+    }
+
+    @Test
+    void downloadsToFileWithRequestedUserAgent(WireMockRuntimeInfo wmInfo, @TempDir Path tempDir) {
+        final String userAgent = "example-client (https://example.org)";
+        stubFor(get("/server.jar").withHeader("User-Agent", equalTo(userAgent))
+            .willReturn(ok("jar contents")));
+
+        final Path file = tempDir.resolve("server.jar");
+        final int status = new CommandLine(new GetCommand())
+            .execute("--user-agent", userAgent, "-o", file.toString(), wmInfo.getHttpBaseUrl() + "/server.jar");
+
+        assertThat(status).isZero();
+        assertThat(file).hasContent("jar contents");
     }
 
     @Test

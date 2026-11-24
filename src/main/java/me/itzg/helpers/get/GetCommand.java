@@ -132,6 +132,9 @@ public class GetCommand implements Callable<Integer> {
     )
     String apikeyHeader;
 
+    @Option(names = "--user-agent", description = "Sets the User-Agent header to use with the request")
+    String userAgent;
+
     @Option(names = "--uris-file",
         description = "A file that contains a URL per line"
     )
@@ -184,7 +187,7 @@ public class GetCommand implements Callable<Integer> {
                 .build())
             .addExecInterceptorFirst("latchRequestUris", interceptor)
             .useSystemProperties()
-            .setUserAgent("mc-image-helper/"+ McImageHelper.getVersion()+" (cmd=get)")
+            .setUserAgent(userAgent != null ? userAgent : "mc-image-helper/"+ McImageHelper.getVersion()+" (cmd=get)")
             .setRetryStrategy(
                 new ExtendedRequestRetryStrategy(retryCount, retryDelay)
             )
@@ -229,19 +232,22 @@ public class GetCommand implements Callable<Integer> {
                         stdout.println(outputFile);
                     }
                 } else {
-                        final Path file = fetch(uris.get(0))
-                        .toFile(outputFile)
-                            .skipUpToDate(skipUpToDate)
-                            .acceptContentTypes(acceptContentTypes)
-                            .handleDownloaded((uri, f, contentSizeBytes) -> {
-                                if (logProgressEach) {
-                                    log.info("Downloaded {}", f);
-                                }
-                            })
-                            .execute();
-                        if (this.outputFilename) {
-                            stdout.println(file);
-                        }
+                    final var download = fetch(uris.get(0)).toFile(outputFile);
+                    if (userAgent != null) {
+                        download.header(HttpHeaders.USER_AGENT, userAgent);
+                    }
+                    final Path file = download
+                        .skipUpToDate(skipUpToDate)
+                        .acceptContentTypes(acceptContentTypes)
+                        .handleDownloaded((uri, f, contentSizeBytes) -> {
+                            if (logProgressEach) {
+                                log.info("Downloaded {}", f);
+                            }
+                        })
+                        .execute();
+                    if (this.outputFilename) {
+                        stdout.println(file);
+                    }
                 }
             }
         } catch (URISyntaxException e) {
