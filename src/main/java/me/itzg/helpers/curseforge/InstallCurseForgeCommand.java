@@ -17,6 +17,7 @@ import java.util.stream.Stream;
 import me.itzg.helpers.McImageHelper;
 import me.itzg.helpers.cache.CacheArgs;
 import me.itzg.helpers.curseforge.ModpacksPageUrlParser.Parsed;
+import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.files.ResultsFileWriter;
 import me.itzg.helpers.files.TabularOutput;
 import me.itzg.helpers.forge.ForgeUrlArgs;
@@ -386,6 +387,33 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
                 .execute();
         }
 
+    }
+
+    @Command(name = "check-modpack-update",
+        description = "Checks for a newer CurseForge modpack file without changing the installation.",
+        footer = {"Put --slug or --modpack-page-url and other install-curseforge options before this subcommand."},
+        exitCodeListHeading = "Exit Codes:%n",
+        exitCodeList = {
+            "0: Update Available",
+            "1: No Update Available",
+            "2: Update Check Failed"
+        })
+    public Integer checkModpackUpdate(@Option(names = {"-h", "--help"}, usageHelp = true) boolean help) {
+        try {
+            final Parsed parsed = ModpacksPageUrlParser.parse(pageUrl);
+            final String packSlug = pageUrl != null ? parsed.getSlug() : slug;
+            if (packSlug == null || packSlug.isBlank() || (slug != null && pageUrl != null)) {
+                throw new InvalidParameterException("Specify either --slug or --modpack-page-url");
+            }
+            if (fileId != null || parsed.getFileId() != null || modpackZip != null || modpackManifest != null) {
+                throw new InvalidParameterException("Update checks require an unpinned CurseForge modpack, not a file ID, ZIP, or manifest override");
+            }
+
+            return createInstaller().hasModpackUpdate(packSlug, filenameMatcher) ? ExitCode.OK : 1;
+        } catch (IOException | RuntimeException e) {
+            System.err.println("Unable to check for a CurseForge modpack update: " + e.getMessage());
+            return ExitCode.USAGE;
+        }
     }
 
 }
