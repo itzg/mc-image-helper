@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
@@ -42,14 +43,14 @@ import org.apache.hc.client5.http.HttpResponseException;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.classic.methods.HttpHead;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.client5.http.impl.io.ManagedHttpClientConnectionFactory;
 import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
-import org.apache.hc.core5.http.config.Http1Config;
-import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.HttpHeaders;
 import org.apache.hc.core5.http.HttpResponse;
 import org.apache.hc.core5.http.HttpStatus;
+import org.apache.hc.core5.http.config.Http1Config;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.Option;
@@ -57,13 +58,14 @@ import picocli.CommandLine.ParameterException;
 import picocli.CommandLine.Parameters;
 import picocli.CommandLine.Spec;
 
-@CommandLine.Command(name = "get", description = "Download a file")
+@CommandLine.Command(name = GetCommand.COMMAND_NAME, description = "Download a file")
 @Slf4j
 public class GetCommand implements Callable<Integer> {
 
     // github.com responses can carry a ~9KB content-security-policy header
     private static final int MAX_HEADER_LINE_LENGTH = 64 * 1024;
     private static final int MAX_HEADER_COUNT = 500;
+    public static final String COMMAND_NAME = "get";
 
     @Spec
     CommandLine.Model.CommandSpec spec;
@@ -132,6 +134,9 @@ public class GetCommand implements Callable<Integer> {
     )
     String apikeyHeader;
 
+    @Option(names = "--user-agent", description = "Sets the User-Agent header to use with the request")
+    String userAgent;
+
     @Option(names = "--uris-file",
         description = "A file that contains a URL per line"
     )
@@ -155,6 +160,9 @@ public class GetCommand implements Callable<Integer> {
 
     @Override
     public Integer call() throws IOException {
+        final String effectiveUserAgent =
+            Objects.requireNonNullElse(userAgent, McImageHelper.userAgent(COMMAND_NAME));
+
         if (urisFile != null) {
             try {
                 readUris();
@@ -184,7 +192,7 @@ public class GetCommand implements Callable<Integer> {
                 .build())
             .addExecInterceptorFirst("latchRequestUris", interceptor)
             .useSystemProperties()
-            .setUserAgent("mc-image-helper/"+ McImageHelper.getVersion()+" (cmd=get)")
+            .setUserAgent(effectiveUserAgent)
             .setRetryStrategy(
                 new ExtendedRequestRetryStrategy(retryCount, retryDelay)
             )
@@ -229,19 +237,20 @@ public class GetCommand implements Callable<Integer> {
                         stdout.println(outputFile);
                     }
                 } else {
-                        final Path file = fetch(uris.get(0))
+                    final Path file = fetch(uris.get(0))
+                        .userAgent(effectiveUserAgent)
                         .toFile(outputFile)
-                            .skipUpToDate(skipUpToDate)
-                            .acceptContentTypes(acceptContentTypes)
-                            .handleDownloaded((uri, f, contentSizeBytes) -> {
-                                if (logProgressEach) {
-                                    log.info("Downloaded {}", f);
-                                }
-                            })
-                            .execute();
-                        if (this.outputFilename) {
-                            stdout.println(file);
-                        }
+                        .skipUpToDate(skipUpToDate)
+                        .acceptContentTypes(acceptContentTypes)
+                        .handleDownloaded((uri, f, contentSizeBytes) -> {
+                            if (logProgressEach) {
+                                log.info("Downloaded {}", f);
+                            }
+                        })
+                        .execute();
+                    if (this.outputFilename) {
+                        stdout.println(file);
+                    }
                 }
             }
         } catch (URISyntaxException e) {

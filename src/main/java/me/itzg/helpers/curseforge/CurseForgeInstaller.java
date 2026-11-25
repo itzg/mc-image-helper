@@ -6,6 +6,7 @@ import static java.util.Optional.ofNullable;
 import static me.itzg.helpers.curseforge.ApiKeyHelper.loadApiKey;
 import static me.itzg.helpers.curseforge.CurseForgeApiClient.CACHING_NAMESPACE;
 import static me.itzg.helpers.curseforge.CurseForgeApiClient.modFileDownloadStatusHandler;
+import static me.itzg.helpers.http.Fetch.fetch;
 import static me.itzg.helpers.singles.MoreCollections.safeStreamFrom;
 
 import io.netty.channel.ChannelException;
@@ -160,6 +161,9 @@ public class CurseForgeInstaller {
 
         install(slug, context -> {
             final MinecraftModpackManifest modpackManifest = extractModpackManifest(modpackZip);
+            if (modpackManifest == null) {
+                throw new GenericException("Modpack zip did not contain a " + MANIFEST_JSON + ". Only client modpack files contain manifest");
+            }
 
             processModpackManifest(context, modpackManifest,
                 new OverridesFromZipApplier(
@@ -179,7 +183,8 @@ public class CurseForgeInstaller {
         install(slug, context -> {
             final MinecraftModpackManifest modpackManifest;
             if (Uris.isUri(modpackManifestLoc)) {
-                modpackManifest = Fetch.fetch(URI.create(modpackManifestLoc))
+                modpackManifest = fetch(URI.create(modpackManifestLoc))
+                    .userAgentCommand("curseforge-installer")
                     .toObject(MinecraftModpackManifest.class)
                     .assemble()
                     .block();
@@ -287,7 +292,7 @@ public class CurseForgeInstaller {
 
         if (matchesPreviousInstall(context, pseudoModId, pseudoFileId)) {
             if (forceSynchronize) {
-                log.info("Requested force synchronize of {}", modpackName);
+                logRequestedForceSynchronize(modpackName);
             }
             else if (Manifests.allFilesPresent(outputDir, context.prevInstallManifest, ignoreMissingFiles)) {
                 log.info("Requested CurseForge modpack {} is already installed", modpackName);
@@ -297,9 +302,7 @@ public class CurseForgeInstaller {
                 return;
             }
             else {
-                log.warn("Re-installing due to missing files from modpack: {}",
-                    Manifests.missingFiles(outputDir, context.prevInstallManifest)
-                );
+                logReinstalling(context);
             }
         }
 
@@ -311,6 +314,12 @@ public class CurseForgeInstaller {
 
         finalizeResults(context, results,
             pseudoModId, pseudoFileId, results.getName()
+        );
+    }
+
+    private void logReinstalling(InstallContext context) {
+        log.warn("Re-installing due to missing files from modpack: {}",
+            Manifests.missingFiles(outputDir, context.prevInstallManifest)
         );
     }
 
@@ -355,7 +364,7 @@ public class CurseForgeInstaller {
         //noinspection DataFlowIssue handled by switchIfEmpty
         if (matchesPreviousInstall(context, modFile.getModId(), modFile.getId())) {
             if (forceSynchronize) {
-                log.info("Requested force synchronize of {}", modFile.getDisplayName());
+                logRequestedForceSynchronize(modFile.getDisplayName());
             }
             else if (Manifests.allFilesPresent(outputDir, context.prevInstallManifest, ignoreMissingFiles)) {
                 log.info("Requested CurseForge modpack {} is already installed for {}",
@@ -367,9 +376,7 @@ public class CurseForgeInstaller {
                 return;
             }
             else {
-                log.warn("Re-installing due to missing files from modpack: {}",
-                    Manifests.missingFiles(outputDir, context.prevInstallManifest)
-                );
+                logReinstalling(context);
             }
         }
 
@@ -424,6 +431,10 @@ public class CurseForgeInstaller {
         }
 
         finalizeResults(context, results, modFile.getModId(), modFile.getId(), modFile.getDisplayName());
+    }
+
+    private static void logRequestedForceSynchronize(String name) {
+        log.info("Requested force synchronize of {}", name);
     }
 
     private Path locateModpackInRepo(String fileName) {
@@ -555,7 +566,7 @@ public class CurseForgeInstaller {
         log.debug("Max concurrent downloads is {}", maxConcurrentDownloads);
 
         // Go through all the files listed in modpack (given project ID + file ID)
-        final List<PathWithInfo> modFiles = Flux.fromIterable(modpackManifest.getFiles())
+        return Flux.fromIterable(modpackManifest.getFiles())
             // ...does the modpack even say it's required?
             .filter(ManifestFileRef::isRequired)
             // ...is this mod file excluded because it is a client mod that didn't declare as such
@@ -590,8 +601,6 @@ public class CurseForgeInstaller {
             )
             .collectList()
             .block();
-
-        return modFiles;
     }
 
     private ModPackResults processModpack(InstallContext context,
@@ -720,9 +729,9 @@ public class CurseForgeInstaller {
                 } catch (NumberFormatException e) {
                     return context.cfApi.searchMod(s, modsClassId)
                         .map(CurseForgeMod::getId)
-                        .doOnError(UnknownModException.class, ex -> {
-                            log.warn("Unable to resolve {} for exclude/include", ex.getSlug(), ex);
-                        })
+                        .doOnError(UnknownModException.class, ex ->
+                            log.warn("Unable to resolve {} for exclude/include", ex.getSlug(), ex)
+                        )
                         .onErrorComplete(UnknownModException.class);
                 }
             })
@@ -771,7 +780,7 @@ public class CurseForgeInstaller {
         boolean isWorld, Path outputSubdir
     ) {
         return isWorld ?
-            buildRetryableDownload(context, modInfo, cfFile, isWorld, outputSubdir)
+            buildRetryableDownload(context, modInfo, cfFile, true, outputSubdir)
                 .flatMap(downloadResult ->
                     downloadResult.downloadNeeded ?
                         Mono.just(new PathWithInfo(downloadResult.path)
@@ -782,7 +791,7 @@ public class CurseForgeInstaller {
                         : Mono.fromCallable(() -> extractWorldZip(modInfo, downloadResult.path, outputSubdir))
                             .subscribeOn(Schedulers.boundedElastic())
                 )
-            : buildRetryableDownload(context, modInfo, cfFile, isWorld, outputSubdir)
+            : buildRetryableDownload(context, modInfo, cfFile, false, outputSubdir)
                 .map(resolveResult ->
                     new PathWithInfo(resolveResult.path)
                         .setDownloadNeeded(resolveResult.downloadNeeded)

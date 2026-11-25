@@ -38,11 +38,12 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
-@Command(name = "mcopy", description = "Multi-source file copy operation with with managed cleanup. "
+@Command(name = MultiCopyCommand.COMMAND_NAME, description = "Multi-source file copy operation with with managed cleanup. "
     + "Supports auto-detected sourcing from file list, directories, and URLs")
 @Slf4j
 public class MultiCopyCommand implements Callable<Integer> {
 
+    public static final String COMMAND_NAME = "mcopy";
     @SuppressWarnings("unused")
     @Option(names = {"--help", "-h"}, usageHelp = true)
     boolean showHelp;
@@ -319,7 +320,7 @@ public class MultiCopyCommand implements Callable<Integer> {
 
     private Mono<Path> processRemoteSource(String source, Path destination) {
         return Fetch.fetch(URI.create(source))
-            .userAgentCommand("mcopy")
+            .userAgentCommand(COMMAND_NAME)
             .toDirectory(destination)
             .skipUpToDate(skipUpToDate)
             .skipExisting(skipExisting)

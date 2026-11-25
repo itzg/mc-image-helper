@@ -99,7 +99,8 @@ class ObjectFetchBuilderTest {
             getRequestedFor(urlEqualTo("/"))
                 .withHeader("accept", WireMock.equalTo("application/json"))
                 .withHeader("x-custom", WireMock.equalTo("customValue"))
-                .withHeader("user-agent", WireMock.containing("mc-image-helper"))
+                .withHeader("user-agent", WireMock.matching(
+                    "mc-image-helper/[!#$%&'*+.^_`|~0-9A-Za-z-]+ \\(https://github\\.com/itzg/mc-image-helper; cmd=unspecified\\)"))
                 .withHeader("x-fetch-session", WireMock.matching("[a-z0-9-]+"))
         );
     }

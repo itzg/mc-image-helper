@@ -174,7 +174,12 @@ public class McImageHelper {
     boolean silent;
 
     @Getter
-    private static String version;
+    private static String version = "unknown";
+
+    /**
+     * Fall-back if the project URL isn't found in the manifest. This is used for the user-agent string.
+     */
+    private static String projectUrl = "https://github.com/itzg/mc-image-helper";
 
     public static void main(String[] args) {
         final McImageHelper rootCommand = new McImageHelper();
@@ -202,11 +207,39 @@ public class McImageHelper {
                 final Manifest manifest = new Manifest(inputStream);
                 final Attributes attributes = manifest.getMainAttributes();
                 if ("mc-image-helper".equals(attributes.getValue(Name.IMPLEMENTATION_TITLE))) {
-                    return attributes.getValue(Name.IMPLEMENTATION_VERSION);
+                    final String manifestProjectUrl = attributes.getValue("Project-URL");
+                    if (manifestProjectUrl != null && !manifestProjectUrl.isBlank()) {
+                        projectUrl = manifestProjectUrl;
+                    }
+                    final String manifestVersion = attributes.getValue(Name.IMPLEMENTATION_VERSION);
+                    return manifestVersion != null && !manifestVersion.isBlank() ? manifestVersion : "unknown";
                 }
             }
         }
-        return "???";
+        return "unknown";
+    }
+
+    /**
+     * Returns the user-agent string for this application declaring
+     * product, product-version, and comment.
+     *
+     * @param command the command being executed
+     * @return the user-agent string
+     */
+    public static String userAgent(String command) {
+        return userAgent(command, version, projectUrl);
+    }
+
+    static String userAgent(String command, String version, String projectUrl) {
+        final String agentVersion;
+        if (version != null && version.matches("[!#$%&'*+.^_`|~0-9A-Za-z-]+")) {
+            agentVersion = version;
+        } else {
+            log.warn("Version '{}' is not a valid HTTP product version; using 'unknown' in User-Agent", version);
+            agentVersion = "unknown";
+        }
+        return String.format("mc-image-helper/%s (%s; cmd=%s)", agentVersion, projectUrl,
+            command != null ? command : "unspecified");
     }
 
     public static class AppVersionProvider implements IVersionProvider {
