@@ -597,7 +597,21 @@ Downloads, installs, and upgrades CurseForge modpacks
                              Default: false
                              Env: FETCH_WIRETAP
 Commands:
-  schemas  Output relevant JSON schemas
+  schemas               Output relevant JSON schemas
+  check-modpack-update  Checks for a newer CurseForge modpack file without changing the installation.
+```
+
+### install-curseforge check-modpack-update
+
+```
+Usage: mc-image-helper install-curseforge check-modpack-update [-h]
+Checks for a newer CurseForge modpack file without changing the installation.
+  -h, --help
+Exit Codes:
+  0    Update Available
+  1    No Update Available
+  2    Update Check Failed
+Put --slug or --modpack-page-url and other install-curseforge options before this subcommand.
 ```
 
 ### install-curseforge schemas

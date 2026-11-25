@@ -208,6 +208,56 @@ public class CurseForgeInstaller {
         );
     }
 
+    /**
+     * Checks if a Modpack as an update.
+     *
+     * <p> Checks if given an unpinned install, a update exists with a stricly newer publication date
+     *
+     * @param slug
+     * @param fileMatcher
+     * @return
+     */
+    public boolean hasModpackUpdate(String slug, String fileMatcher) {
+        if (slug == null || slug.isBlank()) {
+            throw new InvalidParameterException("A modpack slug is required");
+        }
+
+        final CurseForgeManifest installed = Manifests.load(outputDir, CURSEFORGE_ID, CurseForgeManifest.class);
+        if (installed == null || installed.getModId() <= 0 || installed.getFileId() <= 0) {
+            throw new InvalidParameterException("No usable CurseForge installation manifest in " + outputDir);
+        }
+
+        try (final CurseForgeApiClient cfApi = createApiClient(new ApiCachingDisabled())) {
+            final CategoryInfo categoryInfo = cfApi.loadCategoryInfo(List.of(CurseForgeApiClient.CATEGORY_MODPACKS)).block();
+            final CurseForgeMod pack = cfApi.searchMod(slug,
+                    categoryInfo.getClassIdForSlug(CurseForgeApiClient.CATEGORY_MODPACKS)
+                )
+                .block();
+            if (pack.getId() != installed.getModId()) {
+                throw new InvalidParameterException("The installation in " + outputDir + " does not match '" + slug + "'");
+            }
+
+            final CurseForgeFile candidate = cfApi.resolveModpackFile(pack, fileMatcher);
+            if (candidate.getId() == installed.getFileId()) {
+                return false;
+            }
+
+            final CurseForgeFile current = cfApi.getModFileInfo(pack.getId(), installed.getFileId()).block();
+            if (current == null || current.getFileDate() == null || candidate.getFileDate() == null) {
+                throw new GenericException("Could not compare publication dates with installed file " + installed.getFileId());
+            }
+            return candidate.getFileDate().isAfter(current.getFileDate());
+        } catch (InvalidApiKeyException e) {
+            ApiKeyHelper.logKeyIssues(log, apiKey);
+            throw e;
+        }
+    }
+
+    private CurseForgeApiClient createApiClient(ApiCaching apiCaching) {
+        return new CurseForgeApiClient(apiBaseUrl, loadApiKey(apiKey, apiKeyFile), sharedFetchOptions,
+            CurseForgeApiClient.MINECRAFT_GAME_ID, apiCaching);
+    }
+
     void install(String slug, InstallationEntryPoint entryPoint) {
         requireNonNull(outputDir, "outputDir is required");
         requireNonNull(slug);
@@ -221,13 +271,7 @@ public class CurseForgeInstaller {
             final ApiCaching apiCaching = disableApiCaching ? new ApiCachingDisabled()
                 : new ApiCachingImpl(outputDir, CACHING_NAMESPACE, cacheArgs)
                     .setCacheDurations(CurseForgeApiClient.getCacheDurations());
-            final CurseForgeApiClient cfApi = new CurseForgeApiClient(
-                apiBaseUrl,
-                loadApiKey(apiKey, apiKeyFile),
-                sharedFetchOptions,
-                CurseForgeApiClient.MINECRAFT_GAME_ID,
-                apiCaching
-            )
+            final CurseForgeApiClient cfApi = createApiClient(apiCaching)
         ) {
             final CategoryInfo categoryInfo = cfApi.loadCategoryInfo(Arrays.asList(
                     CurseForgeApiClient.CATEGORY_MODPACKS,
