@@ -231,32 +231,7 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
             return ExitCode.USAGE;
         }
 
-        final ExcludeIncludesContent excludeIncludes = loadExcludeIncludes();
-
-        final CurseForgeInstaller installer = new CurseForgeInstaller(outputDirectory, resultsFile)
-            .setExcludeIncludes(excludeIncludes)
-            .setForceSynchronize(forceSynchronize)
-            .setForceReinstallModloader(forceReinstallModloader)
-            .setIgnoreMissingFiles(ignoreMissingFiles)
-            .setLevelFrom(levelFrom)
-            .setOverridesSkipExisting(overridesSkipExisting)
-            .setOverridesExclusions(overridesExclusions)
-            .setSharedFetchOptions(sharedFetchArgs.options())
-            .setApiKey(apiKey)
-            .setApiKeyFile(apiKeyFile)
-            .setDownloadsRepo(downloadsRepo)
-            .setDisableApiCaching(disableApiCaching)
-            .setCacheArgs(cacheArgs)
-            .setForgeUrlArgs(forgeUrlArgs)
-            .setMaxConcurrentDownloads(maxConcurrentDownloads)
-            .setFileDownloadRetries(fileDownloadRetries)
-            .setFileDownloadRetryMinDelay(fileDownloadRetryMinDelay)
-            .setCustomModLoaderVersion(modLoaderVersion)
-            .setExcludeAllMods(excludeIncludeArgs.excludeAllMods);
-
-        if (apiBaseUrl != null) {
-            installer.setApiBaseUrl(apiBaseUrl);
-        }
+        final CurseForgeInstaller installer = createInstaller();
 
         final Path needsDownloadFile = missingModsFilename != null && !missingModsFilename.isEmpty() ?
             outputDirectory.resolve(missingModsFilename)
@@ -299,6 +274,36 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
             return ExitCode.USAGE;
         }
 
+    }
+
+    private CurseForgeInstaller createInstaller() throws IOException {
+        final ExcludeIncludesContent excludeIncludes = loadExcludeIncludes();
+
+        final CurseForgeInstaller installer = new CurseForgeInstaller(outputDirectory, resultsFile)
+            .setExcludeIncludes(excludeIncludes)
+            .setForceSynchronize(forceSynchronize)
+            .setForceReinstallModloader(forceReinstallModloader)
+            .setIgnoreMissingFiles(ignoreMissingFiles)
+            .setLevelFrom(levelFrom)
+            .setOverridesSkipExisting(overridesSkipExisting)
+            .setOverridesExclusions(overridesExclusions)
+            .setSharedFetchOptions(sharedFetchArgs.options())
+            .setApiKey(apiKey)
+            .setApiKeyFile(apiKeyFile)
+            .setDownloadsRepo(downloadsRepo)
+            .setDisableApiCaching(disableApiCaching)
+            .setCacheArgs(cacheArgs)
+            .setForgeUrlArgs(forgeUrlArgs)
+            .setMaxConcurrentDownloads(maxConcurrentDownloads)
+            .setFileDownloadRetries(fileDownloadRetries)
+            .setFileDownloadRetryMinDelay(fileDownloadRetryMinDelay)
+            .setCustomModLoaderVersion(modLoaderVersion)
+            .setExcludeAllMods(excludeIncludeArgs.excludeAllMods);
+
+        if (apiBaseUrl != null) {
+            installer.setApiBaseUrl(apiBaseUrl);
+        }
+        return installer;
     }
 
     @NotNull
