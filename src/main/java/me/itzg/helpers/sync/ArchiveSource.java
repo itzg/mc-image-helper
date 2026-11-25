@@ -19,6 +19,9 @@ record ArchiveSource(String source, List<String> directories) {
 
     static ArchiveSource parse(String value) {
         final int start = value.lastIndexOf(PATHS_START);
+        if (start >= 0 && value.indexOf(PATHS_END, start) < 0) {
+            throw new InvalidParameterException("Archive paths are missing the closing '}': " + value);
+        }
         if (start < 0 || !value.endsWith(String.valueOf(PATHS_END))) {
             return new ArchiveSource(value, List.of());
         }

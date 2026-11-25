@@ -115,6 +115,9 @@ public final class Archive {
      */
     public ExtractedFiles extractDirectories(Path destination, List<String> directories,
             ReplaceExisting replaceExisting) throws IOException, ArchiveException {
+        // Entry names within a directory start with the directory and a slash, such as "saves/world/level.dat".
+        // The trailing slash keeps "saves/world" from matching "saves/world2/...". The directories are already
+        // normalized by ArchiveSource, so one given with a trailing slash doesn't end up with two.
         final List<String> prefixes = directories.isEmpty() ? List.of("")
                 : directories.stream().map(directory -> directory + "/").toList();
         validateDirectories(destination.toAbsolutePath().normalize(), prefixes);
@@ -128,7 +131,7 @@ public final class Archive {
             ArchiveEntry entry;
 
             while ((entry = input.getNextEntry()) != null) {
-                final String name = stripCurrentDirectory(entry.getName());
+                final String name = ArchiveUtils.stripCurrentDirectory(entry.getName());
                 final String prefix = findPrefix(prefixes, name);
                 if (prefix == null) {
                     continue;
@@ -181,7 +184,7 @@ public final class Archive {
             ArchiveEntry entry;
 
             while ((entry = input.getNextEntry()) != null) {
-                final String name = stripCurrentDirectory(entry.getName());
+                final String name = ArchiveUtils.stripCurrentDirectory(entry.getName());
                 final String prefix = findPrefix(prefixes, name);
                 if (ArchiveUtils.isUnsafeEntry(extractionRoot, name)
                         || (prefix != null && ArchiveUtils.isUnsafeEntry(extractionRoot, name.substring(prefix.length())))) {
@@ -213,17 +216,6 @@ public final class Archive {
      * @param skipped absolute, normalized paths of the existing files that were skipped
      */
     public record ExtractedFiles(List<Path> written, List<Path> skipped) {
-    }
-
-    /**
-     * Removes leading {@code ./}, such as from {@code tar -c .}, so entries match a directory prefix.
-     */
-    private static String stripCurrentDirectory(String name) {
-        String result = name;
-        while (result.startsWith("./")) {
-            result = result.substring(2);
-        }
-        return result;
     }
 
     /**

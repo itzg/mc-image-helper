@@ -6,18 +6,14 @@ import static me.itzg.helpers.singles.NormalizeOptions.normalizeOptionList;
 
 import java.io.IOException;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -31,6 +27,7 @@ import me.itzg.helpers.files.ReactiveFileUtils;
 import me.itzg.helpers.files.archive.Archive;
 import me.itzg.helpers.files.archive.Archive.ExtractedFiles;
 import me.itzg.helpers.files.archive.ArchiveFactory;
+import me.itzg.helpers.files.archive.ArchiveUtils;
 import me.itzg.helpers.http.FailedRequestException;
 import me.itzg.helpers.http.Fetch;
 import me.itzg.helpers.http.FileDownloadStatus;
@@ -38,6 +35,7 @@ import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.http.SharedFetchArgs;
 import me.itzg.helpers.http.Uris;
 import org.apache.commons.compress.archivers.ArchiveEntry;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.compress.archivers.ArchiveException;
 import org.jetbrains.annotations.Blocking;
 import org.reactivestreams.Publisher;
@@ -189,20 +187,23 @@ public class MultiCopyCommand implements Callable<Integer> {
         final Path destination;
         final String resolvedSource;
 
-        final int delimiterPos = source.indexOf(destinationDelimiter);
-        if (delimiterPos >= 0 && source.startsWith(archiveDelimiter, delimiterPos)) {
+        final int archiveDelimiterPos = source.indexOf(archiveDelimiter);
+        if (archiveDelimiterPos >= 0) {
             if (fileIsListing) {
                 throw new InvalidParameterException(
                     String.format("Archive source '%s' can't be used with --file-is-listing", source));
             }
             return processArchiveSource(
-                source.substring(0, delimiterPos),
-                source.substring(delimiterPos + archiveDelimiter.length()),
+                sharedFetch,
+                source.substring(0, archiveDelimiterPos),
+                source.substring(archiveDelimiterPos + archiveDelimiter.length()),
                 parentDestination
             );
         }
-        else if (delimiterPos > 0) {
-            destination = resolveDestination(parentDestination, source.substring(0, delimiterPos));
+
+        final int delimiterPos = source.indexOf(destinationDelimiter);
+        if (delimiterPos > 0) {
+            destination = ArchiveUtils.safePathResolve(parentDestination, source.substring(0, delimiterPos));
             resolvedSource = source.substring(delimiterPos + 1);
         }
         else {
@@ -391,12 +392,13 @@ public class MultiCopyCommand implements Callable<Integer> {
             .checkpoint("Retrieving " + source, true);
     }
 
-    private Flux<Path> processArchiveSource(String destinationPart, String sourcePart, Path parentDestination) {
-        final Path destination = resolveDestination(parentDestination, destinationPart);
+    private Flux<Path> processArchiveSource(SharedFetch sharedFetch, String destinationPart, String sourcePart,
+        Path parentDestination) {
+        final Path destination = ArchiveUtils.safePathResolve(parentDestination, destinationPart);
         final ArchiveSource archiveSource = ArchiveSource.parse(sourcePart);
 
         if (Uris.isUri(archiveSource.source())) {
-            return processRemoteArchive(archiveSource, destination);
+            return processRemoteArchive(sharedFetch, archiveSource, destination);
         }
 
         final Path path = Paths.get(archiveSource.source());
@@ -407,21 +409,9 @@ public class MultiCopyCommand implements Callable<Integer> {
         return extractArchive(path, archiveSource, destination);
     }
 
-    /**
-     * An empty destination is the parent destination. A destination containing {@code ..} is rejected.
-     */
-    private static Path resolveDestination(Path parentDestination, String destinationPart) {
-        for (final String part : destinationPart.split("[/\\\\]")) {
-            if (part.equals("..")) {
-                throw new InvalidParameterException(
-                    String.format("Destination '%s' must not contain '..'", destinationPart));
-            }
-        }
-        return destinationPart.isEmpty() ? parentDestination : parentDestination.resolve(destinationPart);
-    }
-
-    private Flux<Path> processRemoteArchive(ArchiveSource archiveSource, Path destination) {
-        return remoteArchives.computeIfAbsent(archiveSource.source(), this::retrieveRemoteArchive)
+    private Flux<Path> processRemoteArchive(SharedFetch sharedFetch, ArchiveSource archiveSource, Path destination) {
+        return remoteArchives.computeIfAbsent(archiveSource.source(),
+                source -> retrieveRemoteArchive(sharedFetch, source))
             .flatMapMany(file -> extractArchive(file, archiveSource, destination))
             .onErrorResume(throwable -> ignoreMissingSources && FailedRequestException.isNotFound(throwable),
                 throwable -> Mono.empty()
@@ -433,13 +423,12 @@ public class MultiCopyCommand implements Callable<Integer> {
      * Keeps the archive in {@link #archiveCacheDirectory}, named by a hash of its URL,
      * so later runs re-fetch it with If-Modified-Since.
      */
-    private Mono<Path> retrieveRemoteArchive(String source) {
+    private Mono<Path> retrieveRemoteArchive(SharedFetch sharedFetch, String source) {
         final Path cacheDirectory = dest.resolve(archiveCacheDirectory);
-        final Path file = cacheDirectory.resolve(sha256(source));
+        final Path file = cacheDirectory.resolve(DigestUtils.sha256Hex(source));
 
         return ReactiveFileUtils.createDirectories(cacheDirectory)
-            .flatMap(ignored -> Fetch.fetch(URI.create(source))
-                .userAgentCommand("mcopy")
+            .flatMap(ignored -> sharedFetch.fetch(URI.create(source))
                 .toFile(file)
                 .skipUpToDate(true)
                 .handleStatus((status, uri, p) -> {
@@ -452,32 +441,11 @@ public class MultiCopyCommand implements Callable<Integer> {
                 )
                 .assemble()
             )
-            .onErrorResume(throwable -> deletePartialDownload(file).then(Mono.error(throwable)))
+            .onErrorResume(throwable -> ReactiveFileUtils.removeFailedDownload(
+                throwable,
+                file.resolveSibling(file.getFileName() + ".download")
+            ))
             .cache();
-    }
-
-    /**
-     * Best effort, so a failed delete doesn't hide the failed fetch.
-     */
-    private static Mono<Void> deletePartialDownload(Path file) {
-        return Mono.<Void>fromRunnable(() -> {
-                final Path partial = file.resolveSibling(file.getFileName() + ".download");
-                try {
-                    Files.deleteIfExists(partial);
-                } catch (IOException e) {
-                    log.warn("Failed to delete partial download {}: {}", partial, e.getMessage());
-                }
-            })
-            .subscribeOn(Schedulers.boundedElastic());
-    }
-
-    private static String sha256(String value) {
-        try {
-            return HexFormat.of().formatHex(
-                MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8)));
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException(e);
-        }
     }
 
     /**

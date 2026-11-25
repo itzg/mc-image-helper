@@ -15,8 +15,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
@@ -26,14 +24,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 import me.itzg.helpers.LatchingExecutionExceptionHandler;
 import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.files.Manifests;
-import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
-import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
-import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
+import me.itzg.helpers.files.archive.ArchiveTestUtils;
 import org.apache.commons.io.file.PathUtils;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -47,6 +41,7 @@ class MultiCopyCommandArchiveTest {
     Path tempDir;
 
     private static final Map<String, String> WORLD = Map.of(
+        "saves/", "",
         "saves/world/level.dat", "level",
         "saves/world/region/r.0.0.mca", "region",
         "saves/other/level.dat", "other",
@@ -76,12 +71,13 @@ class MultiCopyCommandArchiveTest {
         final Path archive = createTarGz(tempDir.resolve("world.tar.gz"), WORLD);
         final Path destDir = tempDir.resolve("dest");
 
-        final int exitCode = execute("--to", destDir.toString(), "world<<" + archive + "{saves/world/}");
+        final int exitCode = execute("--to", destDir.toString(), "extracted<<" + archive + "{saves/world/}");
 
         assertThat(exitCode).isEqualTo(ExitCode.OK);
-        assertThat(destDir.resolve("world/level.dat")).hasContent("level");
-        assertThat(destDir.resolve("world/region/r.0.0.mca")).hasContent("region");
-        assertThat(destDir.resolve("world/readme.txt")).doesNotExist();
+        assertThat(destDir.resolve("extracted/level.dat")).hasContent("level");
+        assertThat(destDir.resolve("extracted/region/r.0.0.mca")).hasContent("region");
+        assertThat(destDir.resolve("extracted/readme.txt")).doesNotExist();
+        assertThat(destDir.resolve("extracted/saves")).doesNotExist();
         assertThat(destDir.resolve("other")).doesNotExist();
     }
 
@@ -197,8 +193,10 @@ class MultiCopyCommandArchiveTest {
             prepare("changed by server", ENTRY_TIME.minusSeconds(86400));
 
             assertThat(extract("--skip-existing")).isEqualTo(ExitCode.OK);
-            assertThat(extract("--skip-existing", "--skip-up-to-date=false")).isEqualTo(ExitCode.OK);
+            assertThat(existing).hasContent("changed by server");
+            assertThat(tempDir.resolve("dest/world/region/r.0.0.mca")).hasContent("region");
 
+            assertThat(extract("--skip-existing", "--skip-up-to-date=false")).isEqualTo(ExitCode.OK);
             assertThat(existing).hasContent("changed by server");
             assertThat(tempDir.resolve("dest/world/region/r.0.0.mca")).hasContent("region");
         }
@@ -214,7 +212,7 @@ class MultiCopyCommandArchiveTest {
 
         @Test
         void newerKeptWhenSkippingUpToDate() throws IOException {
-            prepare("changed by server", Instant.now());
+            prepare("changed by server", ENTRY_TIME.plusSeconds(86400));
 
             assertThat(extract()).isEqualTo(ExitCode.OK);
 
@@ -503,33 +501,10 @@ class MultiCopyCommandArchiveTest {
     }
 
     private static Path createZip(Path archive, Map<String, String> files) throws IOException {
-        try (ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(archive))) {
-            for (Map.Entry<String, String> file : files.entrySet()) {
-                final ZipEntry entry = new ZipEntry(file.getKey());
-                entry.setTime(ENTRY_TIME.toEpochMilli());
-                zos.putNextEntry(entry);
-                zos.write(file.getValue().getBytes(StandardCharsets.UTF_8));
-                zos.closeEntry();
-            }
-        }
-        return archive;
+        return ArchiveTestUtils.createZip(archive, files, ENTRY_TIME);
     }
 
     private static Path createTarGz(Path archive, Map<String, String> files) throws IOException {
-        try (OutputStream output = new GzipCompressorOutputStream(Files.newOutputStream(archive));
-            TarArchiveOutputStream tos = new TarArchiveOutputStream(output)) {
-            tos.putArchiveEntry(new TarArchiveEntry("saves/"));
-            tos.closeArchiveEntry();
-            for (Map.Entry<String, String> file : files.entrySet()) {
-                final byte[] data = file.getValue().getBytes(StandardCharsets.UTF_8);
-                final TarArchiveEntry entry = new TarArchiveEntry(file.getKey());
-                entry.setSize(data.length);
-                entry.setModTime(ENTRY_TIME.toEpochMilli());
-                tos.putArchiveEntry(entry);
-                tos.write(data);
-                tos.closeArchiveEntry();
-            }
-        }
-        return archive;
+        return ArchiveTestUtils.createTarGz(archive, files, ENTRY_TIME);
     }
 }

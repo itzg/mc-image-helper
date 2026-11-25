@@ -46,6 +46,8 @@ class ArchiveSourceTest {
         "world.zip{saves\\..\\other}",
         "world.zip{saves;../other}",
         "https://example.com/world.zip{../world}",
+        "world.zip{saves/world",
+        "world.zip{saves/world;saves/other",
     })
     void rejectsInvalidPath(String value) {
         assertThatThrownBy(() -> ArchiveSource.parse(value))
