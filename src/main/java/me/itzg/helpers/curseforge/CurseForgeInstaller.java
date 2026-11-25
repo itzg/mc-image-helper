@@ -208,6 +208,11 @@ public class CurseForgeInstaller {
         );
     }
 
+    private CurseForgeApiClient createApiClient(ApiCaching apiCaching) {
+        return new CurseForgeApiClient(apiBaseUrl, loadApiKey(apiKey, apiKeyFile), sharedFetchOptions,
+            CurseForgeApiClient.MINECRAFT_GAME_ID, apiCaching);
+    }
+
     void install(String slug, InstallationEntryPoint entryPoint) {
         requireNonNull(outputDir, "outputDir is required");
         requireNonNull(slug);
@@ -221,13 +226,7 @@ public class CurseForgeInstaller {
             final ApiCaching apiCaching = disableApiCaching ? new ApiCachingDisabled()
                 : new ApiCachingImpl(outputDir, CACHING_NAMESPACE, cacheArgs)
                     .setCacheDurations(CurseForgeApiClient.getCacheDurations());
-            final CurseForgeApiClient cfApi = new CurseForgeApiClient(
-                apiBaseUrl,
-                loadApiKey(apiKey, apiKeyFile),
-                sharedFetchOptions,
-                CurseForgeApiClient.MINECRAFT_GAME_ID,
-                apiCaching
-            )
+            final CurseForgeApiClient cfApi = createApiClient(apiCaching)
         ) {
             final CategoryInfo categoryInfo = cfApi.loadCategoryInfo(Arrays.asList(
                     CurseForgeApiClient.CATEGORY_MODPACKS,
