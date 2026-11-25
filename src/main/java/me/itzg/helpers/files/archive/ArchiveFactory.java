@@ -32,7 +32,7 @@ public final class ArchiveFactory {
      * @throws IllegalArgumentException if the path does not exist or is not a regular file
      * @throws IOException if the file type cannot be detected or is unsupported
      */
-    static Archive create(Path archive) throws IOException {
+    public static Archive create(Path archive) throws IOException {
         if (!Files.exists(archive)) {
             throw new IllegalArgumentException("File does not exist: " + archive.toAbsolutePath());
         } else if (!Files.isRegularFile(archive)) {

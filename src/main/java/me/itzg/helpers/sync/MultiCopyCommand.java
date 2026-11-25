@@ -13,18 +13,30 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
 import me.itzg.helpers.errors.InvalidParameterException;
 import me.itzg.helpers.files.Manifests;
 import me.itzg.helpers.files.ReactiveFileUtils;
+import me.itzg.helpers.files.archive.Archive;
+import me.itzg.helpers.files.archive.Archive.ExtractedFiles;
+import me.itzg.helpers.files.archive.ArchiveFactory;
+import me.itzg.helpers.files.archive.ArchiveUtils;
 import me.itzg.helpers.http.FailedRequestException;
 import me.itzg.helpers.http.Fetch;
+import me.itzg.helpers.http.FileDownloadStatus;
 import me.itzg.helpers.http.SharedFetch;
 import me.itzg.helpers.http.SharedFetchArgs;
 import me.itzg.helpers.http.Uris;
+import org.apache.commons.compress.archivers.ArchiveEntry;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.compress.archivers.ArchiveException;
 import org.jetbrains.annotations.Blocking;
 import org.reactivestreams.Publisher;
 import org.slf4j.event.Level;
@@ -93,6 +105,12 @@ public class MultiCopyCommand implements Callable<Integer> {
         paramLabel = "SRC",
         description = "Any mix of source file, directory, or URLs delimited by commas or newlines"
             + "%nPer-file destinations can be assigned by destination<source"
+            + "%nArchives (ZIP, TAR, TAR.GZ, TAR.BZ2, TAR.ZST) are extracted by destination<<archive"
+            + "%nor, for directories within the archive, destination<<archive{path;path}"
+            + "%nExisting files are replaced as for other sources, following --skip-existing and --skip-up-to-date."
+            + "%n--glob doesn't apply to archive entries."
+            + "%nRemote archives are kept in .tmp/mcopy-archives within --to and re-fetched with If-Modified-Since."
+            + "%nDestinations must not contain '..'."
             + "%nEmbedded comments are allowed."
     )
     public void setSources(List<String> sources) {
@@ -103,7 +121,19 @@ public class MultiCopyCommand implements Callable<Integer> {
 
     private final static String destinationDelimiter = "<";
 
+    private final static String archiveDelimiter = "<<";
+
+    /**
+     * Within {@link #dest}, where remote archives are kept so later runs can use If-Modified-Since
+     */
+    private final static String archiveCacheDirectory = ".tmp/mcopy-archives";
+
     private final static int PREFETCH = 1;
+
+    /**
+     * Remote archives by URL, so each is retrieved once per run even when several entries use it
+     */
+    private final Map<String, Mono<Path>> remoteArchives = new ConcurrentHashMap<>();
 
     @Option(names = "--max-concurrent-sources", defaultValue = "10", description = "Maximum number of sources to process concurrently")
     int maxConccurentSources;
@@ -158,9 +188,23 @@ public class MultiCopyCommand implements Callable<Integer> {
         final Path destination;
         final String resolvedSource;
 
+        final int archiveDelimiterPos = source.indexOf(archiveDelimiter);
+        if (archiveDelimiterPos >= 0) {
+            if (fileIsListing) {
+                throw new InvalidParameterException(
+                    String.format("Archive source '%s' can't be used with --file-is-listing", source));
+            }
+            return processArchiveSource(
+                sharedFetch,
+                source.substring(0, archiveDelimiterPos),
+                source.substring(archiveDelimiterPos + archiveDelimiter.length()),
+                parentDestination
+            );
+        }
+
         final int delimiterPos = source.indexOf(destinationDelimiter);
         if (delimiterPos > 0) {
-            destination = parentDestination.resolve(Paths.get(source.substring(0, delimiterPos)));
+            destination = ArchiveUtils.safePathResolve(parentDestination, source.substring(0, delimiterPos));
             resolvedSource = source.substring(delimiterPos + 1);
         }
         else {
@@ -347,6 +391,120 @@ public class MultiCopyCommand implements Callable<Integer> {
                 throwable -> Mono.empty()
             )
             .checkpoint("Retrieving " + source, true);
+    }
+
+    private Flux<Path> processArchiveSource(SharedFetch sharedFetch, String destinationPart, String sourcePart,
+        Path parentDestination) {
+        final Path destination = ArchiveUtils.safePathResolve(parentDestination, destinationPart);
+        final ArchiveSource archiveSource = ArchiveSource.parse(sourcePart);
+
+        if (Uris.isUri(archiveSource.source())) {
+            return processRemoteArchive(sharedFetch, archiveSource, destination);
+        }
+
+        final Path path = Paths.get(archiveSource.source());
+        if (!Files.isRegularFile(path)) {
+            return Flux.error(new InvalidParameterException(
+                String.format("Archive source '%s' does not exist or is not a file", archiveSource.source())));
+        }
+        return extractArchive(path, archiveSource, destination);
+    }
+
+    private Flux<Path> processRemoteArchive(SharedFetch sharedFetch, ArchiveSource archiveSource, Path destination) {
+        return remoteArchives.computeIfAbsent(archiveSource.source(),
+                source -> retrieveRemoteArchive(sharedFetch, source))
+            .flatMapMany(file -> extractArchive(file, archiveSource, destination))
+            .onErrorResume(throwable -> ignoreMissingSources && FailedRequestException.isNotFound(throwable),
+                throwable -> Mono.empty()
+            )
+            .checkpoint("Retrieving archive " + archiveSource.source(), true);
+    }
+
+    /**
+     * Keeps the archive in {@link #archiveCacheDirectory}, named by a hash of its URL,
+     * so later runs re-fetch it with If-Modified-Since.
+     */
+    private Mono<Path> retrieveRemoteArchive(SharedFetch sharedFetch, String source) {
+        final Path cacheDirectory = dest.resolve(archiveCacheDirectory);
+        final Path file = cacheDirectory.resolve(DigestUtils.sha256Hex(source));
+
+        return ReactiveFileUtils.createDirectories(cacheDirectory)
+            .flatMap(ignored -> sharedFetch.fetch(URI.create(source))
+                .toFile(file)
+                .skipUpToDate(true)
+                .handleStatus((status, uri, p) -> {
+                    if (status == FileDownloadStatus.SKIP_FILE_UP_TO_DATE) {
+                        log.debug("The archive {} from {} is already up to date", p, uri);
+                    }
+                })
+                .handleDownloaded((uri, p, size) ->
+                    log.debug("Downloaded archive from {} to {} ({} bytes)", uri, p, size)
+                )
+                .assemble()
+            )
+            .onErrorResume(throwable -> ReactiveFileUtils.removeFailedDownload(
+                throwable,
+                file.resolveSibling(file.getFileName() + ".download")
+            ))
+            .cache();
+    }
+
+    /**
+     * Follows the options for other sources: {@code --skip-existing} keeps existing files, {@code --skip-up-to-date}
+     * replaces an existing file the same way as copying a local file, and otherwise existing files are replaced.
+     */
+    private boolean replaceExisting(ArchiveEntry entry, Path existing) throws IOException {
+        if (skipExisting) {
+            return false;
+        }
+        if (!skipUpToDate) {
+            return true;
+        }
+        // ZIP entries written with a data descriptor have an unknown size until read
+        if (entry.getSize() >= 0 && entry.getSize() == Files.size(existing)) {
+            return false;
+        }
+        final Date modified = entry.getLastModifiedDate();
+        return modified != null && modified.toInstant().isAfter(Files.getLastModifiedTime(existing).toInstant());
+    }
+
+    private Flux<Path> extractArchive(Path archivePath, ArchiveSource archiveSource, Path destination) {
+        return Mono.fromCallable(() -> {
+                final Archive archive;
+                try {
+                    archive = ArchiveFactory.create(archivePath);
+                } catch (IllegalArgumentException | IOException e) {
+                    throw new InvalidParameterException(
+                        String.format("Archive source '%s' is not a supported archive: %s",
+                            archiveSource.source(), e.getMessage()), e);
+                }
+
+                try {
+                    final ExtractedFiles extracted = archive.extractDirectories(
+                        destination, archiveSource.directories(), this::replaceExisting);
+                    log.info("Extracted {} files from {} into {}, skipped {} existing files",
+                        extracted.written().size(), describe(archiveSource), destination,
+                        extracted.skipped().size());
+                    // like other sources, skipped files stay in the manifest
+                    // and keep the same form as --to, which may be relative
+                    final Path extractionRoot = destination.toAbsolutePath().normalize();
+                    return Stream.concat(extracted.written().stream(), extracted.skipped().stream())
+                        .map(path -> destination.resolve(extractionRoot.relativize(path)))
+                        .toList();
+                } catch (ArchiveException e) {
+                    throw new InvalidParameterException(
+                        String.format("Failed to extract %s: %s", describe(archiveSource), e.getMessage()), e);
+                } catch (IOException e) {
+                    throw new GenericException("Failed to extract " + describe(archiveSource), e);
+                }
+            })
+            .subscribeOn(Schedulers.boundedElastic())
+            .flatMapIterable(paths -> paths);
+    }
+
+    private static String describe(ArchiveSource archiveSource) {
+        return archiveSource.directories().isEmpty() ? archiveSource.source()
+            : archiveSource.source() + "{" + String.join(";", archiveSource.directories()) + "}";
     }
 
     private LoggingEventBuilder forSkipped() {

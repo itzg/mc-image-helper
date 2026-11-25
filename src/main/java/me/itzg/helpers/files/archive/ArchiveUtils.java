@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 
+import me.itzg.helpers.errors.InvalidParameterException;
 import org.apache.commons.compress.archivers.ArchiveException;
 
 /** Helpers for checking output paths and copying archive entries. */
@@ -72,5 +73,35 @@ public class ArchiveUtils {
         } else if (Files.notExists(output)) {
             Files.copy(input, output);
         }
+    }
+
+    /**
+     * Removes leading {@code ./}, such as from {@code tar -c .}, so entries match a directory prefix.
+     */
+    static String stripCurrentDirectory(String name) {
+        String result = name;
+        while (result.startsWith("./")) {
+            result = result.substring(2);
+        }
+        return result;
+    }
+
+    /**
+     * Resolves a user-provided path against a parent, rejecting a path containing {@code ..}.
+     * An empty path is the parent itself.
+     *
+     * @param parent directory to resolve against
+     * @param path user-provided path, which may be absolute
+     * @return the resolved path
+     * @throws InvalidParameterException if the path contains {@code ..}
+     */
+    public static Path safePathResolve(Path parent, String path) {
+        for (final String part : path.split("[/\\\\]")) {
+            if (part.equals("..")) {
+                throw new InvalidParameterException(
+                    String.format("Destination '%s' must not contain '..'", path));
+            }
+        }
+        return path.isEmpty() ? parent : parent.resolve(path);
     }
 }
