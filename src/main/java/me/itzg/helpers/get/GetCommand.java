@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
@@ -57,13 +58,14 @@ import picocli.CommandLine.ParameterException;
 import picocli.CommandLine.Parameters;
 import picocli.CommandLine.Spec;
 
-@CommandLine.Command(name = "get", description = "Download a file")
+@CommandLine.Command(name = GetCommand.COMMAND_NAME, description = "Download a file")
 @Slf4j
 public class GetCommand implements Callable<Integer> {
 
     // github.com responses can carry a ~9KB content-security-policy header
     private static final int MAX_HEADER_LINE_LENGTH = 64 * 1024;
     private static final int MAX_HEADER_COUNT = 500;
+    public static final String COMMAND_NAME = "get";
 
     @Spec
     CommandLine.Model.CommandSpec spec;
@@ -158,6 +160,9 @@ public class GetCommand implements Callable<Integer> {
 
     @Override
     public Integer call() throws IOException {
+        final String effectiveUserAgent =
+            Objects.requireNonNullElse(userAgent, McImageHelper.userAgent(COMMAND_NAME));
+
         if (urisFile != null) {
             try {
                 readUris();
@@ -187,7 +192,7 @@ public class GetCommand implements Callable<Integer> {
                 .build())
             .addExecInterceptorFirst("latchRequestUris", interceptor)
             .useSystemProperties()
-            .setUserAgent(userAgent != null ? userAgent : McImageHelper.userAgent("get"))
+            .setUserAgent(effectiveUserAgent)
             .setRetryStrategy(
                 new ExtendedRequestRetryStrategy(retryCount, retryDelay)
             )
@@ -232,11 +237,9 @@ public class GetCommand implements Callable<Integer> {
                         stdout.println(outputFile);
                     }
                 } else {
-                    final var download = fetch(uris.get(0)).toFile(outputFile);
-                    if (userAgent != null) {
-                        download.header(HttpHeaders.USER_AGENT, userAgent);
-                    }
-                    final Path file = download
+                    final Path file = fetch(uris.get(0))
+                        .userAgent(effectiveUserAgent)
+                        .toFile(outputFile)
                         .skipUpToDate(skipUpToDate)
                         .acceptContentTypes(acceptContentTypes)
                         .handleDownloaded((uri, f, contentSizeBytes) -> {

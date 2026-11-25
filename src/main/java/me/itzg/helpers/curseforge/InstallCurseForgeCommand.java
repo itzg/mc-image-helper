@@ -30,12 +30,13 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.Option;
 
-@Command(name = "install-curseforge",
+@Command(name = InstallCurseForgeCommand.COMMAND_NAME,
     description = "Downloads, installs, and upgrades CurseForge modpacks",
     subcommands = {SchemasCommand.class}
 )
 public class InstallCurseForgeCommand implements Callable<Integer> {
 
+    public static final String COMMAND_NAME = "install-curseforge";
     @Option(names = {"--help","-h"}, usageHelp = true)
     boolean help;
 
@@ -158,10 +159,11 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
     List<String> ignoreMissingFiles;
 
     @Option(names = "--set-level-from",
-        description = "When WORLD_FILE, a world file included the modpack will be unzipped into a folder under 'saves' and referenced as 'LEVEL' in the results file."
-            + "\nWhen OVERRIDES and the overrides contains a world save directory (contains level.dat), then that directory will be referenced as 'LEVEL' in the results file."
-            + "\nIn either case, existing world data will be preserved and skipped if it already exists."
-            + "\nValid values: ${COMPLETION-CANDIDATES}"
+        description = """
+            When WORLD_FILE, a world file included the modpack will be unzipped into a folder under 'saves' and referenced as 'LEVEL' in the results file.
+            When OVERRIDES and the overrides contains a world save directory (contains level.dat), then that directory will be referenced as 'LEVEL' in the results file.
+            In either case, existing world data will be preserved and skipped if it already exists.
+            Valid values: ${COMPLETION-CANDIDATES}"""
     )
     LevelFrom levelFrom;
 
@@ -172,10 +174,11 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
 
     @Option(names = "--overrides-exclusions",
         split = "\n|,", splitSynopsisLabel = "NL or ,",
-        description = "Excludes files from the overrides that match these ant-style patterns\n"
-            + "*  : matches any non-slash characters\n"
-            + "** : matches any characters\n"
-            + "?  : matches one character"
+        description = """
+            Excludes files from the overrides that match these ant-style patterns
+            *  : matches any non-slash characters
+            ** : matches any characters
+            ?  : matches one character"""
     )
     List<String> overridesExclusions;
 
@@ -376,6 +379,7 @@ public class InstallCurseForgeCommand implements Callable<Integer> {
         }
         else {
             return fetch(excludeIncludeArgs.excludeIncludeFile.getUri())
+                .userAgentCommand(COMMAND_NAME)
                 .toObject(ExcludeIncludesContent.class)
                 .acceptContentTypes(null)
                 .execute();

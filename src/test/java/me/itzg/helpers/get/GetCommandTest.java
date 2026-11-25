@@ -64,7 +64,7 @@ class GetCommandTest {
         assertThat(file).hasContent("jar contents");
         verify(getRequestedFor(urlEqualTo("/default-agent.jar"))
             .withHeader("User-Agent", matching(
-                "mc-image-helper/[!#$%&'*+.^_`|~0-9A-Za-z-]+ \\(https://github\\.com/itzg/mc-image-helper; cmd=unspecified\\)")));
+                "mc-image-helper/[!#$%&'*+.^_`|~0-9A-Za-z-]+ \\(https://github\\.com/itzg/mc-image-helper; cmd=get\\)")));
     }
 
     @Test

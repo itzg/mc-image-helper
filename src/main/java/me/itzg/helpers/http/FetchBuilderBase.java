@@ -51,6 +51,7 @@ public class FetchBuilderBase<SELF extends FetchBuilderBase<SELF>> {
         private final URI uri;
         private final String userInfo;
         public String userAgentCommand;
+        private String userAgent;
         private Set<String> acceptContentTypes;
         private final Map<String, String> requestHeaders = new HashMap<>();
 
@@ -164,6 +165,11 @@ public class FetchBuilderBase<SELF extends FetchBuilderBase<SELF>> {
 
     public SELF userAgentCommand(String userAgentCommand) {
         state.userAgentCommand = userAgentCommand;
+        return self();
+    }
+
+    public SELF userAgent(String userAgent) {
+        state.userAgent = userAgent;
         return self();
     }
 
@@ -306,6 +312,10 @@ public class FetchBuilderBase<SELF extends FetchBuilderBase<SELF>> {
                         state.userInfo.getBytes(StandardCharsets.UTF_8)
                     )
             );
+        }
+
+        if (state.userAgent != null) {
+            headers.set(USER_AGENT, state.userAgent);
         }
 
         state.requestHeaders.forEach(headers::set);
