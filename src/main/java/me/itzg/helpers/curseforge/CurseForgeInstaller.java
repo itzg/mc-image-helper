@@ -209,7 +209,13 @@ public class CurseForgeInstaller {
     }
 
     /**
-     * Checks whether an unpinned install would select a newer file, without changing the installation.
+     * Checks if a Modpack as an update.
+     *
+     * <p> Checks if given an unpinned install, a update exists with a stricly newer publication date
+     *
+     * @param slug
+     * @param fileMatcher
+     * @return
      */
     public boolean hasModpackUpdate(String slug, String fileMatcher) {
         if (slug == null || slug.isBlank()) {
