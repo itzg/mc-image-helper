@@ -1090,9 +1090,10 @@ directories, and URLs
 ### modrinth
 
 ```
-Usage: mc-image-helper modrinth [--skip-existing] [--skip-up-to-date] [--allowed-version-type=<defaultVersionType>]
-                                [--api-base-url=<baseUrl>] [--download-dependencies=<downloadDependencies>]
-                                --game-version=<gameVersion> --loader=<loader> [--output-directory=DIR]
+Usage: mc-image-helper modrinth [--ignore-failed-upgrades] [--skip-existing] [--skip-up-to-date]
+                                [--allowed-version-type=<defaultVersionType>] [--api-base-url=<baseUrl>]
+                                [--download-dependencies=<downloadDependencies>] --game-version=<gameVersion>
+                                --loader=<loader> [--output-directory=DIR]
                                 [--world-directory=<worldDirectory>] [--projects=[loader:]id|slug[?][:version][,|<nl>
                                 [loader:]id|slug[?][:version]...]]... [[--use-http2] [--wiretap]]
 Automates downloading of modrinth resources
@@ -1105,6 +1106,10 @@ Automates downloading of modrinth resources
                           Valid values: NONE, REQUIRED, OPTIONAL
       --game-version=<gameVersion>
                           Applicable Minecraft version
+      --ignore-failed-upgrades
+                          When resolving or downloading projects fails, such as Modrinth being unavailable or rate
+                            limiting, log a warning and keep the previously installed files instead of failing. Only
+                            applies when a previous installation exists. Invalid project references still fail.
       --loader=<loader>   Valid values: fabric, quilt, forge, neoforge, bukkit, spigot, paper, folia, pufferfish, leaf,
                             purpur, bungeecord, velocity, datapack
       --output-directory=DIR

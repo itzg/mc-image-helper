@@ -737,6 +737,140 @@ class ModrinthCommandTest {
         return getRequestedFor(urlPathEqualTo("/v2/project/" + projectId + "/version"));
     }
 
+    @Test
+    void ignoreFailedUpgradesKeepsPreviousFilesWhenApiUnavailable(@TempDir Path tempDir) {
+        final String projectId = randomAlphanumeric(6);
+        final String versionId = randomAlphanumeric(6);
+        installSingleProject(tempDir, projectId, versionId);
+
+        wm.resetAll();
+        stubFor(get(urlPathEqualTo("/v2/projects"))
+            .willReturn(aResponse().withStatus(503))
+        );
+
+        assertThat(executeProjects(tempDir, projectId, "--ignore-failed-upgrades"))
+            .isEqualTo(ExitCode.OK);
+
+        assertVersionFile(tempDir, versionId).exists();
+        assertThat(tempDir.resolve(".modrinth-manifest.json")).content().contains(versionId + ".jar");
+    }
+
+    @Test
+    void ignoreFailedUpgradesRemovesFilesFromFailedRun(@TempDir Path tempDir) {
+        final String projectA = randomAlphanumeric(6);
+        final String projectB = randomAlphanumeric(6);
+        final String versionA1 = randomAlphanumeric(6);
+        final String versionB1 = randomAlphanumeric(6);
+        final String versionA2 = randomAlphanumeric(6);
+        final String versionB2 = randomAlphanumeric(6);
+
+        stubProjectBulkRequestAnyOrder(projectA, projectB);
+        stubProjectVersionRequestForOne(projectA, versionA1, deps -> {});
+        stubProjectVersionRequestForOne(projectB, versionB1, deps -> {});
+        stubAnyDownload();
+        assertThat(executeProjects(tempDir, projectA + "," + projectB)).isEqualTo(ExitCode.OK);
+
+        // both projects have newer versions, but the second download fails
+        wm.resetAll();
+        stubProjectBulkRequestAnyOrder(projectA, projectB);
+        stubProjectVersionRequestForOne(projectA, versionA2, deps -> {});
+        stubProjectVersionRequestForOne(projectB, versionB2, deps -> {});
+        stubAnyDownload();
+        stubFor(get(urlPathEqualTo("/cdn/" + versionB2))
+            .willReturn(aResponse().withStatus(500))
+        );
+
+        assertThat(executeProjects(tempDir, projectA + "," + projectB, "--ignore-failed-upgrades"))
+            .isEqualTo(ExitCode.OK);
+
+        verify(getRequestedFor(urlPathEqualTo("/cdn/" + versionA2)));
+        assertVersionFile(tempDir, versionA1).exists();
+        assertVersionFile(tempDir, versionB1).exists();
+        assertVersionFile(tempDir, versionA2).doesNotExist();
+        assertVersionFile(tempDir, versionB2).doesNotExist();
+    }
+
+    @Test
+    void failsWithoutIgnoreFailedUpgrades(@TempDir Path tempDir) {
+        final String projectId = randomAlphanumeric(6);
+        final String versionId = randomAlphanumeric(6);
+        installSingleProject(tempDir, projectId, versionId);
+
+        wm.resetAll();
+        stubFor(get(urlPathEqualTo("/v2/projects"))
+            .willReturn(aResponse().withStatus(503))
+        );
+
+        assertThat(executeProjects(tempDir, projectId)).isNotEqualTo(ExitCode.OK);
+    }
+
+    @Test
+    void ignoreFailedUpgradesStillFailsWithoutPreviousInstall(@TempDir Path tempDir) {
+        stubFor(get(urlPathEqualTo("/v2/projects"))
+            .willReturn(aResponse().withStatus(503))
+        );
+
+        assertThat(executeProjects(tempDir, randomAlphanumeric(6), "--ignore-failed-upgrades"))
+            .isNotEqualTo(ExitCode.OK);
+    }
+
+    @Test
+    void ignoreFailedUpgradesStillFailsForInvalidProject(@TempDir Path tempDir) {
+        final String projectId = randomAlphanumeric(6);
+        final String versionId = randomAlphanumeric(6);
+        installSingleProject(tempDir, projectId, versionId);
+
+        // project no longer resolves
+        wm.resetAll();
+        stubFor(get(urlPathEqualTo("/v2/projects"))
+            .willReturn(aResponse()
+                .withHeader("Content-Type", "application/json")
+                .withBody("[]")
+            )
+        );
+
+        assertThat(executeProjects(tempDir, projectId, "--ignore-failed-upgrades"))
+            .isNotEqualTo(ExitCode.OK);
+    }
+
+    private void stubProjectBulkRequestAnyOrder(String... projectIds) {
+        final ArrayNode projectResp = objectMapper.createArrayNode();
+        for (final String projectId : projectIds) {
+            projectResp.addObject()
+                .put("id", projectId)
+                .put("slug", projectId)
+                .put("project_type", "mod")
+                .put("server_side", "required");
+        }
+        stubFor(get(urlPathEqualTo("/v2/projects"))
+            .willReturn(aResponse()
+                .withHeader("Content-Type", "application/json")
+                .withJsonBody(projectResp)
+            )
+        );
+    }
+
+    private void installSingleProject(Path tempDir, String projectId, String versionId) {
+        stubProjectBulkRequest(projectId, projectId);
+        stubProjectVersionRequestForOne(projectId, versionId, deps -> {});
+        stubAnyDownload();
+
+        assertThat(executeProjects(tempDir, projectId)).isEqualTo(ExitCode.OK);
+        assertVersionFile(tempDir, versionId).exists();
+    }
+
+    private static int executeProjects(Path tempDir, String projects, String... extraArgs) {
+        final ArrayList<String> args = new ArrayList<>(Arrays.asList(
+            "--api-base-url", wm.getRuntimeInfo().getHttpBaseUrl(),
+            "--output-directory", tempDir.toString(),
+            "--game-version", "1.21.1",
+            "--loader", "paper",
+            "--projects", projects
+        ));
+        args.addAll(Arrays.asList(extraArgs));
+        return new CommandLine(new ModrinthCommand()).execute(args.toArray(new String[0]));
+    }
+
     @NotNull
     private static AbstractPathAssert<?> assertVersionFile(Path tempDir, String versionId) {
         return assertThat(tempDir.resolve("plugins").resolve(versionId + ".jar"));

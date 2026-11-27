@@ -92,6 +92,13 @@ public class ModrinthCommand implements Callable<Integer> {
     @Option(names = "--skip-up-to-date", defaultValue = "${env:MODRINTH_SKIP_UP_TO_DATE}")
     boolean skipUpToDate = true;
 
+    @Option(names = "--ignore-failed-upgrades",
+        description = "When resolving or downloading projects fails, such as Modrinth being unavailable or rate limiting,"
+            + " log a warning and keep the previously installed files instead of failing."
+            + " Only applies when a previous installation exists. Invalid project references still fail."
+    )
+    boolean ignoreFailedUpgrades;
+
     public enum DownloadDependencies {
         NONE,
         REQUIRED,
@@ -127,11 +134,29 @@ public class ModrinthCommand implements Callable<Integer> {
 
     private final Map<Object, VersionTypePref> allowedVersionTypesByProject = new HashMap<>();
 
+    /**
+     * Files that did not exist before this run, so they can be removed if the run fails part way
+     */
+    private final Set<Path> createdFiles = Collections.synchronizedSet(new HashSet<>());
+
     @Override
     public Integer call() throws Exception {
         Files.createDirectories(outputDirectory);
 
-        final List<Path> outputFiles = processProjects(projects);
+        final List<Path> outputFiles;
+        try {
+            outputFiles = processProjects(projects);
+        } catch (InvalidParameterException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            if (ignoreFailedUpgrades && keepPreviousInstallation()) {
+                log.warn("Failed to resolve or download Modrinth projects, so keeping the previously installed files."
+                    + " The server might be incomplete or incompatible with clients. Cause: {}", e.getMessage());
+                log.debug("Details of ignored failure", e);
+                return ExitCode.OK;
+            }
+            throw e;
+        }
 
         final ModrinthManifest newManifest = ModrinthManifest.builder()
             .files(Manifests.relativizeAll(outputDirectory, outputFiles))
@@ -200,6 +225,27 @@ public class ModrinthCommand implements Callable<Integer> {
                 )
                 .collect(Collectors.toList());
         }
+    }
+
+    /**
+     * Removes the files created by the failed run and retains the previous manifest, if any.
+     * @return true if there was a previous installation to keep
+     */
+    private boolean keepPreviousInstallation() throws IOException {
+        final ModrinthManifest prevManifest = loadManifest();
+        if (prevManifest == null) {
+            return false;
+        }
+
+        synchronized (createdFiles) {
+            for (final Path createdFile : createdFiles) {
+                log.debug("Removing {} created by the failed run", createdFile);
+                Files.deleteIfExists(createdFile);
+            }
+        }
+        // re-apply since loading a legacy manifest removes it
+        Manifests.apply(outputDirectory, ModrinthManifest.ID, prevManifest);
+        return true;
     }
 
     private List<String> expandProjectListings(List<String> projects) {
@@ -410,6 +456,10 @@ public class ModrinthCommand implements Callable<Integer> {
             throw new RuntimeException("Creating output directory", e);
         }
 
+        if (!Files.exists(outPath)) {
+            createdFiles.add(outPath);
+        }
+
         try {
             for (int attempt = 1; attempt <= MAX_DOWNLOAD_ATTEMPTS; attempt++) {
                 final Path file = fetchFile(sharedFetch, versionFile, outPath);
@@ -592,6 +642,7 @@ public class ModrinthCommand implements Callable<Integer> {
                         if (name.contains("/")) {
                             Files.createDirectories(resolved.getParent());
                         }
+                        createdFiles.add(resolved);
                         Files.copy(zipIn, resolved);
                     }
                     else {
