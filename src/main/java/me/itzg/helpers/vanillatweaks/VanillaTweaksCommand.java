@@ -16,6 +16,7 @@ import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -23,7 +24,7 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
+import java.util.zip.ZipFile;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import me.itzg.helpers.errors.GenericException;
@@ -218,11 +219,11 @@ public class VanillaTweaksCommand implements Callable<Integer> {
     }
 
     private Mono<Void> processPackDefinition(SharedFetch sharedFetch, String source, PackDefinition packDefinition) {
-        return resolveDownloadLink(sharedFetch, packDefinition)
+        return resolveDownloadLink(sharedFetch, source, packDefinition)
             .flatMapMany(url -> {
                 try {
                     return downloadVanillaTweaksZip(
-                        sharedFetch, source, packDefinition.getType(), url, calculateFingerprint(packDefinition));
+                        sharedFetch, source, packDefinition, url, calculateFingerprint(packDefinition));
                 } catch (IOException e) {
                     return Flux.error(e);
                 }
@@ -269,23 +270,58 @@ public class VanillaTweaksCommand implements Callable<Integer> {
         return Files.createDirectories(worldPath.resolve("datapacks"));
     }
 
+    /**
+     * Extracts the datapacks only when the zip contains every requested pack, so that a partial
+     * response from Vanilla Tweaks doesn't replace the previously installed datapacks.
+     */
     @SuppressWarnings("BlockingMethodInNonBlockingContext")
     @Blocking
-    private Flux<Path> unzipInto(Path zipPath, Path outDir) throws IOException {
-        final List<Path> result = new ArrayList<>();
-        try (InputStream in = Files.newInputStream(zipPath);
-             ZipInputStream zip = new ZipInputStream(in)) {
-            ZipEntry entry;
-            while ((entry = zip.getNextEntry()) != null) {
+    private Flux<Path> extractDatapacks(Path zipPath, String source, PackDefinition packDefinition) throws IOException {
+        // Unlike ZipInputStream, ZipFile reads the central directory, so a truncated download fails here
+        try (ZipFile zip = new ZipFile(zipPath.toFile())) {
+            final List<? extends ZipEntry> entries = Collections.list(zip.entries());
+
+            final List<String> missing = findMissingDatapacks(packDefinition, entries);
+            if (!missing.isEmpty()) {
+                return Flux.error(new InvalidParameterException(String.format(
+                    "Vanilla Tweaks did not provide the datapacks %s requested by %s for Minecraft %s."
+                        + " Check that the names are spelled exactly as on vanillatweaks.net"
+                        + " and are available for that version",
+                    missing, source, packDefinition.getVersion()
+                )));
+            }
+
+            final Path outDir = dataPacksDir();
+            final List<Path> result = new ArrayList<>();
+            for (final ZipEntry entry : entries) {
                 final Path target = outDir.resolve(entry.getName());
-                Files.copy(zip, target, StandardCopyOption.REPLACE_EXISTING);
+                try (InputStream in = zip.getInputStream(entry)) {
+                    Files.copy(in, target, StandardCopyOption.REPLACE_EXISTING);
+                }
                 result.add(target);
             }
+            return Flux.fromIterable(result);
         }
-        return Flux.fromIterable(result);
     }
 
-    private Publisher<Path> downloadVanillaTweaksZip(SharedFetch sharedFetch, String source, Type type, String url, String packId) throws IOException {
+    /**
+     * Vanilla Tweaks names each datapack in the zip like "graves v4.0.6 (MC 1.21-1.21.11).zip"
+     * and silently leaves out any requested pack it can't provide.
+     */
+    private static List<String> findMissingDatapacks(PackDefinition packDefinition, Collection<? extends ZipEntry> entries) {
+        return packDefinition.getPacks().values().stream()
+            .flatMap(Collection::stream)
+            .filter(pack -> entries.stream()
+                .noneMatch(entry -> entry.getName().startsWith(pack + " v"))
+            )
+            .distinct()
+            .collect(Collectors.toList());
+    }
+
+    private Publisher<Path> downloadVanillaTweaksZip(SharedFetch sharedFetch, String source, PackDefinition packDefinition,
+        String url, String packId
+    ) throws IOException {
+        final Type type = packDefinition.getType();
         log.info("Downloading Vanilla Tweaks {} for {}", type, source);
 
         switch (type) {
@@ -325,9 +361,10 @@ public class VanillaTweaksCommand implements Callable<Integer> {
                             .flatMapMany(downloaded -> {
                                 try {
                                     //noinspection BlockingMethodInNonBlockingContext because IntelliJ is confused
-                                    return unzipInto(tempZip, dataPacksDir());
+                                    return extractDatapacks(tempZip, source, packDefinition);
                                 } catch (IOException e) {
-                                    return Flux.error(e);
+                                    return Flux.error(new GenericException(
+                                        "Failed to extract Vanilla Tweaks datapacks zip for " + source, e));
                                 }
                             })
                             .doOnTerminate(() -> {
@@ -344,7 +381,7 @@ public class VanillaTweaksCommand implements Callable<Integer> {
         }
     }
 
-    private Mono<String> resolveDownloadLink(SharedFetch sharedFetch, PackDefinition packDefinition) {
+    private Mono<String> resolveDownloadLink(SharedFetch sharedFetch, String source, PackDefinition packDefinition) {
         return sharedFetch
             .fetch(
                 Uris.populateToUri(
@@ -366,7 +403,17 @@ public class VanillaTweaksCommand implements Callable<Integer> {
             .acceptContentTypes(null)
             .assemble()
             .checkpoint("Resolving download link")
-            .map(zipLinkResponse -> baseUrl + zipLinkResponse.getLink());
+            .flatMap(zipLinkResponse -> {
+                if ("success".equals(zipLinkResponse.getStatus()) && zipLinkResponse.getLink() != null) {
+                    return Mono.just(baseUrl + zipLinkResponse.getLink());
+                }
+                return Mono.error(InvalidParameterException.formatted(
+                    "Vanilla Tweaks was unable to provide the %s requested by %s for Minecraft %s: %s",
+                    packDefinition.getType(), source, packDefinition.getVersion(),
+                    zipLinkResponse.getMessage() != null ? zipLinkResponse.getMessage()
+                        : "status " + zipLinkResponse.getStatus()
+                ));
+            });
     }
 
     private Mono<SourcedPackDefinition> resolveShareCode(SharedFetch sharedFetch, String shareCode) {

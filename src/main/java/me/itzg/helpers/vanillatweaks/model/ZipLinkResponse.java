@@ -8,4 +8,9 @@ public class ZipLinkResponse {
     String status;
 
     String link;
+
+    /**
+     * Explains the failure when {@link #status} is "error"
+     */
+    String message;
 }
